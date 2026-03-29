@@ -1,0 +1,76 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="aiocron" />
+          <option value="aiohappyeyeballs" />
+          <option value="aiohttp" />
+          <option value="aiosignal" />
+          <option value="anitya_schema" />
+          <option value="attrs" />
+          <option value="Automat" />
+          <option value="cffi" />
+          <option value="charset-normalizer" />
+          <option value="config" />
+          <option value="constantly" />
+          <option value="crochet" />
+          <option value="croniter" />
+          <option value="cronsim" />
+          <option value="cryptography" />
+          <option value="decorator" />
+          <option value="defusedxml" />
+          <option value="fedora-messaging-the-new-hotness-schema" />
+          <option value="fedora_messaging" />
+          <option value="frozenlist" />
+          <option value="gssapi" />
+          <option value="hyperlink" />
+          <option value="incremental" />
+          <option value="jsonschema" />
+          <option value="jsonschema-specifications" />
+          <option value="koji" />
+          <option value="multidict" />
+          <option value="pika" />
+          <option value="propcache" />
+          <option value="pyasn1" />
+          <option value="pyasn1_modules" />
+          <option value="pycparser" />
+          <option value="PyJWT" />
+          <option value="pyOpenSSL" />
+          <option value="python-bugzilla" />
+          <option value="redis" />
+          <option value="referencing" />
+          <option value="requests" />
+          <option value="requests-gssapi" />
+          <option value="rpds-py" />
+          <option value="service-identity" />
+          <option value="setuptools" />
+          <option value="sniffio" />
+          <option value="the-new-hotness" />
+          <option value="tomli" />
+          <option value="Twisted" />
+          <option value="typing_extensions" />
+          <option value="urllib3" />
+          <option value="wrapt" />
+          <option value="yarl" />
+          <option value="zope.interface" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyStubPackagesAdvertiser" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="pandas" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="Versions.V7.Bot.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

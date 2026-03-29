@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Casino Mini App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --card: #1e1e2e;
+    --card2: #252538;
+    --gold: #f5c542;
+    --gold2: #e8a800;
+    --red: #e63946;
+    --green: #2dc653;
+    --blue: #4cc9f0;
+    --purple: #7b2fff;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --border: rgba(245,197,66,0.15);
+    --nav-h: 64px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: var(--nav-h);
+  }
+
+  /* ── NAV ── */
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: var(--nav-h);
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; transition: color .2s;
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .5px;
+  }
+  .nav-btn.active { color: var(--gold); }
+  .nav-btn svg { width:22px; height:22px; }
+  .nav-indicator {
+    position: absolute; bottom: 0; height: 2px;
+    background: linear-gradient(90deg, var(--gold2), var(--gold));
+    width: 33.33%; transition: left .25s cubic-bezier(.4,0,.2,1);
+    border-radius: 2px 2px 0 0;
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; min-height: calc(100vh - var(--nav-h)); padding: 16px; }
+  .page.active { display: block; }
+
+  /* ── HOME ── */
+  .home-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(245,197,66,.12), transparent 70%);
+  }
+  .home-hero h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 26px; font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), #fff 60%, var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .home-hero p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  .info-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 14px;
+    text-align: center;
+  }
+  .info-card-icon { font-size: 28px; margin-bottom: 8px; }
+  .info-card-title { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px; }
+  .info-card-val { font-family: 'Orbitron', monospace; font-size: 20px; color: var(--gold); font-weight: 700; }
+
+  .info-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .info-section h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px; color: var(--gold); letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .info-row:last-child { border-bottom: none; }
+  .info-row-label { color: var(--muted); font-size: 14px; }
+  .info-row-val { color: var(--text); font-weight: 600; }
+
+  /* ── ROULETTE PAGE ── */
+  .roulette-page { padding: 0; }
+
+  .rp-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 12px;
+    color: var(--gold); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: background .2s;
+  }
+  .ref-btn:active { background: var(--card2); }
+  .balance-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    border-radius: 10px; padding: 8px 14px;
+    color: #000; font-family: 'Orbitron', monospace;
+    font-size: 14px; font-weight: 700;
+  }
+
+  .inventory-banner {
+    margin: 12px 16px;
+    background: linear-gradient(135deg, #1a1a30, #252545);
+    border: 1px solid rgba(124,47,255,.3);
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: border-color .2s;
+  }
+  .inventory-banner:active { border-color: var(--purple); }
+  .inventory-banner-left { display: flex; align-items: center; gap: 12px; }
+  .inventory-banner-left .icon { font-size: 28px; }
+  .inventory-banner-title { font-weight: 700; font-size: 16px; }
+  .inventory-banner-sub { font-size: 12px; color: var(--muted); }
+  .inventory-banner-arrow { color: var(--purple); font-size: 20px; }
+
+  /* ── ROULETTE WHEEL ── */
+  .roulette-container { padding: 12px 16px; }
+  .roulette-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .roulette-label {
+    background: linear-gradient(90deg, var(--bg2), transparent);
+    padding: 14px 20px 0;
+    font-family: 'Orbitron', monospace;
+    font-size: 13px; color: var(--gold); letter-spacing: 2px;
+  }
+
+  /* Horizontal strip roulette */
+  .wheel-wrap {
+    position: relative;
+    height: 90px;
+    overflow: hidden;
+    margin: 16px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .wheel-strip {
+    display: flex;
+    height: 100%;
+    transition: transform 6s cubic-bezier(.17,.67,.12,1);
+    will-change: transform;
+  }
+  .wheel-cell {
+    flex-shrink: 0;
+    width: 70px; height: 90px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700;
+    border-right: 1px solid rgba(255,255,255,.07);
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    transition: background .2s;
+  }
+  .wheel-cell.red   { background: rgba(230,57,70,.3);  color: #ff8a8a; }
+  .wheel-cell.black { background: rgba(20,20,30,.8);   color: #ccc; }
+  .wheel-cell.green { background: rgba(45,198,83,.25); color: #2dc653; }
+  .wheel-pointer {
+    position: absolute; top: 0; bottom: 0;
+    left: 50%; transform: translateX(-50%);
+    width: 2px; background: var(--gold);
+    z-index: 5;
+    box-shadow: 0 0 10px var(--gold);
+  }
+  .wheel-pointer::before, .wheel-pointer::after {
+    content: '';
+    position: absolute; left: 50%; transform: translateX(-50%);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+  }
+  .wheel-pointer::before { top: -1px; border-top: 10px solid var(--gold); }
+  .wheel-pointer::after  { bottom: -1px; border-bottom: 10px solid var(--gold); }
+
+  /* Bets */
+  .bets-wrap { padding: 0 16px 8px; }
+
+  .bet-amount-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  }
+  .bet-input-label { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .bet-input {
+    flex: 1;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 9px 12px;
+    color: var(--text); font-family: 'Orbitron', monospace; font-size: 15px;
+    outline: none; text-align: center;
+    width: 0;
+  }
+  .bet-input:focus { border-color: var(--gold); }
+  .quick-bets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .qb {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 10px;
+    color: var(--muted); font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .qb:active, .qb.sel { background: var(--gold); color: #000; border-color: var(--gold); }
+
+  .bet-types { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .bet-type-btn {
+    border-radius: 12px; padding: 12px 8px;
+    text-align: center; cursor: pointer;
+    border: 2px solid transparent;
+    transition: all .2s; font-weight: 700; font-size: 13px;
+    background: var(--bg3);
+  }
+  .bet-type-btn .bt-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .bet-type-btn.red-bet   { border-color: rgba(230,57,70,.4); color: #ff8a8a; }
+  .bet-type-btn.black-bet { border-color: rgba(200,200,220,.2); color: #ccc; }
+  .bet-type-btn.green-bet { border-color: rgba(45,198,83,.4); color: var(--green); }
+  .bet-type-btn.even-bet, .bet-type-btn.odd-bet, .bet-type-btn.half-bet { border-color: rgba(76,201,240,.25); color: var(--blue); }
+  .bet-type-btn.active { background: var(--card2); transform: scale(1.03); }
+  .bet-type-btn.red-bet.active   { border-color: var(--red);   background: rgba(230,57,70,.15); }
+  .bet-type-btn.black-bet.active { border-color: #aaa;          background: rgba(200,200,220,.1); }
+  .bet-type-btn.green-bet.active { border-color: var(--green); background: rgba(45,198,83,.12); }
+  .bet-type-btn.even-bet.active, .bet-type-btn.odd-bet.active, .bet-type-btn.half-bet.active {
+    border-color: var(--blue); background: rgba(76,201,240,.1);
+  }
+
+  .bet-types-2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+
+  .spin-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    border: none; border-radius: 14px;
+    color: #000; font-family: 'Orbitron', monospace;
+    font-size: 16px; font-weight: 900; letter-spacing: 2px;
+    cursor: pointer; transition: transform .15s, box-shadow .2s;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 20px rgba(245,197,66,.3);
+  }
+  .spin-btn:active { transform: scale(.97); }
+  .spin-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .result-box {
+    margin: 0 0 14px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+    text-align: center; min-height: 54px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; font-size: 15px; font-weight: 600;
+    transition: all .3s;
+  }
+  .result-box.win  { border-color: var(--green); background: rgba(45,198,83,.08); color: var(--green); }
+  .result-box.lose { border-color: var(--red);   background: rgba(230,57,70,.08); color: var(--red); }
+
+  /* ── INVENTORY MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    z-index: 200; display: none;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border-radius: 24px 24px 0 0;
+    border-top: 1px solid var(--border);
+    padding: 20px 20px calc(var(--nav-h) + 16px);
+    width: 100%;
+    max-height: 80vh; overflow-y: auto;
+    animation: slideUp .3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--muted); border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .modal h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 16px; color: var(--gold);
+    margin-bottom: 16px; text-align: center;
+  }
+  .inv-empty { color: var(--muted); text-align: center; padding: 30px; }
+  .inv-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border-radius: 12px;
+    padding: 14px; margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .inv-item-icon { font-size: 28px; }
+  .inv-item-info { flex: 1; }
+  .inv-item-name { font-weight: 700; font-size: 15px; }
+  .inv-item-sub  { color: var(--muted); font-size: 12px; }
+  .inv-item-count { font-family: 'Orbitron', monospace; color: var(--gold); font-weight: 700; }
+
+  /* ── HISTORY PAGE ── */
+  .hist-filter {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .filter-btn {
+    flex: 1; padding: 10px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--muted);
+    font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .2s; text-align: center;
+  }
+  .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+
+  .hist-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 16px;
+  }
+  .hist-stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px; text-align: center;
+  }
+  .hist-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .hist-stat-val { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; }
+  .hist-stat-val.green { color: var(--green); }
+  .hist-stat-val.red   { color: var(--red); }
+
+  .hist-list { display: flex; flex-direction: column; gap: 8px; }
+  .hist-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 14px;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } }
+  .hist-item-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .hist-item-icon.win  { background: rgba(45,198,83,.15); }
+  .hist-item-icon.lose { background: rgba(230,57,70,.15); }
+  .hist-item-icon.add  { background: rgba(76,201,240,.15); }
+  .hist-item-body { flex: 1; }
+  .hist-item-title { font-weight: 600; font-size: 14px; }
+  .hist-item-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .hist-item-amount { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; }
+  .hist-item-amount.pos { color: var(--green); }
+  .hist-item-amount.neg { color: var(--red); }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; top: 16px; left: 16px; right: 16px;
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 16px;
+    font-size: 14px; font-weight: 600;
+    z-index: 500; text-align: center;
+    transform: translateY(-80px);
+    transition: transform .3s;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .toast.show { transform: translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error   { border-color: var(--red);   color: var(--red); }
+  .toast.info    { border-color: var(--blue);  color: var(--blue); }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════ HOME ══════════════════ -->
+<div class="page active" id="page-home">
+  <div class="home-hero">
+    <h1>🎰 CASINO</h1>
+    <p>Добро пожаловать в лучшее казино Telegram!<br>Испытай удачу и выиграй большой куш.</p>
+  </div>
+
+  <div class="info-cards">
+    <div class="info-card">
+      <div class="info-card-icon">🪙</div>
+      <div class="info-card-title">Ваш баланс</div>
+      <div class="info-card-val" id="home-balance">0</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-icon">🎲</div>
+      <div class="info-card-title">Игр сыграно</div>
+      <div class="info-card-val" id="home-spins">0</div>
+    </div>
+  </div>
+
+  <div class="info-section">
+    <h3>📋 Как играть</h3>
+    <div class="info-row"><span class="info-row-label">1. Выбери ставку</span><span class="info-row-val">🪙 монеты</span></div>
+    <div class="info-row"><span class="info-row-label">2. Выбери тип пари</span><span class="info-row-val">Цвет / Чёт-нечёт</span></div>
+    <div class="info-row"><span class="info-row-label">3. Крути рулетку</span><span class="info-row-val">🎰 Удачи!</span></div>
+    <div class="info-row"><span class="info-row-label">4. Выигрыш зачисляется</span><span class="info-row-val">Мгновенно</span></div>
+  </div>
+
+  <div class="info-section">
+    <h3>💰 Выплаты</h3>
+    <div class="info-row"><span class="info-row-label">🔴 Красное / ⚫ Чёрное</span><span class="info-row-val" style="color:var(--gold)">×2</span></div>
+    <div class="info-row"><span class="info-row-label">Чётное / Нечётное</span><span class="info-row-val" style="color:var(--gold)">×2</span></div>
+    <div class="info-row"><span class="info-row-label">1–18 / 19–36</span><span class="info-row-val" style="color:var(--gold)">×2</span></div>
+    <div class="info-row"><span class="info-row-label">🟢 Зелёное (0)</span><span class="info-row-val" style="color:var(--gold)">×14</span></div>
+  </div>
+
+  <div class="info-section">
+    <h3>🔗 Реферальная программа</h3>
+    <div class="info-row"><span class="info-row-label">За каждого друга</span><span class="info-row-val" style="color:var(--green)">+50 монет</span></div>
+    <div class="info-row"><span class="info-row-label">За игру друга</span><span class="info-row-val" style="color:var(--green)">5% с выигрыша</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════ ROULETTE ══════════════════ -->
+<div class="page" id="page-roulette">
+  <div class="roulette-page">
+    <div class="rp-header">
+      <button class="ref-btn" id="ref-btn" onclick="copyRef()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        Реф. ссылка
+      </button>
+      <div class="balance-chip">
+        🪙 <span id="roul-balance">0</span>
+      </div>
+    </div>
+
+    <div class="inventory-banner" onclick="openInventory()">
+      <div class="inventory-banner-left">
+        <span class="icon">🎒</span>
+        <div>
+          <div class="inventory-banner-title">Инвентарь</div>
+          <div class="inventory-banner-sub">Ваши выигрыши и предметы</div>
+        </div>
+      </div>
+      <span class="inventory-banner-arrow">›</span>
+    </div>
+
+    <div class="roulette-container">
+      <div class="roulette-card">
+        <div class="roulette-label">🎰 ЕВРОПЕЙСКАЯ РУЛЕТКА</div>
+
+        <div class="wheel-wrap">
+          <div class="wheel-strip" id="wheel-strip"></div>
+          <div class="wheel-pointer"></div>
+        </div>
+
+        <div class="bets-wrap">
+          <!-- Bet amount -->
+          <div class="bet-amount-row">
+            <span class="bet-input-label">Ставка:</span>
+            <input class="bet-input" id="bet-input" type="number" min="1" value="10" inputmode="numeric">
+          </div>
+          <div class="quick-bets">
+            <div class="qb" onclick="setBet(10)">10</div>
+            <div class="qb" onclick="setBet(25)">25</div>
+            <div class="qb" onclick="setBet(50)">50</div>
+            <div class="qb" onclick="setBet(100)">100</div>
+            <div class="qb" onclick="setBetAll()">ВСЁ</div>
+            <div class="qb" onclick="setBetHalf()">1/2</div>
+          </div>
+
+          <!-- Color bets -->
+          <div class="bet-types">
+            <div class="bet-type-btn red-bet" data-bet="red" onclick="selectBet(this)">
+              🔴 Красное
+              <div class="bt-label">×2</div>
+            </div>
+            <div class="bet-type-btn black-bet" data-bet="black" onclick="selectBet(this)">
+              ⚫ Чёрное
+              <div class="bt-label">×2</div>
+            </div>
+            <div class="bet-type-btn green-bet" data-bet="green" onclick="selectBet(this)">
+              🟢 Зеро
+              <div class="bt-label">×14</div>
+            </div>
+          </div>
+
+          <!-- Other bets -->
+          <div class="bet-types-2">
+            <div class="bet-type-btn even-bet" data-bet="even" onclick="selectBet(this)">
+              Чётное
+              <div class="bt-label">×2</div>
+            </div>
+            <div class="bet-type-btn odd-bet" data-bet="odd" onclick="selectBet(this)">
+              Нечётное
+              <div class="bt-label">×2</div>
+            </div>
+            <div class="bet-type-btn half-bet" data-bet="low" onclick="selectBet(this)">
+              1–18
+              <div class="bt-label">×2</div>
+            </div>
+            <div class="bet-type-btn half-bet" data-bet="high" onclick="selectBet(this)">
+              19–36
+              <div class="bt-label">×2</div>
+            </div>
+            <div class="bet-type-btn even-bet" data-bet="dozen1" onclick="selectBet(this)">
+              1–12
+              <div class="bt-label">×3</div>
+            </div>
+            <div class="bet-type-btn even-bet" data-bet="dozen2" onclick="selectBet(this)">
+              13–24
+              <div class="bt-label">×3</div>
+            </div>
+          </div>
+
+          <div class="result-box" id="result-box">Выберите ставку и крутите!</div>
+          <button class="spin-btn" id="spin-btn" onclick="spin()">🎰 КРУТИТЬ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ HISTORY ══════════════════ -->
+<div class="page" id="page-history">
+  <div class="hist-filter">
+    <div class="filter-btn active" data-filter="all" onclick="setFilter(this,'all')">Все</div>
+    <div class="filter-btn" data-filter="win"  onclick="setFilter(this,'win')">Выигрыши</div>
+    <div class="filter-btn" data-filter="lose" onclick="setFilter(this,'lose')">Проигрыши</div>
+    <div class="filter-btn" data-filter="add"  onclick="setFilter(this,'add')">Пополнения</div>
+  </div>
+
+  <div class="hist-stats">
+    <div class="hist-stat">
+      <div class="hist-stat-label">Всего выиграно</div>
+      <div class="hist-stat-val green" id="stat-won">0</div>
+    </div>
+    <div class="hist-stat">
+      <div class="hist-stat-label">Всего проиграно</div>
+      <div class="hist-stat-val red" id="stat-lost">0</div>
+    </div>
+  </div>
+
+  <div class="hist-list" id="hist-list"></div>
+</div>
+
+<!-- ══════════════════ INVENTORY MODAL ══════════════════ -->
+<div class="modal-overlay" id="inv-modal" onclick="closeInventory(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>🎒 ИНВЕНТАРЬ</h2>
+    <div id="inv-list"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ NAVIGATION ══════════════════ -->
+<nav class="nav">
+  <div class="nav-indicator" id="nav-indicator"></div>
+  <button class="nav-btn active" data-page="home" onclick="showPage('home',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Главная
+  </button>
+  <button class="nav-btn" data-page="roulette" onclick="showPage('roulette',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+    Рулетка
+  </button>
+  <button class="nav-btn" data-page="history" onclick="showPage('history',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    История
+  </button>
+</nav>
+
+<script>
+// ── STATE ──
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+let state = JSON.parse(localStorage.getItem('casino_state') || 'null') || {
+  balance: 100,
+  spins: 0,
+  history: [],
+  inventory: []
+};
+
+const userId = tg?.initDataUnsafe?.user?.id || null;
+const username = tg?.initDataUnsafe?.user?.username || 'player';
+const REF_BASE = 'https://t.me/YOUR_BOT?start=ref_';
+
+function save() { localStorage.setItem('casino_state', JSON.stringify(state)); }
+
+// ── NAVIGATION ──
+const pages = document.querySelectorAll('.page');
+const navBtns = document.querySelectorAll('.nav-btn');
+const indicator = document.getElementById('nav-indicator');
+const pageOrder = ['home','roulette','history'];
+
+function showPage(name, btn) {
+  pages.forEach(p => p.classList.remove('active'));
+  navBtns.forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const idx = pageOrder.indexOf(name);
+  indicator.style.left = (idx * 33.33) + '%';
+  if (name === 'history') renderHistory();
+  updateBalanceUI();
+}
+
+// ── BALANCE UI ──
+function updateBalanceUI() {
+  document.getElementById('roul-balance').textContent = state.balance;
+  document.getElementById('home-balance').textContent = state.balance;
+  document.getElementById('home-spins').textContent = state.spins;
+}
+
+// ── TOAST ──
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── REF ──
+function copyRef() {
+  const link = REF_BASE + (userId || 'demo');
+  navigator.clipboard?.writeText(link).then(() => showToast('Ссылка скопирована!','success'))
+    .catch(() => showToast(link, 'info'));
+}
+
+// ── ROULETTE SETUP ──
+const NUMBERS = [
+  {n:0,  c:'green'},
+  {n:32, c:'red'},{n:15,c:'black'},{n:19,c:'red'},{n:4,c:'black'},{n:21,c:'red'},
+  {n:2,  c:'black'},{n:25,c:'red'},{n:17,c:'black'},{n:34,c:'red'},{n:6,c:'black'},
+  {n:27, c:'red'},{n:13,c:'black'},{n:36,c:'red'},{n:11,c:'black'},{n:30,c:'red'},
+  {n:8,  c:'black'},{n:23,c:'red'},{n:10,c:'black'},{n:5,c:'red'},{n:24,c:'black'},
+  {n:16, c:'red'},{n:33,c:'black'},{n:1,c:'red'},{n:20,c:'black'},{n:14,c:'red'},
+  {n:31, c:'black'},{n:9,c:'red'},{n:22,c:'black'},{n:18,c:'red'},{n:29,c:'black'},
+  {n:7,  c:'red'},{n:28,c:'black'},{n:12,c:'red'},{n:35,c:'black'},{n:3,c:'red'},{n:26,c:'black'}
+];
+const CELL_W = 70;
+
+function buildStrip() {
+  const strip = document.getElementById('wheel-strip');
+  strip.innerHTML = '';
+  // Build a long repeating sequence
+  const full = [];
+  for (let i = 0; i < 8; i++) full.push(...NUMBERS);
+  full.forEach(({n, c}) => {
+    const el = document.createElement('div');
+    el.className = 'wheel-cell ' + c;
+    el.textContent = n;
+    strip.appendChild(el);
+  });
+}
+buildStrip();
+
+// Center the strip at middle position
+const TOTAL_CELLS = NUMBERS.length * 8;
+const CONTAINER_W = () => document.querySelector('.wheel-wrap').offsetWidth;
+
+function resetStrip() {
+  const strip = document.getElementById('wheel-strip');
+  const mid = Math.floor(TOTAL_CELLS / 2);
+  const offset = CONTAINER_W() / 2 - mid * CELL_W - CELL_W / 2;
+  strip.style.transition = 'none';
+  strip.style.transform = `translateX(${offset}px)`;
+}
+resetStrip();
+
+// ── BET STATE ──
+let selectedBet = null;
+let spinning = false;
+
+function selectBet(el) {
+  document.querySelectorAll('.bet-type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedBet = el.dataset.bet;
+}
+
+function setBet(v) { document.getElementById('bet-input').value = v; }
+function setBetAll() { document.getElementById('bet-input').value = state.balance; }
+function setBetHalf() { document.getElementById('bet-input').value = Math.floor(state.balance / 2) || 1; }
+
+// ── SPIN ──
+function spin() {
+  if (spinning) return;
+  const betAmt = parseInt(document.getElementById('bet-input').value);
+  if (!selectedBet) { showToast('Выберите тип ставки!', 'error'); return; }
+  if (!betAmt || betAmt < 1) { showToast('Введите сумму ставки!', 'error'); return; }
+  if (betAmt > state.balance) { showToast('Недостаточно монет!', 'error'); return; }
+
+  spinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('result-box').className = 'result-box';
+  document.getElementById('result-box').textContent = '🎰 Крутим...';
+
+  // Deduct bet
+  state.balance -= betAmt;
+  updateBalanceUI();
+
+  // Pick random result
+  const resultIdx = Math.floor(Math.random() * NUMBERS.length);
+  const result = NUMBERS[resultIdx];
+
+  // Animate strip
+  const strip = document.getElementById('wheel-strip');
+  const startOffset = CONTAINER_W() / 2 - Math.floor(TOTAL_CELLS / 2) * CELL_W - CELL_W / 2;
+  const targetCell = Math.floor(TOTAL_CELLS / 2) - Math.floor(NUMBERS.length / 2) + resultIdx;
+  const targetOffset = CONTAINER_W() / 2 - targetCell * CELL_W - CELL_W / 2;
+
+  // Extra spins for drama
+  const extraSpins = (3 + Math.floor(Math.random() * 3)) * NUMBERS.length * CELL_W;
+  const finalOffset = targetOffset - extraSpins;
+
+  strip.style.transition = 'transform 5s cubic-bezier(.17,.67,.12,1)';
+  strip.style.transform = `translateX(${finalOffset}px)`;
+
+  setTimeout(() => {
+    // Evaluate win
+    const won = evaluate(selectedBet, result);
+    let mult = getMultiplier(selectedBet);
+    let delta = 0;
+
+    if (won) {
+      delta = Math.floor(betAmt * mult);
+      state.balance += delta;
+      document.getElementById('result-box').className = 'result-box win';
+      document.getElementById('result-box').textContent =
+        `${result.c === 'green' ? '🟢' : result.c === 'red' ? '🔴' : '⚫'} ${result.n} — Выигрыш! +${delta} 🪙`;
+      showToast(`+${delta} монет! 🎉`, 'success');
+      addHistory('win', betAmt, delta, result);
+    } else {
+      document.getElementById('result-box').className = 'result-box lose';
+      document.getElementById('result-box').textContent =
+        `${result.c === 'green' ? '🟢' : result.c === 'red' ? '🔴' : '⚫'} ${result.n} — Проигрыш -${betAmt} 🪙`;
+      showToast(`-${betAmt} монет 😢`, 'error');
+      addHistory('lose', betAmt, 0, result);
+    }
+
+    state.spins++;
+    updateBalanceUI();
+    save();
+
+    // Reset strip position after delay
+    setTimeout(() => {
+      resetStrip();
+      spinning = false;
+      document.getElementById('spin-btn').disabled = false;
+    }, 800);
+
+  }, 5200);
+}
+
+function evaluate(bet, result) {
+  const {n, c} = result;
+  switch (bet) {
+    case 'red':    return c === 'red';
+    case 'black':  return c === 'black';
+    case 'green':  return c === 'green';
+    case 'even':   return n !== 0 && n % 2 === 0;
+    case 'odd':    return n % 2 === 1;
+    case 'low':    return n >= 1 && n <= 18;
+    case 'high':   return n >= 19 && n <= 36;
+    case 'dozen1': return n >= 1 && n <= 12;
+    case 'dozen2': return n >= 13 && n <= 24;
+    default: return false;
+  }
+}
+function getMultiplier(bet) {
+  if (bet === 'green') return 14;
+  if (bet === 'dozen1' || bet === 'dozen2') return 3;
+  return 2;
+}
+
+// ── HISTORY ──
+function addHistory(type, bet, gain, result) {
+  state.history.unshift({
+    type, bet, gain, result: result.n, color: result.c,
+    ts: Date.now()
+  });
+  if (state.history.length > 200) state.history.pop();
+}
+
+let currentFilter = 'all';
+function setFilter(el, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter = filter;
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('hist-list');
+  let items = state.history;
+  if (currentFilter !== 'all') items = items.filter(i => i.type === currentFilter);
+
+  let totalWon = 0, totalLost = 0;
+  state.history.forEach(i => {
+    if (i.type === 'win')  totalWon  += i.gain;
+    if (i.type === 'lose') totalLost += i.bet;
+    if (i.type === 'add')  totalWon  += i.gain;
+  });
+  document.getElementById('stat-won').textContent  = totalWon;
+  document.getElementById('stat-lost').textContent = totalLost;
+
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><p>История пуста.<br>Сыграйте первую игру!</p></div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(i => {
+    const date = new Date(i.ts).toLocaleTimeString('ru', {hour:'2-digit',minute:'2-digit'});
+    const day  = new Date(i.ts).toLocaleDateString('ru', {day:'numeric',month:'short'});
+    const colorIcon = i.color === 'green' ? '🟢' : i.color === 'red' ? '🔴' : '⚫';
+
+    if (i.type === 'win') return `
+      <div class="hist-item">
+        <div class="hist-item-icon win">🏆</div>
+        <div class="hist-item-body">
+          <div class="hist-item-title">Выигрыш — ${colorIcon} ${i.result ?? ''}</div>
+          <div class="hist-item-sub">Ставка: ${i.bet} 🪙 · ${day} ${date}</div>
+        </div>
+        <div class="hist-item-amount pos">+${i.gain}</div>
+      </div>`;
+    if (i.type === 'lose') return `
+      <div class="hist-item">
+        <div class="hist-item-icon lose">💀</div>
+        <div class="hist-item-body">
+          <div class="hist-item-title">Проигрыш — ${colorIcon} ${i.result ?? ''}</div>
+          <div class="hist-item-sub">Ставка: ${i.bet} 🪙 · ${day} ${date}</div>
+        </div>
+        <div class="hist-item-amount neg">-${i.bet}</div>
+      </div>`;
+    if (i.type === 'add') return `
+      <div class="hist-item">
+        <div class="hist-item-icon add">💎</div>
+        <div class="hist-item-body">
+          <div class="hist-item-title">Пополнение баланса</div>
+          <div class="hist-item-sub">${day} ${date}</div>
+        </div>
+        <div class="hist-item-amount pos">+${i.gain}</div>
+      </div>`;
+    return '';
+  }).join('');
+}
+
+// ── INVENTORY ──
+function openInventory() {
+  const inv = document.getElementById('inv-list');
+  if (!state.inventory.length) {
+    inv.innerHTML = `<div class="inv-empty">📭 Инвентарь пуст.<br>Выигрывайте предметы в рулетке!</div>`;
+  } else {
+    inv.innerHTML = state.inventory.map(item => `
+      <div class="inv-item">
+        <span class="inv-item-icon">${item.icon}</span>
+        <div class="inv-item-info">
+          <div class="inv-item-name">${item.name}</div>
+          <div class="inv-item-sub">${item.desc}</div>
+        </div>
+        <span class="inv-item-count">×${item.qty}</span>
+      </div>`).join('');
+  }
+  document.getElementById('inv-modal').classList.add('open');
+}
+function closeInventory(e) {
+  if (e.target === document.getElementById('inv-modal'))
+    document.getElementById('inv-modal').classList.remove('open');
+}
+
+// ── ADMIN COMMAND HANDLER ──
+// Telegram Bot should call this: /skill-creator <userId> <amount>
+// In WebApp context we expose a function for the bot to call via sendData / webhooks
+// For demo: parse from URL hash  #admin:userId:amount
+function checkAdminCommand() {
+  const hash = location.hash;
+  if (hash.startsWith('#admin:')) {
+    const parts = hash.slice(7).split(':');
+    if (parts.length === 2) {
+      const [targetId, amount] = parts;
+      const amt = parseInt(amount);
+      if (!isNaN(amt) && amt > 0) {
+        // In production: validate targetId against actual user ID
+        state.balance += amt;
+        state.history.unshift({
+          type: 'add', gain: amt, ts: Date.now()
+        });
+        save();
+        updateBalanceUI();
+        showToast(`✅ Начислено ${amt} монет!`, 'success');
+        location.hash = '';
+      }
+    }
+  }
+}
+
+// Also expose global function for bot integration
+window.adminAddCoins = function(targetUserId, amount) {
+  if (String(targetUserId) === String(userId) || !userId) {
+    const amt = parseInt(amount);
+    if (!isNaN(amt) && amt > 0) {
+      state.balance += amt;
+      state.history.unshift({ type: 'add', gain: amt, ts: Date.now() });
+      save();
+      updateBalanceUI();
+      showToast(`✅ +${amt} монет начислено!`, 'success');
+    }
+  }
+};
+
+// ── INIT ──
+updateBalanceUI();
+checkAdminCommand();
+
+// Navigate from tg start_param for admin command
+if (tg?.initDataUnsafe?.start_param?.startsWith('admin_')) {
+  const parts = tg.initDataUnsafe.start_param.slice(6).split('_');
+  if (parts.length === 2) {
+    window.adminAddCoins(parts[0], parseInt(parts[1]));
+  }
+}
+</script>
+</body>
+</html>
