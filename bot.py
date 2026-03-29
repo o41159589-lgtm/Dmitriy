@@ -18,7 +18,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # ══════════════════════════════════════════
 #  CONFIG  —  замените нужные строки
 # ══════════════════════════════════════════
-BOT_TOKEN  = "8726291672:AAHuDez_PMbrmAFymPDvOwQseZOeE73YJWU"   # ← токен бота
+BOT_TOKEN  = "8726291672:AAEbVmk2LG4H2hOQTughIIKxoVMXCwD3TJM"   # ← токен бота
 ADMIN_IDS  = [1840233118]                                           # ← ваш Telegram ID
 WEBAPP_URL = "https://dmitriy-45jd.onrender.com"                  # ← URL Mini App
 PORT       = 8080                                                  # порт для Render
