@@ -21,7 +21,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # ══════════════════════════════════════════
 #  CONFIG
 # ══════════════════════════════════════════
-BOT_TOKEN  = "8726291672:AAHuDez_PMbrmAFymPDvOwQseZOeE73YJWU"
+BOT_TOKEN  = "8686326767:AAFheVAG5rhSjpQHaAJClR-axeuBbM0Zni8"
 ADMIN_IDS  = [1840233118]                          # ← замените на ваш Telegram ID
 WEBAPP_URL = "https://dmitriy-45jd.onrender.com"
 PORT       = int(os.environ.get("PORT", 8080))
