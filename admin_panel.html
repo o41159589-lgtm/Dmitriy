@@ -2,84 +2,80 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Admin</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
-:root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--card:#1e1e2e;--card2:#252538;
+:root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--card:#1e1e2e;
   --gold:#f5c542;--gold2:#e8a800;--red:#e63946;--green:#2dc653;--blue:#4cc9f0;--purple:#7b2fff;
   --text:#e8e8f0;--muted:#7070a0;--border:rgba(245,197,66,0.15);}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
-  font-size:16px;min-height:100vh;padding:16px;}
-.header{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid var(--border);
-  border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden;}
-.header::before{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(230,57,70,.15),transparent 70%);}
-.header h1{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--red);
-  margin-bottom:4px;}
-.header p{color:var(--muted);font-size:13px;}
-.search-wrap{position:relative;margin-bottom:14px;}
-.search-input{width:100%;background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:12px 16px;color:var(--text);font-family:'Rajdhani',sans-serif;
-  font-size:15px;outline:none;}
-.search-input:focus{border-color:var(--gold);}
-.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
-.sbar{background:var(--card);border:1px solid var(--border);border-radius:12px;
-  padding:12px;text-align:center;}
-.sbar-val{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);font-weight:700;}
-.sbar-label{font-size:11px;color:var(--muted);margin-top:4px;}
-.user-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
-  padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .2s;}
-.user-card:active{border-color:var(--gold);}
-.user-card-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-.user-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--blue));
-  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.user-info{flex:1;}
-.user-name{font-weight:700;font-size:15px;}
-.user-id{font-size:11px;color:var(--muted);}
-.user-bal{font-family:'Orbitron',monospace;color:var(--gold);font-size:16px;font-weight:700;}
-.user-stats{display:flex;gap:12px;font-size:12px;color:var(--muted);}
-.user-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;
-  display:none;}
-.user-card.expanded .user-actions{display:grid;}
-.action-group{background:var(--bg3);border-radius:10px;padding:10px;}
-.action-label{font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;}
-.action-row{display:flex;gap:6px;align-items:center;}
-.action-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-  padding:7px 10px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
-  outline:none;width:0;text-align:center;}
-.action-input:focus{border-color:var(--gold);}
-.action-btn{padding:7px 12px;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;
-  font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
-.btn-set{background:var(--gold);color:#000;}
-.btn-add{background:var(--green);color:#000;}
-.btn-sub{background:var(--red);color:#fff;}
-.luck-btns{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
-.luck-btn{padding:5px 8px;border:1px solid var(--border);border-radius:6px;
-  background:var(--bg);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;}
-.luck-btn:active{background:var(--purple);color:#fff;border-color:var(--purple);}
-.luck-custom{display:flex;gap:6px;align-items:center;margin-top:6px;}
-.luck-val{font-family:'Orbitron',monospace;font-size:13px;padding:5px 8px;
-  background:var(--bg);border:1px solid var(--border);border-radius:8px;
-  color:var(--text);outline:none;width:70px;text-align:center;}
-.luck-apply{padding:5px 12px;background:var(--purple);color:#fff;border:none;
-  border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;}
-.luck-status{font-size:12px;margin-top:6px;}
-.luck-status.honest{color:var(--green);}
-.luck-status.rigged{color:var(--red);}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:16px;}
 
-.toast{position:fixed;top:16px;left:16px;right:16px;background:var(--card2);
+.header{background:linear-gradient(135deg,#1a1a2e,#200a0a);border:1px solid rgba(230,57,70,.3);
+  border-radius:18px;padding:20px;text-align:center;margin-bottom:16px;}
+.header h1{font-family:'Orbitron',monospace;font-size:20px;color:var(--red);margin-bottom:4px;}
+.header p{color:var(--muted);font-size:12px;}
+
+.sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.sb{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.sb-v{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);font-weight:700;}
+.sb-l{font-size:11px;color:var(--muted);margin-top:4px;}
+
+.search{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:11px 16px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;
+  outline:none;margin-bottom:14px;}
+.search:focus{border-color:var(--gold);}
+
+.uc{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  margin-bottom:10px;overflow:hidden;}
+.uc-top{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;}
+.uc-av{width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.uc-info{flex:1;}
+.uc-name{font-weight:700;font-size:15px;}
+.uc-id{font-size:11px;color:var(--muted);}
+.uc-bal{font-family:'Orbitron',monospace;color:var(--gold);font-size:15px;font-weight:700;}
+.uc-stats{font-size:12px;color:var(--muted);padding:0 14px 8px;display:flex;gap:10px;flex-wrap:wrap;}
+.uc-actions{border-top:1px solid var(--border);padding:14px;display:none;gap:10px;flex-direction:column;}
+.uc.open .uc-actions{display:flex;}
+.ag{background:var(--bg3);border-radius:10px;padding:12px;}
+.ag-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.ag-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+.ag-inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
+  outline:none;text-align:center;width:0;}
+.ag-inp:focus{border-color:var(--gold);}
+.abtn{padding:8px 12px;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.abtn.set{background:var(--gold);color:#000;}
+.abtn.add{background:var(--green);color:#000;}
+.abtn.sub{background:var(--red);color:#fff;}
+.abtn.pur{background:var(--purple);color:#fff;}
+.luck-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.lbtn{padding:5px 9px;border:1px solid var(--border);border-radius:7px;
+  background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;}
+.lbtn:active,.lbtn.a{background:var(--purple);color:#fff;border-color:var(--purple);}
+.luck-st{font-size:12px;margin-top:6px;padding:5px 8px;border-radius:6px;display:inline-block;}
+.luck-st.h{background:rgba(45,198,83,.12);color:var(--green);}
+.luck-st.r{background:rgba(230,57,70,.12);color:var(--red);}
+
+.toast{position:fixed;top:16px;left:16px;right:16px;background:var(--card);
   border:1px solid var(--border);border-radius:12px;padding:12px 16px;
-  font-size:14px;font-weight:600;z-index:500;text-align:center;
-  transform:translateY(-80px);transition:transform .3s;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  font-size:14px;font-weight:600;z-index:999;text-align:center;
+  transform:translateY(-80px);transition:transform .3s;}
 .toast.show{transform:translateY(0);}
 .toast.ok{border-color:var(--green);color:var(--green);}
 .toast.err{border-color:var(--red);color:var(--red);}
-.loading{text-align:center;padding:48px;color:var(--muted);}
-.loading-ico{font-size:48px;margin-bottom:12px;animation:spin 2s linear infinite;}
+
+.loader{text-align:center;padding:48px;color:var(--muted);}
+.loader span{font-size:42px;display:block;margin-bottom:12px;animation:spin 1.5s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.no-access{text-align:center;padding:60px 20px;}
+.no-access span{font-size:50px;display:block;margin-bottom:14px;}
 </style>
 </head>
 <body>
@@ -87,195 +83,194 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
 
 <div class="header">
   <h1>🛠 ADMIN PANEL</h1>
-  <p>Управление пользователями Casino</p>
+  <p>Casino · Управление пользователями</p>
 </div>
 
-<div class="stats-bar">
-  <div class="sbar"><div class="sbar-val" id="s-total">—</div><div class="sbar-label">Игроков</div></div>
-  <div class="sbar"><div class="sbar-val" id="s-bal">—</div><div class="sbar-label">Монет всего</div></div>
-  <div class="sbar"><div class="sbar-val" id="s-rigged">—</div><div class="sbar-label">Подкручено</div></div>
-</div>
-
-<div class="search-wrap">
-  <input class="search-input" id="search" type="text" placeholder="🔍 Поиск по имени или ID..." oninput="filterUsers()">
-</div>
-
-<div id="users-list">
-  <div class="loading"><div class="loading-ico">⚙️</div><p>Загрузка...</p></div>
+<div id="root">
+  <div class="loader"><span>⚙️</span><p>Загрузка...</p></div>
 </div>
 
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
-const ADMIN_KEY = tg?.initDataUnsafe?.user?.id?.toString() || '';
 
-let allUsers = [];
+// Используем initData для идентификации администратора на сервере.
+// Ключ авторизации = BOT_TOKEN (хранится только на сервере).
+// Для упрощённой реализации передаём user id в заголовке,
+// сервер проверяет его по списку ADMIN_IDS.
+const ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString() || '';
 
-function toast(msg,type='ok'){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast '+type;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+let users = [];
+
+function toast(m,t='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
 }
 
-async function apiGet(path){
-  const r=await fetch(path,{headers:{'X-Admin-Key':ADMIN_KEY}});
-  if(!r.ok)throw new Error('HTTP '+r.status);
+async function api(path, method='GET', body=null){
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Uid': ADMIN_UID,      // передаём uid
+      'X-Admin-Key': ADMIN_UID       // пока используем uid как ключ (сервер проверяет по ADMIN_IDS)
+    }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
 }
-async function apiPost(path,body){
-  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Key':ADMIN_KEY},body:JSON.stringify(body)});
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
-}
 
-async function loadUsers(){
-  try{
-    allUsers = await apiGet('/api/admin/users');
-    updateStats();
-    renderUsers(allUsers);
-  }catch(e){
-    document.getElementById('users-list').innerHTML=
-      '<div class="loading"><p style="color:var(--red)">Ошибка загрузки.<br>Нет доступа?</p></div>';
+async function load(){
+  try {
+    users = await api('/api/admin/users');
+    render(users);
+  } catch(e) {
+    document.getElementById('root').innerHTML = `
+      <div class="no-access">
+        <span>🚫</span>
+        <p style="color:var(--red);font-weight:700;font-size:16px">Нет доступа</p>
+        <p style="color:var(--muted);font-size:13px;margin-top:8px">
+          Только администраторы могут открывать эту панель.<br>
+          Убедитесь что ваш ID добавлен в ADMIN_IDS.
+        </p>
+      </div>`;
   }
 }
 
 function updateStats(){
-  document.getElementById('s-total').textContent=allUsers.length;
-  document.getElementById('s-bal').textContent=allUsers.reduce((s,u)=>s+u.balance,0);
-  document.getElementById('s-rigged').textContent=allUsers.filter(u=>u.luck_pct>=0).length;
+  const total = users.length;
+  const bal   = users.reduce((s,u)=>s+u.balance,0);
+  const rigged= users.filter(u=>u.luck_pct>=0).length;
+  document.getElementById('s-t').textContent = total;
+  document.getElementById('s-b').textContent = bal;
+  document.getElementById('s-r').textContent = rigged;
 }
 
-function filterUsers(){
-  const q=document.getElementById('search').value.toLowerCase();
-  const filtered=allUsers.filter(u=>
-    u.first_name?.toLowerCase().includes(q)||
-    u.username?.toLowerCase().includes(q)||
-    String(u.user_id).includes(q)
-  );
-  renderUsers(filtered);
+function render(list){
+  const root = document.getElementById('root');
+  root.innerHTML = `
+    <div class="sbar">
+      <div class="sb"><div class="sb-v" id="s-t">—</div><div class="sb-l">Игроков</div></div>
+      <div class="sb"><div class="sb-v" id="s-b">—</div><div class="sb-l">Монет всего</div></div>
+      <div class="sb"><div class="sb-v" id="s-r">—</div><div class="sb-l">Подкручено</div></div>
+    </div>
+    <input class="search" placeholder="🔍 Поиск по имени / ID..." oninput="filterUsers(this.value)">
+    <div id="ulist">${list.map(u=>userCard(u)).join('')}</div>`;
+  updateStats();
 }
 
-function renderUsers(users){
-  const list=document.getElementById('users-list');
-  if(!users.length){
-    list.innerHTML='<div class="loading"><p>Пользователи не найдены</p></div>';
-    return;
-  }
-  list.innerHTML=users.map(u=>userCard(u)).join('');
+function filterUsers(q){
+  q=q.toLowerCase();
+  const filtered=users.filter(u=>
+    (u.first_name||'').toLowerCase().includes(q)||
+    (u.username||'').toLowerCase().includes(q)||
+    String(u.user_id).includes(q));
+  document.getElementById('ulist').innerHTML=filtered.map(u=>userCard(u)).join('');
 }
 
 function userCard(u){
-  const luckLabel = u.luck_pct<0
-    ? '<span class="luck-status honest">✅ Честная игра</span>'
-    : `<span class="luck-status rigged">⚠️ Шанс выиграть: ${u.luck_pct}%</span>`;
-  const name = u.first_name||u.username||'Без имени';
-  const initials = (name[0]||'?').toUpperCase();
-
-  return `<div class="user-card" id="card-${u.user_id}" onclick="toggleCard(${u.user_id})">
-    <div class="user-card-top">
-      <div class="user-avatar">${initials}</div>
-      <div class="user-info">
-        <div class="user-name">${name}${u.username?' (@'+u.username+')':''}</div>
-        <div class="user-id">ID: ${u.user_id}</div>
+  const name = u.first_name||u.username||'Аноним';
+  const init = (name[0]||'?').toUpperCase();
+  const luck_label = u.luck_pct<0
+    ? `<span class="luck-st h">✅ Честная игра</span>`
+    : `<span class="luck-st r">⚠️ Шанс: ${u.luck_pct}%</span>`;
+  return `<div class="uc" id="uc-${u.user_id}">
+    <div class="uc-top" onclick="toggle(${u.user_id})">
+      <div class="uc-av">${init}</div>
+      <div class="uc-info">
+        <div class="uc-name">${name}${u.username?' <span style="color:var(--muted);font-size:12px">@'+u.username+'</span>':''}</div>
+        <div class="uc-id">ID: ${u.user_id}</div>
       </div>
-      <div class="user-bal">${u.balance} 🪙</div>
+      <div class="uc-bal">${u.balance}🪙</div>
     </div>
-    <div class="user-stats">
-      <span>🎲 ${u.spins} игр</span>
-      <span>🏆 ${u.wins} побед</span>
-      <span>📈 +${u.total_won}</span>
-      <span>📉 -${u.total_lost}</span>
+    <div class="uc-stats">
+      <span>🎲${u.spins}</span><span>🏆${u.wins}</span><span>📈+${u.total_won}</span><span>📉-${u.total_lost}</span>
     </div>
-
-    <div class="user-actions">
-      <div class="action-group">
-        <div class="action-label">💰 Баланс</div>
-        <div class="action-row">
-          <input class="action-input" id="bal-inp-${u.user_id}" type="number" value="${u.balance}" min="0">
-          <button class="action-btn btn-set" onclick="setBalance(event,${u.user_id})">SET</button>
+    <div class="uc-actions">
+      <div class="ag">
+        <div class="ag-l">💰 Изменить баланс</div>
+        <div class="ag-row">
+          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0">
+          <button class="abtn set" onclick="setbal(${u.user_id})">SET</button>
         </div>
-        <div class="action-row" style="margin-top:6px">
-          <input class="action-input" id="delta-inp-${u.user_id}" type="number" value="100" min="1">
-          <button class="action-btn btn-add" onclick="addBalance(event,${u.user_id},1)">+</button>
-          <button class="action-btn btn-sub" onclick="addBalance(event,${u.user_id},-1)">−</button>
+        <div class="ag-row">
+          <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1">
+          <button class="abtn add" onclick="delta(${u.user_id},1)">+</button>
+          <button class="abtn sub" onclick="delta(${u.user_id},-1)">−</button>
         </div>
       </div>
-
-      <div class="action-group">
-        <div class="action-label">🎲 Подкрут шансов</div>
-        ${luckLabel}
-        <div class="luck-btns">
-          <div class="luck-btn" onclick="setLuck(event,${u.user_id},-1)">Честно</div>
-          <div class="luck-btn" onclick="setLuck(event,${u.user_id},0)">0%</div>
-          <div class="luck-btn" onclick="setLuck(event,${u.user_id},25)">25%</div>
-          <div class="luck-btn" onclick="setLuck(event,${u.user_id},50)">50%</div>
-          <div class="luck-btn" onclick="setLuck(event,${u.user_id},100)">100%</div>
+      <div class="ag">
+        <div class="ag-l">🎲 Подкрут шансов</div>
+        ${luck_label}
+        <div class="luck-row">
+          <div class="lbtn" onclick="setluck(${u.user_id},-1)">Честно</div>
+          <div class="lbtn" onclick="setluck(${u.user_id},0)">0%</div>
+          <div class="lbtn" onclick="setluck(${u.user_id},25)">25%</div>
+          <div class="lbtn" onclick="setluck(${u.user_id},50)">50%</div>
+          <div class="lbtn" onclick="setluck(${u.user_id},75)">75%</div>
+          <div class="lbtn" onclick="setluck(${u.user_id},100)">100%</div>
         </div>
-        <div class="luck-custom">
-          <input class="luck-val" id="luck-inp-${u.user_id}" type="number" min="0" max="100" placeholder="0–100">
-          <button class="luck-apply" onclick="setLuckCustom(event,${u.user_id})">Задать</button>
+        <div class="ag-row" style="margin-top:8px">
+          <input class="ag-inp" id="li-${u.user_id}" type="number" min="0" max="100" placeholder="0–100">
+          <button class="abtn pur" onclick="setluck_custom(${u.user_id})">Задать</button>
         </div>
       </div>
     </div>
   </div>`;
 }
 
-function toggleCard(uid){
-  const card=document.getElementById('card-'+uid);
-  card.classList.toggle('expanded');
+function toggle(uid){
+  document.getElementById('uc-'+uid).classList.toggle('open');
 }
 
-async function setBalance(e,uid){
-  e.stopPropagation();
-  const newBal=parseInt(document.getElementById('bal-inp-'+uid).value);
-  const u=allUsers.find(x=>x.user_id===uid);
-  if(isNaN(newBal)||newBal<0){toast('Неверное значение','err');return;}
+async function setbal(uid){
+  const u=users.find(x=>x.user_id===uid);
+  const nb=parseInt(document.getElementById('bi-'+uid).value);
+  if(isNaN(nb)||nb<0){toast('Неверное значение','err');return;}
   try{
-    await apiPost('/api/admin/set_balance',{user_id:uid,balance:newBal,old_balance:u?.balance||0});
-    if(u)u.balance=newBal;
+    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
+    if(u)u.balance=nb;
     updateStats();
-    toast(`✅ Баланс ${uid} → ${newBal}`,'ok');
-    // Перерисовываем карточку
-    document.getElementById('card-'+uid).outerHTML=userCard(u);
-  }catch(err){toast('Ошибка','err');}
+    document.getElementById('uc-'+uid).outerHTML=userCard(u);
+    toast(`✅ Баланс → ${nb}`);
+  }catch{toast('Ошибка','err');}
 }
 
-async function addBalance(e,uid,sign){
-  e.stopPropagation();
-  const delta=parseInt(document.getElementById('delta-inp-'+uid).value)||0;
-  const u=allUsers.find(x=>x.user_id===uid);
-  if(!u||delta<=0){toast('Введите сумму','err');return;}
-  const newBal=Math.max(0,u.balance+sign*delta);
+async function delta(uid,sign){
+  const u=users.find(x=>x.user_id===uid);
+  const d=parseInt(document.getElementById('di-'+uid).value)||0;
+  if(d<=0){toast('Введите сумму','err');return;}
+  const nb=Math.max(0,(u?.balance||0)+sign*d);
   try{
-    await apiPost('/api/admin/set_balance',{user_id:uid,balance:newBal,old_balance:u.balance});
-    u.balance=newBal;
+    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
+    if(u)u.balance=nb;
     updateStats();
-    toast(`${sign>0?'+':'-'}${delta} → баланс: ${newBal}`,'ok');
-    document.getElementById('bal-inp-'+uid).value=newBal;
-  }catch(err){toast('Ошибка','err');}
+    document.getElementById('bi-'+uid).value=nb;
+    toast(`${sign>0?'+':'-'}${d} → ${nb}🪙`);
+  }catch{toast('Ошибка','err');}
 }
 
-async function setLuck(e,uid,pct){
-  e.stopPropagation();
-  const u=allUsers.find(x=>x.user_id===uid);
+async function setluck(uid,pct){
+  const u=users.find(x=>x.user_id===uid);
   try{
-    await apiPost('/api/admin/set_luck',{user_id:uid,luck:pct});
+    await api('/api/admin/set_luck','POST',{user_id:uid,luck:pct});
     if(u)u.luck_pct=pct;
-    toast(pct<0?'✅ Честная игра':`🎲 Шанс выиграть: ${pct}%`,'ok');
-    document.getElementById('card-'+uid).outerHTML=userCard(u);
-  }catch(err){toast('Ошибка','err');}
+    document.getElementById('uc-'+uid).outerHTML=userCard(u);
+    toast(pct<0?'✅ Честная игра':`🎲 Шанс ${pct}%`);
+  }catch{toast('Ошибка','err');}
 }
 
-async function setLuckCustom(e,uid){
-  e.stopPropagation();
-  const val=parseInt(document.getElementById('luck-inp-'+uid).value);
-  if(isNaN(val)||val<0||val>100){toast('Значение 0–100','err');return;}
-  await setLuck(e,uid,val);
+async function setluck_custom(uid){
+  const v=parseInt(document.getElementById('li-'+uid).value);
+  if(isNaN(v)||v<0||v>100){toast('Значение 0–100','err');return;}
+  await setluck(uid,v);
 }
 
-loadUsers();
-// Обновляем каждые 30 сек
-setInterval(loadUsers,30000);
+load();
+setInterval(load,30000);
 </script>
 </body>
 </html>
