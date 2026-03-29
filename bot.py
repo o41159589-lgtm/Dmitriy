@@ -1,170 +1,174 @@
 """
-Telegram Bot — обработчик команды /skill-creator
-Использование: /skill-creator <user_id> <amount>
-Пример: /skill-creator 123456789 500
-
-Требования: pip install python-telegram-bot
+Casino Telegram Bot — aiogram 3.x
+Хостинг: Render (https://dmitriy-45jd.onrender.com)
+Запуск: python bot.py
 """
 
+import asyncio
 import logging
-from telegram import Update
-from telegram.ext import (
-    Application, CommandHandler, ContextTypes
+import time
+from aiohttp import web
+from aiogram import Bot, Dispatcher, F
+from aiogram.types import (
+    Message, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 )
+from aiogram.filters import Command, CommandStart
+from aiogram.fsm.storage.memory import MemoryStorage
 
-# ── CONFIG ──
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # Замените на токен от @BotFather
-ADMIN_IDS = [123456789]  # Замените на ваш Telegram ID
-WEBAPP_URL = "https://your-domain.com/telegram_mini_app.html"  # URL вашего Mini App
+# ══════════════════════════════════════════
+#  CONFIG  —  замените нужные строки
+# ══════════════════════════════════════════
+BOT_TOKEN  = "8726291672:AAHuDez_PMbrmAFymPDvOwQseZOeE73YJWU"   # ← токен бота
+ADMIN_IDS  = [1840233118]                                           # ← ваш Telegram ID
+WEBAPP_URL = "https://dmitriy-45jd.onrender.com"                  # ← URL Mini App
+PORT       = 8080                                                  # порт для Render
+# ══════════════════════════════════════════
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
 logger = logging.getLogger(__name__)
 
-# ── В ПРОДАКШНЕ: хранилище балансов (замените на БД — PostgreSQL/Redis/и т.д.) ──
-user_balances: dict[int, int] = {}
-user_history: dict[int, list] = {}
+bot = Bot(token=BOT_TOKEN)
+dp  = Dispatcher(storage=MemoryStorage())
 
+# ── Хранилище (в памяти; для продакшна замените на Redis/PostgreSQL) ──
+user_balances: dict[int, int]   = {}
+user_history:  dict[int, list]  = {}
 
-def get_balance(user_id: int) -> int:
-    return user_balances.get(user_id, 100)  # Стартовый баланс 100
+def get_balance(uid: int) -> int:
+    return user_balances.get(uid, 100)          # стартовый баланс 100
 
-
-def add_balance(user_id: int, amount: int) -> int:
-    user_balances[user_id] = get_balance(user_id) + amount
-    if user_id not in user_history:
-        user_history[user_id] = []
-    user_history[user_id].insert(0, {
-        "type": "add",
-        "amount": amount,
-        "ts": __import__("time").time()
+def add_balance(uid: int, amount: int) -> int:
+    user_balances[uid] = get_balance(uid) + amount
+    user_history.setdefault(uid, []).insert(0, {
+        "type": "add", "amount": amount, "ts": time.time()
     })
-    return user_balances[user_id]
+    return user_balances[uid]
 
 
-# ── КОМАНДА /start ──
-async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    args = ctx.args
+# ══════════════════════════════════════════
+#  /start
+# ══════════════════════════════════════════
+@dp.message(CommandStart())
+async def cmd_start(message: Message):
+    user = message.from_user
+    args = message.text.split(maxsplit=1)
 
     # Реферальная система
-    if args and args[0].startswith("ref_"):
-        ref_id = args[0].split("_")[1]
-        logger.info(f"User {user.id} came via ref from {ref_id}")
-        # TODO: начислить бонус реферреру
+    if len(args) > 1 and args[1].startswith("ref_"):
+        ref_id = args[1].split("_")[1]
+        logger.info(f"User {user.id} пришёл по рефералке от {ref_id}")
 
-    # Кнопка запуска Mini App
-    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-    keyboard = InlineKeyboardMarkup([[
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
-            "🎰 Открыть Казино",
+            text="🎰 Открыть Казино",
             web_app=WebAppInfo(url=WEBAPP_URL)
         )
     ]])
 
-    await update.message.reply_text(
-        f"🎰 Добро пожаловать, {user.first_name}!\n\n"
-        f"💰 Ваш баланс: {get_balance(user.id)} монет\n"
+    await message.answer(
+        f"🎰 Добро пожаловать, <b>{user.first_name}</b>!\n\n"
+        f"💰 Ваш баланс: <b>{get_balance(user.id)}</b> монет\n\n"
         f"Нажмите кнопку ниже, чтобы открыть казино:",
-        reply_markup=keyboard
+        reply_markup=kb,
+        parse_mode="HTML"
     )
 
 
-# ── КОМАНДА /skill-creator <id> <amount> ──
-async def skill_creator(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    """
-    Команда только для администраторов.
-    Начисляет монеты пользователю с указанным ID.
+# ══════════════════════════════════════════
+#  /balance
+# ══════════════════════════════════════════
+@dp.message(Command("balance"))
+async def cmd_balance(message: Message):
+    await message.answer(
+        f"💰 Ваш баланс: <b>{get_balance(message.from_user.id)}</b> монет",
+        parse_mode="HTML"
+    )
 
-    Использование: /skill-creator 123456789 500
-    """
-    caller_id = update.effective_user.id
 
-    # Проверка прав администратора
-    if caller_id not in ADMIN_IDS:
-        await update.message.reply_text("❌ У вас нет прав для этой команды.")
+# ══════════════════════════════════════════
+#  /skill-creator <user_id> <amount>
+# ══════════════════════════════════════════
+@dp.message(F.text.regexp(r"^/skill[-_]creator"))
+async def cmd_skill_creator(message: Message):
+    caller = message.from_user.id
+
+    if caller not in ADMIN_IDS:
+        await message.answer("❌ У вас нет прав для этой команды.")
         return
 
-    # Проверка аргументов
-    if len(ctx.args) != 2:
-        await update.message.reply_text(
-            "❌ Неверный формат команды.\n"
-            "Использование: /skill-creator <user_id> <amount>\n"
-            "Пример: /skill-creator 123456789 500"
+    parts = message.text.split()
+    if len(parts) != 3:
+        await message.answer(
+            "❌ Неверный формат.\n"
+            "Использование: <code>/skill-creator &lt;user_id&gt; &lt;amount&gt;</code>\n"
+            "Пример: <code>/skill-creator 123456789 500</code>",
+            parse_mode="HTML"
         )
         return
 
     try:
-        target_id = int(ctx.args[0])
-        amount = int(ctx.args[1])
+        target_id = int(parts[1])
+        amount    = int(parts[2])
     except ValueError:
-        await update.message.reply_text("❌ user_id и amount должны быть числами.")
+        await message.answer("❌ user_id и amount должны быть целыми числами.")
         return
 
     if amount <= 0:
-        await update.message.reply_text("❌ Сумма должна быть больше 0.")
+        await message.answer("❌ Сумма должна быть больше 0.")
         return
 
-    # Начисляем монеты
     new_balance = add_balance(target_id, amount)
 
-    # Ответ администратору
-    await update.message.reply_text(
-        f"✅ Успешно!\n"
-        f"👤 Пользователь: `{target_id}`\n"
-        f"💰 Начислено: +{amount} монет\n"
-        f"📊 Новый баланс: {new_balance} монет",
-        parse_mode="Markdown"
+    await message.answer(
+        f"✅ <b>Готово!</b>\n"
+        f"👤 Пользователь: <code>{target_id}</code>\n"
+        f"💰 Начислено: <b>+{amount}</b> монет\n"
+        f"📊 Новый баланс: <b>{new_balance}</b> монет",
+        parse_mode="HTML"
     )
 
-    # Уведомление пользователю
     try:
-        await ctx.bot.send_message(
+        await bot.send_message(
             chat_id=target_id,
-            text=f"🎉 Вам начислено {amount} монет!\n"
-                 f"💰 Ваш баланс: {new_balance} монет"
+            text=f"🎉 Вам начислено <b>{amount}</b> монет!\n"
+                 f"💰 Ваш баланс: <b>{new_balance}</b> монет",
+            parse_mode="HTML"
         )
     except Exception as e:
-        logger.warning(f"Не удалось отправить уведомление пользователю {target_id}: {e}")
-        await update.message.reply_text(
+        logger.warning(f"Не удалось уведомить {target_id}: {e}")
+        await message.answer(
             "⚠️ Монеты начислены, но уведомить пользователя не удалось "
-            "(возможно, он не запускал бота)."
+            "(возможно, он ещё не запускал бота)."
         )
 
 
-# ── КОМАНДА /balance (для пользователей) ──
-async def balance(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    bal = get_balance(user.id)
-    await update.message.reply_text(
-        f"💰 Ваш баланс: {bal} монет"
-    )
+# ══════════════════════════════════════════
+#  HTTP-сервер для Render (keep-alive)
+# ══════════════════════════════════════════
+async def health(request):
+    return web.Response(text="OK — Casino Bot is running")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", health)
+    app.router.add_get("/health", health)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+    logger.info(f"HTTP server running on port {PORT}")
 
 
-# ── MAIN ──
-def main():
-    app = Application.builder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("skill_creator", skill_creator))  # /skill_creator
-    app.add_handler(CommandHandler("skillcreator", skill_creator))  # /skillcreator
-    app.add_handler(CommandHandler("balance", balance))
-
-    # Примечание: Telegram не поддерживает дефис в командах (/skill-creator),
-    # поэтому используется /skill_creator или /skillcreator.
-    # Если хотите именно /skill-creator — нужно парсить текст сообщения вручную:
-    from telegram.ext import MessageHandler, filters
-    async def hyphen_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-        text = update.message.text or ""
-        if text.startswith("/skill-creator"):
-            parts = text.split()
-            ctx.args = parts[1:]
-            await skill_creator(update, ctx)
-
-    app.add_handler(MessageHandler(filters.TEXT & filters.Regex(r"^/skill-creator"), hyphen_cmd))
-
-    logger.info("Bot started. Commands: /skill-creator <id> <amount>")
-    app.run_polling()
-
+# ══════════════════════════════════════════
+#  MAIN
+# ══════════════════════════════════════════
+async def main():
+    await start_web_server()
+    logger.info("Bot polling started...")
+    await dp.start_polling(bot, skip_updates=True)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
