@@ -188,7 +188,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
   justify-content:center;font-size:18px;flex-shrink:0;}
 .hi-ic.win{background:rgba(45,198,83,.15);}
 .hi-ic.lose{background:rgba(230,57,70,.15);}
-.hi-ic.add,.hi-ic.deposit,.hi-ic.ref{background:rgba(76,201,240,.15);}
+.hi-ic.deposit,.hi-ic.ref{background:rgba(76,201,240,.15);}
 .hi-ic.sub{background:rgba(230,57,70,.08);}
 .hi-b{flex:1;}
 .hi-t{font-weight:600;font-size:14px;}
@@ -413,12 +413,21 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
   <div class="modal">
     <div class="mh"></div>
     <div class="mt">💳 ПОПОЛНЕНИЕ</div>
-    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:16px">1 монета = 1 ⭐ Telegram Star</p>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:14px">1 монета = 1 ⭐ Telegram Star</p>
     <div class="ta-grid">
       <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50</div><div class="ta-s">50 ⭐</div></div>
       <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100</div><div class="ta-s">100 ⭐</div></div>
       <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250</div><div class="ta-s">250 ⭐</div></div>
       <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500</div><div class="ta-s">500 ⭐</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="color:var(--muted);font-size:13px;white-space:nowrap">Или введите:</span>
+      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Своя сумма..."
+        oninput="onCustomInput()"
+        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+          padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:14px;
+          outline:none;text-align:center;" />
+      <span style="color:var(--gold);font-size:14px">⭐</span>
     </div>
     <button class="ta-confirm" onclick="confirmTopup()">Оплатить <span id="ta-amt">50</span> ⭐</button>
   </div>
@@ -455,10 +464,11 @@ let curF     = 'all';
 let selBetType = null;
 let spinning = false;
 let gtaLobbyId = null;
-let gtaPoll = null;
+let gtaPollTimer = null;
 let gtaTimerInterval = null;
-let gtaSpinStart = null;
-const GTA_DELAY = 15000;
+let gtaDeadline = 0;
+let gtaSpinAnim = null;
+let gtaWinnerId = null;
 
 // ── NAV ──
 function showPage(n,btn,i){
@@ -468,13 +478,11 @@ function showPage(n,btn,i){
   btn.classList.add('active');
   document.getElementById('nav-ind').style.left=(i*33.33)+'%';
   if(n==='history')renderHistory();
-  if(n==='roulette'){loadUser();initGtaPoll();}
+  if(n==='roulette'){loadUser();if(!gtaPollTimer)startGtaPoll();}
 }
 
-// ── BANNERS ──
 function toggleBanner(id){
-  const b = document.getElementById(id);
-  b.classList.toggle('open');
+  document.getElementById(id).classList.toggle('open');
 }
 
 // ── TOAST ──
@@ -512,7 +520,7 @@ function copyRef(){
 }
 
 // ══════════════════════════
-//  EUROPEAN ROULETTE
+//  EUROPEAN ROULETTE — фиксированная сила прокрута
 // ══════════════════════════
 const NUMS = [
   {n:0,c:'green'},{n:32,c:'red'},{n:15,c:'black'},{n:19,c:'red'},{n:4,c:'black'},
@@ -524,7 +532,9 @@ const NUMS = [
   {n:29,c:'black'},{n:7,c:'red'},{n:28,c:'black'},{n:12,c:'red'},{n:35,c:'black'},
   {n:3,c:'red'},{n:26,c:'black'}
 ];
-const CW=70, REPS=14;
+const CW=70, REPS=20;
+// Фиксированное количество оборотов — всегда одинаковое, не зависит от позиции
+const FIXED_EXTRA_SPINS = 7; // ровно 7 полных оборотов каждый раз
 
 function buildStrip(){
   const s=document.getElementById('wheel-strip');
@@ -535,15 +545,17 @@ function buildStrip(){
   });
 }
 
+// Стартовая позиция — всегда начинаем с одной точки (индекс 0 в середине)
+const ANCHOR_REP = 4; // начальный повтор
 function resetStrip(){
   const s=document.getElementById('wheel-strip');
   const ww=document.querySelector('.wheel-wrap');
   if(!ww)return;
   const cw=ww.offsetWidth;
-  const mid=Math.floor(REPS/2);
-  const off=cw/2-mid*NUMS.length*CW-CW/2;
+  // Всегда начинаем с позиции где ячейка 0 (индекс 0) первого рабочего повтора стоит по центру
+  const startCell = ANCHOR_REP * NUMS.length; // позиция "0 зеро" в начале
+  const off = cw/2 - startCell*CW - CW/2;
   s.style.transition='none';
-  // force reflow
   void s.offsetWidth;
   s.style.transform=`translateX(${off}px)`;
 }
@@ -569,23 +581,25 @@ async function spinEuro(){
   const rb=document.getElementById('res-box');
   rb.className='res-box'; rb.textContent='🎰 Крутим...';
 
+  // Сначала сбрасываем в начальную позицию (без анимации)
+  resetStrip();
+
   const res=await post('/api/spin',{user_id:UID,bet,bet_type:selBetType}).catch(()=>null);
   if(!res||res.error){
     toast(res?.error||'Ошибка сервера','err');
     spinning=false; document.getElementById('spin-btn').disabled=false; return;
   }
 
-  // Анимация
   const strip=document.getElementById('wheel-strip');
   const ww=document.querySelector('.wheel-wrap');
   const cw=ww.offsetWidth;
-  const midRep=Math.floor(REPS/2);
-  const tCell=midRep*NUMS.length+res.result_index;
-  const tOff=cw/2-tCell*CW-CW/2;
-  const extra=(4+Math.floor(Math.random()*3))*NUMS.length*CW;
-  const finalOff=tOff-extra;
 
-  strip.style.transition='none';
+  // Целевая ячейка — в повторе ANCHOR_REP + FIXED_EXTRA_SPINS
+  const targetRep = ANCHOR_REP + FIXED_EXTRA_SPINS;
+  const tCell = targetRep * NUMS.length + res.result_index;
+  const finalOff = cw/2 - tCell*CW - CW/2;
+
+  // force reflow перед анимацией
   void strip.offsetWidth;
   strip.style.transition='transform 5s cubic-bezier(.17,.67,.12,1)';
   strip.style.transform=`translateX(${finalOff}px)`;
@@ -603,7 +617,7 @@ async function spinEuro(){
     }
     if(userData) userData.balance=res.new_balance;
     updateUI();
-    // Не сбрасываем полосу — остаётся где остановилась
+    // Полоса остаётся где остановилась — НЕ сбрасываем
     spinning=false;
     document.getElementById('spin-btn').disabled=false;
   },5300);
@@ -615,31 +629,27 @@ async function spinEuro(){
 function sgb(v){document.getElementById('gta-inp').value=v;}
 function sgbAll(){document.getElementById('gta-inp').value=userData?.balance||0;}
 
-function initGtaPoll(){
-  if(gtaPoll)return;
+function startGtaPoll(){
+  clearTimeout(gtaPollTimer);
+  gtaPollTimer = null;
   pollGta();
 }
 
 async function pollGta(){
-  if(!gtaLobbyId){
-    const d=await get('/api/gta/lobby').catch(()=>null);
-    if(d){gtaLobbyId=d.lobby.id;renderGta(d.lobby,d.bets);}
-  } else {
-    const d=await get(`/api/gta/status/${gtaLobbyId}`).catch(()=>null);
-    if(!d)return;
-    renderGta(d.lobby,d.bets);
-    if(d.lobby.status==='done'){
-      gtaLobbyId=null;
-      clearInterval(gtaTimerInterval);gtaTimerInterval=null;
-      await loadUser();
-      setTimeout(async()=>{
-        const nd=await get('/api/gta/lobby').catch(()=>null);
-        if(nd){gtaLobbyId=nd.lobby.id;renderGta(nd.lobby,nd.bets);}
-      },3000);
-      return;
+  try {
+    if(!gtaLobbyId){
+      const d=await get('/api/gta/lobby');
+      if(d&&d.lobby){gtaLobbyId=d.lobby.id;renderGta(d.lobby,d.bets);}
+    } else {
+      const d=await get(`/api/gta/status/${gtaLobbyId}`);
+      if(!d||d.error){gtaLobbyId=null;}
+      else {
+        renderGta(d.lobby,d.bets);
+        if(d.lobby.status==='done') return; // renderGta handles restart
+      }
     }
-  }
-  gtaPoll=setTimeout(pollGta,2000);
+  } catch(e){}
+  gtaPollTimer = setTimeout(pollGta, 2000);
 }
 
 async function placeGtaBet(){
@@ -653,94 +663,220 @@ async function placeGtaBet(){
   toast(`Ставка ${amount} монет принята!`,'ok');
   if(userData)userData.balance=res.new_balance;
   gtaLobbyId=res.lobby_id;
+  // Обновляем дедлайн таймера
+  if(res.deadline) gtaDeadline=res.deadline*1000;
   updateUI();
-  clearTimeout(gtaPoll);gtaPoll=null;
-  await pollGta();
+  clearTimeout(gtaPollTimer);gtaPollTimer=null;
+  pollGta();
 }
+
+let lastLobbyStatus = null;
 
 function renderGta(lobby,bets){
   const pot=lobby.pot||0;
   document.getElementById('gta-pot').textContent=pot;
 
+  // Агрегируем по игроку
   const byUser={};
   bets.forEach(b=>{
-    if(!byUser[b.user_id])byUser[b.user_id]={uid:b.user_id,amount:0};
+    if(!byUser[b.user_id]) byUser[b.user_id]={uid:b.user_id,name:b.player_name||`ID${b.user_id}`,amount:0};
     byUser[b.user_id].amount+=b.amount;
   });
   const players=Object.values(byUser);
   const total=players.reduce((s,p)=>s+p.amount,0)||1;
 
-  drawGtaWheel(players,total);
-
-  // Players list
-  const pl=document.getElementById('gta-players');
-  pl.innerHTML=players.length
-    ? players.map((p,i)=>{
-        const pct=Math.round(p.amount/total*100);
-        const you=p.uid==UID?' (Вы)':'';
-        return `<div class="gp-row">
-          <div class="gp-dot" style="background:${GTA_COLORS[i%GTA_COLORS.length]}"></div>
-          <div class="gp-name">Игрок ${p.uid}${you}</div>
-          <div><div class="gp-bet">${p.amount}🪙</div><div class="gp-pct">${pct}% шанс</div></div>
-        </div>`;
-      }).join('')
-    : '<div style="color:var(--muted);text-align:center;padding:12px">Нет ставок</div>';
+  // Статус изменился?
+  const statusChanged = lastLobbyStatus !== lobby.status;
+  lastLobbyStatus = lobby.status;
 
   const st=document.getElementById('gta-status');
   const tw=document.getElementById('t-wrap');
 
   if(lobby.status==='done'){
-    st.textContent='🏆 Игра завершена! Новое лобби через секунду...';
+    // Показываем результат, через 5 сек перезапускаем
+    if(statusChanged){
+      if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;
+      // Рисуем финальное колесо с победителем
+      drawGtaWheel(players,total,lobby.winner_id);
+      st.innerHTML='🏆 Игра завершена! Перезапуск через <b id="restart-cnt">5</b> сек...';
+      tw.style.display='none';
+      let cnt=5;
+      const iv=setInterval(()=>{
+        cnt--;
+        const el=document.getElementById('restart-cnt');
+        if(el)el.textContent=cnt;
+        if(cnt<=0){
+          clearInterval(iv);
+          gtaLobbyId=null;
+          lastLobbyStatus=null;
+          gtaWinnerId=null;
+          loadUser();
+          clearTimeout(gtaPollTimer);gtaPollTimer=null;
+          pollGta();
+        }
+      },1000);
+    }
+    renderPlayers(players,total,lobby.winner_id);
+    return;
+  }
+
+  if(lobby.status==='spinning'){
+    if(statusChanged){
+      if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      tw.style.display='none';
+      st.textContent='🎰 Идёт розыгрыш!';
+      // Запускаем анимацию вращения колеса
+      startGtaSpinAnimation(players,total);
+    }
+    renderPlayers(players,total,null);
+    return;
+  }
+
+  // open
+  cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;
+  drawGtaWheel(players,total,null);
+  renderPlayers(players,total,null);
+
+  if(players.length>=2){
+    tw.style.display='block';
+    // Используем deadline с сервера
+    const deadline = lobby.deadline ? lobby.deadline*1000 : (gtaDeadline || Date.now()+15000);
+    if(statusChanged || !gtaTimerInterval){
+      if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      gtaTimerInterval=setInterval(()=>{
+        const rem=Math.max(0,Math.ceil((deadline-Date.now())/1000));
+        const pct=Math.max(0,Math.min(100,(deadline-Date.now())/15000*100));
+        document.getElementById('t-bar').style.width=pct+'%';
+        st.textContent=`⏳ Розыгрыш через ${rem} сек...`;
+        if(rem<=0){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      },200);
+    }
+  } else {
     tw.style.display='none';
     if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
-  } else if(lobby.status==='spinning'){
-    st.textContent='🎰 Идёт розыгрыш!';
-    tw.style.display='none';
-  } else {
-    if(players.length>=2){
-      tw.style.display='block';
-      if(!gtaTimerInterval){
-        gtaSpinStart=Date.now();
-        gtaTimerInterval=setInterval(()=>{
-          const el=Date.now()-gtaSpinStart;
-          const pct=Math.max(0,100-el/GTA_DELAY*100);
-          document.getElementById('t-bar').style.width=pct+'%';
-          const rem=Math.max(0,Math.ceil((GTA_DELAY-el)/1000));
-          st.textContent=`⏳ Розыгрыш через ${rem} сек...`;
-          if(pct<=0){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
-        },200);
-      }
-    } else {
-      st.textContent=`👥 Ждём ещё игроков (${players.length}/2)`;
-      tw.style.display='none';
-    }
+    st.textContent=`👥 Ждём ещё игроков (${players.length}/2)`;
   }
 }
 
-function drawGtaWheel(players,total){
-  const c=document.getElementById('gta-canvas');
-  const ctx=c.getContext('2d');
-  const cx=70,cy=70,r=65;
-  ctx.clearRect(0,0,140,140);
+function renderPlayers(players,total,winnerId){
+  const pl=document.getElementById('gta-players');
   if(!players.length){
-    ctx.fillStyle='#252538';ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#7070a0';ctx.font='13px Rajdhani';ctx.textAlign='center';ctx.fillText('Нет ставок',cx,cy+5);
+    pl.innerHTML='<div style="color:var(--muted);text-align:center;padding:12px">Нет ставок</div>';
     return;
   }
+  pl.innerHTML=players.map((p,i)=>{
+    const pct=Math.round(p.amount/total*100);
+    const you=p.uid==UID?' (Вы)':'';
+    const isWinner=winnerId&&p.uid==winnerId;
+    const style=isWinner?`background:rgba(245,197,66,.12);border:1px solid var(--gold);border-radius:10px;`:'';
+    return `<div class="gp-row" style="${style}">
+      <div class="gp-dot" style="background:${GTA_COLORS[i%GTA_COLORS.length]}"></div>
+      <div class="gp-name">${p.name}${you}${isWinner?' 🏆':''}</div>
+      <div><div class="gp-bet">${p.amount}🪙</div><div class="gp-pct">${pct}%</div></div>
+    </div>`;
+  }).join('');
+}
+
+// GTA колесо — указатель сверху, вращение по часовой стрелке
+function drawGtaWheel(players,total,winnerId){
+  const canvas=document.getElementById('gta-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2, cy=H/2, r=Math.min(W,H)/2-6;
+  ctx.clearRect(0,0,W,H);
+
+  if(!players.length){
+    ctx.fillStyle='#252538';
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#7070a0';ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('Нет ставок',cx,cy+4);
+    drawPointer(ctx,cx,r);
+    return;
+  }
+
+  // Вычисляем начальный угол — указатель сверху = -PI/2
   let a=-Math.PI/2;
+  players.forEach((p,i)=>{
+    const sl=p.amount/total*Math.PI*2;
+    const isWinner=winnerId&&p.uid==winnerId;
+    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
+    // Обводка победителя
+    if(isWinner){
+      ctx.strokeStyle='#f5c542';ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.stroke();
+      ctx.lineWidth=1;
+    }
+    // Процент
+    if(sl>0.22){
+      const ma=a+sl/2;
+      ctx.fillStyle='rgba(0,0,0,.7)';
+      ctx.font=`bold ${Math.max(10,Math.min(13,sl*20))}px sans-serif`;
+      ctx.textAlign='center';
+      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*0.62),cy+Math.sin(ma)*(r*0.62)+4);
+    }
+    a+=sl;
+  });
+
+  // Центральный круг
+  ctx.fillStyle='#1e1e2e';
+  ctx.beginPath();ctx.arc(cx,cy,r*0.22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f5c542';ctx.font=`${r*0.2}px serif`;ctx.textAlign='center';
+  ctx.fillText('🎰',cx,cy+r*0.07);
+
+  drawPointer(ctx,cx,r);
+}
+
+function drawPointer(ctx,cx,r){
+  // Треугольный указатель сверху (внешний, снаружи колеса)
+  const py = cx - r - 2; // y верхней точки колеса
+  ctx.fillStyle='#f5c542';
+  ctx.beginPath();
+  ctx.moveTo(cx, py+14);       // острый конец внизу — касается колеса
+  ctx.lineTo(cx-9, py-6);
+  ctx.lineTo(cx+9, py-6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur=8;ctx.shadowColor='#f5c542';
+  ctx.fill();
+  ctx.shadowBlur=0;
+}
+
+let gtaAngleOffset=0;
+
+function startGtaSpinAnimation(players,total){
+  if(gtaSpinAnim) cancelAnimationFrame(gtaSpinAnim);
+  gtaAngleOffset=0;
+  const speed=0.06; // рад/фрейм — по часовой
+  function frame(){
+    gtaAngleOffset+=speed;
+    drawGtaWheelAnimated(players,total,gtaAngleOffset);
+    gtaSpinAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function drawGtaWheelAnimated(players,total,offset){
+  const canvas=document.getElementById('gta-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const cx=W/2,cy=H/2,r=Math.min(W,H)/2-6;
+  ctx.clearRect(0,0,W,H);
+
+  let a=-Math.PI/2+offset; // вращение по часовой (offset растёт → по часовой)
   players.forEach((p,i)=>{
     const sl=p.amount/total*Math.PI*2;
     ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
-    if(sl>0.25){
-      const ma=a+sl/2;
-      ctx.fillStyle='rgba(0,0,0,.6)';ctx.font='bold 11px Orbitron';ctx.textAlign='center';
-      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*42,cy+Math.sin(ma)*42+4);
-    }
     a+=sl;
   });
-  ctx.fillStyle='#1e1e2e';ctx.beginPath();ctx.arc(cx,cy,20,0,Math.PI*2);ctx.fill();
-  ctx.font='14px serif';ctx.textAlign='center';ctx.fillText('💰',cx,cy+5);
+
+  ctx.fillStyle='#1e1e2e';
+  ctx.beginPath();ctx.arc(cx,cy,r*0.22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f5c542';ctx.font=`${r*0.2}px serif`;ctx.textAlign='center';
+  ctx.fillText('🎰',cx,cy+r*0.07);
+  drawPointer(ctx,cx,r);
 }
 
 // ══════════════════════════
@@ -751,13 +887,13 @@ async function renderHistory(){
   let items=curF==='all'?history:history.filter(i=>i.type===curF);
   let won=0,lost=0;
   history.forEach(i=>{
-    if(['win','add','deposit','ref'].includes(i.type)) won+=i.amount;
-    if(['lose','sub'].includes(i.type)) lost+=i.amount;
+    if(['win','deposit','ref'].includes(i.type)) won+=i.amount;
+    if(['lose'].includes(i.type)) lost+=i.amount;
   });
   document.getElementById('s-won').textContent=won;
   document.getElementById('s-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',add:'💎',deposit:'💳',ref:'🔗',sub:'✂️'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',add:'Начисление',deposit:'Пополнение',ref:'Реферал',sub:'Списание'};
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал'};
   const list=document.getElementById('hist-list');
   if(!items.length){
     list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;
@@ -765,10 +901,10 @@ async function renderHistory(){
   list.innerHTML=items.map(i=>{
     const d=new Date(i.created_at*1000);
     const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-    const pos=['win','add','deposit','ref'].includes(i.type);
+    const pos=['win','deposit','ref'].includes(i.type);
     return `<div class="hi">
       <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
-      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail} · ${dt}</div></div>
+      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
       <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
     </div>`;
   }).join('');
@@ -779,20 +915,32 @@ function setF(el,f){
 }
 
 // ══════════════════════════
-//  TOPUP
+//  TOPUP — с кастомной суммой
 // ══════════════════════════
 let topupAmt=50;
 function openTopup(){document.getElementById('ov-topup').classList.add('open');}
 function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
 function selAmt(el,v){
   document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));
-  el.classList.add('sel');topupAmt=v;
+  el.classList.add('sel');
+  topupAmt=v;
+  document.getElementById('ta-custom').value='';
   document.getElementById('ta-amt').textContent=v;
+}
+function onCustomInput(){
+  const v=parseInt(document.getElementById('ta-custom').value)||0;
+  if(v>=1){
+    document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));
+    topupAmt=v;
+    document.getElementById('ta-amt').textContent=v;
+  }
 }
 async function confirmTopup(){
   if(!UID){toast('Войдите через Telegram','err');return;}
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;
+  if(custom>=1) topupAmt=custom;
+  if(topupAmt<1){toast('Введите сумму','err');return;}
   document.getElementById('ov-topup').classList.remove('open');
-  // Бот отправит инвойс в личку
   const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
   if(res?.ok){
     toast('Инвойс отправлен в чат с ботом!','ok');
@@ -809,7 +957,7 @@ window.addEventListener('load',()=>{
   setTimeout(resetStrip,150);
   if(UID){
     loadUser();
-    get(`/api/gta/lobby`).then(d=>{if(d){gtaLobbyId=d.lobby.id;renderGta(d.lobby,d.bets);}}).catch(()=>{});
+    startGtaPoll();
   }
 });
 </script>

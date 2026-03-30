@@ -32,6 +32,7 @@ async def init_db():
                 winner_id  INTEGER DEFAULT NULL,
                 pot        INTEGER DEFAULT 0,
                 commission INTEGER DEFAULT 0,
+                deadline   REAL DEFAULT 0,
                 created_at REAL DEFAULT 0,
                 closed_at  REAL DEFAULT NULL
             );
@@ -75,6 +76,10 @@ async def ensure_user(uid: int, username="", first_name=""):
 async def get_all_users():
     async with aiosqlite.connect(DB_PATH) as db:
         return await _rows(db, "SELECT * FROM users ORDER BY balance DESC")
+
+async def get_all_users_by_join():
+    async with aiosqlite.connect(DB_PATH) as db:
+        return await _rows(db, "SELECT * FROM users ORDER BY created_at ASC")
 
 async def set_balance(uid: int, val: int):
     async with aiosqlite.connect(DB_PATH) as db:
@@ -152,6 +157,11 @@ async def place_gta_bet(lid: int, uid: int, amount: int):
             await db.execute("INSERT INTO gta_bets (lobby_id,user_id,amount,created_at) VALUES (?,?,?,?)",
                 (lid, uid, amount, time.time()))
         await db.execute("UPDATE gta_lobbies SET pot=pot+? WHERE id=?", (amount, lid))
+        await db.commit()
+
+async def set_lobby_deadline(lid: int, deadline: float):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE gta_lobbies SET deadline=? WHERE id=?", (deadline, lid))
         await db.commit()
 
 async def set_lobby_spinning(lid: int):

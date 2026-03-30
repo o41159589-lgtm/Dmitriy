@@ -2,7 +2,7 @@
 Casino Bot — aiogram 3.x + aiosqlite
 Render: https://dmitriy-45jd.onrender.com
 """
-import asyncio, logging, os, random, time
+import asyncio, time, logging, os, random, time
 from pathlib import Path
 from aiohttp import web
 from aiogram import Bot, Dispatcher, F
@@ -17,7 +17,7 @@ import database as db
 
 # ════════════════════════════════════════
 BOT_TOKEN  = "8686326767:AAFheVAG5rhSjpQHaAJClR-axeuBbM0Zni8"
-ADMIN_IDS  = [1840233118]
+ADMIN_IDS  = [1840233118]                   # ← ваш Telegram ID (узнать у @userinfobot)
 WEBAPP_URL      = "https://dmitriy-45jd.onrender.com"
 ADMIN_URL       = "https://dmitriy-45jd.onrender.com/admin"
 PORT            = int(os.environ.get("PORT", 8080))
@@ -200,6 +200,15 @@ async def api_spin(req: web.Request):
         new_bal = await db.add_to_balance(uid, gain - bet_amt)
         await db.add_history(uid, "win", gain, f"Европ. рулетка: {rn} {rc}, ×{mult}")
         await db.update_spin_stats(uid, True, gain, 0)
+        try:
+            ico = "🟢" if rc=="green" else "🔴" if rc=="red" else "⚫"
+            await bot.send_message(uid,
+                f"🎉 <b>Выигрыш в Европейской рулетке!</b>\n"
+                f"{ico} Выпало: <b>{rn}</b> · Ставка: {bet_type} ×{mult}\n"
+                f"💰 +<b>{gain}</b> монет · Баланс: <b>{new_bal}</b>",
+                parse_mode="HTML")
+        except Exception:
+            pass
     else:
         new_bal = await db.add_to_balance(uid, -bet_amt)
         await db.add_history(uid, "lose", bet_amt, f"Европ. рулетка: {rn} {rc}")
@@ -210,12 +219,20 @@ async def api_spin(req: web.Request):
         "won": won, "gain": gain if won else 0, "new_balance": new_bal
     })
 
+async def _enrich_bets(bets):
+    enriched = []
+    for b in bets:
+        u = await db.get_user(b["user_id"])
+        name = (u.get("first_name") or u.get("username") or f"ID{b['user_id']}") if u else f"ID{b['user_id']}"
+        enriched.append({**b, "player_name": name})
+    return enriched
+
 async def api_gta_lobby(req: web.Request):
     lobby = await db.get_open_lobby()
     if not lobby:
         lid = await db.create_lobby()
         lobby = await db.get_lobby(lid)
-    bets = await db.get_lobby_bets(lobby["id"])
+    bets = await _enrich_bets(await db.get_lobby_bets(lobby["id"]))
     return web.json_response({"lobby": lobby, "bets": bets})
 
 async def api_gta_bet(req: web.Request):
@@ -242,20 +259,27 @@ async def api_gta_bet(req: web.Request):
 
     bets = await db.get_lobby_bets(lobby["id"])
     unique = len({b["user_id"] for b in bets})
-    if unique >= GTA_MIN_PLAYERS and lobby["id"] not in gta_timers:
-        task = asyncio.create_task(_gta_spin_delayed(lobby["id"]))
-        gta_timers[lobby["id"]] = task
+    lid = lobby["id"]
+    if unique >= GTA_MIN_PLAYERS:
+        # Cancel existing timer and restart with +10s (every new bet resets)
+        if lid in gta_timers:
+            gta_timers[lid].cancel()
+        task = asyncio.create_task(_gta_spin_delayed(lid))
+        gta_timers[lid] = task
+        await db.set_lobby_deadline(lid, time.time() + GTA_SPIN_DELAY)
 
     nb = (await db.get_user(uid))["balance"]
-    return web.json_response({"success":True,"new_balance":nb,"lobby_id":lobby["id"],
-        "players":unique,"pot":(await db.get_lobby(lobby["id"]))["pot"]})
+    updated_lobby = await db.get_lobby(lid)
+    return web.json_response({"success":True,"new_balance":nb,"lobby_id":lid,
+        "players":unique,"pot":updated_lobby["pot"],
+        "deadline": updated_lobby.get("deadline", 0)})
 
 async def api_gta_status(req: web.Request):
     lid = int(req.match_info["lid"])
     lobby = await db.get_lobby(lid)
     if not lobby:
         return web.json_response({"error":"not found"}, status=404)
-    bets = await db.get_lobby_bets(lid)
+    bets = await _enrich_bets(await db.get_lobby_bets(lid))
     return web.json_response({"lobby":lobby,"bets":bets})
 
 async def _gta_spin_delayed(lid: int):
@@ -324,7 +348,7 @@ def _is_admin(req: web.Request):
 async def api_admin_users(req: web.Request):
     if not _is_admin(req):
         return web.json_response({"error":"forbidden"}, status=403)
-    return web.json_response(await db.get_all_users())
+    return web.json_response(await db.get_all_users_by_join())
 
 async def api_admin_set_balance(req: web.Request):
     if not _is_admin(req):
@@ -334,7 +358,9 @@ async def api_admin_set_balance(req: web.Request):
     old = int(data.get("old_balance", 0))
     await db.set_balance(uid, new_bal)
     delta = new_bal - old
-    await db.add_history(uid, "add" if delta>=0 else "sub", abs(delta), "Изменено администратором")
+    if delta > 0:
+        await db.add_history(uid, "deposit", delta, "Пополнение администратором")
+    # при списании — не записываем в историю
     return web.json_response({"success":True,"balance":new_bal})
 
 async def api_admin_set_luck(req: web.Request):
