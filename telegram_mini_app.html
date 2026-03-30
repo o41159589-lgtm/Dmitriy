@@ -152,25 +152,36 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
 .gta-ui{padding:16px 18px;}
 .gta-desc{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:16px;}
 .gta-wheel-row{display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
-.gta-canvas{border-radius:50%;border:3px solid var(--gold);display:block;}
+.gta-canvas{border-radius:50%;display:block;filter:drop-shadow(0 0 18px rgba(245,197,66,.25));}
+.gta-wheel-outer{position:relative;width:220px;height:220px;margin:0 auto 20px;}
+.gta-wheel-outer canvas{border-radius:50%;position:absolute;top:0;left:0;}
+.gta-pot-block{text-align:center;margin-bottom:6px;}
+.gta-pot{font-family:'Orbitron',monospace;font-size:32px;color:var(--gold);font-weight:900;
+  text-shadow:0 0 20px rgba(245,197,66,.4);}
+.gta-pot-lbl{font-size:12px;color:var(--muted);margin-bottom:16px;letter-spacing:.5px;text-transform:uppercase;}
 .gta-pot-block{text-align:center;margin-bottom:4px;}
 .gta-pot{font-family:'Orbitron',monospace;font-size:28px;color:var(--gold);font-weight:900;}
 .gta-pot-lbl{font-size:12px;color:var(--muted);margin-bottom:14px;}
-.timer-wrap{background:var(--bg3);border-radius:8px;height:6px;overflow:hidden;margin-bottom:6px;}
-.timer-bar{height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:8px;transition:width 1s linear;}
-.gta-status{text-align:center;font-size:13px;color:var(--muted);margin-bottom:14px;}
-.gta-players{margin-bottom:14px;}
-.gp-row{display:flex;align-items:center;gap:10px;padding:10px 12px;
-  background:var(--bg3);border-radius:10px;margin-bottom:6px;}
-.gp-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.timer-wrap{background:var(--bg3);border-radius:6px;height:6px;overflow:hidden;margin-bottom:10px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}
+.timer-bar{height:100%;background:linear-gradient(90deg,#e63946,#f5c542,#2dc653);
+  border-radius:6px;transition:width .8s linear;box-shadow:0 0 8px rgba(245,197,66,.4);}
+.gta-status{text-align:center;font-size:13px;color:var(--muted);margin-bottom:14px;
+  padding:10px 14px;background:var(--bg3);border-radius:12px;line-height:1.5;}
+.gta-players{margin-bottom:14px;display:flex;flex-direction:column;gap:6px;}
+.gp-row{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  background:var(--bg3);border-radius:12px;border:1px solid transparent;transition:border-color .3s;}
+.gp-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor;}
 .gp-name{flex:1;font-weight:600;font-size:14px;}
-.gp-bet{font-family:'Orbitron',monospace;color:var(--gold);font-size:13px;}
-.gp-pct{font-size:11px;color:var(--muted);}
-.gta-bet-btn{width:100%;padding:14px;background:linear-gradient(135deg,#7b2fff,#4361ee);
-  border:none;border-radius:14px;color:#fff;font-family:'Orbitron',monospace;
-  font-size:14px;font-weight:700;cursor:pointer;margin-bottom:0;
-  box-shadow:0 4px 20px rgba(124,47,255,.3);}
-.gta-bet-btn:disabled{opacity:.4;cursor:not-allowed;}
+.gp-right{text-align:right;}
+.gp-bet{font-family:'Orbitron',monospace;color:var(--gold);font-size:13px;font-weight:700;}
+.gp-pct{font-size:11px;color:var(--muted);margin-top:2px;}
+.gta-bet-btn{width:100%;padding:16px;background:linear-gradient(135deg,#7b2fff,#4361ee);
+  border:none;border-radius:16px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:15px;font-weight:700;cursor:pointer;margin-bottom:0;letter-spacing:1px;
+  box-shadow:0 6px 24px rgba(124,47,255,.4);transition:transform .15s,box-shadow .2s;}
+.gta-bet-btn:active{transform:scale(.97);box-shadow:0 2px 12px rgba(124,47,255,.3);}
+.gta-bet-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
 /* ── HISTORY ── */
 .filt{display:flex;gap:8px;margin-bottom:14px;}
@@ -373,8 +384,8 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
             <div class="gta-pot-lbl">монет в банке</div>
           </div>
 
-          <div class="gta-wheel-row">
-            <canvas class="gta-canvas" id="gta-canvas" width="140" height="140"></canvas>
+          <div class="gta-wheel-outer">
+            <canvas id="gta-canvas" width="220" height="220" style="border-radius:50%;display:block;"></canvas>
           </div>
 
           <div class="timer-wrap" id="t-wrap" style="display:none"><div class="timer-bar" id="t-bar" style="width:100%"></div></div>
@@ -797,74 +808,253 @@ function renderGta(lobby, bets){
 
 // Вычисляем угол, при котором сектор победителя окажется под указателем (сверху = -PI/2)
 function calcWinnerAngle(players, total, winnerId){
-  let startA = 0; // начальный угол сектора (0 = вверх, т.е. -PI/2 + offset = -PI/2 → offset=0 ставит первый сектор вверх)
+  // Считаем угол, при котором СЕРЕДИНА сектора победителя окажется ровно под указателем (верх = угол 0)
+  let a = 0;
   for(let i=0;i<players.length;i++){
-    const p = players[i];
-    const sl = p.amount/total*Math.PI*2;
-    if(p.uid == winnerId){
-      // Середина сектора победителя должна быть под указателем (угол 0 = вверх)
-      const midOfSector = startA + sl/2;
-      // Нам нужно чтобы -PI/2 + finalAngle + midOfSector = -PI/2 (кратно 2PI)
-      // т.е. finalAngle = -midOfSector (мод 2PI)
-      return ((-midOfSector) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+    const sl = players[i].amount / total * Math.PI*2;
+    if(players[i].uid == winnerId){
+      const mid = a + sl/2;
+      // offset такой, что -PI/2 + offset + mid = -PI/2  → offset = -mid
+      return ((-mid) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
     }
-    startA += sl;
+    a += sl;
   }
   return 0;
 }
 
 let gtaAngleOffset = 0;
 
+// Красивая анимация: быстрый старт → торможение → точная остановка на победителе
 function startGtaSpinAndBrake(players, total, finalAngle){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
-  gtaBrakingAnim = false;
 
-  // Фаза 1: разгон и кручение ~4 секунды с высокой скоростью
-  const SPIN_DURATION = 4000; // мс
-  const MAX_SPEED = 0.18;     // рад/фрейм при полном разгоне
-  const startTime = performance.now();
-  const startAngle = gtaAngleOffset;
-  // Сколько полных оборотов + выход на finalAngle
-  const fullRotations = 5; // минимум 5 оборотов
-  // Целевой угол после всех оборотов
-  const targetAngle = startAngle + fullRotations * Math.PI*2 + ((finalAngle - startAngle) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const START_ANGLE = gtaAngleOffset;
+  const FULL_SPINS  = 8;  // 8 полных оборотов для эффектности
+  // Целевой угол = стартовый + 8 оборотов + поворот до победителя
+  const delta = ((finalAngle - START_ANGLE) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const TARGET = START_ANGLE + FULL_SPINS * Math.PI*2 + delta;
+  const DURATION = 5500; // мс — полное время анимации
 
-  function spinFrame(now){
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / SPIN_DURATION, 1);
-    // easeInOutQuart: быстрый разгон → замедление к концу
-    const ease = t<0.5 ? 8*t*t*t*t : 1-Math.pow(-2*t+2,4)/2;
-    gtaAngleOffset = startAngle + (targetAngle - startAngle) * ease;
+  const t0 = performance.now();
 
+  function easeOut(t){
+    // Сначала быстрый разгон, потом плавное торможение (кубическое)
+    // t: 0→1
+    // phase 1 (0..0.2): разгон (easeIn квадратичный)
+    // phase 2 (0.2..1): замедление (easeOut кубическое)
+    if(t < 0.15) return 3.0*t*t; // разгон
+    const u = (t - 0.15) / 0.85;
+    return 0.0675 + 0.9325 * (1 - Math.pow(1-u, 3.5));
+  }
+
+  function frame(now){
+    const elapsed = now - t0;
+    const t = Math.min(elapsed / DURATION, 1);
+    const ease = easeOut(t);
+    gtaAngleOffset = START_ANGLE + (TARGET - START_ANGLE) * ease;
     drawGtaWheelAnimated(players, total, gtaAngleOffset);
-
     if(t < 1){
-      gtaSpinAnim = requestAnimationFrame(spinFrame);
+      gtaSpinAnim = requestAnimationFrame(frame);
     } else {
-      // Останавливаемся точно на победителе
-      gtaAngleOffset = targetAngle % (Math.PI*2);
-      drawGtaWheel(players, total, null, gtaAngleOffset);
+      gtaAngleOffset = TARGET % (Math.PI*2);
+      // Финальный кадр — рисуем статично (без обводки победителя, она появится в done)
+      drawGtaWheelFinal(players, total, gtaAngleOffset);
       gtaSpinAnim = null;
     }
   }
-  gtaSpinAnim = requestAnimationFrame(spinFrame);
+  gtaSpinAnim = requestAnimationFrame(frame);
+}
+
+// Рисует анимированный кадр — сектора + блик + указатель
+function drawGtaWheelAnimated(players, total, off){
+  const canvas = document.getElementById('gta-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, r = W/2 - 8;
+  ctx.clearRect(0,0,W,H);
+
+  // Тёмный фон-круг
+  ctx.fillStyle = '#0d0d18';
+  ctx.beginPath(); ctx.arc(cx,cy,r+4,0,Math.PI*2); ctx.fill();
+
+  let a = -Math.PI/2 + off;
+  players.forEach((p,i)=>{
+    const sl = p.amount/total*Math.PI*2;
+    ctx.fillStyle = GTA_COLORS[i%GTA_COLORS.length];
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
+    // Разделитель
+    ctx.strokeStyle = '#0d0d18'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.stroke();
+    a += sl;
+  });
+
+  drawWheelDecorations(ctx, cx, cy, r, players, total, off, null);
+  drawPointerBeautiful(ctx, cx, cy, r);
+}
+
+// Рисует финальный кадр (колесо остановилось, до появления winner_id)
+function drawGtaWheelFinal(players, total, off){
+  drawGtaWheel(players, total, null, off);
+}
+
+// Рисует статичное колесо (с опциональной обводкой победителя)
+function drawGtaWheel(players, total, winnerId, angleOff){
+  const canvas = document.getElementById('gta-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, r = W/2 - 8;
+  ctx.clearRect(0,0,W,H);
+
+  // Тёмный фон
+  ctx.fillStyle = '#0d0d18';
+  ctx.beginPath(); ctx.arc(cx,cy,r+4,0,Math.PI*2); ctx.fill();
+
+  if(!players.length){
+    ctx.fillStyle = '#1e1e2e';
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#7070a0'; ctx.font = '13px Rajdhani'; ctx.textAlign = 'center';
+    ctx.fillText('Нет ставок', cx, cy+4);
+    drawPointerBeautiful(ctx, cx, cy, r);
+    return;
+  }
+
+  const off = angleOff||0;
+  let a = -Math.PI/2 + off;
+  players.forEach((p,i)=>{
+    const sl = p.amount/total*Math.PI*2;
+    const isWinner = winnerId && p.uid==winnerId;
+    ctx.fillStyle = GTA_COLORS[i%GTA_COLORS.length];
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
+
+    // Разделитель между секторами
+    ctx.strokeStyle = '#0d0d18'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.stroke();
+
+    // Золотая обводка победителя
+    if(isWinner){
+      ctx.save();
+      // Яркое свечение победителя
+      ctx.shadowColor = '#f5c542'; ctx.shadowBlur = 20;
+      ctx.strokeStyle = '#f5c542'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r-1,a,a+sl); ctx.closePath(); ctx.stroke();
+      // Подсветка сектора победителя
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+    a += sl;
+  });
+
+  drawWheelDecorations(ctx, cx, cy, r, players, total, off, winnerId);
+  drawPointerBeautiful(ctx, cx, cy, r);
+}
+
+// Декорации: проценты, центральный круг, внешний кант
+function drawWheelDecorations(ctx, cx, cy, r, players, total, off, winnerId){
+  // Внешний кант
+  ctx.strokeStyle = '#f5c542'; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.6;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Проценты на секторах
+  let a = -Math.PI/2 + off;
+  players.forEach((p,i)=>{
+    const sl = p.amount/total*Math.PI*2;
+    if(sl > 0.28){
+      const ma = a + sl/2;
+      const dist = r*0.6;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,.65)';
+      ctx.font = 'bold 11px Rajdhani, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+      ctx.fillText(Math.round(p.amount/total*100)+'%', cx+Math.cos(ma)*dist, cy+Math.sin(ma)*dist);
+      ctx.restore();
+    }
+    a += sl;
+  });
+
+  // Центральный круг — градиентный металлический эффект
+  const grad = ctx.createRadialGradient(cx-r*.08, cy-r*.08, r*.02, cx, cy, r*.22);
+  grad.addColorStop(0, '#3a3a50');
+  grad.addColorStop(1, '#1a1a2e');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(cx,cy,r*.22,0,Math.PI*2); ctx.fill();
+  // Кант центрального круга
+  ctx.strokeStyle = '#f5c542'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.arc(cx,cy,r*.22,0,Math.PI*2); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // Иконка в центре
+  ctx.font = `${Math.round(r*.19)}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🎰', cx, cy+1);
+}
+
+// Красивый золотой указатель сверху
+function drawPointerBeautiful(ctx, cx, cy, r){
+  const tipY = cy - r + 2;  // острый конец касается колеса
+  const baseY = tipY - 18;
+  const hw = 11;  // полуширина основания
+
+  ctx.save();
+  // Свечение
+  ctx.shadowColor = '#f5c542'; ctx.shadowBlur = 14;
+
+  // Основной треугольник — золотой
+  ctx.fillStyle = '#f5c542';
+  ctx.beginPath();
+  ctx.moveTo(cx, tipY);
+  ctx.lineTo(cx - hw, baseY);
+  ctx.lineTo(cx + hw, baseY);
+  ctx.closePath();
+  ctx.fill();
+
+  // Маленькая засечка/деталь сверху
+  ctx.fillStyle = '#e8a800';
+  ctx.beginPath();
+  ctx.moveTo(cx - hw, baseY);
+  ctx.lineTo(cx + hw, baseY);
+  ctx.lineTo(cx + hw, baseY - 4);
+  ctx.lineTo(cx - hw, baseY - 4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.restore();
 }
 
 function renderPlayers(players, total, winnerId){
   const pl=document.getElementById('gta-players');
   if(!players.length){
-    pl.innerHTML='<div style="color:var(--muted);text-align:center;padding:12px">Нет ставок</div>';
+    pl.innerHTML='<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">Ждём ставок...</div>';
     return;
   }
-  pl.innerHTML=players.map((p,i)=>{
+  // Сортируем по сумме ставки (больше = выше)
+  const sorted=[...players].sort((a,b)=>b.amount-a.amount);
+  pl.innerHTML=sorted.map((p,i)=>{
+    const origIdx=players.indexOf(p);
     const pct=Math.round(p.amount/total*100);
-    const you=p.uid==UID?' (Вы)':'';
+    const barW=Math.max(4,pct);
+    const you=p.uid==UID;
     const isWinner=winnerId&&p.uid==winnerId;
-    const style=isWinner?'background:rgba(245,197,66,.12);border:1px solid var(--gold);border-radius:10px;':'';
-    return `<div class="gp-row" style="${style}">
-      <div class="gp-dot" style="background:${GTA_COLORS[i%GTA_COLORS.length]}"></div>
-      <div class="gp-name">${p.name}${you}${isWinner?' 🏆':''}</div>
-      <div><div class="gp-bet">${p.amount}🪙</div><div class="gp-pct">${pct}%</div></div>
+    const color=GTA_COLORS[players.indexOf(p)%GTA_COLORS.length];
+    const borderStyle=isWinner?`border-color:var(--gold);background:rgba(245,197,66,.08);`:you?`border-color:${color}33;`:'';
+    return `<div class="gp-row" style="${borderStyle}">
+      <div class="gp-dot" style="background:${color};box-shadow:0 0 8px ${color}88"></div>
+      <div class="gp-name">${p.name}${you?' <span style="color:var(--muted);font-size:11px">(вы)</span>':''}${isWinner?' <span style="color:var(--gold)">🏆</span>':''}</div>
+      <div class="gp-right">
+        <div class="gp-bet">${p.amount} 🪙</div>
+        <div class="gp-pct" style="color:${color};opacity:.8">${pct}% шанс</div>
+      </div>
+    </div>
+    <div style="height:3px;background:var(--bg);border-radius:2px;margin:-2px 14px 4px;overflow:hidden">
+      <div style="height:100%;width:${barW}%;background:${color};border-radius:2px;opacity:.6;transition:width .5s"></div>
     </div>`;
   }).join('');
 }
