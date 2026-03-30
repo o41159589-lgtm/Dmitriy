@@ -27,7 +27,6 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
   font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;transition:color .2s;}
 .nav-btn svg{width:22px;height:22px;}
 .nav-btn.active{color:var(--gold);}
-@keyframes spin-once{to{transform:rotate(360deg)}}
 .nav-ind{position:absolute;bottom:0;height:2px;
   background:linear-gradient(90deg,var(--gold2),var(--gold));
   width:33.33%;transition:left .25s cubic-bezier(.4,0,.2,1);border-radius:2px 2px 0 0;}
@@ -280,13 +279,7 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
       </svg>Реф.ссылка
     </button>
-    <div style="display:flex;align-items:center;gap:8px">
-      <button id="refresh-btn" onclick="refreshBalance()" title="Обновить баланс"
-        style="background:var(--card);border:1px solid var(--border);border-radius:10px;
-          width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-          cursor:pointer;color:var(--muted);font-size:16px;">↻</button>
-      <div class="bal-chip">🪙 <span id="r-bal">0</span></div>
-    </div>
+    <div class="bal-chip">🪙 <span id="r-bal">0</span></div>
   </div>
 
   <div class="roul-scroll">
@@ -652,7 +645,7 @@ async function pollGta(){
       if(!d||d.error){gtaLobbyId=null;}
       else {
         renderGta(d.lobby,d.bets);
-        if(d.lobby.status==='done') return;
+        if(d.lobby.status==='done') return; // renderGta handles restart
       }
     }
   } catch(e){}
@@ -662,8 +655,6 @@ async function pollGta(){
 async function placeGtaBet(){
   const amount=parseInt(document.getElementById('gta-inp').value)||0;
   if(amount<1){toast('Введите ставку!','err');return;}
-  // Загружаем свежий баланс с сервера перед проверкой
-  await loadUser();
   if(amount>(userData?.balance||0)){toast('Недостаточно монет!','err');return;}
   document.getElementById('gta-btn').disabled=true;
   const res=await post('/api/gta/bet',{user_id:UID,amount}).catch(()=>null);
@@ -672,117 +663,90 @@ async function placeGtaBet(){
   toast(`Ставка ${amount} монет принята!`,'ok');
   if(userData)userData.balance=res.new_balance;
   gtaLobbyId=res.lobby_id;
-  // Дедлайн: сервер всегда сбрасывает на +15с при новой ставке
+  // Обновляем дедлайн таймера
   if(res.deadline) gtaDeadline=res.deadline*1000;
-  // Сбросить таймер UI чтобы он пересчитался от нового deadline
-  if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
   updateUI();
   clearTimeout(gtaPollTimer);gtaPollTimer=null;
   pollGta();
 }
 
 let lastLobbyStatus = null;
-// Сохраняем игроков во время spinning чтобы анимация продолжала работать
-let gtaSpinPlayers = [];
-let gtaSpinTotal = 1;
-// Финальный угол где останавливается колесо
-let gtaFinalAngle = 0;
-// Флаг: идёт замедляющая анимация до победителя
-let gtaBrakingAnim = false;
 
-function renderGta(lobby, bets){
-  const pot = lobby.pot || 0;
-  document.getElementById('gta-pot').textContent = pot;
+function renderGta(lobby,bets){
+  const pot=lobby.pot||0;
+  document.getElementById('gta-pot').textContent=pot;
 
-  const byUser = {};
+  // Агрегируем по игроку
+  const byUser={};
   bets.forEach(b=>{
     if(!byUser[b.user_id]) byUser[b.user_id]={uid:b.user_id,name:b.player_name||`ID${b.user_id}`,amount:0};
-    byUser[b.user_id].amount += b.amount;
+    byUser[b.user_id].amount+=b.amount;
   });
-  const players = Object.values(byUser);
-  const total   = players.reduce((s,p)=>s+p.amount,0)||1;
+  const players=Object.values(byUser);
+  const total=players.reduce((s,p)=>s+p.amount,0)||1;
 
+  // Статус изменился?
   const statusChanged = lastLobbyStatus !== lobby.status;
   lastLobbyStatus = lobby.status;
 
-  const st = document.getElementById('gta-status');
-  const tw = document.getElementById('t-wrap');
+  const st=document.getElementById('gta-status');
+  const tw=document.getElementById('t-wrap');
 
-  // ── DONE ──
   if(lobby.status==='done'){
+    // Показываем результат, через 5 сек перезапускаем
     if(statusChanged){
-      // Останавливаем любую текущую анимацию
-      gtaBrakingAnim = false;
-      if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
       if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
-      tw.style.display='none';
-
-      // Рисуем статичное колесо с победителем и обводкой
-      drawGtaWheel(players, total, lobby.winner_id, gtaAngleOffset);
+      cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;
+      // Рисуем финальное колесо с победителем
+      drawGtaWheel(players,total,lobby.winner_id);
       st.innerHTML='🏆 Игра завершена! Перезапуск через <b id="restart-cnt">5</b> сек...';
-      renderPlayers(players, total, lobby.winner_id);
-      loadUser();
-
+      tw.style.display='none';
       let cnt=5;
       const iv=setInterval(()=>{
         cnt--;
         const el=document.getElementById('restart-cnt');
-        if(el) el.textContent=cnt;
+        if(el)el.textContent=cnt;
         if(cnt<=0){
           clearInterval(iv);
           gtaLobbyId=null;
           lastLobbyStatus=null;
-          gtaAngleOffset=0;
+          gtaWinnerId=null;
+          loadUser();
           clearTimeout(gtaPollTimer);gtaPollTimer=null;
           pollGta();
         }
       },1000);
     }
+    renderPlayers(players,total,lobby.winner_id);
     return;
   }
 
-  // ── SPINNING ──
   if(lobby.status==='spinning'){
     if(statusChanged){
       if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
       tw.style.display='none';
-      st.textContent='🎰 Колесо крутится!';
-      // Сохраняем игроков для анимации
-      gtaSpinPlayers = players;
-      gtaSpinTotal   = total;
-      // Вычисляем угол остановки для победителя
-      gtaFinalAngle  = calcWinnerAngle(players, total, lobby.winner_id);
-      // Запускаем: сначала разгон, потом замедление до победителя
-      startGtaSpinAndBrake(players, total, gtaFinalAngle);
+      st.textContent='🎰 Идёт розыгрыш!';
+      // Запускаем анимацию вращения колеса
+      startGtaSpinAnimation(players,total);
     }
-    renderPlayers(players, total, null);
+    renderPlayers(players,total,null);
     return;
   }
 
-  // ── OPEN ──
-  // Если до этого было spinning — сбрасываем анимацию
-  if(gtaSpinAnim){
-    gtaBrakingAnim=false;
-    cancelAnimationFrame(gtaSpinAnim);
-    gtaSpinAnim=null;
-    gtaAngleOffset=0;
-  }
-  drawGtaWheel(players, total, null, 0);
-  renderPlayers(players, total, null);
+  // open
+  cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;
+  drawGtaWheel(players,total,null);
+  renderPlayers(players,total,null);
 
   if(players.length>=2){
     tw.style.display='block';
-    // deadline с сервера (в секундах unix) → мс
-    const deadline = (lobby.deadline && lobby.deadline > Date.now()/1000)
-      ? lobby.deadline*1000
-      : (gtaDeadline || Date.now()+15000);
-
+    // Используем deadline с сервера
+    const deadline = lobby.deadline ? lobby.deadline*1000 : (gtaDeadline || Date.now()+15000);
     if(statusChanged || !gtaTimerInterval){
       if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
       gtaTimerInterval=setInterval(()=>{
-        const now=Date.now();
-        const rem=Math.max(0,Math.ceil((deadline-now)/1000));
-        const pct=Math.max(0,Math.min(100,(deadline-now)/15000*100));
+        const rem=Math.max(0,Math.ceil((deadline-Date.now())/1000));
+        const pct=Math.max(0,Math.min(100,(deadline-Date.now())/15000*100));
         document.getElementById('t-bar').style.width=pct+'%';
         st.textContent=`⏳ Розыгрыш через ${rem} сек...`;
         if(rem<=0){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
@@ -795,62 +759,7 @@ function renderGta(lobby, bets){
   }
 }
 
-// Вычисляем угол, при котором сектор победителя окажется под указателем (сверху = -PI/2)
-function calcWinnerAngle(players, total, winnerId){
-  let startA = 0; // начальный угол сектора (0 = вверх, т.е. -PI/2 + offset = -PI/2 → offset=0 ставит первый сектор вверх)
-  for(let i=0;i<players.length;i++){
-    const p = players[i];
-    const sl = p.amount/total*Math.PI*2;
-    if(p.uid == winnerId){
-      // Середина сектора победителя должна быть под указателем (угол 0 = вверх)
-      const midOfSector = startA + sl/2;
-      // Нам нужно чтобы -PI/2 + finalAngle + midOfSector = -PI/2 (кратно 2PI)
-      // т.е. finalAngle = -midOfSector (мод 2PI)
-      return ((-midOfSector) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
-    }
-    startA += sl;
-  }
-  return 0;
-}
-
-let gtaAngleOffset = 0;
-
-function startGtaSpinAndBrake(players, total, finalAngle){
-  if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
-  gtaBrakingAnim = false;
-
-  // Фаза 1: разгон и кручение ~4 секунды с высокой скоростью
-  const SPIN_DURATION = 4000; // мс
-  const MAX_SPEED = 0.18;     // рад/фрейм при полном разгоне
-  const startTime = performance.now();
-  const startAngle = gtaAngleOffset;
-  // Сколько полных оборотов + выход на finalAngle
-  const fullRotations = 5; // минимум 5 оборотов
-  // Целевой угол после всех оборотов
-  const targetAngle = startAngle + fullRotations * Math.PI*2 + ((finalAngle - startAngle) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
-
-  function spinFrame(now){
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / SPIN_DURATION, 1);
-    // easeInOutQuart: быстрый разгон → замедление к концу
-    const ease = t<0.5 ? 8*t*t*t*t : 1-Math.pow(-2*t+2,4)/2;
-    gtaAngleOffset = startAngle + (targetAngle - startAngle) * ease;
-
-    drawGtaWheelAnimated(players, total, gtaAngleOffset);
-
-    if(t < 1){
-      gtaSpinAnim = requestAnimationFrame(spinFrame);
-    } else {
-      // Останавливаемся точно на победителе
-      gtaAngleOffset = targetAngle % (Math.PI*2);
-      drawGtaWheel(players, total, null, gtaAngleOffset);
-      gtaSpinAnim = null;
-    }
-  }
-  gtaSpinAnim = requestAnimationFrame(spinFrame);
-}
-
-function renderPlayers(players, total, winnerId){
+function renderPlayers(players,total,winnerId){
   const pl=document.getElementById('gta-players');
   if(!players.length){
     pl.innerHTML='<div style="color:var(--muted);text-align:center;padding:12px">Нет ставок</div>';
@@ -860,7 +769,7 @@ function renderPlayers(players, total, winnerId){
     const pct=Math.round(p.amount/total*100);
     const you=p.uid==UID?' (Вы)':'';
     const isWinner=winnerId&&p.uid==winnerId;
-    const style=isWinner?'background:rgba(245,197,66,.12);border:1px solid var(--gold);border-radius:10px;':'';
+    const style=isWinner?`background:rgba(245,197,66,.12);border:1px solid var(--gold);border-radius:10px;`:'';
     return `<div class="gp-row" style="${style}">
       <div class="gp-dot" style="background:${GTA_COLORS[i%GTA_COLORS.length]}"></div>
       <div class="gp-name">${p.name}${you}${isWinner?' 🏆':''}</div>
@@ -869,13 +778,12 @@ function renderPlayers(players, total, winnerId){
   }).join('');
 }
 
-// Рисует статичное колесо с нужным углом поворота и опциональной обводкой победителя
-function drawGtaWheel(players, total, winnerId, angleOff){
+// GTA колесо — указатель сверху, вращение по часовой стрелке
+function drawGtaWheel(players,total,winnerId){
   const canvas=document.getElementById('gta-canvas');
-  if(!canvas)return;
   const ctx=canvas.getContext('2d');
   const W=canvas.width, H=canvas.height;
-  const cx=W/2, cy=H/2, r=Math.min(W,H)/2-10;
+  const cx=W/2, cy=H/2, r=Math.min(W,H)/2-6;
   ctx.clearRect(0,0,W,H);
 
   if(!players.length){
@@ -883,49 +791,80 @@ function drawGtaWheel(players, total, winnerId, angleOff){
     ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#7070a0';ctx.font='12px sans-serif';ctx.textAlign='center';
     ctx.fillText('Нет ставок',cx,cy+4);
-    drawPointer(ctx,cx,cy,r);
+    drawPointer(ctx,cx,r);
     return;
   }
 
-  const off = angleOff||0;
-  let a = -Math.PI/2 + off;
+  // Вычисляем начальный угол — указатель сверху = -PI/2
+  let a=-Math.PI/2;
   players.forEach((p,i)=>{
     const sl=p.amount/total*Math.PI*2;
     const isWinner=winnerId&&p.uid==winnerId;
     ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
+    // Обводка победителя
     if(isWinner){
-      ctx.save();ctx.strokeStyle='#f5c542';ctx.lineWidth=5;
+      ctx.strokeStyle='#f5c542';ctx.lineWidth=4;
       ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.stroke();
-      ctx.restore();
+      ctx.lineWidth=1;
     }
+    // Процент
     if(sl>0.22){
       const ma=a+sl/2;
-      ctx.save();ctx.fillStyle='rgba(0,0,0,.75)';
-      ctx.font=`bold 11px sans-serif`;ctx.textAlign='center';
-      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*.62),cy+Math.sin(ma)*(r*.62)+4);
-      ctx.restore();
+      ctx.fillStyle='rgba(0,0,0,.7)';
+      ctx.font=`bold ${Math.max(10,Math.min(13,sl*20))}px sans-serif`;
+      ctx.textAlign='center';
+      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*0.62),cy+Math.sin(ma)*(r*0.62)+4);
     }
     a+=sl;
   });
 
+  // Центральный круг
   ctx.fillStyle='#1e1e2e';
-  ctx.beginPath();ctx.arc(cx,cy,r*.22,0,Math.PI*2);ctx.fill();
-  ctx.font=`${r*.19}px serif`;ctx.textAlign='center';ctx.fillText('🎰',cx,cy+r*.07);
+  ctx.beginPath();ctx.arc(cx,cy,r*0.22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f5c542';ctx.font=`${r*0.2}px serif`;ctx.textAlign='center';
+  ctx.fillText('🎰',cx,cy+r*0.07);
 
-  drawPointer(ctx,cx,cy,r);
+  drawPointer(ctx,cx,r);
 }
 
-// Рисует анимированное колесо (без обводки победителя, с текущим offset)
-function drawGtaWheelAnimated(players, total, off){
+function drawPointer(ctx,cx,r){
+  // Треугольный указатель сверху (внешний, снаружи колеса)
+  const py = cx - r - 2; // y верхней точки колеса
+  ctx.fillStyle='#f5c542';
+  ctx.beginPath();
+  ctx.moveTo(cx, py+14);       // острый конец внизу — касается колеса
+  ctx.lineTo(cx-9, py-6);
+  ctx.lineTo(cx+9, py-6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur=8;ctx.shadowColor='#f5c542';
+  ctx.fill();
+  ctx.shadowBlur=0;
+}
+
+let gtaAngleOffset=0;
+
+function startGtaSpinAnimation(players,total){
+  if(gtaSpinAnim) cancelAnimationFrame(gtaSpinAnim);
+  gtaAngleOffset=0;
+  const speed=0.06; // рад/фрейм — по часовой
+  function frame(){
+    gtaAngleOffset+=speed;
+    drawGtaWheelAnimated(players,total,gtaAngleOffset);
+    gtaSpinAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function drawGtaWheelAnimated(players,total,offset){
   const canvas=document.getElementById('gta-canvas');
-  if(!canvas)return;
   const ctx=canvas.getContext('2d');
   const W=canvas.width,H=canvas.height;
-  const cx=W/2,cy=H/2,r=Math.min(W,H)/2-10;
+  const cx=W/2,cy=H/2,r=Math.min(W,H)/2-6;
   ctx.clearRect(0,0,W,H);
 
-  let a=-Math.PI/2+off;
+  let a=-Math.PI/2+offset; // вращение по часовой (offset растёт → по часовой)
   players.forEach((p,i)=>{
     const sl=p.amount/total*Math.PI*2;
     ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
@@ -934,25 +873,10 @@ function drawGtaWheelAnimated(players, total, off){
   });
 
   ctx.fillStyle='#1e1e2e';
-  ctx.beginPath();ctx.arc(cx,cy,r*.22,0,Math.PI*2);ctx.fill();
-  ctx.font=`${r*.19}px serif`;ctx.textAlign='center';ctx.fillText('🎰',cx,cy+r*.07);
-  drawPointer(ctx,cx,cy,r);
-}
-
-function drawPointer(ctx,cx,cy,r){
-  // Указатель сверху — внутри холста, острый конец вниз (к центру колеса)
-  const tipY = cy - r + 2;       // кончик указателя у края колеса
-  const baseY = tipY - 14;
-  ctx.save();
-  ctx.fillStyle='#f5c542';
-  ctx.shadowBlur=10;ctx.shadowColor='#f5c542';
-  ctx.beginPath();
-  ctx.moveTo(cx, tipY);           // острый конец (смотрит на колесо)
-  ctx.lineTo(cx-10, baseY);
-  ctx.lineTo(cx+10, baseY);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+  ctx.beginPath();ctx.arc(cx,cy,r*0.22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#f5c542';ctx.font=`${r*0.2}px serif`;ctx.textAlign='center';
+  ctx.fillText('🎰',cx,cy+r*0.07);
+  drawPointer(ctx,cx,r);
 }
 
 // ══════════════════════════
@@ -991,7 +915,7 @@ function setF(el,f){
 }
 
 // ══════════════════════════
-//  TOPUP
+//  TOPUP — с кастомной суммой
 // ══════════════════════════
 let topupAmt=50;
 function openTopup(){document.getElementById('ov-topup').classList.add('open');}
@@ -1026,16 +950,6 @@ async function confirmTopup(){
 }
 
 // ══════════════════════════
-//  REFRESH (обновление баланса)
-// ══════════════════════════
-async function refreshBalance(){
-  const btn=document.getElementById('refresh-btn');
-  if(btn){btn.style.animation='spin-once .6s ease';setTimeout(()=>btn.style.animation='',700);}
-  await loadUser();
-  toast('Баланс обновлён','ok');
-}
-
-// ══════════════════════════
 //  INIT
 // ══════════════════════════
 buildStrip();
@@ -1045,10 +959,7 @@ window.addEventListener('load',()=>{
     loadUser();
     startGtaPoll();
   }
-  // Авто-обновление баланса каждые 15 сек (подхватывает начисления от админа)
-  setInterval(loadUser, 15000);
 });
-
 </script>
 </body>
 </html>

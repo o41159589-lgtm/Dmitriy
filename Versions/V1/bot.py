@@ -17,7 +17,7 @@ import database as db
 
 # ════════════════════════════════════════
 BOT_TOKEN  = "8686326767:AAFheVAG5rhSjpQHaAJClR-axeuBbM0Zni8"
-ADMIN_IDS  = [1840233118]                       # ← ваш Telegram ID (узнать у @userinfobot)
+ADMIN_IDS  = [1840233118]                   # ← ваш Telegram ID (узнать у @userinfobot)
 WEBAPP_URL      = "https://dmitriy-45jd.onrender.com"
 ADMIN_URL       = "https://dmitriy-45jd.onrender.com/admin"
 PORT            = int(os.environ.get("PORT", 8080))
@@ -260,21 +260,19 @@ async def api_gta_bet(req: web.Request):
     bets = await db.get_lobby_bets(lobby["id"])
     unique = len({b["user_id"] for b in bets})
     lid = lobby["id"]
-    new_deadline = time.time() + GTA_SPIN_DELAY  # всегда сбрасываем на 15 сек
-    await db.set_lobby_deadline(lid, new_deadline)
-
     if unique >= GTA_MIN_PLAYERS:
-        # Отменяем старый таймер и запускаем новый (каждая ставка = +15 сек)
+        # Cancel existing timer and restart with +10s (every new bet resets)
         if lid in gta_timers:
             gta_timers[lid].cancel()
         task = asyncio.create_task(_gta_spin_delayed(lid))
         gta_timers[lid] = task
+        await db.set_lobby_deadline(lid, time.time() + GTA_SPIN_DELAY)
 
     nb = (await db.get_user(uid))["balance"]
     updated_lobby = await db.get_lobby(lid)
     return web.json_response({"success":True,"new_balance":nb,"lobby_id":lid,
         "players":unique,"pot":updated_lobby["pot"],
-        "deadline": new_deadline})
+        "deadline": updated_lobby.get("deadline", 0)})
 
 async def api_gta_status(req: web.Request):
     lid = int(req.match_info["lid"])
