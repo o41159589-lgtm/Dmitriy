@@ -808,14 +808,17 @@ function renderGta(lobby, bets){
 
 // Вычисляем угол, при котором сектор победителя окажется под указателем (сверху = -PI/2)
 function calcWinnerAngle(players, total, winnerId){
-  // Считаем угол, при котором СЕРЕДИНА сектора победителя окажется ровно под указателем (верх = угол 0)
+  // Возвращает случайный угол внутри сектора победителя (не середина)
   let a = 0;
   for(let i=0;i<players.length;i++){
     const sl = players[i].amount / total * Math.PI*2;
     if(players[i].uid == winnerId){
-      const mid = a + sl/2;
-      // offset такой, что -PI/2 + offset + mid = -PI/2  → offset = -mid
-      return ((-mid) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+      // Случайная точка внутри сектора (15%..85% от начала)
+      const margin = sl * 0.15;
+      const rnd = a + margin + Math.random() * (sl - margin*2);
+      // Чтобы указатель (вверху, угол -PI/2) попал на rnd:
+      // -PI/2 + offset + rnd = -PI/2  =>  offset = -rnd
+      return ((-rnd) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
     }
     a += sl;
   }
@@ -824,40 +827,43 @@ function calcWinnerAngle(players, total, winnerId){
 
 let gtaAngleOffset = 0;
 
-// Красивая анимация: быстрый старт → торможение → точная остановка на победителе
+// Анимация вращения с замедлением и остановкой на секторе победителя
 function startGtaSpinAndBrake(players, total, finalAngle){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
 
-  const START_ANGLE = gtaAngleOffset;
-  const FULL_SPINS  = 8;  // 8 полных оборотов для эффектности
-  // Целевой угол = стартовый + 8 оборотов + поворот до победителя
-  const delta = ((finalAngle - START_ANGLE) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
-  const TARGET = START_ANGLE + FULL_SPINS * Math.PI*2 + delta;
-  const DURATION = 5500; // мс — полное время анимации
+  const START  = gtaAngleOffset;
+  const SPINS  = 8 + Math.floor(Math.random()*3); // 8-10 оборотов, каждый раз разное
+
+  // Минимальный поворот по часовой до finalAngle
+  const delta    = ((finalAngle - START) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const safeDelta = delta < 0.25 ? delta + Math.PI*2 : delta;
+  const TARGET   = START + SPINS * Math.PI*2 + safeDelta;
+  const DURATION = 5800; // мс
 
   const t0 = performance.now();
 
-  function easeOut(t){
-    // Сначала быстрый разгон, потом плавное торможение (кубическое)
-    // t: 0→1
-    // phase 1 (0..0.2): разгон (easeIn квадратичный)
-    // phase 2 (0.2..1): замедление (easeOut кубическое)
-    if(t < 0.15) return 3.0*t*t; // разгон
-    const u = (t - 0.15) / 0.85;
-    return 0.0675 + 0.9325 * (1 - Math.pow(1-u, 3.5));
+  // progress(t): 0→1  — быстрый старт, очень долгое замедление
+  function progress(t){
+    if(t < 0.10){
+      // Фаза разгона: easeIn квадратичный
+      const u = t / 0.10;
+      return u * u * 0.10 * 0.55;
+    }
+    // Фаза торможения: easeOut со степенью 4 (длинный плавный накат)
+    const u = (t - 0.10) / 0.90;
+    const v = 1 - Math.pow(1 - u, 4);
+    return 0.055 + v * 0.945;
   }
 
   function frame(now){
-    const elapsed = now - t0;
-    const t = Math.min(elapsed / DURATION, 1);
-    const ease = easeOut(t);
-    gtaAngleOffset = START_ANGLE + (TARGET - START_ANGLE) * ease;
+    const t = Math.min((now - t0) / DURATION, 1);
+    const p = progress(t);
+    gtaAngleOffset = START + (TARGET - START) * p;
     drawGtaWheelAnimated(players, total, gtaAngleOffset);
     if(t < 1){
       gtaSpinAnim = requestAnimationFrame(frame);
     } else {
       gtaAngleOffset = TARGET % (Math.PI*2);
-      // Финальный кадр — рисуем статично (без обводки победителя, она появится в done)
       drawGtaWheelFinal(players, total, gtaAngleOffset);
       gtaSpinAnim = null;
     }
@@ -1059,75 +1065,6 @@ function renderPlayers(players, total, winnerId){
   }).join('');
 }
 
-// Рисует статичное колесо с нужным углом поворота и опциональной обводкой победителя
-function drawGtaWheel(players, total, winnerId, angleOff){
-  const canvas=document.getElementById('gta-canvas');
-  if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  const W=canvas.width, H=canvas.height;
-  const cx=W/2, cy=H/2, r=Math.min(W,H)/2-10;
-  ctx.clearRect(0,0,W,H);
-
-  if(!players.length){
-    ctx.fillStyle='#252538';
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#7070a0';ctx.font='12px sans-serif';ctx.textAlign='center';
-    ctx.fillText('Нет ставок',cx,cy+4);
-    drawPointer(ctx,cx,cy,r);
-    return;
-  }
-
-  const off = angleOff||0;
-  let a = -Math.PI/2 + off;
-  players.forEach((p,i)=>{
-    const sl=p.amount/total*Math.PI*2;
-    const isWinner=winnerId&&p.uid==winnerId;
-    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
-    if(isWinner){
-      ctx.save();ctx.strokeStyle='#f5c542';ctx.lineWidth=5;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.stroke();
-      ctx.restore();
-    }
-    if(sl>0.22){
-      const ma=a+sl/2;
-      ctx.save();ctx.fillStyle='rgba(0,0,0,.75)';
-      ctx.font=`bold 11px sans-serif`;ctx.textAlign='center';
-      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*.62),cy+Math.sin(ma)*(r*.62)+4);
-      ctx.restore();
-    }
-    a+=sl;
-  });
-
-  ctx.fillStyle='#1e1e2e';
-  ctx.beginPath();ctx.arc(cx,cy,r*.22,0,Math.PI*2);ctx.fill();
-  ctx.font=`${r*.19}px serif`;ctx.textAlign='center';ctx.fillText('🎰',cx,cy+r*.07);
-
-  drawPointer(ctx,cx,cy,r);
-}
-
-// Рисует анимированное колесо (без обводки победителя, с текущим offset)
-function drawGtaWheelAnimated(players, total, off){
-  const canvas=document.getElementById('gta-canvas');
-  if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  const W=canvas.width,H=canvas.height;
-  const cx=W/2,cy=H/2,r=Math.min(W,H)/2-10;
-  ctx.clearRect(0,0,W,H);
-
-  let a=-Math.PI/2+off;
-  players.forEach((p,i)=>{
-    const sl=p.amount/total*Math.PI*2;
-    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
-    a+=sl;
-  });
-
-  ctx.fillStyle='#1e1e2e';
-  ctx.beginPath();ctx.arc(cx,cy,r*.22,0,Math.PI*2);ctx.fill();
-  ctx.font=`${r*.19}px serif`;ctx.textAlign='center';ctx.fillText('🎰',cx,cy+r*.07);
-  drawPointer(ctx,cx,cy,r);
-}
 
 function drawPointer(ctx,cx,cy,r){
   // Указатель сверху — внутри холста, острый конец вниз (к центру колеса)
