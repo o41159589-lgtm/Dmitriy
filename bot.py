@@ -17,7 +17,7 @@ import database as db
 
 # ════════════════════════════════════════
 BOT_TOKEN  = "8686326767:AAFheVAG5rhSjpQHaAJClR-axeuBbM0Zni8"
-ADMIN_IDS  = [1840233118]                          # ← ваш Telegram ID (узнать у @userinfobot)
+ADMIN_IDS  = [1840233118, 6852175783]                   # ← ваш Telegram ID (узнать у @userinfobot)                          # ← ваш Telegram ID (узнать у @userinfobot)
 WEBAPP_URL      = "https://dmitriy-45jd.onrender.com"
 ADMIN_URL       = "https://dmitriy-45jd.onrender.com/admin"
 PORT            = int(os.environ.get("PORT", 8080))
