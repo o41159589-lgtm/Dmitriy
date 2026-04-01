@@ -17,7 +17,7 @@ import database as db
 
 # ════════════════════════════════════════
 BOT_TOKEN  = "8686326767:AAFheVAG5rhSjpQHaAJClR-axeuBbM0Zni8"
-ADMIN_IDS  = [1840233118]                       # ← ваш Telegram ID (узнать у @userinfobot)
+ADMIN_IDS  = [1840233118]                          # ← ваш Telegram ID (узнать у @userinfobot)
 WEBAPP_URL      = "https://dmitriy-45jd.onrender.com"
 ADMIN_URL       = "https://dmitriy-45jd.onrender.com/admin"
 PORT            = int(os.environ.get("PORT", 8080))
@@ -82,7 +82,6 @@ async def cmd_start(message: Message):
         f"🎰 <b>Casino</b> — крути рулетку и выигрывай!\n\n"
         f"💰 Ваш баланс: <b>{u['balance']}</b> монет",
         reply_markup=kb_reply, parse_mode="HTML")
-    await message.answer("Или нажмите:", reply_markup=kb_inline)
 
 
 @dp.message(Command("admin"))
@@ -338,6 +337,15 @@ async def _gta_run(lid: int):
         logger.warning(f"GTA notify error: {e}")
 
 # ── Admin API ──
+async def api_admin_revenue(req: web.Request):
+    """Доход казино = сумма комиссий GTA + проигрыши в европейской за период"""
+    if not _is_admin(req):
+        return web.json_response({"error":"forbidden"}, status=403)
+    from_ts = float(req.rel_url.query.get("from", 0))
+    to_ts   = float(req.rel_url.query.get("to",   9999999999))
+    data = await db.get_revenue(from_ts, to_ts)
+    return web.json_response(data)
+
 def _is_admin(req: web.Request):
     # Проверка по токену бота ИЛИ по uid администратора
     key = req.headers.get("X-Admin-Key", "")
@@ -400,6 +408,7 @@ async def start_web():
     app.router.add_get("/api/admin/users",         api_admin_users)
     app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
     app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)
+    app.router.add_get ("/api/admin/revenue",      api_admin_revenue)
     runner = web.AppRunner(app)
     await runner.setup()
     await web.TCPSite(runner,"0.0.0.0",PORT).start()

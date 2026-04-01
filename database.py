@@ -175,3 +175,48 @@ async def close_lobby(lid: int, winner_id: int, commission: int):
             "UPDATE gta_lobbies SET status='done',winner_id=?,commission=?,closed_at=? WHERE id=?",
             (winner_id, commission, time.time(), lid))
         await db.commit()
+
+async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
+    """Доходность казино за период: комиссии GTA + проигрыши в европейской"""
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        # GTA комиссии
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(commission),0) FROM gta_lobbies WHERE status='done' AND closed_at>=? AND closed_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            gta_commission = (await cur.fetchone())[0] or 0
+
+        # Проигрыши в европейской (тип 'lose' в истории)
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='lose' AND created_at>=? AND created_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            euro_losses = (await cur.fetchone())[0] or 0
+
+        # Выигрыши (выплаты) в европейской
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='win' AND detail LIKE '%Европ%' AND created_at>=? AND created_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            euro_wins = (await cur.fetchone())[0] or 0
+
+        # Пополнения (deposits)
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='deposit' AND created_at>=? AND created_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            deposits = (await cur.fetchone())[0] or 0
+
+        # Итого доход казино
+        total_revenue = gta_commission + (euro_losses - euro_wins)
+
+        return {
+            "gta_commission": gta_commission,
+            "euro_losses":    euro_losses,
+            "euro_wins":      euro_wins,
+            "euro_profit":    euro_losses - euro_wins,
+            "deposits":       deposits,
+            "total_revenue":  total_revenue,
+            "from_ts": from_ts,
+            "to_ts":   to_ts,
+        }
