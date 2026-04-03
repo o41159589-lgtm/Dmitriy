@@ -8,13 +8,58 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 :root{
-  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;
-  --card:#1e1e2e;--card2:#252538;
+  --bg:#08080f;--bg2:#0e0e1a;--bg3:#141424;
+  --card:#1a1a2e;--card2:#222238;
   --gold:#f5c542;--gold2:#e8a800;
   --red:#e63946;--green:#2dc653;--blue:#4cc9f0;--purple:#7b2fff;
-  --text:#e8e8f0;--muted:#7070a0;
+  --text:#e8e8f0;--muted:#6060a0;
   --border:rgba(245,197,66,0.15);--nav-h:64px;
+  /* Liquid Glass */
+  --glass-bg:rgba(255,255,255,0.04);
+  --glass-border:rgba(255,255,255,0.10);
+  --glass-blur:18px;
+  --glass-shine:rgba(255,255,255,0.06);
 }
+
+/* ── LIQUID GLASS ── */
+.glass{
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  border:1px solid var(--glass-border);
+  position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,var(--glass-shine) 0%,transparent 60%);
+  border-radius:inherit;
+}
+/* Применяем glass к картам */
+.card,.banner,.sc,.hstat,.hist-item,.gp-row,.rev-card,.hi,.sbar .sb{
+  background:var(--glass-bg) !important;
+  backdrop-filter:blur(12px) saturate(1.3);
+  -webkit-backdrop-filter:blur(12px) saturate(1.3);
+  border-color:var(--glass-border) !important;
+  position:relative;overflow:hidden;
+}
+.card::before,.banner::before,.sc::before,.hi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);
+  pointer-events:none;
+}
+/* NAV glass */
+.nav{
+  background:rgba(8,8,15,0.7) !important;
+  backdrop-filter:blur(20px) saturate(1.5);
+  -webkit-backdrop-filter:blur(20px) saturate(1.5);
+}
+/* Header chips glass */
+.bal-chip{
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+/* Roulette banners */
+.banner-top{background:transparent;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
   font-size:16px;min-height:100vh;overflow-x:hidden;padding-bottom:var(--nav-h);}
@@ -800,240 +845,236 @@ function renderGta(lobby, bets){
 // Вычисляем угол, при котором сектор победителя окажется под указателем (сверху = -PI/2)
 // Вычисляет случайный угол в секторе победителя (не середина)
 function calcWinnerAngle(players, total, winnerId){
+  // Вычисляем случайный угол внутри сектора победителя
+  // Используем сид на основе lobby winner для одинаковости у всех клиентов
   let a = 0;
   for(let i=0;i<players.length;i++){
     const sl = players[i].amount / total * Math.PI*2;
     if(String(players[i].uid) === String(winnerId)){
-      const margin  = sl * 0.15;
-      const rnd     = a + margin + Math.random()*(sl - margin*2);
-      // offset: -PI/2 + offset + rnd = -PI/2  =>  offset = -rnd
-      return ((-rnd)%(Math.PI*2) + Math.PI*2) % (Math.PI*2);
+      // Берём "псевдослучайный" offset внутри сектора (детерминированный по winnerId)
+      // чтобы все игроки видели одинаковое место остановки
+      const seed   = (parseInt(String(winnerId).slice(-4))||1234) % 1000;
+      const frac   = (seed / 1000) * 0.7 + 0.15; // 0.15..0.85 от сектора
+      const target = a + sl * frac;
+      // offset такой что -PI/2 + offset + target = -PI/2  =>  offset = -target
+      return ((-target) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
     }
     a += sl;
   }
-  // Победитель не найден в списке — возвращаем середину первого сектора
-  const sl0 = players[0] ? players[0].amount/total*Math.PI*2 : Math.PI;
-  return ((-sl0/2)%(Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  return 0;
 }
 
 let gtaAngleOffset = 0;
 
-// Свободное вращение — быстро крутится пока сервер не объявит победителя
+// Фаза 1: быстрое свободное вращение (пока сервер считает победителя)
 function startFreeSpinning(players, total){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
-  const ACCEL_MS  = 600;   // время разгона
-  const TOP_SPEED = 0.14;  // рад/фрейм на пике
+  const ACCEL = 800; // мс разгона
+  const SPEED = 0.16; // рад/фрейм
   const t0 = performance.now();
-
   function frame(now){
-    const elapsed = now - t0;
-    // Разгон: квадратичный easeIn до TOP_SPEED
-    const speed = elapsed < ACCEL_MS
-      ? TOP_SPEED * Math.pow(elapsed/ACCEL_MS, 2)
-      : TOP_SPEED;
-    gtaAngleOffset = (gtaAngleOffset + speed) % (Math.PI*2);
+    const e = now-t0;
+    const spd = e < ACCEL ? SPEED*(e/ACCEL)*(e/ACCEL) : SPEED;
+    gtaAngleOffset = (gtaAngleOffset + spd) % (Math.PI*2);
     drawGtaWheelAnimated(players, total, gtaAngleOffset);
     gtaSpinAnim = requestAnimationFrame(frame);
   }
   gtaSpinAnim = requestAnimationFrame(frame);
 }
 
-// Остановка на победителе: замедление и точная остановка
+// Фаза 2: торможение и остановка на победителе
 function spinAndStop(players, total, finalAngle, onDone){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
-
   const START    = gtaAngleOffset;
-  // Нам нужно проехать минимум 5 оборотов + добраться до finalAngle
-  const delta    = ((finalAngle - START)%(Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const EXTRA    = (5 + Math.floor( (parseInt(String(finalAngle*1000|0).slice(-1))||3) )) * Math.PI*2;
+  const delta    = ((finalAngle - START) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
   const safeDelta = delta < 0.3 ? delta + Math.PI*2 : delta;
-  const EXTRA    = (5 + Math.floor(Math.random()*3)) * Math.PI*2; // 5-7 доп. оборотов
   const TARGET   = START + EXTRA + safeDelta;
-  const DURATION = 5000 + Math.random()*1000; // 5-6 сек
-
+  const DURATION = 5500;
   const t0 = performance.now();
 
-  // Плавное торможение: easeOut quart
-  function ease(t){ return 1 - Math.pow(1-t, 4); }
+  function ease(t){
+    // Две фазы: быстро до 20% потом очень плавно тормозит
+    if(t < 0.05) return t * 0.8; // небольшой доразгон
+    const u = (t-0.05)/0.95;
+    return 0.04 + 0.96*(1-Math.pow(1-u,4.5));
+  }
 
   function frame(now){
     const t = Math.min((now-t0)/DURATION, 1);
     gtaAngleOffset = START + (TARGET-START)*ease(t);
-    drawGtaWheelAnimated(players, total, gtaAngleOffset);
     if(t < 1){
+      drawGtaWheelAnimated(players, total, gtaAngleOffset);
       gtaSpinAnim = requestAnimationFrame(frame);
     } else {
       gtaAngleOffset = TARGET % (Math.PI*2);
-      gtaSpinAnim = null;
       drawGtaWheelAnimated(players, total, gtaAngleOffset);
+      gtaSpinAnim = null;
       if(onDone) onDone();
     }
   }
   gtaSpinAnim = requestAnimationFrame(frame);
 }
 
-// Рисует анимированный кадр — сектора + блик + указатель
+// Рисует анимированный кадр (вращение)
 function drawGtaWheelAnimated(players, total, off){
   const canvas = document.getElementById('gta-canvas');
   if(!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const cx = W/2, cy = H/2, r = W/2 - 8;
+  const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, r=W/2-8;
   ctx.clearRect(0,0,W,H);
 
-  // Тёмный фон-круг
-  ctx.fillStyle = '#0d0d18';
-  ctx.beginPath(); ctx.arc(cx,cy,r+4,0,Math.PI*2); ctx.fill();
+  // Тёмный фон с свечением
+  ctx.save();
+  ctx.shadowColor='rgba(100,60,200,0.3)'; ctx.shadowBlur=20;
+  ctx.fillStyle='#080812';
+  ctx.beginPath(); ctx.arc(cx,cy,r+5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
 
-  let a = -Math.PI/2 + off;
+  let a=-Math.PI/2+off;
   players.forEach((p,i)=>{
-    const sl = p.amount/total*Math.PI*2;
-    ctx.fillStyle = GTA_COLORS[i%GTA_COLORS.length];
+    const sl=p.amount/total*Math.PI*2;
+    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
-    // Разделитель
-    ctx.strokeStyle = '#0d0d18'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.stroke();
-    a += sl;
+    // Тонкие разделители
+    ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r); ctx.stroke();
+    a+=sl;
   });
 
-  drawWheelDecorations(ctx, cx, cy, r, players, total, off, null);
-  drawPointerBeautiful(ctx, cx, cy, r);
+  drawWheelShine(ctx,cx,cy,r,off);
+  drawWheelCenter(ctx,cx,cy,r);
+  drawPointerNew(ctx,cx,cy,r);
 }
 
-// Рисует финальный кадр (колесо остановилось, до появления winner_id)
+// Блик на колесе (liquid-glass эффект)
+function drawWheelShine(ctx,cx,cy,r,off){
+  const grad = ctx.createRadialGradient(cx-r*0.3, cy-r*0.3, r*0.05, cx, cy, r);
+  grad.addColorStop(0,'rgba(255,255,255,0.18)');
+  grad.addColorStop(0.35,'rgba(255,255,255,0.04)');
+  grad.addColorStop(1,'rgba(0,0,0,0.2)');
+  ctx.fillStyle=grad;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+
+  // Горизонтальный блик сверху
+  const shineGrad = ctx.createLinearGradient(cx-r,cy-r,cx+r,cy-r*0.2);
+  shineGrad.addColorStop(0,'rgba(255,255,255,0)');
+  shineGrad.addColorStop(0.4,'rgba(255,255,255,0.12)');
+  shineGrad.addColorStop(0.6,'rgba(255,255,255,0.12)');
+  shineGrad.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=shineGrad;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+}
+
+// Центральный круг с metallic gradient
+function drawWheelCenter(ctx,cx,cy,r){
+  const cR = r*0.2;
+  // Внешний кант
+  ctx.strokeStyle='rgba(245,197,66,0.5)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+
+  // Центр — metallic
+  const g=ctx.createRadialGradient(cx-cR*0.4,cy-cR*0.4,cR*0.1,cx,cy,cR);
+  g.addColorStop(0,'#4a4a6a'); g.addColorStop(0.6,'#1e1e32'); g.addColorStop(1,'#0e0e1e');
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.arc(cx,cy,cR,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(245,197,66,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,cy,cR,0,Math.PI*2); ctx.stroke();
+
+  // Иконка
+  ctx.font=`${Math.round(cR*1.1)}px serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🎰',cx,cy+1);
+}
+
+// Рисует финальный кадр (= drawGtaWheelFinal)
 function drawGtaWheelFinal(players, total, off){
   drawGtaWheel(players, total, null, off);
 }
 
 // Рисует статичное колесо (с опциональной обводкой победителя)
 function drawGtaWheel(players, total, winnerId, angleOff){
-  const canvas = document.getElementById('gta-canvas');
+  const canvas=document.getElementById('gta-canvas');
   if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const cx = W/2, cy = H/2, r = W/2 - 8;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, r=W/2-8;
   ctx.clearRect(0,0,W,H);
 
-  // Тёмный фон
-  ctx.fillStyle = '#0d0d18';
-  ctx.beginPath(); ctx.arc(cx,cy,r+4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#080812';
+  ctx.beginPath(); ctx.arc(cx,cy,r+5,0,Math.PI*2); ctx.fill();
 
   if(!players.length){
-    ctx.fillStyle = '#1e1e2e';
+    ctx.fillStyle='#1a1a2e';
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#7070a0'; ctx.font = '13px Rajdhani'; ctx.textAlign = 'center';
-    ctx.fillText('Нет ставок', cx, cy+4);
-    drawPointerBeautiful(ctx, cx, cy, r);
-    return;
+    ctx.fillStyle='#6060a0'; ctx.font='13px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Нет ставок',cx,cy);
+    drawPointerNew(ctx,cx,cy,r); return;
   }
 
-  const off = angleOff||0;
-  let a = -Math.PI/2 + off;
+  const off=angleOff||0;
+  let a=-Math.PI/2+off;
   players.forEach((p,i)=>{
-    const sl = p.amount/total*Math.PI*2;
-    const isWinner = winnerId && p.uid==winnerId;
-    ctx.fillStyle = GTA_COLORS[i%GTA_COLORS.length];
+    const sl=p.amount/total*Math.PI*2;
+    const isW=winnerId&&String(p.uid)===String(winnerId);
+    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
-
-    // Разделитель между секторами
-    ctx.strokeStyle = '#0d0d18'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.stroke();
-
-    // Золотая обводка победителя
-    if(isWinner){
+    // Разделитель
+    ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r); ctx.stroke();
+    if(isW){
+      // Мягкая белая подсветка победного сектора
       ctx.save();
-      // Яркое свечение победителя
-      ctx.shadowColor = '#f5c542'; ctx.shadowBlur = 20;
-      ctx.strokeStyle = '#f5c542'; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r-1,a,a+sl); ctx.closePath(); ctx.stroke();
-      // Подсветка сектора победителя
-      ctx.globalAlpha = 0.25;
-      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha=0.22;
+      ctx.fillStyle='#ffffff';
       ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
+      ctx.globalAlpha=1;
+      // Белая обводка (не золотая — более элегантно)
+      ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=3;
+      ctx.shadowColor='rgba(255,255,255,0.6)'; ctx.shadowBlur=14;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r-1,a,a+sl); ctx.closePath(); ctx.stroke();
+      ctx.shadowBlur=0;
       ctx.restore();
     }
-    a += sl;
-  });
-
-  drawWheelDecorations(ctx, cx, cy, r, players, total, off, winnerId);
-  drawPointerBeautiful(ctx, cx, cy, r);
-}
-
-// Декорации: проценты, центральный круг, внешний кант
-function drawWheelDecorations(ctx, cx, cy, r, players, total, off, winnerId){
-  // Внешний кант
-  ctx.strokeStyle = '#f5c542'; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.6;
-  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  // Проценты на секторах
-  let a = -Math.PI/2 + off;
-  players.forEach((p,i)=>{
-    const sl = p.amount/total*Math.PI*2;
-    if(sl > 0.28){
-      const ma = a + sl/2;
-      const dist = r*0.6;
+    // Процент
+    if(sl>0.25){
+      const ma=a+sl/2;
       ctx.save();
-      ctx.fillStyle = 'rgba(0,0,0,.65)';
-      ctx.font = 'bold 11px Rajdhani, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
-      ctx.fillText(Math.round(p.amount/total*100)+'%', cx+Math.cos(ma)*dist, cy+Math.sin(ma)*dist);
+      ctx.fillStyle='rgba(255,255,255,0.9)';
+      ctx.font='bold 11px Rajdhani,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=4;
+      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*0.62),cy+Math.sin(ma)*(r*0.62));
       ctx.restore();
     }
-    a += sl;
+    a+=sl;
   });
 
-  // Центральный круг — градиентный металлический эффект
-  const grad = ctx.createRadialGradient(cx-r*.08, cy-r*.08, r*.02, cx, cy, r*.22);
-  grad.addColorStop(0, '#3a3a50');
-  grad.addColorStop(1, '#1a1a2e');
-  ctx.fillStyle = grad;
-  ctx.beginPath(); ctx.arc(cx,cy,r*.22,0,Math.PI*2); ctx.fill();
-  // Кант центрального круга
-  ctx.strokeStyle = '#f5c542'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.5;
-  ctx.beginPath(); ctx.arc(cx,cy,r*.22,0,Math.PI*2); ctx.stroke();
-  ctx.globalAlpha = 1;
-  // Иконка в центре
-  ctx.font = `${Math.round(r*.19)}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('🎰', cx, cy+1);
+  drawWheelShine(ctx,cx,cy,r,off);
+  drawWheelCenter(ctx,cx,cy,r);
+  drawPointerNew(ctx,cx,cy,r);
 }
 
-// Красивый золотой указатель сверху
-function drawPointerBeautiful(ctx, cx, cy, r){
-  const tipY = cy - r + 2;  // острый конец касается колеса
-  const baseY = tipY - 18;
-  const hw = 11;  // полуширина основания
-
+// Треугольный указатель — чистый белый с тенью
+function drawPointerNew(ctx,cx,cy,r){
+  const tipY = cy - r + 1;
+  const baseY = tipY - 20;
+  const hw = 12;
   ctx.save();
-  // Свечение
-  ctx.shadowColor = '#f5c542'; ctx.shadowBlur = 14;
-
-  // Основной треугольник — золотой
-  ctx.fillStyle = '#f5c542';
+  ctx.shadowColor='rgba(255,255,255,0.9)'; ctx.shadowBlur=16;
+  ctx.fillStyle='#ffffff';
   ctx.beginPath();
   ctx.moveTo(cx, tipY);
-  ctx.lineTo(cx - hw, baseY);
-  ctx.lineTo(cx + hw, baseY);
-  ctx.closePath();
-  ctx.fill();
-
-  // Маленькая засечка/деталь сверху
-  ctx.fillStyle = '#e8a800';
-  ctx.beginPath();
-  ctx.moveTo(cx - hw, baseY);
-  ctx.lineTo(cx + hw, baseY);
-  ctx.lineTo(cx + hw, baseY - 4);
-  ctx.lineTo(cx - hw, baseY - 4);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
+  ctx.lineTo(cx-hw, baseY);
+  ctx.lineTo(cx+hw, baseY);
+  ctx.closePath(); ctx.fill();
+  // Тёмный контур
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1;
+  ctx.stroke();
   ctx.restore();
 }
+
 
 function renderPlayers(players, total, winnerId){
   const pl=document.getElementById('gta-players');

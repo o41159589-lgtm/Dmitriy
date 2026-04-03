@@ -43,6 +43,11 @@ async def init_db():
                 amount     INTEGER NOT NULL,
                 created_at REAL DEFAULT 0
             );
+            CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT DEFAULT ''
+            );
+            INSERT OR IGNORE INTO settings(key,value) VALUES ('global_luck_coeff','1.0');
         """)
         await db.commit()
 
@@ -220,3 +225,19 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
             "from_ts": from_ts,
             "to_ts":   to_ts,
         }
+
+async def get_global_luck_coeff() -> float:
+    """Глобальный коэф. удачи: 1.0 = без изменений, 0.5 = вдвое меньше шансов, 0 = никто не выигрывает"""
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        async with db_conn.execute("SELECT value FROM settings WHERE key='global_luck_coeff'") as cur:
+            row = await cur.fetchone()
+            try: return float(row[0]) if row else 1.0
+            except: return 1.0
+
+async def set_global_luck_coeff(coeff: float):
+    coeff = max(0.0, min(2.0, coeff))
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT OR REPLACE INTO settings(key,value) VALUES('global_luck_coeff',?)",
+            (str(coeff),))
+        await db_conn.commit()

@@ -162,7 +162,12 @@ async def api_spin(req: web.Request):
     if bet_amt <= 0 or bet_amt > u["balance"]:
         return web.json_response({"error":"invalid bet"}, status=400)
 
-    luck = await db.get_luck(uid)
+    luck       = await db.get_luck(uid)
+    global_k   = await db.get_global_luck_coeff()
+    # Применяем глобальный коэффициент:
+    # luck=-1 (авто) → просто уменьшаем вероятность выигрыша через global_k
+    # luck=0 → всегда проигрыш (личный 0% побеждает глобал)
+    # luck>0 → эффективная удача = luck * global_k, но если luck=0 → 0
 
     def check(n, c, bt):
         if bt=="red":    return c=="red"
@@ -177,11 +182,21 @@ async def api_spin(req: web.Request):
         return False
 
     if luck == -1:
-        rn, rc = random.choice(ROULETTE_NUMBERS)
+        # Авто: глобальный коэфф уменьшает шанс выигрыша
+        # global_k=1.0 → честная игра; 0.5 → дополнительно 50% шанс проиграть
+        if global_k >= 1.0 or random.random() < global_k:
+            rn, rc = random.choice(ROULETTE_NUMBERS)
+        else:
+            # Принудительный проигрыш (global_k снижает удачу)
+            wins  = [(n,co) for n,co in ROULETTE_NUMBERS if check(n,co,bet_type)]
+            loses = [(n,co) for n,co in ROULETTE_NUMBERS if not check(n,co,bet_type)]
+            rn,rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
     else:
-        will_win = random.randint(0,99) < luck
-        wins  = [(n,c) for n,c in ROULETTE_NUMBERS if check(n,c,bet_type)]
-        loses = [(n,c) for n,c in ROULETTE_NUMBERS if not check(n,c,bet_type)]
+        # Личная удача: luck=0 всегда проигрыш; luck>0 → эффективная = luck * global_k
+        effective = 0 if luck == 0 else min(100, int(luck * global_k))
+        will_win  = random.randint(0,99) < effective
+        wins  = [(n,co) for n,co in ROULETTE_NUMBERS if check(n,co,bet_type)]
+        loses = [(n,co) for n,co in ROULETTE_NUMBERS if not check(n,co,bet_type)]
         if will_win and wins:
             rn,rc = random.choice(wins)
         elif loses:
@@ -299,14 +314,23 @@ async def _gta_run(lid: int):
 
     pot   = lobby["pot"]
     total = sum(b["amount"] for b in bets)
-    weights = []
+    global_k = await db.get_global_luck_coeff()
+    weights  = []
     for b in bets:
         luck = await db.get_luck(b["user_id"])
-        base = b["amount"] / total * 100
-        if luck == -1:   weights.append(base)
-        elif luck == 0:  weights.append(0.01)
-        elif luck == 100:weights.append(999999)
-        else:            weights.append(float(luck))
+        base = b["amount"] / total * 100  # базовый вес = доля ставки
+        if luck == 0:
+            w = 0.001  # личная 0% удача — почти невозможно
+        elif luck == -1:
+            # Авто: global_k масштабирует базу (k<1 → меньше удача для всех)
+            w = base * (0.3 + global_k * 0.7)  # минимум 30% базы даже при k=0
+        else:
+            # Личная: luck=0 уже обработан; luck>0 → эффективная = luck*global_k, но не ниже base*0.1
+            effective_pct = max(luck * global_k, 0.1)
+            w = base * (effective_pct / 50.0)  # нормализуем (50% = neutral)
+            if luck == 100:
+                w = max(w, base * 3)  # 100% личной удачи — очень высокий шанс
+        weights.append(max(0.001, w))
 
     winner = random.choices(bets, weights=weights, k=1)[0]
     wid    = winner["user_id"]
@@ -337,6 +361,20 @@ async def _gta_run(lid: int):
         logger.warning(f"GTA notify error: {e}")
 
 # ── Admin API ──
+async def api_admin_get_global_luck(req: web.Request):
+    if not _is_admin(req):
+        return web.json_response({"error":"forbidden"}, status=403)
+    coeff = await db.get_global_luck_coeff()
+    return web.json_response({"coeff": coeff})
+
+async def api_admin_set_global_luck(req: web.Request):
+    if not _is_admin(req):
+        return web.json_response({"error":"forbidden"}, status=403)
+    data  = await req.json()
+    coeff = float(data.get("coeff", 1.0))
+    await db.set_global_luck_coeff(coeff)
+    return web.json_response({"ok": True, "coeff": coeff})
+
 async def api_admin_revenue(req: web.Request):
     """Доход казино = сумма комиссий GTA + проигрыши в европейской за период"""
     if not _is_admin(req):
@@ -409,6 +447,8 @@ async def start_web():
     app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
     app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)
     app.router.add_get ("/api/admin/revenue",      api_admin_revenue)
+    app.router.add_get ("/api/admin/global_luck",  api_admin_get_global_luck)
+    app.router.add_post("/api/admin/global_luck",  api_admin_set_global_luck)
     runner = web.AppRunner(app)
     await runner.setup()
     await web.TCPSite(runner,"0.0.0.0",PORT).start()
