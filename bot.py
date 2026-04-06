@@ -17,7 +17,7 @@ import database as db
 
 # ════════════════════════════════════════
 BOT_TOKEN  = "8686326767:AAFheVAG5rhSjpQHaAJClR-axeuBbM0Zni8"
-ADMIN_IDS  = [1840233118, 6852175783]                   # ← ваш Telegram ID (узнать у @userinfobot)                          # ← ваш Telegram ID (узнать у @userinfobot)
+ADMIN_IDS  = [1840233118, 5709138319]                   # ← ваш Telegram ID (узнать у @userinfobot)                          # ← ваш Telegram ID (узнать у @userinfobot)
 WEBAPP_URL      = "https://dmitriy-45jd.onrender.com"
 ADMIN_URL       = "https://dmitriy-45jd.onrender.com/admin"
 PORT            = int(os.environ.get("PORT", 8080))
@@ -418,6 +418,87 @@ async def api_admin_set_luck(req: web.Request):
     await db.set_luck(int(data["user_id"]), int(data["luck"]))
     return web.json_response({"success":True})
 
+# ── GIFT API ──
+async def api_gift_buy(req: web.Request):
+    data = await req.json()
+    uid          = int(data.get("user_id", 0))
+    gift_name    = str(data.get("gift_name", "Подарок"))
+    gift_emoji   = str(data.get("gift_emoji", "🎁"))
+    price        = int(data.get("price", 0))
+    source       = str(data.get("source", "bot"))  # 'bot' or 'owner'
+    recipient_id = int(data.get("recipient_id", uid))
+    anonymous    = bool(data.get("anonymous", False))
+    message      = data.get("message")
+    sender_name  = data.get("sender_name", "Аноним")
+
+    u = await db.get_user(uid)
+    if not u:
+        return web.json_response({"error": "user not found"}, status=404)
+    if price <= 0 or u["balance"] < price:
+        return web.json_response({"error": "Недостаточно монет!"}, status=400)
+
+    # Deduct balance
+    new_bal = await db.add_to_balance(uid, -price)
+    await db.add_history(uid, "lose", price, f"Покупка подарка: {gift_emoji} {gift_name}")
+
+    if source == "bot":
+        # Bot delivers immediately
+        detail = f"{gift_emoji} {gift_name}"
+        if message and message != "auto":
+            detail += f"\n💬 {message}"
+        elif not anonymous:
+            detail += f"\nОт: {sender_name}"
+
+        try:
+            target = recipient_id if recipient_id else uid
+            await bot.send_message(
+                target,
+                f"🎁 <b>Вам подарок!</b>\n\n"
+                f"{gift_emoji} <b>{gift_name}</b>\n"
+                + (f"💬 {message}\n" if message and message != 'auto' else "")
+                + (f"\nОт: {'Аноним 🎭' if anonymous else f'<b>{sender_name}</b>'}\n"),
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logger.warning(f"Gift delivery error: {e}")
+
+        await db.add_history(recipient_id, "gift_received", 0, f"{gift_emoji} {gift_name}")
+        return web.json_response({"ok": True, "new_balance": new_bal})
+
+    else:
+        # Owner gift — notify admin
+        sender_info = "Аноним" if anonymous else sender_name
+        msg_text = (
+            f"📦 <b>Запрос на подарок от владельца</b>\n\n"
+            f"👤 Покупатель: <b>{sender_info}</b> (ID: {uid})\n"
+            f"🎁 Подарок: {gift_emoji} <b>{gift_name}</b>\n"
+            f"💰 Стоимость: {price} монет\n"
+            + (f"📩 Получатель ID: {recipient_id}\n" if recipient_id != uid else "")
+            + (f"💬 Подпись: {message}\n" if message else "")
+            + f"\n⚠️ Пожалуйста, свяжитесь с пользователем и выдайте подарок вручную."
+        )
+        for admin_id in ADMIN_IDS:
+            try:
+                await bot.send_message(admin_id, msg_text, parse_mode="HTML")
+            except Exception as e:
+                logger.warning(f"Admin notify error: {e}")
+
+        # Notify buyer
+        try:
+            await bot.send_message(
+                uid,
+                f"📨 <b>Заявка принята!</b>\n\n"
+                f"Вы заказали: {gift_emoji} <b>{gift_name}</b>\n"
+                f"Владелец получил уведомление и скоро свяжется с вами.\n\n"
+                f"💬 Напишите владельцу, чтобы подтвердить заявку!",
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            logger.warning(f"Buyer notify error: {e}")
+
+        return web.json_response({"ok": True, "new_balance": new_bal})
+
+
 # ── Static ──
 BASE = Path(__file__).parent
 
@@ -427,15 +508,41 @@ async def serve(f: str):
         return web.Response(text=p.read_text("utf-8"), content_type="text/html", charset="utf-8")
     return web.Response(text="Not found", status=404)
 
-async def serve_app(req):   return await serve("telegram_mini_app.html")
-async def serve_admin(req): return await serve("admin_panel.html")
-async def health(req):      return web.Response(text="OK")
+async def serve_app(req):             return await serve("index.html")
+async def serve_main(req):            return await serve("main.html")
+async def serve_euro_roulette(req):   return await serve("european_roulette.html")
+async def serve_gta_roulette(req):    return await serve("gta_roulette.html")
+async def serve_inventory(req):       return await serve("inventory.html")
+async def serve_shop(req):            return await serve("shop.html")
+async def serve_admin(req):           return await serve("admin_panel.html")
+async def health(req):                return web.Response(text="OK")
+
+async def serve_static(req):
+    """Serve CSS, PNG and other static files"""
+    filename = req.match_info.get("filename", "")
+    # Security: no path traversal
+    if ".." in filename or "/" in filename:
+        return web.Response(text="Forbidden", status=403)
+    p = BASE / filename
+    if p.exists():
+        ext = p.suffix.lower()
+        ct_map = {".css":"text/css",".png":"image/png",".jpg":"image/jpeg",
+                  ".js":"application/javascript",".svg":"image/svg+xml"}
+        ct = ct_map.get(ext, "application/octet-stream")
+        return web.Response(body=p.read_bytes(), content_type=ct)
+    return web.Response(text="Not found", status=404)
 
 async def start_web():
     app = web.Application()
-    app.router.add_get("/",        serve_app)
-    app.router.add_get("/admin",   serve_admin)
-    app.router.add_get("/health",  health)
+    app.router.add_get("/",             serve_app)
+    app.router.add_get("/main.html",    serve_main)
+    app.router.add_get("/european_roulette.html", serve_euro_roulette)
+    app.router.add_get("/gta_roulette.html",      serve_gta_roulette)
+    app.router.add_get("/inventory.html",         serve_inventory)
+    app.router.add_get("/shop.html",              serve_shop)
+    app.router.add_get("/admin",        serve_admin)
+    app.router.add_get("/health",       health)
+    app.router.add_get("/{filename:.*\\.(?:css|png|jpg|js|svg)}", serve_static)
     app.router.add_get("/api/user/{uid}",          api_user)
     app.router.add_get("/api/history/{uid}",       api_history)
     app.router.add_get("/api/invoice",             api_invoice)
@@ -443,6 +550,7 @@ async def start_web():
     app.router.add_get("/api/gta/lobby",           api_gta_lobby)
     app.router.add_post("/api/gta/bet",            api_gta_bet)
     app.router.add_get("/api/gta/status/{lid}",    api_gta_status)
+    app.router.add_post("/api/gift/buy",           api_gift_buy)
     app.router.add_get("/api/admin/users",         api_admin_users)
     app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
     app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)

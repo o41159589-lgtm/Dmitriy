@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Инвентарь — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+.page-content{padding:16px;}
+
+.inv-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.inv-tab{flex:1;padding:10px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;color:var(--muted);font-weight:700;font-size:13px;
+  cursor:pointer;text-align:center;transition:all .2s;}
+.inv-tab.active{background:var(--gold);color:#000;border-color:var(--gold);}
+
+.inv-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+.istat{background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:14px;padding:12px 8px;text-align:center;
+  backdrop-filter:blur(12px);}
+.istat-val{font-family:'Orbitron',monospace;font-size:20px;color:var(--gold);font-weight:700;}
+.istat-lbl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+
+.inv-item{display:flex;align-items:center;gap:14px;
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:16px;padding:14px;margin-bottom:10px;
+  backdrop-filter:blur(12px);transition:border-color .2s;position:relative;}
+.inv-item:hover{border-color:rgba(245,197,66,.25);}
+.inv-icon{width:52px;height:52px;border-radius:14px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.inv-info{flex:1;}
+.inv-name{font-weight:700;font-size:15px;margin-bottom:3px;}
+.inv-meta{font-size:12px;color:var(--muted);}
+.inv-qty{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);
+  font-weight:700;white-space:nowrap;}
+
+.inv-badge{
+  position:absolute;top:-4px;right:-4px;
+  background:var(--red);color:#fff;
+  font-size:10px;font-weight:700;font-family:'Orbitron',monospace;
+  border-radius:8px;padding:2px 6px;
+  box-shadow:0 2px 8px rgba(230,57,70,.4);
+}
+
+.use-btn{
+  padding:7px 14px;background:linear-gradient(135deg,var(--purple),#4361ee);
+  border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:'Rajdhani',sans-serif;margin-top:6px;
+}
+
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-i{font-size:60px;margin-bottom:14px;}
+.empty p{font-size:15px;line-height:1.6;}
+.empty a{color:var(--gold);text-decoration:none;}
+
+.hist-section{margin-top:8px;}
+.hi{display:flex;align-items:center;gap:12px;
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:14px;padding:12px 14px;margin-bottom:8px;
+  backdrop-filter:blur(10px);}
+.hi-ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:16px;flex-shrink:0;}
+.hi-ic.win{background:rgba(45,198,83,.15);}
+.hi-ic.lose{background:rgba(230,57,70,.15);}
+.hi-ic.deposit{background:rgba(76,201,240,.15);}
+.hi-ic.gift{background:rgba(245,197,66,.15);}
+.hi-b{flex:1;}
+.hi-t{font-weight:600;font-size:14px;}
+.hi-s{font-size:12px;color:var(--muted);margin-top:2px;}
+.hi-a{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;}
+.hi-a.p{color:var(--green);}.hi-a.n{color:var(--red);}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="topbar">
+  <button class="fp-back" onclick="history.back()">‹</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:20px">🎒</span>
+    <span class="fp-title">ИНВЕНТАРЬ</span>
+  </div>
+  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+</div>
+
+<div class="page-content">
+
+  <div class="inv-stats">
+    <div class="istat"><div class="istat-val" id="stat-spins">—</div><div class="istat-lbl">Игр</div></div>
+    <div class="istat"><div class="istat-val" id="stat-wins">—</div><div class="istat-lbl">Побед</div></div>
+    <div class="istat"><div class="istat-val" id="stat-won">—</div><div class="istat-lbl">Выиграно</div></div>
+  </div>
+
+  <div class="inv-tabs">
+    <div class="inv-tab active" onclick="switchTab('items',this)">🎁 Предметы</div>
+    <div class="inv-tab" onclick="switchTab('history',this)">📋 История</div>
+  </div>
+
+  <!-- ITEMS TAB -->
+  <div id="tab-items">
+    <div id="items-list">
+      <div class="empty">
+        <div class="empty-i">📭</div>
+        <p>Инвентарь пуст.<br>Купи что-нибудь в <a href="shop.html">Магазине</a>!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" style="display:none">
+    <div class="card">
+      <div class="card-head">📊 Статистика</div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">ВЫИГРАНО</div>
+          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--green)" id="hs-won">0</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">ПРОИГРАНО</div>
+          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--red)" id="hs-lost">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="hist-section" id="hist-list">
+      <div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID = tg?.initDataUnsafe?.user?.id || 0;
+
+let userData = null;
+let historyData = [];
+
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+async function get(url){const r=await fetch(url);return r.json();}
+
+function switchTab(tab, el){
+  document.querySelectorAll('.inv-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-items').style.display = tab==='items'?'':'none';
+  document.getElementById('tab-history').style.display = tab==='history'?'':'none';
+  if(tab==='history') renderHistory();
+}
+
+async function loadUser(){
+  if(!UID)return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  if(!userData)return;
+  document.getElementById('r-bal').textContent   = userData.balance??0;
+  document.getElementById('stat-spins').textContent = userData.spins??0;
+  document.getElementById('stat-wins').textContent  = userData.wins??0;
+  document.getElementById('stat-won').textContent   = userData.total_won??0;
+}
+
+async function loadItems(){
+  // Gifts in inventory from history type='gift_received'
+  const hist = await get(`/api/history/${UID}`).catch(()=>[]);
+  historyData = hist;
+  const gifts = hist.filter(h=>h.type==='gift_received'||h.type==='gift');
+  const list = document.getElementById('items-list');
+  if(!gifts.length){
+    list.innerHTML=`<div class="empty"><div class="empty-i">📭</div><p>Инвентарь пуст.<br>Купи что-нибудь в <a href="shop.html">Магазине</a>!</p></div>`;
+    return;
+  }
+  const grouped = {};
+  gifts.forEach(g=>{
+    const key = g.detail||'Подарок';
+    if(!grouped[key]) grouped[key]={name:key,count:0,date:g.created_at};
+    grouped[key].count++;
+  });
+  list.innerHTML = Object.values(grouped).map(item=>`
+    <div class="inv-item">
+      <div class="inv-icon">🎁</div>
+      <div class="inv-info">
+        <div class="inv-name">${item.name}</div>
+        <div class="inv-meta">Получен ${new Date(item.date*1000).toLocaleDateString('ru',{day:'numeric',month:'short'})}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="inv-qty">×${item.count}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function renderHistory(){
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_received:'🎁',gift:'🎁'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_received:'Подарок получен',gift:'Подарок'};
+  let won=0,lost=0;
+  historyData.forEach(i=>{
+    if(['win','deposit','ref','gift_received'].includes(i.type))won+=i.amount;
+    if(['lose'].includes(i.type))lost+=i.amount;
+  });
+  document.getElementById('hs-won').textContent=won;
+  document.getElementById('hs-lost').textContent=lost;
+  const list=document.getElementById('hist-list');
+  if(!historyData.length){
+    list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;
+  }
+  list.innerHTML=historyData.slice(0,50).map(i=>{
+    const d=new Date(i.created_at*1000);
+    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos=['win','deposit','ref','gift_received'].includes(i.type);
+    return `<div class="hi">
+      <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
+      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
+    </div>`;
+  }).join('');
+}
+
+loadUser();
+loadItems();
+</script>
+</body>
+</html>

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Европейская рулетка — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+.page-content{padding:0 0 24px;}
+
+/* ── WHEEL SECTION ── */
+.wheel-section{
+  background:linear-gradient(180deg,#0a0a18 0%,#0e0e1a 100%);
+  padding:20px 0 24px;
+  display:flex;flex-direction:column;align-items:center;
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.wheel-section::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(245,197,66,0.07) 0%, transparent 60%);
+  pointer-events:none;
+}
+.wheel-outer{
+  position:relative;
+  width:280px;height:280px;
+  margin:0 auto;
+}
+/* Outer ring */
+.wheel-ring{
+  position:absolute;inset:-8px;
+  border-radius:50%;
+  background:conic-gradient(from 0deg,#2a1a00,#5a3e00,#f5c542,#5a3e00,#2a1a00,#5a3e00,#f5c542,#5a3e00,#2a1a00);
+  box-shadow:0 0 40px rgba(245,197,66,0.3),inset 0 0 20px rgba(0,0,0,0.6);
+}
+.wheel-ring::after{
+  content:'';position:absolute;inset:4px;border-radius:50%;
+  background:#0a0a14;
+}
+.wheel-canvas{
+  position:absolute;inset:0;border-radius:50%;
+  box-shadow:0 0 30px rgba(0,0,0,0.8);
+}
+
+/* Ball canvas overlaid */
+.ball-canvas{
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:5;
+}
+
+/* Pointer at top */
+.wheel-pointer{
+  position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:10px solid transparent;
+  border-right:10px solid transparent;
+  border-top:20px solid var(--gold);
+  filter:drop-shadow(0 0 6px var(--gold));
+  z-index:10;
+}
+
+/* Result display */
+.result-display{
+  margin-top:20px;
+  min-height:50px;
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;
+}
+.result-number{
+  font-family:'Orbitron',monospace;font-size:42px;font-weight:900;
+  line-height:1;
+  transition:all .3s;
+}
+.result-number.red{color:var(--red);text-shadow:0 0 20px rgba(230,57,70,.5);}
+.result-number.black{color:#ddd;text-shadow:0 0 20px rgba(200,200,220,.3);}
+.result-number.green{color:var(--green);text-shadow:0 0 20px rgba(45,198,83,.5);}
+.result-label{font-size:16px;font-weight:600;color:var(--muted);}
+
+/* ── BET SECTION ── */
+.bet-section{padding:16px;}
+
+.bet-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.bet-lbl{color:var(--muted);font-size:13px;white-space:nowrap;font-weight:600;}
+.bet-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:16px;
+  outline:none;text-align:center;width:0;}
+.bet-inp:focus{border-color:var(--gold);}
+
+.qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.qb{background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:6px 12px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
+  transition:all .15s;font-family:'Orbitron',monospace;}
+.qb:active,.qb.a{background:var(--gold);color:#000;border-color:var(--gold);}
+
+/* Bet type grid */
+.btypes{display:grid;gap:8px;margin-bottom:10px;}
+.btypes.cols3{grid-template-columns:repeat(3,1fr);}
+.btypes.cols2{grid-template-columns:repeat(2,1fr);}
+.btypes.cols6{grid-template-columns:repeat(3,1fr);}
+
+.bt{border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;
+  border:2px solid transparent;transition:all .2s;font-weight:700;font-size:13px;
+  background:var(--bg3);line-height:1.3;}
+.bt-s{font-size:11px;color:var(--muted);margin-top:3px;}
+.bt.r{border-color:rgba(230,57,70,.4);color:#ff9090;}
+.bt.bl{border-color:rgba(200,200,220,.2);color:#ccc;}
+.bt.g{border-color:rgba(45,198,83,.4);color:var(--green);}
+.bt.o{border-color:rgba(76,201,240,.25);color:var(--blue);}
+.bt.active.r{border-color:var(--red);background:rgba(230,57,70,.15);}
+.bt.active.bl{border-color:#aaa;background:rgba(200,200,220,.1);}
+.bt.active.g{border-color:var(--green);background:rgba(45,198,83,.12);}
+.bt.active.o{border-color:var(--blue);background:rgba(76,201,240,.1);}
+
+/* Number grid */
+.num-grid-wrap{margin-bottom:10px;}
+.num-grid-title{font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;}
+.num-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;}
+.ng{border-radius:6px;padding:8px 2px;text-align:center;cursor:pointer;
+  border:1px solid rgba(255,255,255,.08);font-weight:700;font-size:11px;
+  font-family:'Orbitron',monospace;transition:all .15s;background:var(--bg3);}
+.ng.r{color:#ff9090;border-color:rgba(230,57,70,.25);}
+.ng.bl{color:#bbb;border-color:rgba(200,200,220,.12);}
+.ng.gr{color:var(--green);border-color:rgba(45,198,83,.3);}
+.ng.active{outline:2px solid var(--gold);outline-offset:1px;transform:scale(1.05);}
+
+.res-box{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:13px;text-align:center;margin-bottom:12px;min-height:50px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;}
+.res-box.win{border-color:var(--green);background:rgba(45,198,83,.08);color:var(--green);}
+.res-box.lose{border-color:var(--red);background:rgba(230,57,70,.08);color:var(--red);}
+
+.spin-btn{width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:15px;font-weight:900;letter-spacing:2px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(245,197,66,.35);transition:transform .1s;}
+.spin-btn:active{transform:scale(.97);}
+.spin-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* Payouts */
+.pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pay-item{background:var(--bg3);border-radius:10px;padding:10px;
+  border:1px solid rgba(255,255,255,.05);}
+.pay-name{font-size:12px;color:var(--muted);margin-bottom:3px;}
+.pay-val{font-family:'Orbitron',monospace;font-size:15px;color:var(--gold);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- Header -->
+<div class="topbar">
+  <button class="fp-back" onclick="history.back()">‹</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:20px">🎰</span>
+    <span class="fp-title">ЕВРОПЕЙСКАЯ РУЛЕТКА</span>
+  </div>
+  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+</div>
+
+<div class="page-content">
+
+  <!-- Wheel -->
+  <div class="wheel-section">
+    <div class="wheel-outer">
+      <div class="wheel-ring"></div>
+      <canvas class="wheel-canvas" id="wheel-canvas" width="280" height="280"></canvas>
+      <canvas class="ball-canvas" id="ball-canvas" width="280" height="280"></canvas>
+      <div class="wheel-pointer"></div>
+    </div>
+
+    <div class="result-display">
+      <div class="result-number" id="res-num" style="color:var(--muted)">—</div>
+      <div class="result-label" id="res-lbl">Крутите колесо!</div>
+    </div>
+  </div>
+
+  <!-- Bet UI -->
+  <div class="bet-section">
+
+    <div class="bet-row">
+      <span class="bet-lbl">Ставка:</span>
+      <input class="bet-inp" id="bet-inp" type="number" min="1" value="10" inputmode="numeric">
+    </div>
+    <div class="qb-row">
+      <div class="qb" onclick="sb(10)">10</div>
+      <div class="qb" onclick="sb(25)">25</div>
+      <div class="qb" onclick="sb(50)">50</div>
+      <div class="qb" onclick="sb(100)">100</div>
+      <div class="qb" onclick="sbAll()">ВСЁ</div>
+      <div class="qb" onclick="sbHalf()">½</div>
+    </div>
+
+    <!-- Main bets -->
+    <div class="btypes cols3" style="margin-bottom:8px">
+      <div class="bt r" data-bet="red"   onclick="selBet(this)">🔴 Красное<div class="bt-s">×2</div></div>
+      <div class="bt bl" data-bet="black" onclick="selBet(this)">⚫ Чёрное<div class="bt-s">×2</div></div>
+      <div class="bt g"  data-bet="green" onclick="selBet(this)">🟢 Зеро<div class="bt-s">×14</div></div>
+    </div>
+    <div class="btypes cols2" style="margin-bottom:8px">
+      <div class="bt o" data-bet="even" onclick="selBet(this)">Чётное<div class="bt-s">×2</div></div>
+      <div class="bt o" data-bet="odd"  onclick="selBet(this)">Нечётное<div class="bt-s">×2</div></div>
+    </div>
+    <div class="btypes cols2" style="margin-bottom:8px">
+      <div class="bt o" data-bet="low"  onclick="selBet(this)">1–18<div class="bt-s">×2</div></div>
+      <div class="bt o" data-bet="high" onclick="selBet(this)">19–36<div class="bt-s">×2</div></div>
+    </div>
+    <div class="btypes cols2" style="margin-bottom:14px">
+      <div class="bt o" data-bet="dozen1" onclick="selBet(this)">1–12<div class="bt-s">×3</div></div>
+      <div class="bt o" data-bet="dozen2" onclick="selBet(this)">13–24<div class="bt-s">×3</div></div>
+    </div>
+
+    <div class="res-box" id="res-box">Выберите ставку и нажмите КРУТИТЬ</div>
+    <button class="spin-btn" id="spin-btn" onclick="spinEuro()">🎰 КРУТИТЬ</button>
+
+    <!-- Payouts -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-head">💰 Выплаты</div>
+      <div class="card-body">
+        <div class="pay-grid">
+          <div class="pay-item"><div class="pay-name">Красное / Чёрное</div><div class="pay-val">×2</div></div>
+          <div class="pay-item"><div class="pay-name">Чёт / Нечёт</div><div class="pay-val">×2</div></div>
+          <div class="pay-item"><div class="pay-name">1–18 / 19–36</div><div class="pay-val">×2</div></div>
+          <div class="pay-item"><div class="pay-name">1–12 / 13–24</div><div class="pay-val">×3</div></div>
+          <div class="pay-item"><div class="pay-name">🟢 Зеро</div><div class="pay-val">×14</div></div>
+          <div class="pay-item"><div class="pay-name">Число</div><div class="pay-val">×35</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID = tg?.initDataUnsafe?.user?.id || 0;
+const API = '';
+
+// ── ROULETTE NUMBERS (European order) ──
+const NUMS = [
+  {n:0,c:'green'},{n:32,c:'red'},{n:15,c:'black'},{n:19,c:'red'},{n:4,c:'black'},
+  {n:21,c:'red'},{n:2,c:'black'},{n:25,c:'red'},{n:17,c:'black'},{n:34,c:'red'},
+  {n:6,c:'black'},{n:27,c:'red'},{n:13,c:'black'},{n:36,c:'red'},{n:11,c:'black'},
+  {n:30,c:'red'},{n:8,c:'black'},{n:23,c:'red'},{n:10,c:'black'},{n:5,c:'red'},
+  {n:24,c:'black'},{n:16,c:'red'},{n:33,c:'black'},{n:1,c:'red'},{n:20,c:'black'},
+  {n:14,c:'red'},{n:31,c:'black'},{n:9,c:'red'},{n:22,c:'black'},{n:18,c:'red'},
+  {n:29,c:'black'},{n:7,c:'red'},{n:28,c:'black'},{n:12,c:'red'},{n:35,c:'black'},
+  {n:3,c:'red'},{n:26,c:'black'}
+];
+const N = NUMS.length;
+const SLICE = (Math.PI*2) / N;
+
+let userData = null;
+let selBetType = null;
+let spinning = false;
+let wheelAngle = 0;
+let ballAngle = 0;
+let ballRadius = 118; // starts near edge
+let animReq = null;
+
+// ── TOAST ──
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── API ──
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+async function loadUser(){
+  if(!UID)return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  if(userData) document.getElementById('r-bal').textContent = userData.balance??0;
+}
+
+// ── DRAW WHEEL ──
+function drawWheel(angle){
+  const canvas = document.getElementById('wheel-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, r = W/2 - 2;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Outer dark border
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.fillStyle='#0a0812';ctx.fill();
+
+  // Draw sectors
+  for(let i=0;i<N;i++){
+    const startA = angle + i*SLICE - Math.PI/2;
+    const endA   = startA + SLICE;
+    const {n,c} = NUMS[i];
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r-2,startA,endA);
+    ctx.closePath();
+
+    // Sector fill
+    if(c==='red')       ctx.fillStyle='#c0131e';
+    else if(c==='black') ctx.fillStyle='#151520';
+    else                 ctx.fillStyle='#0d7040';
+    ctx.fill();
+
+    // Sector border
+    ctx.strokeStyle='rgba(0,0,0,0.6)';ctx.lineWidth=1;
+    ctx.stroke();
+
+    // Number
+    const ma = startA + SLICE/2;
+    const tr = r*0.76;
+    ctx.save();
+    ctx.translate(cx + Math.cos(ma)*tr, cy + Math.sin(ma)*tr);
+    ctx.rotate(ma + Math.PI/2);
+    ctx.fillStyle='#fff';
+    ctx.font = n===0 ? 'bold 10px Orbitron,monospace' : 'bold 9px Orbitron,monospace';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=3;
+    ctx.fillText(n,0,0);
+    ctx.restore();
+
+    // Divider line at sector edge
+    ctx.save();
+    ctx.strokeStyle='rgba(245,197,66,0.3)';ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(startA)*(r*0.55), cy + Math.sin(startA)*(r*0.55));
+    ctx.lineTo(cx + Math.cos(startA)*(r-2), cy + Math.sin(startA)*(r-2));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Outer gold ring
+  ctx.beginPath();ctx.arc(cx,cy,r-1,0,Math.PI*2);
+  ctx.strokeStyle='rgba(245,197,66,0.5)';ctx.lineWidth=2;ctx.stroke();
+
+  // Inner circle (hub)
+  const hubR = r*0.14;
+  const hubGrad = ctx.createRadialGradient(cx,cy,0,cx,cy,hubR);
+  hubGrad.addColorStop(0,'#f5c542');
+  hubGrad.addColorStop(0.5,'#b8860b');
+  hubGrad.addColorStop(1,'#4a3500');
+  ctx.beginPath();ctx.arc(cx,cy,hubR,0,Math.PI*2);
+  ctx.fillStyle=hubGrad;ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1;ctx.stroke();
+
+  // Hub shine dot
+  ctx.beginPath();ctx.arc(cx - hubR*0.25, cy - hubR*0.3, hubR*0.2, 0, Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.fill();
+
+  // Spokes
+  for(let i=0;i<12;i++){
+    const a = angle + i*Math.PI/6;
+    ctx.save();
+    ctx.strokeStyle='rgba(180,130,0,0.25)';ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a)*hubR*1.4, cy + Math.sin(a)*hubR*1.4);
+    ctx.lineTo(cx + Math.cos(a)*(r*0.55), cy + Math.sin(a)*(r*0.55));
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ── DRAW BALL ──
+function drawBall(ballA, ballR){
+  const canvas = document.getElementById('ball-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+
+  ctx.clearRect(0,0,W,H);
+
+  const bx = cx + Math.cos(ballA) * ballR;
+  const by = cy + Math.sin(ballA) * ballR;
+  const br = 7;
+
+  // Shadow
+  ctx.beginPath();ctx.arc(bx+1,by+1,br,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fill();
+
+  // Ball
+  const grad = ctx.createRadialGradient(bx-br*0.3, by-br*0.3, 1, bx, by, br);
+  grad.addColorStop(0,'#ffffff');
+  grad.addColorStop(0.4,'#e0e0e8');
+  grad.addColorStop(1,'#a0a0b0');
+  ctx.beginPath();ctx.arc(bx,by,br,0,Math.PI*2);
+  ctx.fillStyle=grad;ctx.fill();
+
+  // Shine
+  ctx.beginPath();ctx.arc(bx-br*0.3,by-br*0.35,br*0.25,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fill();
+}
+
+// ── IDLE ANIMATION (slow wheel rotation) ──
+let idleAngle = 0;
+let idleReq = null;
+function startIdleAnim(){
+  if(spinning) return;
+  function frame(){
+    idleAngle += 0.002;
+    drawWheel(idleAngle);
+    idleReq = requestAnimationFrame(frame);
+  }
+  idleReq = requestAnimationFrame(frame);
+}
+function stopIdleAnim(){
+  if(idleReq){cancelAnimationFrame(idleReq);idleReq=null;}
+}
+
+// ── BET CONTROLS ──
+function selBet(el){
+  document.querySelectorAll('.bt').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  selBetType = el.dataset.bet;
+}
+function sb(v){document.getElementById('bet-inp').value=v;}
+function sbAll(){document.getElementById('bet-inp').value=userData?.balance||0;}
+function sbHalf(){document.getElementById('bet-inp').value=Math.max(1,Math.floor((userData?.balance||0)/2));}
+
+// ── SPIN ──
+async function spinEuro(){
+  if(spinning) return;
+  if(!selBetType){toast('Выберите ставку!','err');return;}
+  const bet = parseInt(document.getElementById('bet-inp').value)||0;
+  if(bet<1){toast('Введите ставку!','err');return;}
+  if(bet>(userData?.balance||0)){toast('Недостаточно монет!','err');return;}
+
+  spinning = true;
+  stopIdleAnim();
+  document.getElementById('spin-btn').disabled = true;
+  const rb = document.getElementById('res-box');
+  rb.className='res-box'; rb.textContent='🎰 Крутим...';
+  document.getElementById('res-num').textContent='—';
+  document.getElementById('res-num').style.color='var(--muted)';
+  document.getElementById('res-lbl').textContent='';
+
+  const res = await post('/api/spin',{user_id:UID,bet,bet_type:selBetType}).catch(()=>null);
+  if(!res||res.error){
+    toast(res?.error||'Ошибка сервера','err');
+    spinning=false;document.getElementById('spin-btn').disabled=false;
+    startIdleAnim();
+    return;
+  }
+
+  // Calculate target angle for winning number
+  const targetIdx = res.result_index;
+
+  // Wheel spins clockwise ~8 full rotations, ball counter-clockwise
+  const wheelSpins = 8;
+  const totalWheelDelta = wheelSpins * Math.PI*2;
+
+  // Ball: starts at edge (r=118), spirals inward to pocket
+  const ballSpins = 12; // ball spins more than wheel
+  const SPIN_DURATION = 5500;
+
+  const startWheelAngle = idleAngle;
+  // The winning number should be under the pointer (top = -PI/2)
+  // Pointer is at -PI/2. Sector i starts at angle + i*SLICE - PI/2
+  // We want: finalWheelAngle + targetIdx*SLICE - PI/2 = -PI/2
+  // finalWheelAngle = -targetIdx*SLICE
+  const rawTargetWheel = -targetIdx*SLICE;
+  const finalWheelAngle = startWheelAngle - totalWheelDelta + ((rawTargetWheel - startWheelAngle + totalWheelDelta) % (Math.PI*2));
+
+  const startBallAngle = -Math.PI/2 + 0.3; // near top
+  const startBallR = 118;
+  const CVSW = document.getElementById('wheel-canvas').width;
+  const finalBallR = CVSW * 0.34; // rests in pocket ring
+
+  const t0 = performance.now();
+
+  function easeOut(t){
+    return 1 - Math.pow(1-t, 4);
+  }
+
+  function animFrame(now){
+    const elapsed = now - t0;
+    const t = Math.min(1, elapsed / SPIN_DURATION);
+    const eT = easeOut(t);
+
+    // Wheel rotates clockwise, eases into final position
+    const wA = startWheelAngle - totalWheelDelta * eT + (finalWheelAngle - startWheelAngle + totalWheelDelta) * eT;
+
+    // Ball: counter-clockwise, starts fast, slows, drops inward
+    const ballEase = 1 - Math.pow(1-t, 3.5);
+    const bA = startBallAngle - (ballSpins * Math.PI*2) * ballEase;
+
+    // Ball radius: stays at edge until 70%, then drops inward
+    let bR;
+    if(t < 0.7){
+      bR = startBallR;
+    } else {
+      const dropT = (t-0.7)/0.3;
+      const fr = finalBallR;
+      bR = startBallR + (fr - startBallR) * ((dropT<0.5?2*dropT*dropT:1-Math.pow(-2*dropT+2,3)/2));
+      // Small wobble as it settles
+      if(t>0.85){
+        bR += Math.sin((t-0.85)*80) * (1-t) * 5;
+      }
+    }
+
+    drawWheel(wA);
+    drawBall(bA, bR);
+
+    if(t < 1){
+      animReq = requestAnimationFrame(animFrame);
+    } else {
+      // Done
+      idleAngle = wA % (Math.PI*2);
+      ballAngle = bA;
+      ballRadius = finalBallR;
+
+      // Show final state
+      drawWheel(idleAngle);
+      drawBall(ballAngle, ballRadius);
+
+      // Update UI
+      const ico = res.result_c==='green'?'🟢':res.result_c==='red'?'🔴':'⚫';
+      const numEl = document.getElementById('res-num');
+      numEl.textContent = res.result_n;
+      numEl.className = 'result-number ' + res.result_c;
+      document.getElementById('res-lbl').textContent = res.won ? '🎉 Выигрыш!' : '😢 Проигрыш';
+
+      if(res.won){
+        rb.className='res-box win';
+        rb.textContent=`${ico} ${res.result_n} — Выигрыш! +${res.gain} 🪙`;
+        toast(`+${res.gain} монет! 🎉`,'ok');
+      } else {
+        rb.className='res-box lose';
+        rb.textContent=`${ico} ${res.result_n} — Проигрыш -${bet} 🪙`;
+        toast(`-${bet} монет 😢`,'err');
+      }
+      if(userData) userData.balance = res.new_balance;
+      document.getElementById('r-bal').textContent = res.new_balance ?? 0;
+
+      spinning = false;
+      document.getElementById('spin-btn').disabled = false;
+
+      // After 2s, ball disappears and idle starts again
+      setTimeout(()=>{
+        const bc = document.getElementById('ball-canvas');
+        bc.getContext('2d').clearRect(0,0,bc.width,bc.height);
+        startIdleAnim();
+      }, 2000);
+    }
+  }
+
+  animReq = requestAnimationFrame(animFrame);
+}
+
+// Init
+loadUser();
+drawWheel(0);
+startIdleAnim();
+</script>
+</body>
+</html>

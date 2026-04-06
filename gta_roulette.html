@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>GTA Рулетка — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+.page-content{padding:0 0 24px;}
+
+.gta-hero{
+  background:linear-gradient(135deg,#0f0f1e,#1a0a2e,#0a0f1e);
+  padding:20px 16px;
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.gta-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(123,47,255,0.12) 0%, transparent 70%);
+  pointer-events:none;
+}
+
+.gta-pot-block{text-align:center;margin-bottom:14px;position:relative;}
+.gta-pot-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.gta-pot{font-family:'Orbitron',monospace;font-size:40px;color:var(--gold);font-weight:900;
+  text-shadow:0 0 30px rgba(245,197,66,.5),0 0 60px rgba(245,197,66,.2);}
+.gta-pot-coin{font-size:14px;color:var(--muted);}
+
+.gta-wheel-outer{position:relative;width:240px;height:240px;margin:0 auto 16px;}
+.gta-canvas{border-radius:50%;position:absolute;top:0;left:0;display:block;}
+
+.timer-wrap{background:rgba(255,255,255,.04);border-radius:6px;height:5px;
+  overflow:hidden;margin-bottom:10px;border:1px solid var(--border);}
+.timer-bar{height:100%;background:linear-gradient(90deg,#e63946,#f5c542,#2dc653);
+  border-radius:6px;transition:width .8s linear;box-shadow:0 0 8px rgba(245,197,66,.4);}
+
+.gta-status{text-align:center;font-size:13px;color:var(--muted);
+  padding:10px 14px;background:rgba(255,255,255,.03);border-radius:12px;
+  border:1px solid var(--border);line-height:1.5;margin-bottom:0;}
+
+.gta-section{padding:16px;}
+
+.gta-players{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.gp-row{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  background:rgba(255,255,255,.03);border-radius:12px;border:1px solid transparent;
+  transition:border-color .3s;backdrop-filter:blur(8px);}
+.gp-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.gp-name{flex:1;font-weight:600;font-size:14px;}
+.gp-right{text-align:right;}
+.gp-bet{font-family:'Orbitron',monospace;color:var(--gold);font-size:12px;font-weight:700;}
+.gp-pct{font-size:11px;color:var(--muted);margin-top:2px;}
+
+.bet-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.bet-lbl{color:var(--muted);font-size:13px;white-space:nowrap;font-weight:600;}
+.bet-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:16px;
+  outline:none;text-align:center;width:0;}
+.bet-inp:focus{border-color:var(--gold);}
+
+.qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.qb{background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:6px 12px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
+  transition:all .15s;font-family:'Orbitron',monospace;}
+.qb:active{background:var(--gold);color:#000;border-color:var(--gold);}
+
+.gta-bet-btn{width:100%;padding:16px;background:linear-gradient(135deg,#7b2fff,#4361ee);
+  border:none;border-radius:16px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:15px;font-weight:700;cursor:pointer;letter-spacing:1px;
+  box-shadow:0 6px 24px rgba(124,47,255,.4);transition:transform .15s,box-shadow .2s;}
+.gta-bet-btn:active{transform:scale(.97);}
+.gta-bet-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+.info-row{display:flex;justify-content:space-between;
+  font-size:13px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.info-row:last-child{border:none;}
+.info-l{color:var(--muted);}
+.info-r{color:var(--text);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- Header -->
+<div class="topbar">
+  <button class="fp-back" onclick="history.back()">‹</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:20px">🏙</span>
+    <span class="fp-title">GTA RP РУЛЕТКА</span>
+  </div>
+  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+</div>
+
+<div class="page-content">
+
+  <!-- Hero / Wheel -->
+  <div class="gta-hero">
+    <div class="gta-pot-block">
+      <div class="gta-pot-lbl">Банк</div>
+      <div class="gta-pot" id="gta-pot">0</div>
+      <div class="gta-pot-coin">монет в банке 🪙</div>
+    </div>
+
+    <div class="gta-wheel-outer">
+      <canvas class="gta-canvas" id="gta-canvas" width="240" height="240"></canvas>
+    </div>
+
+    <div class="timer-wrap" id="t-wrap" style="display:none">
+      <div class="timer-bar" id="t-bar" style="width:100%"></div>
+    </div>
+    <div class="gta-status" id="gta-status">Ожидаем игроков...</div>
+  </div>
+
+  <!-- Bet / Players section -->
+  <div class="gta-section">
+
+    <div class="gta-players" id="gta-players"></div>
+
+    <div class="bet-row">
+      <span class="bet-lbl">Ставка:</span>
+      <input class="bet-inp" id="gta-inp" type="number" min="1" value="10" inputmode="numeric">
+    </div>
+    <div class="qb-row">
+      <div class="qb" onclick="sgb(10)">10</div>
+      <div class="qb" onclick="sgb(50)">50</div>
+      <div class="qb" onclick="sgb(100)">100</div>
+      <div class="qb" onclick="sgbAll()">ВСЁ</div>
+    </div>
+    <button class="gta-bet-btn" id="gta-btn" onclick="placeGtaBet()">🎲 ПОСТАВИТЬ</button>
+
+    <!-- Rules -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-head">📋 Правила</div>
+      <div class="card-body">
+        <div class="info-row"><span class="info-l">Мин. игроков</span><span class="info-r">2</span></div>
+        <div class="info-row"><span class="info-l">Комиссия казино</span><span class="info-r">3–8%</span></div>
+        <div class="info-row"><span class="info-l">Твой шанс</span><span class="info-r" id="your-chance">—</span></div>
+        <div class="info-row"><span class="info-l">Обратный отсчёт</span><span class="info-r">15 сек</span></div>
+        <div class="info-row"><span class="info-l">Победитель</span><span class="info-r">1 игрок</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID = tg?.initDataUnsafe?.user?.id || 0;
+const GTA_COLORS = ['#e63946','#2dc653','#4cc9f0','#f5c542','#7b2fff','#ff9f1c','#e9c46a','#2a9d8f'];
+
+let userData = null;
+let gtaLobbyId = null;
+let gtaPollTimer = null;
+let gtaTimerInterval = null;
+let gtaDeadline = 0;
+let gtaSpinAnim = null;
+let gtaAngleOffset = 0;
+let lastLobbyStatus = null;
+
+// ── TOAST ──
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── API ──
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+async function loadUser(){
+  if(!UID)return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  if(userData) document.getElementById('r-bal').textContent = userData.balance??0;
+}
+
+// ── BET ──
+function sgb(v){document.getElementById('gta-inp').value=v;}
+function sgbAll(){document.getElementById('gta-inp').value=userData?.balance||0;}
+
+// ── WHEEL DRAW ──
+function drawWheelShine(ctx,cx,cy,r){
+  const grad=ctx.createRadialGradient(cx-r*0.3,cy-r*0.3,r*0.05,cx,cy,r);
+  grad.addColorStop(0,'rgba(255,255,255,0.18)');
+  grad.addColorStop(0.35,'rgba(255,255,255,0.04)');
+  grad.addColorStop(1,'rgba(0,0,0,0.2)');
+  ctx.fillStyle=grad;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+  const sg=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy-r*0.2);
+  sg.addColorStop(0,'rgba(255,255,255,0)');
+  sg.addColorStop(0.4,'rgba(255,255,255,0.1)');
+  sg.addColorStop(0.6,'rgba(255,255,255,0.1)');
+  sg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=sg;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+}
+
+function drawWheelCenter(ctx,cx,cy,r){
+  const cR=r*0.2;
+  ctx.strokeStyle='rgba(245,197,66,0.5)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  const g=ctx.createRadialGradient(cx-cR*0.4,cy-cR*0.4,cR*0.1,cx,cy,cR);
+  g.addColorStop(0,'#4a4a6a');g.addColorStop(0.6,'#1e1e32');g.addColorStop(1,'#0e0e1e');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,cR,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(245,197,66,0.4)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx,cy,cR,0,Math.PI*2);ctx.stroke();
+  ctx.font=`${Math.round(cR*1.1)}px serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🎰',cx,cy+1);
+}
+
+function drawPointer(ctx,cx,cy,r){
+  const tipY=cy-r+1, baseY=tipY-20, hw=12;
+  ctx.save();
+  ctx.shadowColor='rgba(255,255,255,0.9)';ctx.shadowBlur=16;
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(cx,tipY);ctx.lineTo(cx-hw,baseY);ctx.lineTo(cx+hw,baseY);
+  ctx.closePath();ctx.fill();
+  ctx.shadowBlur=0;ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=1;ctx.stroke();
+  ctx.restore();
+}
+
+function drawGtaWheel(players, total, winnerId, off){
+  const canvas=document.getElementById('gta-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=W/2-8;
+  ctx.clearRect(0,0,W,H);
+
+  ctx.save();
+  ctx.shadowColor='rgba(100,60,200,0.3)';ctx.shadowBlur=20;
+  ctx.fillStyle='#080812';
+  ctx.beginPath();ctx.arc(cx,cy,r+5,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+
+  if(!players.length){
+    ctx.fillStyle='#1a1a2e';
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#6060a0';ctx.font='13px Rajdhani,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('Нет ставок',cx,cy);
+    drawPointer(ctx,cx,cy,r);return;
+  }
+
+  let a=-Math.PI/2+(off||0);
+  players.forEach((p,i)=>{
+    const sl=p.amount/total*Math.PI*2;
+    const isW=winnerId&&String(p.uid)===String(winnerId);
+    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.stroke();
+    if(isW){
+      ctx.save();ctx.globalAlpha=0.22;ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
+      ctx.globalAlpha=1;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=3;
+      ctx.shadowColor='rgba(255,255,255,.6)';ctx.shadowBlur=14;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-1,a,a+sl);ctx.closePath();ctx.stroke();
+      ctx.restore();
+    }
+    if(sl>0.25){
+      const ma=a+sl/2;
+      ctx.save();ctx.fillStyle='rgba(255,255,255,0.9)';
+      ctx.font='bold 11px Rajdhani,sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=4;
+      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*0.62),cy+Math.sin(ma)*(r*0.62));
+      ctx.restore();
+    }
+    a+=sl;
+  });
+
+  drawWheelShine(ctx,cx,cy,r);
+  drawWheelCenter(ctx,cx,cy,r);
+  drawPointer(ctx,cx,cy,r);
+}
+
+function calcWinnerAngle(players, total, winnerId){
+  let a=0;
+  for(let i=0;i<players.length;i++){
+    const sl=players[i].amount/total*Math.PI*2;
+    if(String(players[i].uid)===String(winnerId)){
+      const seed=(parseInt(String(winnerId).slice(-4))||1234)%1000;
+      const frac=(seed/1000)*0.7+0.15;
+      const target=a+sl*frac;
+      return ((-target)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+    }
+    a+=sl;
+  }
+  return 0;
+}
+
+function startFreeSpinning(players, total){
+  if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
+  const ACCEL=800, SPEED=0.16;
+  const t0=performance.now();
+  function frame(now){
+    const e=now-t0;
+    const spd=e<ACCEL?SPEED*(e/ACCEL)*(e/ACCEL):SPEED;
+    gtaAngleOffset=(gtaAngleOffset+spd)%(Math.PI*2);
+    drawGtaWheel(players,total,null,gtaAngleOffset);
+    gtaSpinAnim=requestAnimationFrame(frame);
+  }
+  gtaSpinAnim=requestAnimationFrame(frame);
+}
+
+function spinAndStop(players, total, finalAngle, onDone){
+  if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
+  const START=gtaAngleOffset;
+  const EXTRA=(5+Math.floor((parseInt(String(finalAngle*1000|0).slice(-1))||3)))*Math.PI*2;
+  const delta=((finalAngle-START)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  const safeDelta=delta<0.3?delta+Math.PI*2:delta;
+  const TARGET=START+EXTRA+safeDelta;
+  const DURATION=5500;
+  const t0=performance.now();
+  function ease(t){
+    if(t<0.05)return t*0.8;
+    const u=(t-0.05)/0.95;
+    return 0.04+0.96*(1-Math.pow(1-u,4.5));
+  }
+  function frame(now){
+    const t=Math.min((now-t0)/DURATION,1);
+    gtaAngleOffset=START+(TARGET-START)*ease(t);
+    if(t<1){
+      drawGtaWheel(players,total,null,gtaAngleOffset);
+      gtaSpinAnim=requestAnimationFrame(frame);
+    } else {
+      gtaAngleOffset=TARGET%(Math.PI*2);
+      drawGtaWheel(players,total,null,gtaAngleOffset);
+      gtaSpinAnim=null;
+      if(onDone)onDone();
+    }
+  }
+  gtaSpinAnim=requestAnimationFrame(frame);
+}
+
+function renderPlayers(players, total, winnerId){
+  const pl=document.getElementById('gta-players');
+  if(!players.length){
+    pl.innerHTML='<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">Ждём ставок...</div>';
+    document.getElementById('your-chance').textContent='—';
+    return;
+  }
+  const sorted=[...players].sort((a,b)=>b.amount-a.amount);
+  let yourPct = 0;
+  pl.innerHTML=sorted.map(p=>{
+    const pct=Math.round(p.amount/total*100);
+    const barW=Math.max(4,pct);
+    const you=p.uid==UID;
+    const isWinner=winnerId&&p.uid==winnerId;
+    const color=GTA_COLORS[players.indexOf(p)%GTA_COLORS.length];
+    if(you) yourPct=pct;
+    const borderStyle=isWinner?'border-color:var(--gold);background:rgba(245,197,66,.08);':you?`border-color:${color}33;`:'';
+    return `<div class="gp-row" style="${borderStyle}">
+      <div class="gp-dot" style="background:${color};box-shadow:0 0 8px ${color}88"></div>
+      <div class="gp-name">${p.name}${you?' <span style="color:var(--muted);font-size:11px">(вы)</span>':''}${isWinner?' 🏆':''}</div>
+      <div class="gp-right">
+        <div class="gp-bet">${p.amount} 🪙</div>
+        <div class="gp-pct" style="color:${color}">${pct}% шанс</div>
+      </div>
+    </div>
+    <div style="height:3px;background:var(--bg);border-radius:2px;margin:-2px 14px 6px;overflow:hidden">
+      <div style="height:100%;width:${barW}%;background:${color};border-radius:2px;opacity:.6;transition:width .5s"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('your-chance').textContent = yourPct ? yourPct+'%' : '—';
+}
+
+// ── GTA POLL ──
+function startGtaPoll(){
+  clearTimeout(gtaPollTimer);gtaPollTimer=null;
+  pollGta();
+}
+
+async function pollGta(){
+  try {
+    if(!gtaLobbyId){
+      const d=await get('/api/gta/lobby');
+      if(d&&d.lobby){gtaLobbyId=d.lobby.id;renderGta(d.lobby,d.bets);}
+      else{drawGtaWheel([],1,null,0);}
+    } else {
+      const d=await get(`/api/gta/status/${gtaLobbyId}`);
+      if(!d||d.error){gtaLobbyId=null;drawGtaWheel([],1,null,0);}
+      else{
+        renderGta(d.lobby,d.bets);
+        if(d.lobby.status==='done')return;
+      }
+    }
+  }catch(e){}
+  gtaPollTimer=setTimeout(pollGta,2000);
+}
+
+async function placeGtaBet(){
+  const amount=parseInt(document.getElementById('gta-inp').value)||0;
+  if(amount<1){toast('Введите ставку!','err');return;}
+  await loadUser();
+  if(amount>(userData?.balance||0)){toast('Недостаточно монет!','err');return;}
+  document.getElementById('gta-btn').disabled=true;
+  const res=await post('/api/gta/bet',{user_id:UID,amount}).catch(()=>null);
+  document.getElementById('gta-btn').disabled=false;
+  if(!res||res.error){toast(res?.error||'Ошибка','err');return;}
+  toast(`Ставка ${amount} монет принята!`,'ok');
+  if(userData)userData.balance=res.new_balance;
+  document.getElementById('r-bal').textContent=res.new_balance??0;
+  gtaLobbyId=res.lobby_id;
+  if(res.deadline)gtaDeadline=res.deadline*1000;
+  if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+  clearTimeout(gtaPollTimer);gtaPollTimer=null;
+  pollGta();
+}
+
+function renderGta(lobby, bets){
+  document.getElementById('gta-pot').textContent=lobby.pot||0;
+  const byUser={};
+  bets.forEach(b=>{
+    const safeName=(b.player_name||`ID${b.user_id}`)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if(!byUser[b.user_id])byUser[b.user_id]={uid:b.user_id,name:safeName,amount:0};
+    byUser[b.user_id].amount+=b.amount;
+  });
+  const players=Object.values(byUser);
+  const total=players.reduce((s,p)=>s+p.amount,0)||1;
+  const prevStatus=lastLobbyStatus;
+  const statusChanged=prevStatus!==lobby.status;
+  lastLobbyStatus=lobby.status;
+  const st=document.getElementById('gta-status');
+  const tw=document.getElementById('t-wrap');
+
+  if(lobby.status==='done'){
+    if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+    tw.style.display='none';
+    if(statusChanged||(!gtaSpinAnim&&prevStatus==='spinning')){
+      if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
+      st.textContent='🎰 Определяем победителя...';
+      const finalAngle=calcWinnerAngle(players,total,lobby.winner_id);
+      spinAndStop(players,total,finalAngle,()=>{
+        drawGtaWheel(players,total,lobby.winner_id,gtaAngleOffset);
+        st.innerHTML='🏆 Победитель определён! Перезапуск через <b id="rc">5</b> сек...';
+        renderPlayers(players,total,lobby.winner_id);
+        loadUser();
+        let cnt=5;
+        const iv=setInterval(()=>{
+          cnt--;
+          const el=document.getElementById('rc');
+          if(el)el.textContent=cnt;
+          if(cnt<=0){
+            clearInterval(iv);
+            gtaLobbyId=null;lastLobbyStatus=null;gtaAngleOffset=0;
+            clearTimeout(gtaPollTimer);gtaPollTimer=null;
+            pollGta();
+          }
+        },1000);
+      });
+    }
+    return;
+  }
+
+  if(lobby.status==='spinning'){
+    if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+    tw.style.display='none';
+    st.textContent='🎰 Колесо крутится!';
+    if(!gtaSpinAnim)startFreeSpinning(players,total);
+    renderPlayers(players,total,null);
+    return;
+  }
+
+  if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;gtaAngleOffset=0;}
+  drawGtaWheel(players,total,null,0);
+  renderPlayers(players,total,null);
+
+  if(players.length>=2){
+    tw.style.display='block';
+    const deadline=(lobby.deadline&&lobby.deadline>Date.now()/1000)
+      ?lobby.deadline*1000:(gtaDeadline||Date.now()+15000);
+    if(statusChanged||!gtaTimerInterval){
+      if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      gtaTimerInterval=setInterval(()=>{
+        const now=Date.now();
+        const rem=Math.max(0,Math.ceil((deadline-now)/1000));
+        const pct=Math.max(0,Math.min(100,(deadline-now)/15000*100));
+        document.getElementById('t-bar').style.width=pct+'%';
+        st.textContent=`⏳ Розыгрыш через ${rem} сек...`;
+        if(rem<=0){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      },200);
+    }
+  } else {
+    tw.style.display='none';
+    if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+    st.textContent=`👥 Ждём ещё игроков (${players.length}/2)`;
+  }
+}
+
+// Init
+loadUser();
+drawGtaWheel([],1,null,0);
+startGtaPoll();
+</script>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck Casino</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── PAGES ── */
+.page{display:none;min-height:calc(100vh - var(--nav-h));}
+.page.active{display:block;}
+
+/* ── HOME ── */
+.home-content{padding:0 16px 24px;}
+.hero{
+  background:linear-gradient(135deg,#0d0d1e,#160a2e,#0a1020);
+  padding:32px 20px 28px;text-align:center;
+  margin:-0px -16px 16px;
+  position:relative;overflow:hidden;
+}
+.hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(245,197,66,.1),transparent 70%);}
+.hero-logo{
+  width:68px;height:68px;border-radius:18px;margin:0 auto 14px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 30px rgba(245,197,66,.15);
+}
+.hero-logo img{width:48px;height:48px;object-fit:contain;}
+.hero h1{
+  font-family:'Orbitron',monospace;font-size:28px;font-weight:900;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold) 40%,#fff 60%,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:6px;position:relative;
+}
+.hero p{color:var(--muted);font-size:13px;line-height:1.5;position:relative;}
+
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.sc{
+  background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;
+  padding:14px;text-align:center;backdrop-filter:blur(12px);position:relative;
+}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);}
+.sc-ico{font-size:22px;margin-bottom:4px;}
+.sc-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.sc-val{font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700;}
+
+.topup-btn{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:15px;background:linear-gradient(135deg,#7b2fff,#4361ee);
+  border:none;border-radius:16px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;margin-bottom:14px;
+  box-shadow:0 4px 20px rgba(124,47,255,.3);transition:transform .1s;}
+.topup-btn:active{transform:scale(.98);}
+
+.irow{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.irow:last-child{border-bottom:none;}
+.irow-l{color:var(--muted);font-size:14px;}
+.irow-r{color:var(--text);font-weight:600;}
+
+/* ── ROULETTE PAGE (card links) ── */
+.roulette-content{padding:16px;}
+.rp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+
+.game-card{
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:20px;overflow:hidden;margin-bottom:14px;
+  backdrop-filter:blur(12px);cursor:pointer;
+  transition:border-color .2s,transform .15s;
+  text-decoration:none;display:block;
+  position:relative;
+}
+.game-card:active{transform:scale(.98);}
+.game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);}
+.gc-banner{
+  height:120px;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.gc-banner.euro{background:linear-gradient(135deg,#0d1a0a,#0a2010,#0d2808);}
+.gc-banner.gta{background:linear-gradient(135deg,#0a0a20,#160820,#1a0830);}
+.gc-preview{font-size:64px;position:relative;z-index:1;
+  filter:drop-shadow(0 0 20px rgba(255,255,255,.2));}
+.gc-glow-euro{position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 50%,rgba(45,198,83,.12),transparent 70%);}
+.gc-glow-gta{position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 50%,rgba(123,47,255,.12),transparent 70%);}
+.gc-info{padding:16px 18px;}
+.gc-title{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;
+  color:var(--text);margin-bottom:5px;}
+.gc-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px;}
+.gc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.gc-tag{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;padding:4px 9px;font-size:11px;color:var(--muted);font-weight:600;}
+.gc-arrow{position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  color:var(--gold);font-size:22px;opacity:.6;}
+
+/* ── HISTORY ── */
+.hist-content{padding:16px;}
+.filt{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;}
+.fb{flex-shrink:0;padding:9px 14px;background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:10px;color:var(--muted);font-weight:700;font-size:12px;
+  cursor:pointer;transition:all .2s;backdrop-filter:blur(8px);}
+.fb.a{background:var(--gold);color:#000;border-color:var(--gold);}
+.hstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.hs{background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:14px;padding:14px;text-align:center;backdrop-filter:blur(8px);}
+.hs-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.hs-v{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;}
+.hs-v.gr{color:var(--green);}.hs-v.re{color:var(--red);}
+.hi{display:flex;align-items:center;gap:12px;background:var(--glass-bg);
+  border:1px solid var(--glass-border);border-radius:14px;padding:12px 14px;margin-bottom:8px;
+  backdrop-filter:blur(8px);}
+.hi-ic{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0;}
+.hi-ic.win{background:rgba(45,198,83,.15);}
+.hi-ic.lose{background:rgba(230,57,70,.15);}
+.hi-ic.deposit,.hi-ic.ref{background:rgba(76,201,240,.15);}
+.hi-b{flex:1;}
+.hi-t{font-weight:600;font-size:14px;}
+.hi-s{font-size:12px;color:var(--muted);margin-top:2px;}
+.hi-a{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;}
+.hi-a.p{color:var(--green);}.hi-a.n{color:var(--red);}
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-i{font-size:48px;margin-bottom:12px;}
+
+/* ── PROFILE ── */
+.profile-content{padding:16px;}
+.profile-hero{
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:20px;padding:24px 20px;text-align:center;
+  backdrop-filter:blur(16px);margin-bottom:16px;position:relative;overflow:hidden;
+}
+.profile-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(245,197,66,.06),transparent);}
+.profile-avatar{
+  width:72px;height:72px;border-radius:50%;margin:0 auto 12px;
+  background:linear-gradient(135deg,var(--purple),#4361ee);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:700;color:#fff;
+  box-shadow:0 0 20px rgba(123,47,255,.3);
+}
+.profile-name{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;margin-bottom:4px;}
+.profile-id{font-size:12px;color:var(--muted);}
+
+/* ── NAV OVERRIDE for 5 tabs ── */
+.nav-ind{width:20%;}
+
+/* ── TOPUP MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  display:none;align-items:flex-end;}
+.ov.open{display:flex;}
+.modal{background:var(--bg2);border-radius:24px 24px 0 0;border-top:1px solid var(--border);
+  padding:20px 20px calc(var(--nav-h) + 16px);width:100%;max-height:80vh;overflow-y:auto;
+  animation:su .3s ease;}
+@keyframes su{from{transform:translateY(100%)}}
+.mh{width:40px;height:4px;background:var(--muted);border-radius:2px;margin:0 auto 16px;}
+.mt{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);
+  margin-bottom:16px;text-align:center;}
+.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.ta{padding:18px;background:var(--card);border:2px solid var(--border);border-radius:14px;
+  text-align:center;cursor:pointer;transition:all .2s;}
+.ta.sel{border-color:var(--gold);}
+.ta-c{font-family:'Orbitron',monospace;font-size:20px;color:var(--gold);font-weight:700;}
+.ta-s{font-size:13px;color:var(--muted);margin-top:4px;}
+.ta-confirm{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:15px;font-weight:700;cursor:pointer;}
+@keyframes spin-once{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ HOME ═══════════ -->
+<div class="page active" id="page-home">
+  <div class="home-content">
+    <div class="hero">
+      <div class="hero-logo">
+        <img src="logo.png" alt="TopLuck" onerror="this.parentNode.innerHTML='🍀'">
+      </div>
+      <h1>TOPLUCK</h1>
+      <p>Добро пожаловать! Испытай удачу.</p>
+    </div>
+
+    <div class="sgrid">
+      <div class="sc"><div class="sc-ico">🪙</div><div class="sc-lbl">Баланс</div><div class="sc-val" id="h-bal">—</div></div>
+      <div class="sc"><div class="sc-ico">🎲</div><div class="sc-lbl">Игр</div><div class="sc-val" id="h-spins">—</div></div>
+      <div class="sc"><div class="sc-ico">🏆</div><div class="sc-lbl">Побед</div><div class="sc-val" id="h-wins">—</div></div>
+      <div class="sc"><div class="sc-ico">📈</div><div class="sc-lbl">Выиграно</div><div class="sc-val" id="h-won">—</div></div>
+    </div>
+
+    <button class="topup-btn" onclick="openTopup()">
+      <span style="font-size:20px">⭐</span> Пополнить баланс (1 монета = 1 Star)
+    </button>
+
+    <div class="card">
+      <div class="card-head">💰 Выплаты рулетки</div>
+      <div class="card-body">
+        <div class="irow"><span class="irow-l">🔴 Красное / ⚫ Чёрное</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+        <div class="irow"><span class="irow-l">Чёт / Нечёт · 1–18 / 19–36</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+        <div class="irow"><span class="irow-l">Дюжина (1–12 / 13–24)</span><span class="irow-r" style="color:var(--gold)">×3</span></div>
+        <div class="irow"><span class="irow-l">🟢 Зеро</span><span class="irow-r" style="color:var(--gold)">×14</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">🔗 Реферальная программа</div>
+      <div class="card-body">
+        <div class="irow"><span class="irow-l">За каждого приглашённого</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
+        <button onclick="copyRef()" style="margin-top:10px;width:100%;padding:11px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать ссылку</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ROULETTE ═══════════ -->
+<div class="page" id="page-roulette">
+  <div class="roulette-content">
+    <div class="rp-header">
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">🎰 ИГРЫ</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button id="refresh-btn" onclick="refreshBalance()"
+          style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;
+            width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+            cursor:pointer;color:var(--muted);font-size:16px;backdrop-filter:blur(8px);">↻</button>
+        <div class="bal-chip">🪙 <span id="r-bal">0</span></div>
+      </div>
+    </div>
+
+    <!-- European Roulette -->
+    <a class="game-card" href="european_roulette.html">
+      <div class="gc-banner euro">
+        <div class="gc-glow-euro"></div>
+        <div class="gc-preview">🎰</div>
+      </div>
+      <div class="gc-info">
+        <div class="gc-title">Европейская рулетка</div>
+        <div class="gc-desc">Классическое казино! Крутящееся колесо с шариком, реалистичная физика. Ставь на цвет, число или чётность.</div>
+        <div class="gc-tags">
+          <span class="gc-tag">×2–×14</span>
+          <span class="gc-tag">1 игрок</span>
+          <span class="gc-tag">37 секторов</span>
+        </div>
+      </div>
+      <div class="gc-arrow">›</div>
+    </a>
+
+    <!-- GTA Roulette -->
+    <a class="game-card" href="gta_roulette.html">
+      <div class="gc-banner gta">
+        <div class="gc-glow-gta"></div>
+        <div class="gc-preview">🏙</div>
+      </div>
+      <div class="gc-info">
+        <div class="gc-title">GTA RP Рулетка</div>
+        <div class="gc-desc">Общий банк всех игроков! Чем больше твоя ставка — тем выше шанс выиграть весь банк. Минимум 2 игрока.</div>
+        <div class="gc-tags">
+          <span class="gc-tag">Общий банк</span>
+          <span class="gc-tag">2+ игроков</span>
+          <span class="gc-tag">Комиссия 3–8%</span>
+        </div>
+      </div>
+      <div class="gc-arrow">›</div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══════════ INVENTORY ═══════════ -->
+<div class="page" id="page-inventory">
+  <!-- Full page redirect -->
+  <div style="padding:20px;text-align:center;padding-top:40px">
+    <div style="font-size:60px;margin-bottom:16px">🎒</div>
+    <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);margin-bottom:8px">ИНВЕНТАРЬ</div>
+    <p style="color:var(--muted);margin-bottom:20px">Все твои предметы и история игр</p>
+    <a href="inventory.html" style="display:block;padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));border-radius:14px;color:#000;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;text-decoration:none;">Открыть инвентарь</a>
+  </div>
+</div>
+
+<!-- ═══════════ HISTORY ═══════════ -->
+<div class="page" id="page-history">
+  <div class="hist-content">
+    <div class="filt">
+      <div class="fb a" onclick="setF(this,'all')">Все</div>
+      <div class="fb" onclick="setF(this,'win')">Победы</div>
+      <div class="fb" onclick="setF(this,'lose')">Проиг.</div>
+      <div class="fb" onclick="setF(this,'deposit')">Пополн.</div>
+    </div>
+    <div class="hstats">
+      <div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="s-won">0</div></div>
+      <div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="s-lost">0</div></div>
+    </div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════ SHOP ═══════════ -->
+<div class="page" id="page-shop">
+  <div style="padding:20px;text-align:center;padding-top:40px">
+    <div style="font-size:60px;margin-bottom:16px">🛍</div>
+    <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);margin-bottom:8px">МАГАЗИН</div>
+    <p style="color:var(--muted);margin-bottom:20px">Подарки от бота и владельца</p>
+    <a href="shop.html" style="display:block;padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));border-radius:14px;color:#000;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;text-decoration:none;">Открыть магазин</a>
+  </div>
+</div>
+
+<!-- Topup Modal -->
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)">
+  <div class="modal">
+    <div class="mh"></div>
+    <div class="mt">💳 ПОПОЛНЕНИЕ</div>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:14px">1 монета = 1 ⭐ Telegram Star</p>
+    <div class="ta-grid">
+      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50</div><div class="ta-s">50 ⭐</div></div>
+      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100</div><div class="ta-s">100 ⭐</div></div>
+      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250</div><div class="ta-s">250 ⭐</div></div>
+      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500</div><div class="ta-s">500 ⭐</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="color:var(--muted);font-size:13px;white-space:nowrap">Или введите:</span>
+      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Своя сумма..."
+        oninput="onCustomInput()"
+        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+          padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:14px;
+          outline:none;text-align:center;" />
+      <span style="color:var(--gold)">⭐</span>
+    </div>
+    <button class="ta-confirm" onclick="confirmTopup()">Оплатить <span id="ta-amt">50</span> ⭐</button>
+  </div>
+</div>
+
+<!-- NAV (5 tabs) -->
+<nav class="nav">
+  <div class="nav-ind" id="nav-ind"></div>
+  <button class="nav-btn active" onclick="showPage('home',this,0)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Главная
+  </button>
+  <button class="nav-btn" onclick="showPage('roulette',this,1)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+    Игры
+  </button>
+  <button class="nav-btn" onclick="showPage('inventory',this,2)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Инвентарь
+  </button>
+  <button class="nav-btn" onclick="showPage('history',this,3)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    История
+  </button>
+  <button class="nav-btn" onclick="showPage('shop',this,4)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    Магазин
+  </button>
+</nav>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID  = tg?.initDataUnsafe?.user?.id || 0;
+const BOT  = 'GeometryImmageBot';
+const REF  = `https://t.me/${BOT}?start=ref_${UID}`;
+
+let userData = null;
+let history  = [];
+let curF     = 'all';
+let topupAmt = 50;
+
+// ── NAV ──
+function showPage(n, btn, i){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('nav-ind').style.left=(i*20)+'%';
+  if(n==='history') renderHistory();
+  if(n==='roulette') loadUser();
+}
+
+// ── TOAST ──
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── API ──
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+async function loadUser(){
+  if(!UID)return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  updateUI();
+}
+
+function updateUI(){
+  if(!userData)return;
+  document.getElementById('h-bal').textContent   = userData.balance??0;
+  document.getElementById('h-spins').textContent = userData.spins??0;
+  document.getElementById('h-wins').textContent  = userData.wins??0;
+  document.getElementById('h-won').textContent   = userData.total_won??0;
+  const rb = document.getElementById('r-bal');
+  if(rb) rb.textContent = userData.balance??0;
+}
+
+function copyRef(){
+  navigator.clipboard?.writeText(REF).then(()=>toast('Ссылка скопирована!','ok'))
+    .catch(()=>toast(REF,'info'));
+}
+
+async function refreshBalance(){
+  const btn=document.getElementById('refresh-btn');
+  if(btn){btn.style.animation='spin-once .6s ease';setTimeout(()=>btn.style.animation='',700);}
+  await loadUser();
+  toast('Баланс обновлён','ok');
+}
+
+// ── HISTORY ──
+async function renderHistory(){
+  history = await get(`/api/history/${UID}`).catch(()=>[]);
+  let items = curF==='all'?history:history.filter(i=>i.type===curF);
+  let won=0, lost=0;
+  history.forEach(i=>{
+    if(['win','deposit','ref'].includes(i.type)) won+=i.amount;
+    if(['lose'].includes(i.type)) lost+=i.amount;
+  });
+  document.getElementById('s-won').textContent=won;
+  document.getElementById('s-lost').textContent=lost;
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал'};
+  const list=document.getElementById('hist-list');
+  if(!items.length){
+    list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;
+  }
+  list.innerHTML=items.slice(0,50).map(i=>{
+    const d=new Date(i.created_at*1000);
+    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos=['win','deposit','ref'].includes(i.type);
+    return `<div class="hi">
+      <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
+      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
+    </div>`;
+  }).join('');
+}
+function setF(el,f){
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));
+  el.classList.add('a');curF=f;renderHistory();
+}
+
+// ── TOPUP ──
+function openTopup(){document.getElementById('ov-topup').classList.add('open');}
+function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
+function selAmt(el,v){
+  document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');topupAmt=v;
+  document.getElementById('ta-custom').value='';
+  document.getElementById('ta-amt').textContent=v;
+}
+function onCustomInput(){
+  const v=parseInt(document.getElementById('ta-custom').value)||0;
+  if(v>=1){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));topupAmt=v;document.getElementById('ta-amt').textContent=v;}
+}
+async function confirmTopup(){
+  if(!UID){toast('Войдите через Telegram','err');return;}
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;
+  if(custom>=1)topupAmt=custom;
+  if(topupAmt<1){toast('Введите сумму','err');return;}
+  document.getElementById('ov-topup').classList.remove('open');
+  const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
+  if(res?.ok){toast('Инвойс отправлен в чат с ботом!','ok');}
+  else{toast('Откройте чат с ботом для оплаты','info');}
+}
+
+// Init
+window.addEventListener('load',()=>{
+  if(UID) loadUser();
+  setInterval(loadUser, 15000);
+});
+</script>
+</body>
+</html>
