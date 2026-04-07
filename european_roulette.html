@@ -245,6 +245,24 @@ const NUMS = [
 const N = NUMS.length;
 const SLICE = (Math.PI*2) / N;
 
+// Returns the sector index currently under the pointer (top = -PI/2)
+function sectorUnderPointer(angle) {
+  // Pointer is at -PI/2. Sector i occupies [angle + i*SLICE - PI/2, angle + i*SLICE - PI/2 + SLICE]
+  // We want i such that angle + i*SLICE - PI/2 <= -PI/2 < angle + i*SLICE - PI/2 + SLICE
+  // i.e. 0 <= -angle + i*SLICE < SLICE => i = floor((-angle % TAU + TAU) % TAU / SLICE)
+  const TAU = Math.PI * 2;
+  const norm = ((-angle % TAU) + TAU) % TAU;
+  return Math.floor(norm / SLICE) % N;
+}
+
+function liveSectorLabel(angle) {
+  const idx = sectorUnderPointer(angle);
+  const {n, c} = NUMS[idx];
+  const ico = c==='green' ? '🟢' : c==='red' ? '🔴' : '⚫';
+  return `${ico} ${n}`;
+}
+
+
 let userData = null;
 let selBetType = null;
 let spinning = false;
@@ -480,6 +498,10 @@ async function spinEuro(){
 
     // Show winning highlight only in the last 5% of animation
     drawWheel(wA, t >= 0.95 ? targetIdx : -1);
+    if(t < 0.95){
+      rb.textContent = '👆 ' + liveSectorLabel(wA);
+      rb.className = 'res-box';
+    }
 
     if(t < 1){
       animReq = requestAnimationFrame(animFrame);

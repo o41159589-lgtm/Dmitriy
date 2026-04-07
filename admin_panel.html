@@ -3,95 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Admin</title>
+<title>TopLuck Admin</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
-:root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--card:#1e1e2e;
-  --gold:#f5c542;--gold2:#e8a800;--red:#e63946;--green:#2dc653;--blue:#4cc9f0;--purple:#7b2fff;
-  --text:#e8e8f0;--muted:#7070a0;--border:rgba(245,197,66,0.15);}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--card:#1e1e2e;
+  --gold:#f5c542;--gold2:#e8a800;--red:#e63946;--green:#2dc653;
+  --blue:#4cc9f0;--purple:#7b2fff;--text:#e8e8f0;--muted:#7070a0;
+  --border:rgba(245,197,66,0.15);
+  --accent:var(--red);
+}
+.incognito-mode{--accent:#2dc653;--border:rgba(45,198,83,0.2);}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:16px 16px 32px;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:12px 12px 32px;}
+
+/* Header */
 .header{background:linear-gradient(135deg,#1a1a2e,#200a0a);border:1px solid rgba(230,57,70,.3);
-  border-radius:18px;padding:20px;text-align:center;margin-bottom:16px;}
-.header h1{font-family:'Orbitron',monospace;font-size:20px;color:var(--red);margin-bottom:4px;}
-.header p{color:var(--muted);font-size:12px;}
-.tabs{display:flex;gap:8px;margin-bottom:16px;}
-.tab{flex:1;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;
-  color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;text-align:center;transition:all .2s;}
-.tab.a{background:var(--gold);color:#000;border-color:var(--gold);}
+  border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;position:relative;}
+.incognito-mode .header{background:linear-gradient(135deg,#0a1a0a,#0a200a);border-color:rgba(45,198,83,.3);}
+.header h1{font-family:'Orbitron',monospace;font-size:17px;color:var(--accent);margin-bottom:3px;}
+.header p{color:var(--muted);font-size:11px;}
+.incognito-badge{display:none;position:absolute;top:10px;right:12px;
+  background:rgba(45,198,83,.2);border:1px solid var(--green);border-radius:8px;
+  padding:3px 8px;font-size:10px;color:var(--green);font-weight:700;}
+.incognito-mode .incognito-badge{display:block;}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.tab{flex:1;min-width:80px;padding:9px 6px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer;
+  text-align:center;transition:all .2s;}
+.tab.a{background:var(--accent);color:#fff;border-color:var(--accent);}
 .tab-pane{display:none;}.tab-pane.a{display:block;}
-.sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
-.sb{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
-.sb-v{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);font-weight:700;}
-.sb-l{font-size:11px;color:var(--muted);margin-top:4px;}
-.rev-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;}
-.rev-title{font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);letter-spacing:1px;margin-bottom:14px;}
-.period-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.pb{padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
-.pb.a,.pb:active{background:var(--gold);color:#000;border-color:var(--gold);}
-.date-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
-.date-lbl{font-size:12px;color:var(--muted);white-space:nowrap;}
-.date-inp{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;
-  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;min-width:120px;}
-.date-inp:focus{border-color:var(--gold);}
-.rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.ri{background:var(--bg3);border-radius:12px;padding:14px;text-align:center;}
-.ri-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-.ri-v{font-family:'Orbitron',monospace;font-size:19px;font-weight:700;}
-.ri-v.g{color:var(--green);}.ri-v.r{color:var(--red);}.ri-v.gold{color:var(--gold);}
-.rev-total{grid-column:1/-1;background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.25);
-  border-radius:14px;padding:18px;text-align:center;}
-.rt-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.rt-v{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;}
-.search{width:100%;background:var(--card);border:1px solid var(--border);border-radius:12px;
-  padding:11px 16px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;
-  outline:none;margin-bottom:14px;}
+
+/* Stats bar */
+.sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
+.sb{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;}
+.sb-v{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);font-weight:700;}
+.sb-l{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* Search */
+.search{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;
+  outline:none;margin-bottom:10px;}
 .search:focus{border-color:var(--gold);}
-.uc{background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;overflow:hidden;}
-.uc-top{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;}
-.uc-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--blue));
-  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+
+/* User card */
+.uc{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;overflow:hidden;}
+.uc.banned{border-color:rgba(230,57,70,.4);background:rgba(230,57,70,.04);}
+.uc-top{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;}
+.uc-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--blue));
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:700;}
+.uc-av.banned-av{background:linear-gradient(135deg,#8b0000,#e63946);}
 .uc-info{flex:1;min-width:0;}
-.uc-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.uc-id{font-size:11px;color:var(--muted);}
-.uc-bal{font-family:'Orbitron',monospace;color:var(--gold);font-size:15px;font-weight:700;flex-shrink:0;}
-.uc-stats{font-size:12px;color:var(--muted);padding:0 14px 6px;display:flex;gap:10px;flex-wrap:wrap;}
-.uc-profit{font-size:12px;padding:0 14px 10px;}
-.uc-actions{border-top:1px solid var(--border);padding:14px;display:none;gap:10px;flex-direction:column;}
-.uc.open .uc-actions{display:flex;}
-.ag{background:var(--bg3);border-radius:10px;padding:12px;}
-.ag-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
-.ag-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
-.ag-inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-  padding:7px 10px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
+.uc-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.uc-id{font-size:10px;color:var(--muted);}
+.uc-bal{font-family:'Orbitron',monospace;color:var(--gold);font-size:14px;font-weight:700;flex-shrink:0;}
+.uc-body{border-top:1px solid var(--border);padding:12px;display:none;flex-direction:column;gap:8px;}
+.uc.open .uc-body{display:flex;}
+
+/* User detail rows */
+.uinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px;}
+.uinfo-item{background:var(--bg3);border-radius:8px;padding:8px 10px;}
+.uinfo-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
+.uinfo-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;}
+.uinfo-val.gold{color:var(--gold);}
+.uinfo-val.green{color:var(--green);}
+.uinfo-val.red{color:var(--red);}
+.uinfo-val.blue{color:var(--blue);}
+.uinfo-val.muted{color:var(--muted);font-family:'Rajdhani',sans-serif;}
+
+/* Action groups */
+.ag{background:var(--bg3);border-radius:10px;padding:10px;}
+.ag-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;font-weight:700;}
+.ag-row{display:flex;gap:5px;align-items:center;margin-bottom:5px;}
+.ag-inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:7px 8px;color:var(--text);font-family:'Orbitron',monospace;font-size:12px;
   outline:none;text-align:center;width:0;}
 .ag-inp:focus{border-color:var(--gold);}
-.abtn{padding:8px 12px;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;
-  font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
-.abtn.set{background:var(--gold);color:#000;}.abtn.add{background:var(--green);color:#000;}
-.abtn.sub{background:var(--red);color:#fff;}.abtn.pur{background:var(--purple);color:#fff;}
-.luck-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
-.lbtn{padding:5px 9px;border:1px solid var(--border);border-radius:7px;
-  background:var(--bg);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;}
-.lbtn:active,.lbtn.a{background:var(--purple);color:#fff;border-color:var(--purple);}
-.luck-st{font-size:12px;}.luck-st.h{color:rgba(45,198,83,.7);}.luck-st.r{color:rgba(200,120,120,.8);}
-.toast{position:fixed;top:16px;left:16px;right:16px;background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;z-index:999;text-align:center;
+.abtn{padding:7px 10px;border:none;border-radius:7px;font-family:'Rajdhani',sans-serif;
+  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.abtn.set{background:var(--gold);color:#000;}
+.abtn.add{background:var(--green);color:#000;}
+.abtn.sub{background:var(--red);color:#fff;}
+.abtn.pur{background:var(--purple);color:#fff;}
+.abtn.ban{background:#8b0000;color:#fff;}
+.abtn.unban{background:var(--green);color:#000;}
+.abtn.msg{background:var(--blue);color:#000;}
+
+/* Luck buttons */
+.luck-row{display:flex;gap:4px;flex-wrap:wrap;}
+.lbtn{padding:5px 8px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.lbtn.a,.lbtn:active{background:var(--purple);color:#fff;border-color:var(--purple);}
+.lbtn.luck100{background:rgba(45,198,83,.2);border-color:var(--green);color:var(--green);}
+.lbtn.luck100.a{background:var(--green);color:#000;}
+.lbtn.luck0{background:rgba(230,57,70,.15);border-color:rgba(230,57,70,.4);color:rgba(230,57,70,.8);}
+.lbtn.luck0.a{background:var(--red);color:#fff;}
+
+/* Revenue */
+.rev-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.rev-title{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;}
+.period-btns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.pb{padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.pb.a,.pb:active{background:var(--gold);color:#000;border-color:var(--gold);}
+.date-row{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.date-lbl{font-size:11px;color:var(--muted);white-space:nowrap;}
+.date-inp{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 8px;
+  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;flex:1;min-width:110px;}
+.rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ri{background:var(--bg3);border-radius:10px;padding:12px;text-align:center;}
+.ri-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.ri-v{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;}
+.ri-v.g{color:var(--green);}.ri-v.r{color:var(--red);}.ri-v.gold{color:var(--gold);}
+.rev-total{grid-column:1/-1;background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.2);
+  border-radius:12px;padding:16px;text-align:center;}
+.rt-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.rt-v{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;}
+
+/* Settings */
+.settings-block{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.settings-title{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;}
+.incognito-toggle{display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:10px;}
+.it-label{font-size:14px;font-weight:600;}
+.it-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--bg);border-radius:12px;
+  border:1px solid var(--border);cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;
+  border-radius:50%;background:#888;top:2px;left:2px;transition:transform .2s,background .2s;}
+.toggle input:checked+.toggle-slider{background:rgba(45,198,83,.25);border-color:var(--green);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--green);}
+
+/* Toast */
+.toast{position:fixed;top:14px;left:12px;right:12px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;z-index:999;text-align:center;
   transform:translateY(-80px);transition:transform .3s;}
 .toast.show{transform:translateY(0);}
-.toast.ok{border-color:var(--green);color:var(--green);}.toast.err{border-color:var(--red);color:var(--red);}
-.loader{text-align:center;padding:48px;color:var(--muted);}
-.loader span{font-size:42px;display:block;margin-bottom:12px;animation:spin 1.5s linear infinite;}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
+.loader{text-align:center;padding:40px;color:var(--muted);}
+.loader span{font-size:36px;display:block;margin-bottom:10px;animation:spin 1.5s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<div class="header"><h1>🛠 ADMIN PANEL</h1><p>Casino · Управление</p></div>
 
-<div class="tabs" style="flex-wrap:wrap;gap:6px">
+<div class="header">
+  <span class="incognito-badge">🥷 ИНКОГНИТО</span>
+  <h1 id="header-title">🛠 TOPLUCK ADMIN</h1>
+  <p id="header-sub">Панель управления казино</p>
+</div>
+
+<div class="tabs">
   <div class="tab a" onclick="switchTab('users',this)">👥 Игроки</div>
   <div class="tab"   onclick="switchTab('revenue',this)">💰 Доход</div>
   <div class="tab"   onclick="switchTab('settings',this)">⚙️ Настройки</div>
@@ -102,57 +171,72 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;fo
   <div id="users-root"><div class="loader"><span>⚙️</span><p>Загрузка...</p></div></div>
 </div>
 
-<!-- GLOBAL LUCK -->
-<div class="tab-pane" id="tab-settings">
-  <div class="rev-card" style="margin-bottom:14px">
-    <div class="rev-title">🎲 ГЛОБАЛЬНЫЙ КОЭФФИЦИЕНТ УДАЧИ</div>
-    <p style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:16px">
-      Масштабирует удачу всех игроков.<br>
-      <b style="color:var(--text)">1.0</b> = без изменений · <b style="color:var(--text)">0.5</b> = вдвое меньше шансов выиграть · <b style="color:var(--text)">0.0</b> = казино всегда выигрывает<br>
-      <span style="color:var(--muted);font-size:11px">Примечание: личная удача 0% остаётся 0% при любом коэффициенте</span>
-    </p>
-    <div style="background:var(--bg3);border-radius:12px;padding:16px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-size:13px;color:var(--muted)">Текущий коэффициент:</span>
-        <span id="gl-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="gl-slider" min="0" max="100" value="100" oninput="onGlSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:14px">
-        <span>0.0 (никто не выигрывает)</span><span>1.0 (честно)</span>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <div class="pb" onclick="setGlCoeff(0)">0.0 — Всегда проигрыш</div>
-        <div class="pb" onclick="setGlCoeff(0.3)">0.3 — Редко</div>
-        <div class="pb" onclick="setGlCoeff(0.6)">0.6 — Меньше обычного</div>
-        <div class="pb" onclick="setGlCoeff(1.0)">1.0 — Честно</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:12px" onclick="saveGlCoeff()">💾 Сохранить коэффициент</button>
-    </div>
-    <div id="gl-status" style="text-align:center;font-size:13px;color:var(--muted);min-height:20px"></div>
-  </div>
-</div>
-
 <!-- REVENUE -->
 <div class="tab-pane" id="tab-revenue">
   <div class="rev-card">
     <div class="rev-title">📅 ПЕРИОД</div>
     <div class="period-btns">
       <div class="pb a" onclick="setPeriod(this,'today')">Сегодня</div>
-      <div class="pb" onclick="setPeriod(this,'week')">7 дней</div>
-      <div class="pb" onclick="setPeriod(this,'month')">30 дней</div>
-      <div class="pb" onclick="setPeriod(this,'all')">Всё время</div>
-      <div class="pb" onclick="setPeriod(this,'custom')">Выбрать даты</div>
+      <div class="pb"   onclick="setPeriod(this,'week')">7 дней</div>
+      <div class="pb"   onclick="setPeriod(this,'month')">30 дней</div>
+      <div class="pb"   onclick="setPeriod(this,'all')">Всё время</div>
+      <div class="pb"   onclick="setPeriod(this,'custom')">Даты</div>
     </div>
     <div id="custom-wrap" style="display:none">
       <div class="date-row">
         <span class="date-lbl">С:</span><input class="date-inp" type="date" id="d-from">
         <span class="date-lbl">По:</span><input class="date-inp" type="date" id="d-to">
-        <button class="abtn set" onclick="loadRev()">Показать</button>
+        <button class="abtn set" onclick="loadRev()">OK</button>
       </div>
     </div>
-    <div id="rev-msg" style="text-align:center;color:var(--muted);padding:16px">Загрузка...</div>
+    <div id="rev-msg" style="text-align:center;color:var(--muted);padding:14px">Загрузка...</div>
     <div class="rev-grid" id="rev-grid" style="display:none"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="tab-pane" id="tab-settings">
+
+  <!-- Incognito mode (dev only) -->
+  <div class="settings-block" id="incognito-block" style="display:none">
+    <div class="settings-title">🥷 РЕЖИМ ИНКОГНИТО</div>
+    <div class="incognito-toggle">
+      <div>
+        <div class="it-label">Режим инкогнито</div>
+        <div class="it-sub">Действия не логируются в группу логов</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div id="incognito-status" style="font-size:12px;color:var(--muted);text-align:center"></div>
+  </div>
+
+  <!-- Global luck -->
+  <div class="settings-block">
+    <div class="settings-title">🎲 ГЛОБАЛЬНЫЙ КОЭФФИЦИЕНТ УДАЧИ</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Масштабирует удачу всех игроков.<br>
+      <b style="color:var(--text)">1.0</b> — честная игра ·
+      <b style="color:var(--text)">0.0</b> — казино всегда выигрывает<br>
+      <span style="color:var(--muted);font-size:10px">Личная удача 100% / 0% остаётся абсолютной при любом коэффициенте</span>
+    </p>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="gl-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--gold);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="gl-slider" min="0" max="100" value="100" oninput="onGlSlider(this.value)"
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setGlCoeff(0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="setGlCoeff(0.5)">0.5 — Меньше шансов</div>
+        <div class="pb" onclick="setGlCoeff(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveGlCoeff()">💾 Сохранить</button>
+    </div>
+    <div id="gl-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 </div>
 
@@ -160,9 +244,12 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;fo
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 const ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString()||'';
-let users=[], curPeriod='today';
+const IS_DEV = false; // Will be set by API response
 
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let users = [], curPeriod = 'today';
+let incognitoMode = false;
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function toast(m,t='ok'){
   const el=document.getElementById('toast');
@@ -176,84 +263,165 @@ function switchTab(name,btn){
   btn.classList.add('a');
   document.getElementById('tab-'+name).classList.add('a');
   if(name==='revenue') loadRev();
+  if(name==='settings') loadGl();
 }
 
-async function api(path,method='GET',body=null){
-  const o={method,headers:{'Content-Type':'application/json','X-Admin-Uid':ADMIN_UID,'X-Admin-Key':ADMIN_UID}};
-  if(body) o.body=JSON.stringify(body);
-  const r=await fetch(path,o);
+async function api(path, method='GET', body=null){
+  const o = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Uid': ADMIN_UID,
+      'X-Admin-Key': ADMIN_UID,
+    }
+  };
+  if(body) o.body = JSON.stringify({...body, incognito: incognitoMode});
+  const r = await fetch(path, o);
   if(!r.ok) throw new Error(r.status);
   return r.json();
+}
+
+// ── INCOGNITO ──
+function toggleIncognito(on){
+  incognitoMode = on;
+  document.body.classList.toggle('incognito-mode', on);
+  const st = document.getElementById('incognito-status');
+  if(on){
+    st.textContent = '🥷 Режим инкогнито включён — действия не логируются';
+    st.style.color = 'var(--green)';
+    document.getElementById('header-title').textContent = '🥷 ИНКОГНИТО';
+    document.getElementById('header-sub').textContent = 'Действия не логируются';
+  } else {
+    st.textContent = '✅ Стандартный режим — все действия логируются';
+    st.style.color = 'var(--muted)';
+    document.getElementById('header-title').textContent = '🛠 TOPLUCK ADMIN';
+    document.getElementById('header-sub').textContent = 'Панель управления казино';
+  }
 }
 
 // ── USERS ──
 async function load(){
   try{
-    users=await api('/api/admin/users');
+    users = await api('/api/admin/users');
     renderUsers(users);
-  }catch{
-    document.getElementById('users-root').innerHTML=
-      '<div style="text-align:center;padding:60px;color:var(--red)"><div style="font-size:48px;margin-bottom:12px">🚫</div><p>Нет доступа. Убедитесь что ваш ID в ADMIN_IDS.</p></div>';
+  } catch {
+    document.getElementById('users-root').innerHTML =
+      '<div style="text-align:center;padding:48px;color:var(--red)"><div style="font-size:42px;margin-bottom:10px">🚫</div><p>Нет доступа. Убедитесь что ваш ID в ADMIN_IDS.</p></div>';
   }
 }
 
-function updateStats(){
-  document.getElementById('s-t').textContent=users.length;
-  document.getElementById('s-b').textContent=users.reduce((s,u)=>s+u.balance,0);
-  document.getElementById('s-r').textContent=users.filter(u=>u.luck_pct>=0).length;
+function stats(){
+  const total = users.length;
+  const coins = users.reduce((s,u)=>s+u.balance,0);
+  const banned = users.filter(u=>u.banned).length;
+  const lucky = users.filter(u=>u.luck_pct>=0).length;
+  return {total,coins,banned,lucky};
 }
 
 function renderUsers(list){
-  document.getElementById('users-root').innerHTML=`
+  const s = stats();
+  document.getElementById('users-root').innerHTML = `
     <div class="sbar">
-      <div class="sb"><div class="sb-v" id="s-t">—</div><div class="sb-l">Игроков</div></div>
-      <div class="sb"><div class="sb-v" id="s-b">—</div><div class="sb-l">Монет всего</div></div>
-      <div class="sb"><div class="sb-v" id="s-r">—</div><div class="sb-l">Подкручено</div></div>
+      <div class="sb"><div class="sb-v">${s.total}</div><div class="sb-l">Игроков</div></div>
+      <div class="sb"><div class="sb-v">${s.coins}</div><div class="sb-l">Монет</div></div>
+      <div class="sb"><div class="sb-v">${s.lucky}</div><div class="sb-l">Подкручено</div></div>
+      <div class="sb"><div class="sb-v" style="color:var(--red)">${s.banned}</div><div class="sb-l">Заблок.</div></div>
     </div>
-    <input class="search" placeholder="🔍 Поиск по имени / ID..." oninput="filterU(this.value)">
+    <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)">
     <div id="ulist">${list.map(uCard).join('')}</div>`;
-  updateStats();
 }
 
 function filterU(q){
-  q=q.toLowerCase();
-  document.getElementById('ulist').innerHTML=
-    users.filter(u=>(u.first_name||'').toLowerCase().includes(q)||(u.username||'').toLowerCase().includes(q)||String(u.user_id).includes(q))
-    .map(uCard).join('');
+  q = q.toLowerCase();
+  document.getElementById('ulist').innerHTML =
+    users.filter(u =>
+      (u.first_name||'').toLowerCase().includes(q) ||
+      (u.username||'').toLowerCase().includes(q) ||
+      String(u.user_id).includes(q)
+    ).map(uCard).join('');
+}
+
+function fmtDate(ts){
+  if(!ts) return '—';
+  return new Date(ts*1000).toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+
+function winrate(u){
+  if(!u.spins) return '—';
+  return Math.round(u.wins/u.spins*100)+'%';
 }
 
 function uCard(u){
-  const name=esc(u.first_name||u.username||'Аноним');
-  const uname=u.username?` <span style="color:var(--muted);font-size:11px">@${esc(u.username)}</span>`:'';
-  const profit=u.total_lost-u.total_won;
-  const lk=u.luck_pct<0?'<span class="luck-st h">● Авто</span>':`<span class="luck-st r">● Задан: ${u.luck_pct}</span>`;
-  return `<div class="uc" id="uc-${u.user_id}">
+  const name = esc(u.first_name||u.username||'Аноним');
+  const uname = u.username ? `@${esc(u.username)}` : '';
+  const profit = u.total_lost - u.total_won;
+  const luck = u.luck_pct < 0 ? '<span style="color:var(--green)">●Авто</span>'
+    : u.luck_pct === 100 ? '<span style="color:var(--green)">●100% ВЫИГР.</span>'
+    : u.luck_pct === 0   ? '<span style="color:var(--red)">●0% ПРОГР.</span>'
+    : `<span style="color:var(--purple)">●${u.luck_pct}%</span>`;
+  const isBanned = u.banned;
+  return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}">
     <div class="uc-top" onclick="tog(${u.user_id})">
-      <div class="uc-av">${(name[0]||'?').toUpperCase()}</div>
-      <div class="uc-info"><div class="uc-name">${name}${uname}</div><div class="uc-id">ID: ${u.user_id}</div></div>
+      <div class="uc-av${isBanned?' banned-av':''}">${(name[0]||'?').toUpperCase()}</div>
+      <div class="uc-info">
+        <div class="uc-name">${name}${isBanned?' ⛔':''}</div>
+        <div class="uc-id">ID: ${u.user_id}${uname?' · '+uname:''}</div>
+      </div>
       <div class="uc-bal">${u.balance}🪙</div>
     </div>
-    <div class="uc-stats"><span>🎲${u.spins}</span><span>🏆${u.wins}</span><span>📈+${u.total_won}</span><span>📉-${u.total_lost}</span></div>
-    <div class="uc-profit" style="color:${profit>=0?'var(--green)':'var(--red)'}">💼 Доход с игрока: ${profit>=0?'+':''}${profit}🪙</div>
-    <div class="uc-actions">
-      <div class="ag">
-        <div class="ag-l">💰 Баланс</div>
-        <div class="ag-row"><input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0"><button class="abtn set" onclick="sbal(event,${u.user_id})">SET</button></div>
-        <div class="ag-row"><input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1"><button class="abtn add" onclick="dbal(event,${u.user_id},1)">+</button><button class="abtn sub" onclick="dbal(event,${u.user_id},-1)">−</button></div>
+    <div class="uc-body">
+      <!-- Extended stats -->
+      <div class="uinfo-grid">
+        <div class="uinfo-item"><div class="uinfo-label">🎲 Игр</div><div class="uinfo-val blue">${u.spins}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🏆 Побед</div><div class="uinfo-val green">${u.wins}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">📈 Выиграно</div><div class="uinfo-val green">+${u.total_won}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">📉 Проиграно</div><div class="uinfo-val red">-${u.total_lost}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">💼 Доход казино</div><div class="uinfo-val ${profit>=0?'green':'red'}">${profit>=0?'+':''}${profit}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🎯 Винрейт</div><div class="uinfo-val gold">${winrate(u)}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">📅 Регистрация</div><div class="uinfo-val muted">${fmtDate(u.created_at)}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🍀 Удача</div><div class="uinfo-val">${luck}</div></div>
       </div>
+      <!-- Balance -->
       <div class="ag">
-        <div class="ag-l">⚙️ Удача ${lk}</div>
-        <div class="luck-row">
-          <div class="lbtn" onclick="sluck(event,${u.user_id},-1)">Авто</div>
-          <div class="lbtn" onclick="sluck(event,${u.user_id},0)">×0</div>
-          <div class="lbtn" onclick="sluck(event,${u.user_id},25)">×0.25</div>
-          <div class="lbtn" onclick="sluck(event,${u.user_id},50)">×0.5</div>
-          <div class="lbtn" onclick="sluck(event,${u.user_id},75)">×0.75</div>
-          <div class="lbtn" onclick="sluck(event,${u.user_id},100)">×1</div>
+        <div class="ag-l">💰 Управление балансом</div>
+        <div class="ag-row">
+          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0">
+          <button class="abtn set" onclick="sbal(event,${u.user_id})">SET</button>
         </div>
-        <div class="ag-row" style="margin-top:8px">
+        <div class="ag-row">
+          <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1">
+          <button class="abtn add" onclick="dbal(event,${u.user_id},1)">+Начислить</button>
+          <button class="abtn sub" onclick="dbal(event,${u.user_id},-1)">−Снять</button>
+        </div>
+      </div>
+      <!-- Luck -->
+      <div class="ag">
+        <div class="ag-l">🍀 Удача игрока</div>
+        <div class="luck-row">
+          <div class="lbtn luck0 ${u.luck_pct===0?'a':''}" onclick="sluck(event,${u.user_id},0)">0%</div>
+          <div class="lbtn ${u.luck_pct===-1?'a':''}" onclick="sluck(event,${u.user_id},-1)">Авто</div>
+          <div class="lbtn ${u.luck_pct===25?'a':''}" onclick="sluck(event,${u.user_id},25)">25%</div>
+          <div class="lbtn ${u.luck_pct===50?'a':''}" onclick="sluck(event,${u.user_id},50)">50%</div>
+          <div class="lbtn ${u.luck_pct===75?'a':''}" onclick="sluck(event,${u.user_id},75)">75%</div>
+          <div class="lbtn luck100 ${u.luck_pct===100?'a':''}" onclick="sluck(event,${u.user_id},100)">100%★</div>
+        </div>
+        <div class="ag-row" style="margin-top:6px">
           <input class="ag-inp" id="li-${u.user_id}" type="number" min="0" max="100" placeholder="0–100">
           <button class="abtn pur" onclick="sluck_c(event,${u.user_id})">Задать</button>
+        </div>
+      </div>
+      <!-- Message & Ban -->
+      <div class="ag">
+        <div class="ag-l">📩 Сообщение / ⛔ Бан</div>
+        <div class="ag-row">
+          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..." style="font-family:'Rajdhani',sans-serif;font-size:13px;">
+          <button class="abtn msg" onclick="sendMsg(event,${u.user_id})">📨</button>
+        </div>
+        <div class="ag-row">
+          ${isBanned
+            ? `<button class="abtn unban" style="flex:1" onclick="banUser(event,${u.user_id},false)">✅ Разблокировать</button>`
+            : `<button class="abtn ban" style="flex:1" onclick="banUser(event,${u.user_id},true)">⛔ Заблокировать</button>`
+          }
         </div>
       </div>
     </div>
@@ -264,29 +432,81 @@ function tog(uid){ document.getElementById('uc-'+uid).classList.toggle('open'); 
 
 async function sbal(e,uid){
   e.stopPropagation();
-  const u=users.find(x=>x.user_id===uid);
-  const nb=parseInt(document.getElementById('bi-'+uid).value);
+  const u = users.find(x=>x.user_id===uid);
+  const nb = parseInt(document.getElementById('bi-'+uid).value);
   if(isNaN(nb)||nb<0){toast('Неверное значение','err');return;}
-  try{ await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0}); if(u)u.balance=nb; updateStats(); document.getElementById('uc-'+uid).outerHTML=uCard(u); toast(`✅ → ${nb}🪙`); }catch{toast('Ошибка','err');}
+  try{
+    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
+    if(u) u.balance=nb; updateCard(uid,u);
+    toast(`✅ Баланс → ${nb}🪙`);
+  } catch{ toast('Ошибка','err'); }
 }
+
 async function dbal(e,uid,sign){
   e.stopPropagation();
-  const u=users.find(x=>x.user_id===uid);
-  const d=parseInt(document.getElementById('di-'+uid).value)||0;
+  const u = users.find(x=>x.user_id===uid);
+  const d = parseInt(document.getElementById('di-'+uid).value)||0;
   if(!d){toast('Введите сумму','err');return;}
-  const nb=Math.max(0,(u?.balance||0)+sign*d);
-  try{ await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0}); if(u)u.balance=nb; updateStats(); document.getElementById('bi-'+uid).value=nb; toast(`${sign>0?'+':'-'}${d}🪙`); }catch{toast('Ошибка','err');}
+  const nb = Math.max(0,(u?.balance||0)+sign*d);
+  try{
+    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
+    if(u) u.balance=nb; updateCard(uid,u);
+    toast(`${sign>0?'+':'-'}${d}🪙`);
+  } catch{ toast('Ошибка','err'); }
 }
+
 async function sluck(e,uid,pct){
   e.stopPropagation();
-  const u=users.find(x=>x.user_id===uid);
-  try{ await api('/api/admin/set_luck','POST',{user_id:uid,luck:pct}); if(u)u.luck_pct=pct; document.getElementById('uc-'+uid).outerHTML=uCard(u); toast(pct<0?'✅ Авто':`⚙️ ×${pct/100}`); }catch{toast('Ошибка','err');}
+  const u = users.find(x=>x.user_id===uid);
+  try{
+    await api('/api/admin/set_luck','POST',{user_id:uid,luck:pct});
+    if(u) u.luck_pct=pct; updateCard(uid,u);
+    const label = pct<0?'Авто':pct===100?'100% (всегда выигрывает)':pct===0?'0% (всегда проигрывает)':`${pct}%`;
+    toast(`🍀 Удача: ${label}`);
+  } catch{ toast('Ошибка','err'); }
 }
+
 async function sluck_c(e,uid){
   e.stopPropagation();
-  const v=parseInt(document.getElementById('li-'+uid).value);
+  const v = parseInt(document.getElementById('li-'+uid).value);
   if(isNaN(v)||v<0||v>100){toast('0–100','err');return;}
   await sluck(e,uid,v);
+}
+
+async function sendMsg(e,uid){
+  e.stopPropagation();
+  const text = document.getElementById('msg-'+uid).value.trim();
+  if(!text){toast('Введите текст','err');return;}
+  try{
+    const r = await fetch(`/api/admin/send_message`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Uid':ADMIN_UID},
+      body: JSON.stringify({user_id:uid, text})
+    });
+    const d = await r.json();
+    if(d.ok) toast('📨 Сообщение отправлено');
+    else toast(d.error||'Ошибка','err');
+  } catch{ toast('Ошибка','err'); }
+}
+
+async function banUser(e,uid,banned){
+  e.stopPropagation();
+  const u = users.find(x=>x.user_id===uid);
+  const reason = banned ? (prompt('Причина бана (необязательно):') || '—') : '—';
+  try{
+    await api('/api/admin/ban','POST',{user_id:uid,banned,reason});
+    if(u) u.banned=banned; updateCard(uid,u);
+    toast(banned?`⛔ Заблокирован`:`✅ Разблокирован`);
+  } catch{ toast('Ошибка','err'); }
+}
+
+function updateCard(uid, u){
+  const el = document.getElementById('uc-'+uid);
+  if(el && u){
+    const wasOpen = el.classList.contains('open');
+    el.outerHTML = uCard(u);
+    if(wasOpen) document.getElementById('uc-'+uid)?.classList.add('open');
+  }
 }
 
 // ── REVENUE ──
@@ -296,88 +516,93 @@ function setPeriod(btn,p){
   document.getElementById('custom-wrap').style.display=p==='custom'?'block':'none';
   if(p!=='custom') loadRev();
 }
-
 function getTsRange(){
   const now=Date.now()/1000;
-  if(curPeriod==='today'){ const d=new Date(); d.setHours(0,0,0,0); return {f:d.getTime()/1000,t:now}; }
-  if(curPeriod==='week')  return {f:now-7*86400,t:now};
-  if(curPeriod==='month') return {f:now-30*86400,t:now};
-  if(curPeriod==='all')   return {f:0,t:now};
+  if(curPeriod==='today'){const d=new Date();d.setHours(0,0,0,0);return{f:d.getTime()/1000,t:now};}
+  if(curPeriod==='week') return{f:now-7*86400,t:now};
+  if(curPeriod==='month')return{f:now-30*86400,t:now};
+  if(curPeriod==='all')  return{f:0,t:now};
   const fv=document.getElementById('d-from').value;
   const tv=document.getElementById('d-to').value;
-  return {f:fv?new Date(fv).getTime()/1000:0, t:tv?new Date(tv).getTime()/1000+86399:now};
+  return{f:fv?new Date(fv).getTime()/1000:0,t:tv?new Date(tv).getTime()/1000+86399:now};
 }
-
 async function loadRev(){
   const msg=document.getElementById('rev-msg');
   const grid=document.getElementById('rev-grid');
-  msg.style.display='block'; msg.textContent='Загрузка...'; grid.style.display='none';
-  const {f,t}=getTsRange();
+  msg.style.display='block';msg.textContent='Загрузка...';grid.style.display='none';
+  const{f,t}=getTsRange();
   try{
     const d=await api(`/api/admin/revenue?from=${f}&to=${t}`);
-    msg.style.display='none'; grid.style.display='grid';
+    msg.style.display='none';grid.style.display='grid';
     const ep=d.euro_losses-d.euro_wins;
     grid.innerHTML=`
       <div class="ri"><div class="ri-l">🏙 GTA комиссии</div><div class="ri-v g">+${d.gta_commission}</div></div>
       <div class="ri"><div class="ri-l">🎰 Европ. профит</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
-      <div class="ri"><div class="ri-l">📉 Проиграно</div><div class="ri-v gold">${d.euro_losses}</div></div>
-      <div class="ri"><div class="ri-l">📈 Выплачено</div><div class="ri-v r">-${d.euro_wins}</div></div>
+      <div class="ri"><div class="ri-l">📉 Проиграно игр.</div><div class="ri-v gold">${d.euro_losses}</div></div>
+      <div class="ri"><div class="ri-l">📈 Выплачено игр.</div><div class="ri-v r">-${d.euro_wins}</div></div>
       <div class="ri"><div class="ri-l">💳 Пополнения</div><div class="ri-v gold">${d.deposits}</div></div>
+      <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${users.length}</div></div>
       <div class="rev-total">
         <div class="rt-l">Итого доход казино</div>
         <div class="rt-v" style="color:${d.total_revenue>=0?'var(--gold)':'var(--red)'}">
           ${d.total_revenue>=0?'+':''}${d.total_revenue} 🪙
         </div>
       </div>`;
-  }catch{ msg.style.display='block'; msg.textContent='Ошибка загрузки'; }
+  } catch{ msg.style.display='block';msg.textContent='Ошибка загрузки'; }
 }
 
-// Init
-load();
-setInterval(load,30000);
-const td=new Date().toISOString().split('T')[0];
-document.getElementById('d-to').value=td;
-document.getElementById('d-from').value=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
-
-// ── Global Luck Coefficient ──
+// ── GLOBAL LUCK ──
 let glCoeff = 1.0;
-
 async function loadGl(){
   try{
-    const d=await api('/api/admin/global_luck');
-    glCoeff=d.coeff;
-    document.getElementById('gl-val').textContent=glCoeff.toFixed(2);
-    document.getElementById('gl-slider').value=Math.round(glCoeff*100);
-  }catch{}
+    const d = await api('/api/admin/global_luck');
+    glCoeff = d.coeff;
+    document.getElementById('gl-val').textContent = glCoeff.toFixed(2);
+    document.getElementById('gl-slider').value = Math.round(glCoeff*100);
+  } catch{}
 }
-
 function onGlSlider(v){
-  glCoeff=parseInt(v)/100;
-  document.getElementById('gl-val').textContent=glCoeff.toFixed(2);
-  // Цвет индикатора
-  const el=document.getElementById('gl-val');
-  el.style.color=glCoeff<0.3?'var(--red)':glCoeff<0.7?'var(--gold)':'var(--green)';
+  glCoeff = parseInt(v)/100;
+  const el = document.getElementById('gl-val');
+  el.textContent = glCoeff.toFixed(2);
+  el.style.color = glCoeff<0.3?'var(--red)':glCoeff<0.7?'var(--gold)':'var(--green)';
 }
-
 function setGlCoeff(v){
   glCoeff=v;
-  document.getElementById('gl-val').textContent=v.toFixed(2);
-  document.getElementById('gl-slider').value=Math.round(v*100);
-  const el=document.getElementById('gl-val');
-  el.style.color=v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--green)';
+  document.getElementById('gl-val').textContent = v.toFixed(2);
+  document.getElementById('gl-slider').value = Math.round(v*100);
+  const el = document.getElementById('gl-val');
+  el.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--green)';
 }
-
 async function saveGlCoeff(){
   try{
     await api('/api/admin/global_luck','POST',{coeff:glCoeff});
-    const st=document.getElementById('gl-status');
-    st.textContent='✅ Сохранено: коэффициент '+glCoeff.toFixed(2);
-    st.style.color='var(--green)';
+    const st = document.getElementById('gl-status');
+    st.textContent = '✅ Сохранено: '+glCoeff.toFixed(2);
+    st.style.color = 'var(--green)';
     setTimeout(()=>st.textContent='',3000);
-  }catch{ toast('Ошибка сохранения','err'); }
+  } catch{ toast('Ошибка сохранения','err'); }
 }
 
+// ── INIT ──
+load();
 loadGl();
+setInterval(load, 30000);
+const td = new Date().toISOString().split('T')[0];
+document.getElementById('d-to').value = td;
+document.getElementById('d-from').value = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+
+// Show incognito block for devs (check via UID)
+// Dev check is done server-side; we show the block if user has access
+setTimeout(async()=>{
+  try{
+    const r = await fetch('/api/admin/is_dev', {
+      headers:{'X-Admin-Uid':ADMIN_UID}
+    });
+    const d = await r.json();
+    if(d.is_dev) document.getElementById('incognito-block').style.display='block';
+  } catch{}
+}, 500);
 </script>
 </body>
 </html>

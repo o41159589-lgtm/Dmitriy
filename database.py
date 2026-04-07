@@ -16,6 +16,7 @@ async def init_db():
                 wins       INTEGER DEFAULT 0,
                 total_won  INTEGER DEFAULT 0,
                 total_lost INTEGER DEFAULT 0,
+                banned     INTEGER DEFAULT 0,
                 created_at REAL DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS history (
@@ -49,6 +50,11 @@ async def init_db():
             );
             INSERT OR IGNORE INTO settings(key,value) VALUES ('global_luck_coeff','1.0');
         """)
+        # Migration: add banned column if missing
+        try:
+            await db.execute('ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0')
+        except Exception:
+            pass
         await db.commit()
 
 async def _row(db, sql, params=()):
@@ -241,3 +247,14 @@ async def set_global_luck_coeff(coeff: float):
             "INSERT OR REPLACE INTO settings(key,value) VALUES('global_luck_coeff',?)",
             (str(coeff),))
         await db_conn.commit()
+# ── BAN ──
+async def is_banned(uid: int) -> bool:
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT banned FROM users WHERE user_id=?", (uid,)) as cur:
+            row = await cur.fetchone()
+            return bool(row[0]) if row else False
+
+async def set_banned(uid: int, banned: bool):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE users SET banned=? WHERE user_id=?", (1 if banned else 0, uid))
+        await db.commit()

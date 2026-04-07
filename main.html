@@ -376,13 +376,18 @@
       <div class="shop-tab" onclick="shopTab('owner',this)">👑 От владельца</div>
     </div>
     <div id="shop-bot">
-      <div style="background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.2);border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12px;color:rgba(150,220,255,.85);line-height:1.5;">
-        ℹ️ Подарки от бота — настоящие Telegram-подарки. Некоторые <b>нельзя конвертировать в звёзды</b> (зависит от типа подарка в Telegram).
+      <div style="background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.2);border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12px;color:rgba(255,160,160,.9);line-height:1.5;">
+        🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>
+        ⚠️ <b>Нельзя конвертировать в звёзды</b> (non-transferable по условиям Telegram).
       </div>
       <div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div>
     </div>
     <div id="shop-owner" style="display:none">
-      <div class="owner-note">👑 Те же подарки, но отправляет лично <b>владелец</b>. После покупки он получит уведомление и свяжется с вами.<br><br>⚠️ Эти подарки также <b>нельзя конвертировать в звёзды</b> на усмотрение владельца.</div>
+      <div class="owner-note">
+        👑 <b>Подарок от владельца</b> — те же Telegram-подарки, но отправляет лично владелец.<br>
+        ✅ <b>Можно конвертировать в звёзды</b> — владелец отправляет стандартный подарок, который получатель может конвертировать.<br><br>
+        После покупки владелец получит уведомление и свяжется с вами в Telegram.
+      </div>
       <div class="gift-grid" id="owner-gifts-grid"></div>
     </div>
   </div>
