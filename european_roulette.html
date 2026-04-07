@@ -43,11 +43,6 @@
   box-shadow:0 0 30px rgba(0,0,0,0.8);
 }
 
-/* Ball canvas overlaid */
-.ball-canvas{
-  position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:5;
-}
-
 /* Pointer at top */
 .wheel-pointer{
   position:absolute;top:-14px;left:50%;transform:translateX(-50%);
@@ -165,7 +160,6 @@
     <div class="wheel-outer">
       <div class="wheel-ring"></div>
       <canvas class="wheel-canvas" id="wheel-canvas" width="280" height="280"></canvas>
-      <canvas class="ball-canvas" id="ball-canvas" width="280" height="280"></canvas>
       <div class="wheel-pointer"></div>
     </div>
 
@@ -255,8 +249,6 @@ let userData = null;
 let selBetType = null;
 let spinning = false;
 let wheelAngle = 0;
-let ballAngle = 0;
-let ballRadius = 118; // starts near edge
 let animReq = null;
 
 // ── TOAST ──
@@ -276,6 +268,19 @@ async function post(url,d){
 async function loadUser(){
   if(!UID)return;
   userData = await get(`/api/user/${UID}`).catch(()=>null);
+  if(userData) document.getElementById('r-bal').textContent = userData.balance??0;
+}
+
+async function initUser(){
+  if(!UID)return;
+  const tg = window.Telegram?.WebApp;
+  const username   = tg?.initDataUnsafe?.user?.username || '';
+  const first_name = tg?.initDataUnsafe?.user?.first_name || '';
+  try {
+    userData = await post('/api/ensure_user',{user_id:UID,username,first_name});
+  } catch(e) {
+    userData = await get(`/api/user/${UID}`).catch(()=>null);
+  }
   if(userData) document.getElementById('r-bal').textContent = userData.balance??0;
 }
 
@@ -367,36 +372,6 @@ function drawWheel(angle){
   }
 }
 
-// ── DRAW BALL ──
-function drawBall(ballA, ballR){
-  const canvas = document.getElementById('ball-canvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const cx = W/2, cy = H/2;
-
-  ctx.clearRect(0,0,W,H);
-
-  const bx = cx + Math.cos(ballA) * ballR;
-  const by = cy + Math.sin(ballA) * ballR;
-  const br = 7;
-
-  // Shadow
-  ctx.beginPath();ctx.arc(bx+1,by+1,br,0,Math.PI*2);
-  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fill();
-
-  // Ball
-  const grad = ctx.createRadialGradient(bx-br*0.3, by-br*0.3, 1, bx, by, br);
-  grad.addColorStop(0,'#ffffff');
-  grad.addColorStop(0.4,'#e0e0e8');
-  grad.addColorStop(1,'#a0a0b0');
-  ctx.beginPath();ctx.arc(bx,by,br,0,Math.PI*2);
-  ctx.fillStyle=grad;ctx.fill();
-
-  // Shine
-  ctx.beginPath();ctx.arc(bx-br*0.3,by-br*0.35,br*0.25,0,Math.PI*2);
-  ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fill();
-}
-
 // ── IDLE ANIMATION (slow wheel rotation) ──
 let idleAngle = 0;
 let idleReq = null;
@@ -451,12 +426,11 @@ async function spinEuro(){
   // Calculate target angle for winning number
   const targetIdx = res.result_index;
 
-  // Wheel spins clockwise ~8 full rotations, ball counter-clockwise
+  // Wheel spins clockwise ~8 full rotations
   const wheelSpins = 8;
   const totalWheelDelta = wheelSpins * Math.PI*2;
 
   // Ball: starts at edge (r=118), spirals inward to pocket
-  const ballSpins = 12; // ball spins more than wheel
   const SPIN_DURATION = 5500;
 
   const startWheelAngle = idleAngle;
@@ -466,11 +440,6 @@ async function spinEuro(){
   // finalWheelAngle = -targetIdx*SLICE
   const rawTargetWheel = -targetIdx*SLICE;
   const finalWheelAngle = startWheelAngle - totalWheelDelta + ((rawTargetWheel - startWheelAngle + totalWheelDelta) % (Math.PI*2));
-
-  const startBallAngle = -Math.PI/2 + 0.3; // near top
-  const startBallR = 118;
-  const CVSW = document.getElementById('wheel-canvas').width;
-  const finalBallR = CVSW * 0.34; // rests in pocket ring
 
   const t0 = performance.now();
 
@@ -486,38 +455,16 @@ async function spinEuro(){
     // Wheel rotates clockwise, eases into final position
     const wA = startWheelAngle - totalWheelDelta * eT + (finalWheelAngle - startWheelAngle + totalWheelDelta) * eT;
 
-    // Ball: counter-clockwise, starts fast, slows, drops inward
-    const ballEase = 1 - Math.pow(1-t, 3.5);
-    const bA = startBallAngle - (ballSpins * Math.PI*2) * ballEase;
-
-    // Ball radius: stays at edge until 70%, then drops inward
-    let bR;
-    if(t < 0.7){
-      bR = startBallR;
-    } else {
-      const dropT = (t-0.7)/0.3;
-      const fr = finalBallR;
-      bR = startBallR + (fr - startBallR) * ((dropT<0.5?2*dropT*dropT:1-Math.pow(-2*dropT+2,3)/2));
-      // Small wobble as it settles
-      if(t>0.85){
-        bR += Math.sin((t-0.85)*80) * (1-t) * 5;
-      }
-    }
 
     drawWheel(wA);
-    drawBall(bA, bR);
 
     if(t < 1){
       animReq = requestAnimationFrame(animFrame);
     } else {
       // Done
       idleAngle = wA % (Math.PI*2);
-      ballAngle = bA;
-      ballRadius = finalBallR;
-
       // Show final state
       drawWheel(idleAngle);
-      drawBall(ballAngle, ballRadius);
 
       // Update UI
       const ico = res.result_c==='green'?'🟢':res.result_c==='red'?'🔴':'⚫';
@@ -541,12 +488,8 @@ async function spinEuro(){
       spinning = false;
       document.getElementById('spin-btn').disabled = false;
 
-      // After 2s, ball disappears and idle starts again
-      setTimeout(()=>{
-        const bc = document.getElementById('ball-canvas');
-        bc.getContext('2d').clearRect(0,0,bc.width,bc.height);
-        startIdleAnim();
-      }, 2000);
+      startIdleAnim();
+
     }
   }
 
@@ -554,7 +497,7 @@ async function spinEuro(){
 }
 
 // Init
-loadUser();
+initUser();
 drawWheel(0);
 startIdleAnim();
 </script>

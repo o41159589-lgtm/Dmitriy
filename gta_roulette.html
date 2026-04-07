@@ -147,7 +147,18 @@
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 const UID = tg?.initDataUnsafe?.user?.id || 0;
-const GTA_COLORS = ['#e63946','#2dc653','#4cc9f0','#f5c542','#7b2fff','#ff9f1c','#e9c46a','#2a9d8f'];
+const GTA_COLORS = [
+  '#FF2D55', // vivid red/pink
+  '#00FF94', // neon green
+  '#00C8FF', // electric blue
+  '#FFD700', // bright gold
+  '#BF5FFF', // vivid purple
+  '#FF6B00', // bright orange
+  '#00FFD1', // cyan
+  '#FF3CAC', // hot pink
+  '#AAFF00', // lime
+  '#FF4757', // coral red
+];
 
 let userData = null;
 let gtaLobbyId = null;
@@ -178,41 +189,24 @@ async function loadUser(){
   if(userData) document.getElementById('r-bal').textContent = userData.balance??0;
 }
 
+async function initUser(){
+  if(!UID)return;
+  const tgObj = window.Telegram?.WebApp;
+  const username   = tgObj?.initDataUnsafe?.user?.username || '';
+  const first_name = tgObj?.initDataUnsafe?.user?.first_name || '';
+  try {
+    userData = await post('/api/ensure_user',{user_id:UID,username,first_name});
+  } catch(e) {
+    userData = await get(`/api/user/${UID}`).catch(()=>null);
+  }
+  if(userData) document.getElementById('r-bal').textContent = userData.balance??0;
+}
+
 // ── BET ──
 function sgb(v){document.getElementById('gta-inp').value=v;}
 function sgbAll(){document.getElementById('gta-inp').value=userData?.balance||0;}
 
 // ── WHEEL DRAW ──
-function drawWheelShine(ctx,cx,cy,r){
-  const grad=ctx.createRadialGradient(cx-r*0.3,cy-r*0.3,r*0.05,cx,cy,r);
-  grad.addColorStop(0,'rgba(255,255,255,0.18)');
-  grad.addColorStop(0.35,'rgba(255,255,255,0.04)');
-  grad.addColorStop(1,'rgba(0,0,0,0.2)');
-  ctx.fillStyle=grad;
-  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-  const sg=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy-r*0.2);
-  sg.addColorStop(0,'rgba(255,255,255,0)');
-  sg.addColorStop(0.4,'rgba(255,255,255,0.1)');
-  sg.addColorStop(0.6,'rgba(255,255,255,0.1)');
-  sg.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=sg;
-  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-}
-
-function drawWheelCenter(ctx,cx,cy,r){
-  const cR=r*0.2;
-  ctx.strokeStyle='rgba(245,197,66,0.5)';ctx.lineWidth=2;
-  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
-  const g=ctx.createRadialGradient(cx-cR*0.4,cy-cR*0.4,cR*0.1,cx,cy,cR);
-  g.addColorStop(0,'#4a4a6a');g.addColorStop(0.6,'#1e1e32');g.addColorStop(1,'#0e0e1e');
-  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,cR,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle='rgba(245,197,66,0.4)';ctx.lineWidth=1.5;
-  ctx.beginPath();ctx.arc(cx,cy,cR,0,Math.PI*2);ctx.stroke();
-  ctx.font=`${Math.round(cR*1.1)}px serif`;
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('🎰',cx,cy+1);
-}
-
 function drawPointer(ctx,cx,cy,r){
   const tipY=cy-r+1, baseY=tipY-20, hw=12;
   ctx.save();
@@ -232,51 +226,112 @@ function drawGtaWheel(players, total, winnerId, off){
   const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=W/2-8;
   ctx.clearRect(0,0,W,H);
 
+  // Dark background with subtle glow
   ctx.save();
-  ctx.shadowColor='rgba(100,60,200,0.3)';ctx.shadowBlur=20;
-  ctx.fillStyle='#080812';
-  ctx.beginPath();ctx.arc(cx,cy,r+5,0,Math.PI*2);ctx.fill();
+  ctx.shadowColor='rgba(120,60,255,0.4)';ctx.shadowBlur=30;
+  ctx.fillStyle='#06060f';
+  ctx.beginPath();ctx.arc(cx,cy,r+6,0,Math.PI*2);ctx.fill();
   ctx.restore();
 
   if(!players.length){
-    ctx.fillStyle='#1a1a2e';
+    // Empty wheel: draw decorative ring
+    const emptyGrad = ctx.createConicalGradient ? null : null;
+    ctx.fillStyle='#12122a';
     ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#6060a0';ctx.font='13px Rajdhani,sans-serif';
+    // Colored ring segments for empty state
+    const emptyColors=['#FF2D5544','#00FF9444','#00C8FF44','#FFD70044','#BF5FFF44','#FF6B0044'];
+    for(let i=0;i<6;i++){
+      const sa=i*(Math.PI*2/6)-Math.PI/2;
+      const ea=sa+Math.PI*2/6;
+      ctx.save();
+      ctx.fillStyle=emptyColors[i];
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,sa,ea);ctx.closePath();ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle='rgba(100,100,160,0.6)';ctx.font='bold 13px Rajdhani,sans-serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('Нет ставок',cx,cy);
     drawPointer(ctx,cx,cy,r);return;
   }
 
-  let a=-Math.PI/2+(off||0);
+  const angleOff = off||0;
+  let a=-Math.PI/2+angleOff;
   players.forEach((p,i)=>{
     const sl=p.amount/total*Math.PI*2;
     const isW=winnerId&&String(p.uid)===String(winnerId);
-    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
+    const color=GTA_COLORS[i%GTA_COLORS.length];
+
+    // Main sector fill with gradient
+    const grad = ctx.createRadialGradient(cx,cy,r*0.1,cx,cy,r);
+    grad.addColorStop(0, color+'cc');
+    grad.addColorStop(1, color+'88');
+    ctx.fillStyle=grad;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=1.5;
+
+    // Bright sector border (divider)
+    ctx.save();
+    ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.lineWidth=2;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.stroke();
+    ctx.restore();
+
+    // Outer arc glow for each sector
+    ctx.save();
+    ctx.strokeStyle=color;ctx.lineWidth=3;
+    ctx.shadowColor=color;ctx.shadowBlur=12;
+    ctx.globalAlpha=0.7;
+    ctx.beginPath();ctx.arc(cx,cy,r-1,a,a+sl);ctx.stroke();
+    ctx.restore();
+
+    // Winner highlight
     if(isW){
-      ctx.save();ctx.globalAlpha=0.22;ctx.fillStyle='#fff';
+      ctx.save();ctx.globalAlpha=0.28;ctx.fillStyle='#ffffff';
       ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sl);ctx.closePath();ctx.fill();
-      ctx.globalAlpha=1;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=3;
-      ctx.shadowColor='rgba(255,255,255,.6)';ctx.shadowBlur=14;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-1,a,a+sl);ctx.closePath();ctx.stroke();
+      ctx.globalAlpha=1;
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=3;
+      ctx.shadowColor='rgba(255,255,255,0.9)';ctx.shadowBlur=20;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-2,a,a+sl);ctx.closePath();ctx.stroke();
       ctx.restore();
     }
-    if(sl>0.25){
+
+    // Percentage label
+    if(sl>0.22){
       const ma=a+sl/2;
-      ctx.save();ctx.fillStyle='rgba(255,255,255,0.9)';
-      ctx.font='bold 11px Rajdhani,sans-serif';
+      ctx.save();
+      ctx.fillStyle='#ffffff';
+      ctx.font='bold 12px Rajdhani,sans-serif';
       ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=4;
-      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*0.62),cy+Math.sin(ma)*(r*0.62));
+      ctx.shadowColor='rgba(0,0,0,0.9)';ctx.shadowBlur=6;
+      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*0.63),cy+Math.sin(ma)*(r*0.63));
       ctx.restore();
     }
     a+=sl;
   });
 
-  drawWheelShine(ctx,cx,cy,r);
-  drawWheelCenter(ctx,cx,cy,r);
+  // Inner glow overlay
+  const shine=ctx.createRadialGradient(cx-r*0.25,cy-r*0.25,r*0.05,cx,cy,r);
+  shine.addColorStop(0,'rgba(255,255,255,0.14)');
+  shine.addColorStop(0.4,'rgba(255,255,255,0.03)');
+  shine.addColorStop(1,'rgba(0,0,0,0.25)');
+  ctx.fillStyle=shine;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+
+  // Outer gold ring
+  ctx.save();
+  ctx.strokeStyle='rgba(245,197,66,0.6)';ctx.lineWidth=2.5;
+  ctx.shadowColor='rgba(245,197,66,0.4)';ctx.shadowBlur=8;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+
+  // Center hub
+  const cR=r*0.18;
+  const hubG=ctx.createRadialGradient(cx-cR*0.4,cy-cR*0.4,cR*0.1,cx,cy,cR);
+  hubG.addColorStop(0,'#6060a0');hubG.addColorStop(0.6,'#1a1a30');hubG.addColorStop(1,'#08080f');
+  ctx.fillStyle=hubG;ctx.beginPath();ctx.arc(cx,cy,cR,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(245,197,66,0.5)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx,cy,cR,0,Math.PI*2);ctx.stroke();
+  ctx.font=`${Math.round(cR*1.1)}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🎰',cx,cy+1);
+
   drawPointer(ctx,cx,cy,r);
 }
 
@@ -496,7 +551,7 @@ function renderGta(lobby, bets){
 }
 
 // Init
-loadUser();
+initUser();
 drawGtaWheel([],1,null,0);
 startGtaPoll();
 </script>
