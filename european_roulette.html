@@ -285,7 +285,8 @@ async function initUser(){
 }
 
 // ── DRAW WHEEL ──
-function drawWheel(angle){
+// winIdx = index of winning sector to highlight (-1 = none)
+function drawWheel(angle, winIdx = -1){
   const canvas = document.getElementById('wheel-canvas');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -302,21 +303,41 @@ function drawWheel(angle){
     const startA = angle + i*SLICE - Math.PI/2;
     const endA   = startA + SLICE;
     const {n,c} = NUMS[i];
+    const isWin  = (i === winIdx);
 
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r-2,startA,endA);
     ctx.closePath();
 
-    // Sector fill
-    if(c==='red')       ctx.fillStyle='#c0131e';
-    else if(c==='black') ctx.fillStyle='#151520';
-    else                 ctx.fillStyle='#0d7040';
+    // Sector fill — brighter if winner
+    if(isWin){
+      // Bright gradient highlight for winner
+      const midA = startA + SLICE/2;
+      const gx = cx + Math.cos(midA)*(r*0.5), gy = cy + Math.sin(midA)*(r*0.5);
+      const grad = ctx.createRadialGradient(gx, gy, 0, gx, gy, r*0.7);
+      if(c==='red'){      grad.addColorStop(0,'#ff4455');grad.addColorStop(1,'#c0131e');}
+      else if(c==='black'){grad.addColorStop(0,'#5555aa');grad.addColorStop(1,'#151520');}
+      else{                grad.addColorStop(0,'#00ff88');grad.addColorStop(1,'#0d7040');}
+      ctx.fillStyle=grad;
+    } else {
+      if(c==='red')        ctx.fillStyle='#c0131e';
+      else if(c==='black') ctx.fillStyle='#151520';
+      else                 ctx.fillStyle='#0d7040';
+    }
     ctx.fill();
 
-    // Sector border
-    ctx.strokeStyle='rgba(0,0,0,0.6)';ctx.lineWidth=1;
-    ctx.stroke();
+    // Winner glow border
+    if(isWin){
+      ctx.save();
+      ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=2.5;
+      ctx.shadowColor='rgba(255,255,255,0.8)';ctx.shadowBlur=14;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r-2,startA,endA);ctx.closePath();ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.strokeStyle='rgba(0,0,0,0.6)';ctx.lineWidth=1;
+      ctx.stroke();
+    }
 
     // Number
     const ma = startA + SLICE/2;
@@ -324,10 +345,11 @@ function drawWheel(angle){
     ctx.save();
     ctx.translate(cx + Math.cos(ma)*tr, cy + Math.sin(ma)*tr);
     ctx.rotate(ma + Math.PI/2);
-    ctx.fillStyle='#fff';
+    ctx.fillStyle = isWin ? '#fff' : '#fff';
     ctx.font = n===0 ? 'bold 10px Orbitron,monospace' : 'bold 9px Orbitron,monospace';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=3;
+    ctx.shadowColor= isWin ? 'rgba(255,255,200,1)' : 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = isWin ? 8 : 3;
     ctx.fillText(n,0,0);
     ctx.restore();
 
@@ -425,48 +447,46 @@ async function spinEuro(){
 
   // Calculate target angle for winning number
   const targetIdx = res.result_index;
-
-  // Wheel spins clockwise ~8 full rotations
-  const wheelSpins = 8;
-  const totalWheelDelta = wheelSpins * Math.PI*2;
-
-  // Ball: starts at edge (r=118), spirals inward to pocket
   const SPIN_DURATION = 5500;
-
   const startWheelAngle = idleAngle;
-  // The winning number should be under the pointer (top = -PI/2)
-  // Pointer is at -PI/2. Sector i starts at angle + i*SLICE - PI/2
-  // We want: finalWheelAngle + targetIdx*SLICE - PI/2 = -PI/2
-  // finalWheelAngle = -targetIdx*SLICE
-  const rawTargetWheel = -targetIdx*SLICE;
-  const finalWheelAngle = startWheelAngle - totalWheelDelta + ((rawTargetWheel - startWheelAngle + totalWheelDelta) % (Math.PI*2));
+
+  // Pointer is at top (–PI/2).
+  // Sector i center is at: wheelAngle + i*SLICE + SLICE/2 – PI/2 = –PI/2
+  // => wheelAngle = –(i + 0.5) * SLICE
+  // Add small random jitter so pointer lands deep inside sector (not on edge)
+  const jitter = (Math.random() - 0.5) * SLICE * 0.55; // ±27.5% of sector width
+  const targetWheelAngle = -((targetIdx + 0.5) * SLICE) + jitter;
+
+  // Normalise delta so we always spin clockwise (negative direction in our system)
+  // and do at least 8 full rotations
+  const PI2 = Math.PI * 2;
+  const minSpins = 8;
+  let delta = ((targetWheelAngle - startWheelAngle) % PI2 + PI2) % PI2;
+  // delta is in [0, 2PI). We subtract it (CW) plus full spins.
+  const finalWheelAngle = startWheelAngle - minSpins * PI2 - delta;
 
   const t0 = performance.now();
 
-  function easeOut(t){
-    return 1 - Math.pow(1-t, 4);
+  function easeOutSpin(t){
+    // Smooth casino-style deceleration
+    return 1 - Math.pow(1 - t, 4.5);
   }
 
   function animFrame(now){
     const elapsed = now - t0;
     const t = Math.min(1, elapsed / SPIN_DURATION);
-    const eT = easeOut(t);
+    const eT = easeOutSpin(t);
+    const wA = startWheelAngle + (finalWheelAngle - startWheelAngle) * eT;
 
-    // Wheel rotates clockwise, eases into final position
-    const wA = startWheelAngle - totalWheelDelta * eT + (finalWheelAngle - startWheelAngle + totalWheelDelta) * eT;
-
-
-    drawWheel(wA);
+    // Show winning highlight only in the last 5% of animation
+    drawWheel(wA, t >= 0.95 ? targetIdx : -1);
 
     if(t < 1){
       animReq = requestAnimationFrame(animFrame);
     } else {
-      // Done
-      idleAngle = wA % (Math.PI*2);
-      // Show final state
-      drawWheel(idleAngle);
+      idleAngle = wA % PI2;
+      drawWheel(idleAngle, targetIdx);
 
-      // Update UI
       const ico = res.result_c==='green'?'🟢':res.result_c==='red'?'🔴':'⚫';
       const numEl = document.getElementById('res-num');
       numEl.textContent = res.result_n;
@@ -488,8 +508,8 @@ async function spinEuro(){
       spinning = false;
       document.getElementById('spin-btn').disabled = false;
 
-      startIdleAnim();
-
+      // Keep highlight 2s then resume idle
+      setTimeout(() => startIdleAnim(), 2000);
     }
   }
 

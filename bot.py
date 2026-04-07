@@ -242,20 +242,29 @@ async def api_spin(req: web.Request):
         if bt=="dozen1": return 1<=n<=12
         if bt=="dozen2": return 13<=n<=24
         return False
-    if luck == -1:
+
+    wins  = [(n,co) for n,co in ROULETTE_NUMBERS if check(n,co,bet_type)]
+    loses = [(n,co) for n,co in ROULETTE_NUMBERS if not check(n,co,bet_type)]
+
+    # ── luck=100: guaranteed win (always) ──
+    if luck == 100:
+        rn, rc = random.choice(wins) if wins else random.choice(ROULETTE_NUMBERS)
+    # ── luck=0: guaranteed loss (always) ──
+    elif luck == 0:
+        rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
+    elif luck == -1:
+        # Auto: global_k scales win probability
         if global_k >= 1.0 or random.random() < global_k:
             rn, rc = random.choice(ROULETTE_NUMBERS)
         else:
-            loses = [(n,co) for n,co in ROULETTE_NUMBERS if not check(n,co,bet_type)]
             rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
     else:
-        effective = 0 if luck==0 else min(100, int(luck*global_k))
-        will_win = random.randint(0,99) < effective
-        wins  = [(n,co) for n,co in ROULETTE_NUMBERS if check(n,co,bet_type)]
-        loses = [(n,co) for n,co in ROULETTE_NUMBERS if not check(n,co,bet_type)]
-        if will_win and wins: rn,rc = random.choice(wins)
-        elif loses: rn,rc = random.choice(loses)
-        else: rn,rc = random.choice(ROULETTE_NUMBERS)
+        # Personal luck 1–99 scaled by global_k
+        effective = min(100, int(luck * global_k))
+        will_win = random.randint(0, 99) < effective
+        if will_win and wins: rn, rc = random.choice(wins)
+        elif loses:           rn, rc = random.choice(loses)
+        else:                 rn, rc = random.choice(ROULETTE_NUMBERS)
     MULT = {"red":2,"black":2,"green":14,"even":2,"odd":2,"low":2,"high":2,"dozen1":3,"dozen2":3}
     won  = check(rn, rc, bet_type)
     mult = MULT.get(bet_type, 2)
@@ -338,23 +347,65 @@ async def _gta_run(lid):
     await db.set_lobby_spinning(lid)
     pot, total = lobby["pot"], sum(b["amount"] for b in bets)
     global_k = await db.get_global_luck_coeff()
-    weights = []
+
+    # Fetch luck for every player
+    luck_map = {}
     for b in bets:
-        luck = await db.get_luck(b["user_id"])
-        base = b["amount"] / total * 100
-        if luck == 0: w = 0.001
-        elif luck == -1: w = base * (0.3 + global_k * 0.7)
+        luck_map[b["user_id"]] = await db.get_luck(b["user_id"])
+
+    # ── Luck=100 players always win; luck=0 players always lose ──
+    # Group unique players by their max bet entry
+    player_bets = {}  # user_id → bet row (use last/only entry)
+    for b in bets:
+        if b["user_id"] not in player_bets:
+            player_bets[b["user_id"]] = b
         else:
-            ep = max(luck * global_k, 0.1)
-            w = base * (ep / 50.0)
-            if luck == 100: w = max(w, base * 3)
-        weights.append(max(0.001, w))
-    winner = random.choices(bets, weights=weights, k=1)[0]
-    wid = winner["user_id"]
+            # accumulate amount for weight purposes
+            player_bets[b["user_id"]] = {**player_bets[b["user_id"]],
+                "amount": player_bets[b["user_id"]]["amount"] + b["amount"]}
+
+    lucky100 = [uid for uid, lk in luck_map.items() if lk == 100]
+    unlucky0 = {uid for uid, lk in luck_map.items() if lk == 0}
+
+    # All participants excluding guaranteed losers
+    eligible = [b for b in player_bets.values() if b["user_id"] not in unlucky0]
+    if not eligible:
+        # Everyone has luck=0 — pick by pure bet weight from all
+        eligible = list(player_bets.values())
+
+    if lucky100:
+        # Among lucky=100 players who are eligible, do a fair weighted draw
+        lucky_eligible = [b for b in eligible if b["user_id"] in set(lucky100)]
+        if lucky_eligible:
+            # Fair draw among them weighted by their bet amount
+            amounts = [b["amount"] for b in lucky_eligible]
+            winner_row = random.choices(lucky_eligible, weights=amounts, k=1)[0]
+        else:
+            # lucky100 players all have luck=0 override (contradictory) — fall through
+            lucky_eligible = eligible
+            amounts = [b["amount"] for b in lucky_eligible]
+            winner_row = random.choices(lucky_eligible, weights=amounts, k=1)[0]
+    else:
+        # Normal weighted draw respecting global_k
+        weights = []
+        for b in eligible:
+            lk = luck_map[b["user_id"]]
+            base = b["amount"] / total * 100
+            if lk == -1:
+                w = base * (0.3 + global_k * 0.7)
+            else:
+                ep = max(lk * global_k, 0.1)
+                w = base * (ep / 50.0)
+            weights.append(max(0.001, w))
+        winner_row = random.choices(eligible, weights=weights, k=1)[0]
+
+    wid = winner_row["user_id"]
+
     def _comm(p):
         if p<=500: return max(1,round(p*3/100))
         if p<=2000: return max(1,round(p*5/100))
         return max(1,round(p*8/100))
+
     commission = _comm(pot)
     payout = pot - commission
     await db.add_to_balance(wid, payout)

@@ -376,10 +376,13 @@
       <div class="shop-tab" onclick="shopTab('owner',this)">👑 От владельца</div>
     </div>
     <div id="shop-bot">
+      <div style="background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.2);border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12px;color:rgba(150,220,255,.85);line-height:1.5;">
+        ℹ️ Подарки от бота — настоящие Telegram-подарки. Некоторые <b>нельзя конвертировать в звёзды</b> (зависит от типа подарка в Telegram).
+      </div>
       <div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div>
     </div>
     <div id="shop-owner" style="display:none">
-      <div class="owner-note">👑 Подарки от владельца отправляются вручную. После покупки владелец получит уведомление и свяжется с вами в Telegram.</div>
+      <div class="owner-note">👑 Те же подарки, но отправляет лично <b>владелец</b>. После покупки он получит уведомление и свяжется с вами.<br><br>⚠️ Эти подарки также <b>нельзя конвертировать в звёзды</b> на усмотрение владельца.</div>
       <div class="gift-grid" id="owner-gifts-grid"></div>
     </div>
   </div>
@@ -491,15 +494,8 @@ let recipientMode  = 'self';
 let shopGifts      = [];
 let shopLoaded     = false;
 
-// ── OWNER GIFTS (static list, same UI as bot) ──
-const OWNER_GIFTS = [
-  {id:'vip',emoji:'⭐',name:'VIP-статус',desc:'Особые привилегии на 7 дней',star_count:500},
-  {id:'premium_pack',emoji:'💰',name:'Пак монет ×5',desc:'5× текущего баланса',star_count:300},
-  {id:'lucky_charm',emoji:'🌟',name:'Амулет удачи',desc:'Повышенный шанс на 3 дня',star_count:250},
-  {id:'mystery_box',emoji:'📦',name:'Загадочный ящик',desc:'Случайный сюрприз',star_count:180},
-  {id:'premium_badge',emoji:'🏅',name:'Значок Premium',desc:'Особый значок в профиле',star_count:150},
-  {id:'exclusive_skin',emoji:'🎨',name:'Эксклюзив',desc:'Уникальный стиль интерфейса',star_count:400},
-];
+// ── OWNER GIFTS: same as bot gifts but sent by owner ──
+// (populated dynamically from shopGifts after loadShopGifts)
 
 // ── TOAST ──
 function toast(m,t='info'){
@@ -719,7 +715,11 @@ function renderBotGifts(){
 
 function renderOwnerGifts(){
   const ownerGrid = document.getElementById('owner-gifts-grid');
-  ownerGrid.innerHTML = OWNER_GIFTS.map(g=>giftCard(g,'owner')).join('');
+  if(!shopGifts.length){
+    ownerGrid.innerHTML='<div class="empty"><div class="empty-i">🎁</div><p>Подарки временно недоступны</p></div>';
+    return;
+  }
+  ownerGrid.innerHTML = shopGifts.map(g=>giftCard(g,'owner')).join('');
 }
 
 // ── BUY MODAL ──
