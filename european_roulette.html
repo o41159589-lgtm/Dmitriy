@@ -245,14 +245,31 @@ const NUMS = [
 const N = NUMS.length;
 const SLICE = (Math.PI*2) / N;
 
-// Returns the sector index currently under the pointer (top = -PI/2)
+// ── ANGLE SYSTEM ──
+// Sector i is drawn from: angle + i*SLICE - PI/2  to  angle + i*SLICE - PI/2 + SLICE
+// The POINTER is fixed at the TOP = angle -PI/2 on the canvas = the 12 o'clock position.
+// Sector i sits under the pointer when its range includes -PI/2:
+//   angle + i*SLICE - PI/2  <=  -PI/2  <  angle + i*SLICE - PI/2 + SLICE
+//   =>  0  <=  -angle + ... hmm, let's simplify:
+//   Sector i center angle = angle + i*SLICE - PI/2 + SLICE/2
+//   Center under pointer (-PI/2) when: angle + i*SLICE - PI/2 + SLICE/2 = -PI/2 (mod 2PI)
+//   => angle = -i*SLICE - SLICE/2  (mod 2PI)
+//
+// For sectorUnderPointer(angle): which i satisfies center closest to -PI/2?
+//   center_i = angle + i*SLICE + SLICE/2 - PI/2
+//   We want center_i ≡ -PI/2 (mod 2PI)  => angle + i*SLICE + SLICE/2 ≡ 0 (mod 2PI)
+//   => i*SLICE ≡ -(angle + SLICE/2) (mod 2PI)
+//   => i = floor( (-(angle + SLICE/2) % 2PI + 2PI) % 2PI / SLICE ) % N
+
 function sectorUnderPointer(angle) {
-  // Pointer is at -PI/2. Sector i occupies [angle + i*SLICE - PI/2, angle + i*SLICE - PI/2 + SLICE]
-  // We want i such that angle + i*SLICE - PI/2 <= -PI/2 < angle + i*SLICE - PI/2 + SLICE
-  // i.e. 0 <= -angle + i*SLICE < SLICE => i = floor((-angle % TAU + TAU) % TAU / SLICE)
+  // Sector i is drawn starting at: angle + i*SLICE - PI/2
+  // Pointer is at top = -PI/2 on canvas.
+  // Sector i contains pointer when: angle + i*SLICE in [0, SLICE) mod TAU
+  // => i = floor((-angle % TAU) / SLICE) mod N
+  // +1 corrects the boundary shift from floor vs sector start alignment:
   const TAU = Math.PI * 2;
   const norm = ((-angle % TAU) + TAU) % TAU;
-  return Math.floor(norm / SLICE) % N;
+  return (Math.floor(norm / SLICE) + 1) % N;
 }
 
 function liveSectorLabel(angle) {
@@ -453,7 +470,7 @@ async function spinEuro(){
   rb.className='res-box'; rb.textContent='🎰 Крутим...';
   document.getElementById('res-num').textContent='—';
   document.getElementById('res-num').style.color='var(--muted)';
-  document.getElementById('res-lbl').textContent='';
+  document.getElementById('res-lbl').textContent='🎰 Вращается...';
 
   const res = await post('/api/spin',{user_id:UID,bet,bet_type:selBetType}).catch(()=>null);
   if(!res||res.error){
@@ -468,20 +485,25 @@ async function spinEuro(){
   const SPIN_DURATION = 5500;
   const startWheelAngle = idleAngle;
 
-  // Pointer is at top (–PI/2).
-  // Sector i center is at: wheelAngle + i*SLICE + SLICE/2 – PI/2 = –PI/2
-  // => wheelAngle = –(i + 0.5) * SLICE
-  // Add small random jitter so pointer lands deep inside sector (not on edge)
-  const jitter = (Math.random() - 0.5) * SLICE * 0.55; // ±27.5% of sector width
-  const targetWheelAngle = -((targetIdx + 0.5) * SLICE) + jitter;
-
-  // Normalise delta so we always spin clockwise (negative direction in our system)
-  // and do at least 8 full rotations
+  // ── TARGET ANGLE CALCULATION ──
+  // Sector idx is under pointer when: angle = SLICE/2 - idx*SLICE  (exact center)
+  // (Derived: sector i is drawn from angle + i*SLICE - PI/2;
+  //  pointer at -PI/2 is in sector i when angle + i*SLICE ∈ [0, SLICE);
+  //  center = SLICE/2, so angle = SLICE/2 - i*SLICE)
   const PI2 = Math.PI * 2;
   const minSpins = 8;
-  let delta = ((targetWheelAngle - startWheelAngle) % PI2 + PI2) % PI2;
-  // delta is in [0, 2PI). We subtract it (CW) plus full spins.
-  const finalWheelAngle = startWheelAngle - minSpins * PI2 - delta;
+
+  // Exact angle that places sector center under pointer:
+  const exactTarget = SLICE/2 - targetIdx * SLICE;
+  // Random jitter: ±35% of sector width so it never lands on edge
+  const jitter = (Math.random() - 0.5) * SLICE * 0.7;
+  const targetWheelAngle = exactTarget + jitter;
+
+  // CW travel (negative direction): start → target, at least minSpins rotations
+  let totalTravel = startWheelAngle - targetWheelAngle;
+  totalTravel = ((totalTravel % PI2) + PI2) % PI2; // normalise to [0, 2PI)
+  totalTravel += minSpins * PI2;                   // ensure enough full rotations
+  const finalWheelAngle = startWheelAngle - totalTravel;
 
   const t0 = performance.now();
 
@@ -499,7 +521,11 @@ async function spinEuro(){
     // Show winning highlight only in the last 5% of animation
     drawWheel(wA, t >= 0.95 ? targetIdx : -1);
     if(t < 0.95){
-      rb.textContent = '👆 ' + liveSectorLabel(wA);
+      // Show live sector under the wheel (in result-display area, not res-box)
+      const liveLabel = liveSectorLabel(wA);
+      document.getElementById('res-lbl').textContent = '👆 ' + liveLabel;
+      // Show in res-box too (above spin button) for visibility
+      rb.textContent = '👆 Указатель: ' + liveLabel;
       rb.className = 'res-box';
     }
 
@@ -514,6 +540,7 @@ async function spinEuro(){
       numEl.textContent = res.result_n;
       numEl.className = 'result-number ' + res.result_c;
       document.getElementById('res-lbl').textContent = res.won ? '🎉 Выигрыш!' : '😢 Проигрыш';
+      // Clear the live pointer label from res-box (now shows actual result)
 
       if(res.won){
         rb.className='res-box win';
@@ -531,7 +558,10 @@ async function spinEuro(){
       document.getElementById('spin-btn').disabled = false;
 
       // Keep highlight 2s then resume idle
-      setTimeout(() => startIdleAnim(), 2000);
+      setTimeout(() => {
+        document.getElementById('res-lbl').textContent = '';
+        startIdleAnim();
+      }, 2000);
     }
   }
 

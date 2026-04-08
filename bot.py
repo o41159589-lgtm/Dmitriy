@@ -32,6 +32,7 @@ LOG_GROUP_ID       = int(os.getenv("LOG_GROUP_ID", 0))
 LOG_THREAD_USERS   = int(os.getenv("LOG_THREAD_USERS",   1))
 LOG_THREAD_GAMES   = int(os.getenv("LOG_THREAD_GAMES",   2))
 LOG_THREAD_WITHDRAW= int(os.getenv("LOG_THREAD_WITHDRAW",3))
+LOG_THREAD_WITHDRAW_BOT = int(os.getenv("LOG_THREAD_WITHDRAW_BOT", 8))
 LOG_THREAD_DEPOSIT = int(os.getenv("LOG_THREAD_DEPOSIT", 4))
 LOG_THREAD_BROADCAST=int(os.getenv("LOG_THREAD_BROADCAST",5))
 LOG_THREAD_ADMIN   = int(os.getenv("LOG_THREAD_ADMIN",   6))
@@ -134,6 +135,21 @@ async def log_withdraw_request(uid: int, name: str, gift_name: str, price: int,
         + (f"Подпись: <i>{message_text}</i>\n" if message_text and message_text != "auto" else "")
         + f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}",
         reply_markup=kb)
+
+async def log_bot_gift(uid: int, name: str, gift_name: str, gift_emoji: str, price: int,
+                       recipient_id: int, anonymous: bool, message_text: str):
+    """Log auto-sent bot gift to the bot-withdraw thread."""
+    uname_info = "Аноним 🎭" if anonymous else f"{name} (ID: {uid})"
+    recip_info = f"себе (ID: {uid})" if recipient_id == uid else f"ID: <code>{recipient_id}</code>"
+    await log(LOG_THREAD_WITHDRAW_BOT,
+        f"🤖 <b>Подарок от бота отправлен</b>\n"
+        f"#id{uid} #bot_gift\n"
+        f"Отправитель: <b>{uname_info}</b>\n"
+        f"Подарок: {gift_emoji} <b>{gift_name}</b>\n"
+        f"Стоимость: {price} ⭐\n"
+        f"Получатель: {recip_info}\n"
+        + (f"Подпись: <i>{message_text}</i>\n" if message_text and message_text != "auto" else "")
+        + f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
 # ════════════════════════════════════════
 #  CALLBACK: Вывод (Выдано / Отклонено)
@@ -513,7 +529,14 @@ async def api_ensure_user(req: web.Request):
     data = await req.json()
     uid = int(data.get("user_id", 0))
     if not uid: return web.json_response({"error":"no uid"}, status=400)
-    u = await db.ensure_user(uid, str(data.get("username","")), str(data.get("first_name","")))
+    username   = str(data.get("username",""))
+    first_name = str(data.get("first_name",""))
+    # Check if user exists before ensure (to detect new registrations)
+    existed = await db.get_user(uid)
+    u = await db.ensure_user(uid, username, first_name)
+    # Log new users who register through the mini app (not via /start)
+    if not existed:
+        await log_new_user(uid, first_name, username, u.get("balance", 10))
     return web.json_response(u)
 
 async def api_history(req: web.Request):
@@ -597,6 +620,11 @@ async def api_gift_buy(req: web.Request):
 
         new_bal = await db.add_to_balance(uid, -price)
         await db.add_history(uid, "gift_sent", price, f"Подарок → {recipient_id}: {gift_emoji} (⭐{price})")
+        # Log to bot-gifts thread
+        u2 = await db.get_user(uid)
+        uname = u2.get("first_name", "?") if u2 else "?"
+        await log_bot_gift(uid, sender_name or uname, gift_name, gift_emoji, price,
+                           recipient_id, anonymous, message_text)
         return web.json_response({"ok":True,"new_balance":new_bal})
 
     else:
