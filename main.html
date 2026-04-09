@@ -372,11 +372,13 @@
       <div class="shop-tab" onclick="shopTab('owner',this)">👑 От владельца</div>
     </div>
     <div id="shop-bot">
-      <div class="owner-note" style="border-color:rgba(230,57,70,.25);background:rgba(230,57,70,.07);">
+      <div class="owner-note" style="border-color:rgba(230,57,70,.3);background:rgba(230,57,70,.07);color:rgba(255,200,200,.9);">
         🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>
         ⛔ <b>Нельзя конвертировать в звёзды</b> — эти подарки non-transferable по условиям Telegram.
       </div>
-      <div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div>
+      <div id="bot-gifts-inner">
+        <div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div>
+      </div>
     </div>
     <div id="shop-owner" style="display:none">
       <div class="owner-note">
@@ -482,7 +484,7 @@ if(tg){tg.ready();tg.expand();}
 const UID        = tg?.initDataUnsafe?.user?.id || 0;
 const USERNAME   = tg?.initDataUnsafe?.user?.username || '';
 const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
-let BOT = 'DmitriyProjectBot'; // overridden by /api/config on load
+let BOT = 'DmitriyProjectBot'; // overridden from /api/config
 const REF        = `https://t.me/${BOT}?start=ref_${UID}`;
 
 let userData  = null;
@@ -514,12 +516,6 @@ async function post(url,d){
 
 // ── REGISTER USER on first load ──
 async function initUser(){
-  // Load bot name from server config
-  try {
-    const cfg = await get('/api/config');
-    if(cfg && cfg.bot_name) BOT = cfg.bot_name;
-  } catch(e) {}
-
   if(!UID) return;
   try {
     userData = await post('/api/ensure_user',{
@@ -674,16 +670,17 @@ function shopTab(tab, el){
 async function loadShopGifts(){
   shopLoaded = true;
   const botDiv = document.getElementById('shop-bot');
+  const botInner = document.getElementById('bot-gifts-inner');
   try {
     const data = await get('/api/gifts');
     shopGifts = data.gifts || [];
     if(!shopGifts.length){
-      botDiv.innerHTML='<div class="empty"><div class="empty-i">🎁</div><p>Подарки временно недоступны</p></div>';
+      if(botInner) botInner.innerHTML='<div class="empty"><div class="empty-i">🎁</div><p>Подарки временно недоступны</p></div>';
     } else {
       renderBotGifts();
     }
   } catch(e){
-    botDiv.innerHTML='<div class="empty"><div class="empty-i">⚠️</div><p>Не удалось загрузить подарки</p></div>';
+    if(botInner) botInner.innerHTML='<div class="empty"><div class="empty-i">⚠️</div><p>Не удалось загрузить подарки</p></div>';
   }
   renderOwnerGifts();
 }
@@ -712,8 +709,9 @@ function giftCard(gift, source){
 }
 
 function renderBotGifts(){
-  const botDiv = document.getElementById('shop-bot');
-  botDiv.innerHTML = `<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;
+  // Update only the inner grid container — NOTE stays preserved above it
+  const inner = document.getElementById('bot-gifts-inner');
+  if(inner) inner.innerHTML = `<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;
 }
 
 function renderOwnerGifts(){

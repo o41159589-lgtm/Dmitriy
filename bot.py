@@ -85,6 +85,10 @@ async def log(thread_id: int, text: str, reply_markup=None, incognito: bool = Fa
     except Exception as e:
         logger.warning(f"Log send error (thread {thread_id}): {e}")
 
+def fire_log(coro):
+    """Fire-and-forget: schedule a log coroutine as background task. Never blocks."""
+    asyncio.create_task(coro)
+
 async def log_new_user(uid: int, first_name: str, username: str, balance: int):
     uname = f"@{username}" if username else "нет"
     await log(LOG_THREAD_USERS,
@@ -270,92 +274,96 @@ async def on_broadcast_msg(message: Message):
 async def cmd_start(message: Message):
     user = message.from_user
 
-    # DB operations — wrapped so any error doesn't silently kill the handler
+    # ── 1. DB — wrapped so any DB error returns gracefully ──
     try:
         existed = await db.get_user(user.id)
         u = await db.ensure_user(user.id, user.username or "", user.first_name or "")
     except Exception as e:
-        logger.error(f"cmd_start db error uid={user.id}: {e}")
-        await message.answer("❌ Ошибка сервера. Попробуйте позже.")
+        logger.error(f"[cmd_start] DB error uid={user.id}: {e}")
+        try:
+            await message.answer("❌ Временная ошибка сервера. Попробуйте ещё раз.")
+        except Exception: pass
         return
 
-    # Check ban — also wrapped
+    # ── 2. Ban check — wrapped ──
     try:
-        banned = await db.is_banned(user.id)
-    except Exception:
-        banned = False
+        if await db.is_banned(user.id):
+            await message.answer(
+                "⛔ <b>Вы заблокированы.</b>\n"
+                "Обратитесь к администратору, если считаете это ошибкой.",
+                parse_mode="HTML")
+            return
+    except Exception as e:
+        logger.warning(f"[cmd_start] is_banned error: {e}")
 
-    if banned:
-        await message.answer(
-            "⛔ <b>Вы заблокированы.</b>\n"
-            "Обратитесь к администратору, если считаете это ошибкой.",
-            parse_mode="HTML")
-        return
+    # ── 3. SEND GREETING — always, before any logging ──
+    try:
+        kb_inline = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🎰 Открыть TopLuck Casino", web_app=WebAppInfo(url=WEBAPP_URL))]])
 
-    # ── Send greeting FIRST — always, regardless of logging status ──
-    kb_inline = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="🎰 Открыть TopLuck Casino", web_app=WebAppInfo(url=WEBAPP_URL))]])
+        is_new = not existed
+        greeting = (
+            f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
+            f"👋 Привет, <b>{user.first_name}</b>!\n\n"
+            f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
+            f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
+            f"⭐ 1 монета = 1 Telegram Star\n\n"
+            f"Нажми кнопку ниже чтобы начать:"
+        ) if is_new else (
+            f"👋 С возвращением, <b>{user.first_name}</b>!\n\n"
+            f"🍀 <b>TopLuck Casino</b> ждёт тебя!\n\n"
+            f"💰 Баланс: <b>{u['balance']}</b> монет\n\n"
+            f"Открывай казино:"
+        )
+        await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"[cmd_start] answer error uid={user.id}: {e}")
 
-    is_new = not existed
-    greeting = (
-        f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
-        f"👋 Привет, <b>{user.first_name}</b>!\n\n"
-        f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
-        f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
-        f"⭐ 1 монета = 1 Telegram Star\n\n"
-        f"Нажми кнопку ниже чтобы начать:"
-    ) if is_new else (
-        f"👋 С возвращением, <b>{user.first_name}</b>!\n\n"
-        f"🍀 <b>TopLuck Casino</b> ждёт тебя!\n\n"
-        f"💰 Баланс: <b>{u['balance']}</b> монет\n\n"
-        f"Открывай казино:"
-    )
+    # ── 4. All side-effects AFTER greeting, fire-and-forget ──
 
-    await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
-
-    # ── All side-effects AFTER greeting (non-blocking) ──
-
-    # Referral handling
+    # Referral
     parts = message.text.split(maxsplit=1)
     if len(parts) > 1 and parts[1].startswith("ref_"):
-        try:
-            ref_id = int(parts[1].split("_")[1])
-            if ref_id != user.id:
-                ref_u = await db.get_user(ref_id)
-                if ref_u:
-                    nb = await db.add_to_balance(ref_id, 10)
-                    await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
-                    try:
-                        ref_u2 = await db.get_user(ref_id)
-                        ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
-                        await log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})")
-                    except Exception: pass
-                    try:
-                        await bot.send_message(ref_id,
-                            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
-                            f"💰 +10 монет → баланс: <b>{nb}</b>", parse_mode="HTML")
-                    except Exception: pass
-        except (ValueError, IndexError): pass
+        asyncio.create_task(_handle_referral(user, parts[1]))
 
     if len(parts) > 1 and parts[1].startswith("gift_request"):
         for admin_id in ADMIN_IDS:
-            try:
-                await bot.send_message(admin_id,
-                    f"📦 Пользователь <b>{user.first_name}</b> (ID: <code>{user.id}</code>) "
-                    f"написал боту по заявке на подарок.", parse_mode="HTML")
-            except Exception: pass
+            asyncio.create_task(_safe_send(admin_id,
+                f"📦 Пользователь <b>{user.first_name}</b> (ID: <code>{user.id}</code>) "
+                f"написал боту по заявке на подарок."))
 
-    # Log new user — in background so it NEVER blocks the greeting
-    if is_new:
-        asyncio.create_task(_log_new_user_safe(
-            user.id, user.first_name or "", user.username or "", u.get("balance", 10)))
+    # Log new user — background task, NEVER blocks greeting
+    if not existed:
+        fire_log(log_new_user(user.id, user.first_name or "", user.username or "", u.get("balance", 10)))
 
-async def _log_new_user_safe(uid, first_name, username, balance):
-    """Background task — logs new user without blocking cmd_start."""
+async def _safe_send(uid: int, text: str, parse_mode: str = "HTML"):
+    """Send a message safely without raising."""
     try:
-        await log_new_user(uid, first_name, username, balance)
+        await bot.send_message(uid, text, parse_mode=parse_mode)
     except Exception as e:
-        logger.warning(f"log_new_user failed uid={uid}: {e}")
+        logger.warning(f"[_safe_send] uid={uid}: {e}")
+
+async def _handle_referral(user, param: str):
+    """Handle referral bonus in background."""
+    try:
+        ref_id = int(param.split("_")[1])
+        if ref_id == user.id:
+            return
+        ref_u = await db.get_user(ref_id)
+        if not ref_u:
+            return
+        nb = await db.add_to_balance(ref_id, 10)
+        await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
+        try:
+            ref_u2 = await db.get_user(ref_id)
+            ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
+            fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
+        except Exception: pass
+        await _safe_send(ref_id,
+            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
+            f"💰 +10 монет → баланс: <b>{nb}</b>")
+    except Exception as e:
+        logger.warning(f"[_handle_referral]: {e}")
 
 @dp.message(Command("help"))
 async def cmd_help(message: Message):
@@ -557,7 +565,7 @@ async def on_payment(message: Message):
         await message.answer(f"✅ Оплата прошла!\n💰 +{amount} монет → баланс: <b>{nb}</b>", parse_mode="HTML")
         u = await db.get_user(uid)
         name = u.get("first_name","?") if u else "?"
-        await log_deposit(uid, name, amount, nb, "Telegram Stars")
+        fire_log(log_deposit(uid, name, amount, nb, "Telegram Stars"))
 
 # ════════════════════════════════════════
 #  DAILY BACKUP at 00:00
@@ -706,8 +714,8 @@ async def api_gift_buy(req: web.Request):
         u2 = await db.get_user(uid)
         uname = u2.get("first_name", "?") if u2 else "?"
         _bg_name = gift_name if gift_name.startswith(gift_emoji) else f"{gift_emoji} {gift_name}"
-        await log_bot_gift(uid, sender_name or uname, _bg_name, gift_emoji, price,
-                           recipient_id, anonymous, message_text)
+        fire_log(log_bot_gift(uid, sender_name or uname, _bg_name, gift_emoji, price,
+                              recipient_id, anonymous, message_text))
         return web.json_response({"ok":True,"new_balance":new_bal})
 
     else:
@@ -725,8 +733,8 @@ async def api_gift_buy(req: web.Request):
         withdraw_id = str(int(time.time()))
         # Avoid double emoji: if gift_name starts with gift_emoji, don't prepend again
         _display_name = gift_name if gift_name.startswith(gift_emoji) else f"{gift_emoji} {gift_name}"
-        await log_withdraw_request(uid, sender_name or "?", _display_name,
-                                   price, recipient_id, anonymous, message_text, withdraw_id)
+        fire_log(log_withdraw_request(uid, sender_name or "?", _display_name,
+                                       price, recipient_id, anonymous, message_text, withdraw_id))
 
         # Notify admins directly too
         sender_info = "Аноним 🎭" if anonymous else f"{sender_name} (ID: {uid})"
@@ -812,8 +820,8 @@ async def api_spin(req: web.Request):
 
     u2 = await db.get_user(uid)
     name = u2.get("first_name","?") if u2 else "?"
-    await log_game(uid, name, "Европейская рулетка", bet_amt,
-                   "Выигрыш" if won else "Проигрыш", gain, new_bal)
+    fire_log(log_game(uid, name, "Европейская рулетка", bet_amt,
+                      "Выигрыш" if won else "Проигрыш", gain, new_bal))
 
     return web.json_response({"result_n":rn,"result_c":rc,"result_index":ridx,"won":won,"gain":gain,"new_balance":new_bal})
 
@@ -933,7 +941,7 @@ async def _gta_run(lid):
 
     wu = await db.get_user(wid)
     wname = wu.get("first_name","?") if wu else "?"
-    await log_game(wid, wname, "GTA рулетка", 0, "Выигрыш", payout, wu.get("balance",0) if wu else 0)
+    fire_log(log_game(wid, wname, "GTA рулетка", winner_bet, "Выигрыш", net_gain, wu.get("balance",0) if wu else 0))
 
     try:
         pct = 3 if pot<=500 else 5 if pot<=2000 else 8
@@ -970,8 +978,8 @@ async def api_admin_set_global_luck(req):
             u = await db.get_user(uid)
             aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
-        await log_admin_action(uid, aname, "SET_GLOBAL_LUCK", 0, "Все игроки",
-            f"Глобальный коэффициент удачи → {coeff}", incognito=False)
+        fire_log(log_admin_action(uid, aname, "SET_GLOBAL_LUCK", 0, "Все игроки",
+            f"Глобальный коэффициент удачи → {coeff}", incognito=False))
     return web.json_response({"ok":True,"coeff":coeff})
 
 async def api_admin_revenue(req):
@@ -996,7 +1004,7 @@ async def api_admin_set_balance(req):
         if not incognito:
             tu2 = await db.get_user(uid)
             tname2 = tu2.get("first_name","?") if tu2 else "?"
-            await log_deposit(uid, tname2, delta, new_bal, "Пополнение администратором")
+            fire_log(log_deposit(uid, tname2, delta, new_bal, "Пополнение администратором"))
     if not incognito:
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid","0"))
@@ -1006,7 +1014,7 @@ async def api_admin_set_balance(req):
         tu = await db.get_user(uid)
         tname = tu.get("first_name","?") if tu else "?"
         action = f"SET_BALANCE {old}→{new_bal} (delta: {delta:+d})"
-        await log_admin_action(admin_uid, aname, action, uid, tname, f"Новый баланс: {new_bal} 🪙")
+        fire_log(log_admin_action(admin_uid, aname, action, uid, tname, f"Новый баланс: {new_bal} 🪙"))
     return web.json_response({"success":True,"balance":new_bal})
 
 async def api_admin_set_luck(req):
@@ -1024,7 +1032,7 @@ async def api_admin_set_luck(req):
         tu = await db.get_user(uid)
         tname = tu.get("first_name","?") if tu else "?"
         luck_str = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
-        await log_admin_action(admin_uid, aname, f"SET_LUCK → {luck_str}", uid, tname, f"Удача: {luck_str}")
+        fire_log(log_admin_action(admin_uid, aname, f"SET_LUCK → {luck_str}", uid, tname, f"Удача: {luck_str}"))
     return web.json_response({"success":True})
 
 async def api_admin_ban(req):
