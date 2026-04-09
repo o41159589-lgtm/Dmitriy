@@ -372,9 +372,9 @@
       <div class="shop-tab" onclick="shopTab('owner',this)">👑 От владельца</div>
     </div>
     <div id="shop-bot">
-      <div style="background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.2);border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:12px;color:rgba(255,160,160,.9);line-height:1.5;">
+      <div class="owner-note" style="border-color:rgba(230,57,70,.25);background:rgba(230,57,70,.07);">
         🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>
-        ⚠️ <b>Нельзя конвертировать в звёзды</b> (non-transferable по условиям Telegram).
+        ⛔ <b>Нельзя конвертировать в звёзды</b> — эти подарки non-transferable по условиям Telegram.
       </div>
       <div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div>
     </div>
@@ -482,7 +482,7 @@ if(tg){tg.ready();tg.expand();}
 const UID        = tg?.initDataUnsafe?.user?.id || 0;
 const USERNAME   = tg?.initDataUnsafe?.user?.username || '';
 const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
-let BOT = '';  // loaded from /api/config
+let BOT = 'DmitriyProjectBot'; // overridden by /api/config on load
 const REF        = `https://t.me/${BOT}?start=ref_${UID}`;
 
 let userData  = null;
@@ -514,10 +514,10 @@ async function post(url,d){
 
 // ── REGISTER USER on first load ──
 async function initUser(){
-  // Load bot config first
+  // Load bot name from server config
   try {
     const cfg = await get('/api/config');
-    if(cfg.bot_name) BOT = cfg.bot_name;
+    if(cfg && cfg.bot_name) BOT = cfg.bot_name;
   } catch(e) {}
 
   if(!UID) return;

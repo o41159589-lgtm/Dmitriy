@@ -467,7 +467,7 @@ async function spinEuro(){
   document.getElementById('spin-btn').disabled = true;
   const rb = document.getElementById('res-box');
   rb.className='res-box'; rb.textContent='🎰 Крутим...';
-  document.getElementById('res-num').textContent='—';
+  document.getElementById('res-num').textContent='';
   document.getElementById('res-num').style.color='var(--muted)';
   document.getElementById('res-lbl').textContent='🎰 Вращается...';
 
@@ -522,10 +522,16 @@ async function spinEuro(){
     drawWheel(wA, t >= 0.95 ? targetIdx : -1);
     if(t < 0.95){
       // Show live sector under the wheel (in result-display area, not res-box)
-      const liveLabel = liveSectorLabel(wA);
-      document.getElementById('res-lbl').textContent = liveLabel;
-      // Show in res-box too (above spin button) for visibility
-      rb.textContent = liveLabel;
+      const liveIdx = sectorUnderPointer(wA);
+      const liveNum = NUMS[liveIdx];
+      const liveIco = liveNum.c==='green'?'🟢':liveNum.c==='red'?'🔴':'⚫';
+      // Show number in big display, color in label — no "—" prefix
+      const numEl2 = document.getElementById('res-num');
+      numEl2.textContent = liveNum.n;
+      numEl2.style.color = liveNum.c==='green'?'var(--green)':liveNum.c==='red'?'var(--red)':'#ccc';
+      document.getElementById('res-lbl').textContent = liveIco;
+      // res-box: compact live readout
+      rb.textContent = liveIco + ' ' + liveNum.n;
       rb.className = 'res-box';
     }
 
