@@ -145,7 +145,7 @@
 
 <!-- Header -->
 <div class="topbar">
-  <button class="fp-back" onclick="history.back()">‹</button>
+  <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:20px">🎰</span>
     <span class="fp-title">ЕВРОПЕЙСКАЯ РУЛЕТКА</span>
@@ -262,14 +262,13 @@ const SLICE = (Math.PI*2) / N;
 //   => i = floor( (-(angle + SLICE/2) % 2PI + 2PI) % 2PI / SLICE ) % N
 
 function sectorUnderPointer(angle) {
-  // Sector i is drawn starting at: angle + i*SLICE - PI/2
-  // Pointer is at top = -PI/2 on canvas.
-  // Sector i contains pointer when: angle + i*SLICE in [0, SLICE) mod TAU
-  // => i = floor((-angle % TAU) / SLICE) mod N
-  // +1 corrects the boundary shift from floor vs sector start alignment:
+  // Sector i starts at: angle + i*SLICE - PI/2
+  // Pointer at top = -PI/2. Sector i is under pointer when:
+  //   angle + i*SLICE in (-SLICE, 0]  =>  center when angle + i*SLICE = -SLICE/2
+  // => i = floor(-angle / TAU * N) = floor((-angle % TAU) / SLICE)
   const TAU = Math.PI * 2;
-  const norm = ((-angle % TAU) + TAU) % TAU;
-  return (Math.floor(norm / SLICE) + 1) % N;
+  const norm = ((-angle) % TAU + TAU) % TAU;
+  return Math.floor(norm / SLICE) % N;
 }
 
 function liveSectorLabel(angle) {
@@ -494,7 +493,8 @@ async function spinEuro(){
   const minSpins = 8;
 
   // Exact angle that places sector center under pointer:
-  const exactTarget = SLICE/2 - targetIdx * SLICE;
+    // target: angle + targetIdx*SLICE = -SLICE/2 => angle = -targetIdx*SLICE - SLICE/2
+  const exactTarget = -targetIdx * SLICE - SLICE/2;
   // Random jitter: ±35% of sector width so it never lands on edge
   const jitter = (Math.random() - 0.5) * SLICE * 0.7;
   const targetWheelAngle = exactTarget + jitter;
@@ -523,9 +523,9 @@ async function spinEuro(){
     if(t < 0.95){
       // Show live sector under the wheel (in result-display area, not res-box)
       const liveLabel = liveSectorLabel(wA);
-      document.getElementById('res-lbl').textContent = '👆 ' + liveLabel;
+      document.getElementById('res-lbl').textContent = liveLabel;
       // Show in res-box too (above spin button) for visibility
-      rb.textContent = '👆 Указатель: ' + liveLabel;
+      rb.textContent = liveLabel;
       rb.className = 'res-box';
     }
 

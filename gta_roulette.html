@@ -83,7 +83,7 @@
 
 <!-- Header -->
 <div class="topbar">
-  <button class="fp-back" onclick="history.back()">‹</button>
+  <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
   <div style="display:flex;align-items:center;gap:8px">
     <span style="font-size:20px">🏙</span>
     <span class="fp-title">GTA RP РУЛЕТКА</span>
@@ -534,10 +534,16 @@ function renderGta(lobby, bets){
       ?lobby.deadline*1000:(gtaDeadline||Date.now()+15000);
     if(statusChanged||!gtaTimerInterval){
       if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      // Capture deadline at interval start so it stays fixed
+      const timerDeadline = deadline;
+      const timerStart = Date.now();
+      const timerTotal = Math.max(1000, timerDeadline - timerStart); // total duration ms
       gtaTimerInterval=setInterval(()=>{
         const now=Date.now();
-        const rem=Math.max(0,Math.ceil((deadline-now)/1000));
-        const pct=Math.max(0,Math.min(100,(deadline-now)/15000*100));
+        const rem=Math.max(0,Math.ceil((timerDeadline-now)/1000));
+        // pct goes from 100 → 0 as time passes (progress = time remaining / total)
+        const elapsed = now - timerStart;
+        const pct = Math.max(0, Math.min(100, (1 - elapsed/timerTotal)*100));
         document.getElementById('t-bar').style.width=pct+'%';
         st.textContent=`⏳ Розыгрыш через ${rem} сек...`;
         if(rem<=0){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}

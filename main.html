@@ -319,10 +319,6 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <div class="section-label">🎮 Выбери игру</div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button id="refresh-btn" onclick="refreshBalance()"
-          style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;
-            width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-            cursor:pointer;color:var(--muted);font-size:15px;backdrop-filter:blur(8px);">↻</button>
         <div class="bal-chip" style="font-size:13px;padding:6px 11px;">🪙 <span id="r-bal">0</span></div>
       </div>
     </div>
@@ -486,7 +482,7 @@ if(tg){tg.ready();tg.expand();}
 const UID        = tg?.initDataUnsafe?.user?.id || 0;
 const USERNAME   = tg?.initDataUnsafe?.user?.username || '';
 const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
-const BOT        = 'DmitriyProjectBot';
+const BOT        = 'GeometryImmageBot';
 const REF        = `https://t.me/${BOT}?start=ref_${UID}`;
 
 let userData  = null;
@@ -569,11 +565,7 @@ function copyRef(){
     .catch(()=>toast(REF,'info'));
 }
 
-async function refreshBalance(){
-  const btn=document.getElementById('refresh-btn');
-  if(btn){btn.style.animation='spin-once .6s ease';setTimeout(()=>btn.style.animation='',700);}
-  await loadUser(); toast('Баланс обновлён','ok');
-}
+// refreshBalance removed
 
 // ── HISTORY ──
 async function renderHistory(){
@@ -838,6 +830,13 @@ async function confirmTopup(){
 
 // ── INIT ──
 window.addEventListener('load', async ()=>{
+  // Handle ?tab=games from back button in roulette pages
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab');
+  if(tabParam === 'games'){
+    const gamesBtn = document.querySelector('[onclick*="games"]');
+    if(gamesBtn) showPage('games', gamesBtn, 2);
+  }
   await initUser();
   setInterval(loadUser, 15000);
 });

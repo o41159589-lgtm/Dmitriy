@@ -42,7 +42,14 @@ GTA_MIN_PLAYERS = int(os.getenv("GTA_MIN_PLAYERS", 2))
 GTA_SPIN_DELAY  = int(os.getenv("GTA_SPIN_DELAY",  15))
 # ════════════════════════════════════════
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("topluck.log", encoding="utf-8"),
+    ]
+)
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=BOT_TOKEN)
@@ -275,6 +282,9 @@ async def cmd_start(message: Message):
                 if ref_u:
                     nb = await db.add_to_balance(ref_id, 10)
                     await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
+                    ref_u2 = await db.get_user(ref_id)
+                    ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
+                    await log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})")
                     try:
                         await bot.send_message(ref_id,
                             f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
@@ -321,6 +331,36 @@ async def cmd_start(message: Message):
     )
 
     await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
+
+@dp.message(Command("help"))
+async def cmd_help(message: Message):
+    uid = message.from_user.id
+    is_admin = uid in ADMIN_IDS
+    is_dev   = uid in DEV_IDS
+
+    user_cmds = (
+        "🎮 <b>Команды пользователя:</b>\n"
+        "/start — открыть казино\n"
+        "/help — список команд\n"
+    )
+    admin_cmds = (
+        "\n🛠 <b>Команды администратора:</b>\n"
+        "/admin — открыть панель управления\n"
+        "/info &lt;id&gt; — информация о пользователе\n"
+        "/ban &lt;id&gt; [причина] — заблокировать пользователя\n"
+        "/unban &lt;id&gt; — разблокировать пользователя\n"
+        "/message &lt;id&gt; &lt;текст&gt; — отправить сообщение пользователю\n"
+    ) if is_admin else ""
+    dev_cmds = (
+        "\n💻 <b>Команды разработчика:</b>\n"
+        "/database — получить копию базы данных\n"
+        "/logs — получить файл логов\n"
+    ) if is_dev else ""
+
+    await message.answer(
+        f"📋 <b>Команды TopLuck Casino</b>\n\n"
+        + user_cmds + admin_cmds + dev_cmds,
+        parse_mode="HTML")
 
 @dp.message(Command("admin"))
 async def cmd_admin(message: Message):
@@ -451,9 +491,26 @@ async def cmd_database(message: Message):
 async def cmd_logs(message: Message):
     if message.from_user.id not in DEV_IDS:
         await message.answer("⛔ Нет доступа."); return
-    log_path = Path("topluck.log")
-    if not log_path.exists():
-        await message.answer("❌ Файл логов не найден."); return
+    # Search for log file in multiple locations
+    possible = ["topluck.log", "bot.log", "app.log", "/tmp/topluck.log",
+                str(BASE / "topluck.log"), str(BASE / "bot.log")]
+    log_path = None
+    for p in possible:
+        if Path(p).exists():
+            log_path = Path(p); break
+    if not log_path:
+        # Try Python logging file handler
+        import logging
+        for h in logging.root.handlers:
+            if hasattr(h, 'baseFilename') and Path(h.baseFilename).exists():
+                log_path = Path(h.baseFilename); break
+    if not log_path:
+        await message.answer(
+            "ℹ️ Файл логов не найден.\n"
+            "Логи пишутся в stdout. Для сохранения запустите:\n"
+            "<code>python bot.py 2>&1 | tee topluck.log</code>",
+            parse_mode="HTML")
+        return
     await message.answer_document(
         BufferedInputFile(log_path.read_bytes(), filename=f"logs_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"),
         caption=f"📋 Логи TopLuck Casino\n{datetime.now().strftime('%d.%m.%Y %H:%M')}")
@@ -623,7 +680,8 @@ async def api_gift_buy(req: web.Request):
         # Log to bot-gifts thread
         u2 = await db.get_user(uid)
         uname = u2.get("first_name", "?") if u2 else "?"
-        await log_bot_gift(uid, sender_name or uname, gift_name, gift_emoji, price,
+        _bg_name = gift_name if gift_name.startswith(gift_emoji) else f"{gift_emoji} {gift_name}"
+        await log_bot_gift(uid, sender_name or uname, _bg_name, gift_emoji, price,
                            recipient_id, anonymous, message_text)
         return web.json_response({"ok":True,"new_balance":new_bal})
 
@@ -640,7 +698,9 @@ async def api_gift_buy(req: web.Request):
         await db.add_history(uid, "gift_sent", price, f"Заявка владельцу: {gift_emoji} {gift_name} (⭐{price})")
 
         withdraw_id = str(int(time.time()))
-        await log_withdraw_request(uid, sender_name or "?", f"{gift_emoji} {gift_name}",
+        # Avoid double emoji: if gift_name starts with gift_emoji, don't prepend again
+        _display_name = gift_name if gift_name.startswith(gift_emoji) else f"{gift_emoji} {gift_name}"
+        await log_withdraw_request(uid, sender_name or "?", _display_name,
                                    price, recipient_id, anonymous, message_text, withdraw_id)
 
         # Notify admins directly too
@@ -906,7 +966,12 @@ async def api_admin_set_balance(req):
     incognito = bool(data.get("incognito", False))
     await db.set_balance(uid, new_bal)
     delta = new_bal - old
-    if delta > 0: await db.add_history(uid, "deposit", delta, "Пополнение администратором")
+    if delta > 0:
+        await db.add_history(uid, "deposit", delta, "Пополнение администратором")
+        if not incognito:
+            tu2 = await db.get_user(uid)
+            tname2 = tu2.get("first_name","?") if tu2 else "?"
+            await log_deposit(uid, tname2, delta, new_bal, "Пополнение администратором")
     if not incognito:
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid","0"))
