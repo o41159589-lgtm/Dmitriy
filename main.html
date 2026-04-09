@@ -482,7 +482,7 @@ if(tg){tg.ready();tg.expand();}
 const UID        = tg?.initDataUnsafe?.user?.id || 0;
 const USERNAME   = tg?.initDataUnsafe?.user?.username || '';
 const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
-const BOT        = 'GeometryImmageBot';
+let BOT = '';  // loaded from /api/config
 const REF        = `https://t.me/${BOT}?start=ref_${UID}`;
 
 let userData  = null;
@@ -514,6 +514,12 @@ async function post(url,d){
 
 // ── REGISTER USER on first load ──
 async function initUser(){
+  // Load bot config first
+  try {
+    const cfg = await get('/api/config');
+    if(cfg.bot_name) BOT = cfg.bot_name;
+  } catch(e) {}
+
   if(!UID) return;
   try {
     userData = await post('/api/ensure_user',{

@@ -26,6 +26,7 @@ WEBAPP_URL  = os.getenv("WEBAPP_URL", "")
 ADMIN_URL   = os.getenv("ADMIN_URL", "")
 PORT        = int(os.getenv("PORT", 8080))
 ADMIN_IDS   = [int(x) for x in os.getenv("ADMIN_IDS","").split(",") if x.strip()]
+BOT_NAME    = os.getenv("BOT_NAME", "TopLuckCasinoBot")  # имя бота без @
 DEV_IDS     = [int(x) for x in os.getenv("DEV_IDS","").split(",") if x.strip()]
 
 LOG_GROUP_ID       = int(os.getenv("LOG_GROUP_ID", 0))
@@ -269,10 +270,17 @@ async def on_broadcast_msg(message: Message):
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
     user = message.from_user
-    existed = await db.get_user(user.id)
-    u = await db.ensure_user(user.id, user.username or "", user.first_name or "")
+    try:
+        existed = await db.get_user(user.id)
+        u = await db.ensure_user(user.id, user.username or "", user.first_name or "")
+    except Exception as e:
+        logger.error(f"cmd_start DB error uid={user.id}: {e}")
+        try:
+            await message.answer("❌ Ошибка сервера. Попробуйте позже.")
+        except Exception: pass
+        return
 
-    # Referral
+    # Referral — process before ban check
     parts = message.text.split(maxsplit=1)
     if len(parts) > 1 and parts[1].startswith("ref_"):
         try:
@@ -282,9 +290,11 @@ async def cmd_start(message: Message):
                 if ref_u:
                     nb = await db.add_to_balance(ref_id, 10)
                     await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
-                    ref_u2 = await db.get_user(ref_id)
-                    ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
-                    await log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})")
+                    try:
+                        ref_u2 = await db.get_user(ref_id)
+                        ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
+                        await log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})")
+                    except Exception: pass
                     try:
                         await bot.send_message(ref_id,
                             f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
@@ -300,37 +310,61 @@ async def cmd_start(message: Message):
                     f"написал боту по заявке на подарок.", parse_mode="HTML")
             except Exception: pass
 
-    # Log new user
-    if not existed:
-        await log_new_user(user.id, user.first_name or "", user.username or "", u.get("balance",10))
-
     # Check ban
-    if await db.is_banned(user.id):
-        await message.answer(
-            "⛔ <b>Вы заблокированы.</b>\n"
-            "Обратитесь к администратору, если считаете это ошибкой.",
-            parse_mode="HTML")
-        return
+    try:
+        if await db.is_banned(user.id):
+            await message.answer(
+                "⛔ <b>Вы заблокированы.</b>\n"
+                "Обратитесь к администратору, если считаете это ошибкой.",
+                parse_mode="HTML")
+            return
+    except Exception as e:
+        logger.warning(f"is_banned error: {e}")
 
-    kb_inline = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="🎰 Открыть TopLuck Casino", web_app=WebAppInfo(url=WEBAPP_URL))]])
+    # Send welcome message — wrapped in try/except so DB users always get a response
+    try:
+        kb_inline = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🎰 Открыть TopLuck Casino", web_app=WebAppInfo(url=WEBAPP_URL))]])
 
-    is_new = not existed
-    greeting = (
-        f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
-        f"👋 Привет, <b>{user.first_name}</b>!\n\n"
-        f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
-        f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
-        f"⭐ 1 монета = 1 Telegram Star\n\n"
-        f"Нажми кнопку ниже чтобы начать:"
-    ) if is_new else (
-        f"👋 С возвращением, <b>{user.first_name}</b>!\n\n"
-        f"🍀 <b>TopLuck Casino</b> ждёт тебя!\n\n"
-        f"💰 Баланс: <b>{u['balance']}</b> монет\n\n"
-        f"Открывай казино:"
-    )
+        is_new = not existed
+        greeting = (
+            f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
+            f"👋 Привет, <b>{user.first_name}</b>!\n\n"
+            f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
+            f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
+            f"⭐ 1 монета = 1 Telegram Star\n\n"
+            f"Нажми кнопку ниже чтобы начать:"
+        ) if is_new else (
+            f"👋 С возвращением, <b>{user.first_name}</b>!\n\n"
+            f"🍀 <b>TopLuck Casino</b> ждёт тебя!\n\n"
+            f"💰 Баланс: <b>{u['balance']}</b> монет\n\n"
+            f"Открывай казино:"
+        )
+        await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"cmd_start send error uid={user.id}: {e}")
+        # Fallback — plain message without keyboard
+        try:
+            is_new = not existed
+            text = (f"🎉 Добро пожаловать в TopLuck Casino, {user.first_name}! Баланс: {u['balance']} монет."
+                    if is_new else
+                    f"👋 С возвращением, {user.first_name}! Баланс: {u['balance']} монет.")
+            await message.answer(text)
+        except Exception: pass
 
-    await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
+    # Log new user AFTER sending message (non-blocking)
+    if not existed:
+        asyncio.create_task(_log_new_user_bg(user.id, user.first_name or "", user.username or "", u.get("balance",10)))
+
+
+
+
+async def _log_new_user_bg(uid, first_name, username, balance):
+    """Log new user in background — doesn't block cmd_start."""
+    try:
+        await log_new_user(uid, first_name, username, balance)
+    except Exception as e:
+        logger.warning(f"_log_new_user_bg error: {e}")
 
 @dp.message(Command("help"))
 async def cmd_help(message: Message):
@@ -575,6 +609,13 @@ async def send_backup():
 # ════════════════════════════════════════
 #  HTTP API
 # ════════════════════════════════════════
+
+async def api_config(req: web.Request):
+    """Return public config for frontend — bot name, webapp url."""
+    return web.json_response({
+        "bot_name": BOT_NAME,
+        "webapp_url": WEBAPP_URL,
+    })
 
 async def api_user(req: web.Request):
     uid = int(req.match_info["uid"])
@@ -891,6 +932,7 @@ async def _gta_run(lid):
         winner_row = random.choices(eligible, weights=weights, k=1)[0]
 
     wid = winner_row["user_id"]
+    winner_bet = player_bets[wid]["amount"]  # what winner had already paid
 
     def _comm(p):
         if p<=500: return max(1,round(p*3/100))
@@ -899,22 +941,30 @@ async def _gta_run(lid):
 
     commission = _comm(pot)
     payout = pot - commission
+    net_gain = payout - winner_bet  # actual profit (bet was already deducted)
+
     await db.add_to_balance(wid, payout)
-    await db.add_history(wid,"win",payout,f"GTA #{lid}: банк {pot}, комиссия {commission}")
-    await db.update_spin_stats(wid, True, payout, 0)
+    # Record net gain in history (bet was already recorded as "lose" when placing)
+    await db.add_history(wid, "win", net_gain,
+        f"GTA #{lid}: банк {pot}, выплата {payout}, ставка {winner_bet}, комиссия {commission}")
+    await db.update_spin_stats(wid, True, net_gain, 0)
     for b in bets:
         if b["user_id"] != wid: await db.update_spin_stats(b["user_id"], False, 0, b["amount"])
     await db.close_lobby(lid, wid, commission)
 
     wu = await db.get_user(wid)
     wname = wu.get("first_name","?") if wu else "?"
-    await log_game(wid, wname, "GTA рулетка", 0, "Выигрыш", payout, wu.get("balance",0) if wu else 0)
+    await log_game(wid, wname, "GTA рулетка", winner_bet, "Выигрыш", net_gain, wu.get("balance",0) if wu else 0)
 
     try:
         pct = 3 if pot<=500 else 5 if pot<=2000 else 8
+        sign = "+" if net_gain >= 0 else ""
         await bot.send_message(wid,
-            f"🎉 <b>Вы выиграли в GTA-рулетке!</b>\n💰 Банк: {pot} · Комиссия {pct}%: {commission}\n"
-            f"✅ Выплата: <b>{payout}</b> монет\n📊 Баланс: <b>{wu['balance']}</b>", parse_mode="HTML")
+            f"🎉 <b>Вы выиграли в GTA-рулетке!</b>\n"
+            f"💰 Банк: {pot} 🪙 · Комиссия {pct}%: {commission}\n"
+            f"📥 Выплата: <b>{payout}</b> 🪙 (ваша ставка была {winner_bet})\n"
+            f"📈 Чистый выигрыш: <b>{sign}{net_gain}</b> 🪙\n"
+            f"📊 Баланс: <b>{wu['balance']}</b> 🪙", parse_mode="HTML")
     except Exception as e: logger.warning(f"GTA notify: {e}")
 
 def _is_admin(req):
@@ -1070,6 +1120,7 @@ async def start_web():
     app.router.add_get("/", serve_app)
     app.router.add_get("/admin", serve_admin)
     app.router.add_get("/health", health)
+    app.router.add_get ("/api/config",             api_config)
     app.router.add_post("/api/ensure_user",        api_ensure_user)
     app.router.add_get ("/api/user/{uid}",         api_user)
     app.router.add_get ("/api/history/{uid}",      api_history)
