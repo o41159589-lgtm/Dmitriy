@@ -247,25 +247,6 @@
 .ta-confirm{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));
   border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;cursor:pointer;}
 @keyframes spin-once{to{transform:rotate(360deg)}}
-/* ── О НАС ── */
-#about-card .card-body{padding-top:10px;}
-.about-block{padding:10px 0 6px;}
-.about-role{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:3px;}
-.about-name{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);font-weight:700;margin-bottom:7px;}
-.about-text{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:8px;}
-.about-contacts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
-.about-tag{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--text);font-weight:600;text-decoration:none;}
-.about-link{color:var(--gold);text-decoration:none;}
-.about-link:hover{text-decoration:underline;}
-.about-donate{font-size:12px;color:var(--muted);line-height:1.6;background:rgba(245,197,66,.05);border:1px solid rgba(245,197,66,.12);border-radius:10px;padding:9px 11px;margin-bottom:8px;}
-.about-wallet{font-family:monospace;font-size:10px;color:var(--gold);word-break:break-all;display:block;margin-top:3px;}
-.about-bots{margin-bottom:8px;}
-.about-bot-link{display:block;color:var(--muted);font-size:12px;text-decoration:none;padding:2px 0;line-height:1.6;}
-.about-bot-link:hover{color:var(--gold);}
-.about-ps{font-size:11px;color:var(--muted);font-style:italic;line-height:1.5;padding:6px 0;}
-.about-warn{font-size:12px;color:rgba(230,57,70,.85);background:rgba(230,57,70,.07);border:1px solid rgba(230,57,70,.2);border-radius:9px;padding:8px 11px;margin-top:6px;}
-.about-divider{height:1px;background:var(--border);margin:4px 0;}
-
 </style>
 </head>
 <body>
@@ -291,67 +272,19 @@
       <span style="font-size:20px">⭐</span> Пополнить (1 монета = 1 Star)
     </button>
     <div class="card">
+      <div class="card-head">💰 Выплаты</div>
+      <div class="card-body">
+        <div class="irow"><span class="irow-l">🔴 Красное / ⚫ Чёрное</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+        <div class="irow"><span class="irow-l">Чёт / Нечёт · 1–18 / 19–36</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+        <div class="irow"><span class="irow-l">Дюжина (1–12 / 13–24)</span><span class="irow-r" style="color:var(--gold)">×3</span></div>
+        <div class="irow"><span class="irow-l">🟢 Зеро</span><span class="irow-r" style="color:var(--gold)">×14</span></div>
+      </div>
+    </div>
+    <div class="card">
       <div class="card-head">🔗 Реферальная программа</div>
       <div class="card-body">
         <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
         <button onclick="copyRef()" style="margin-top:10px;width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
-      </div>
-    </div>
-
-    <div class="card" id="about-card">
-      <div class="card-head">ℹ️ О нас</div>
-      <div class="card-body" style="padding-bottom:6px">
-
-        <!-- ВЛАДЕЛЕЦ -->
-        <div class="about-block">
-          <div class="about-role">👑 Владелец проекта</div>
-          <div class="about-name">Smishek</div>
-          <div class="about-text">Привет! Я Smishek — владелец <a class="about-link" href="https://t.me/T0pLuckbot" onclick="openLink('https://t.me/T0pLuckbot')">TopLuck</a>, который создан чтобы вы могли выгодно испытать удачу. Все мои проекты можно посмотреть <a class="about-link" href="https://t.me/smishik_bio" onclick="openLink('https://t.me/smishik_bio')">здесь</a>.</div>
-          <div class="about-contacts">
-            <span class="about-tag">💬 @Smishek</span>
-          </div>
-          <div class="about-donate">💵 <b>Донаты приветствуются!</b><br>Если сервис нравится — поддержи проект звёздами прямо в Telegram:<br>Просто отправь 🌟 звёзды в личные сообщения <a class="about-link" href="https://t.me/Smishek" onclick="openLink('https://t.me/Smishek')">@Smishek</a></div>
-        </div>
-        <div class="about-divider"></div>
-
-        <!-- РАЗРАБОТЧИК -->
-        <div class="about-block">
-          <div class="about-role">🧑‍💻 Разработчик бота</div>
-          <div class="about-name">Артём</div>
-          <div class="about-text">Привет! Я Артем — разработчик этого бота. Занимаюсь разработкой Telegram-ботов и не только. Если нужен телеграм бот — пиши, сделаем 🤝<br>Мои проекты: <a class="about-link" href="https://t.me/PythonPr0gramist" onclick="openLink('https://t.me/PythonPr0gramist')">t.me/PythonPr0gramist</a></div>
-          <div class="about-contacts">
-            <span class="about-tag">💬 @ArtemKirss</span>
-            <a class="about-tag about-link" href="https://sceletonchik.github.io/Portfolio/portfolio.html" onclick="openLink('https://sceletonchik.github.io/Portfolio/portfolio.html')">👤 Портфолио</a>
-          </div>
-          <div class="about-donate">💵 <b>Донаты приветствуются!</b><br>Поддержи разработку — отправь 🌟 звёзды <a class="about-link" href="https://t.me/ArtemKirss" onclick="openLink('https://t.me/ArtemKirss')">@ArtemKirss</a><br>📱 Telegram кошелёк:<br><span class="about-wallet">🪙 UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN 🪙</span></div>
-          <div class="about-bots">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600">Боты для @Smishek:</div>
-            <a class="about-bot-link" href="https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky" onclick="openLink('https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky')">🔘 TopNet (@T0pNetbot)</a>
-            <a class="about-bot-link" href="https://t.me/Supp0rt_R0bot" onclick="openLink('https://t.me/Supp0rt_R0bot')">🔘 Support — Smishek (@Supp0rt_R0bot)</a>
-            <a class="about-bot-link" href="https://t.me/Crocodi1ebot" onclick="openLink('https://t.me/Crocodi1ebot')">🔘 Crocodile (@Crocodi1ebot)</a>
-          </div>
-          <div class="about-ps">Ps: Бот был сделан в кратчайшие сроки, если найдёте баги — пишите в поддержку, исправим (могут дать награду) 😉</div>
-        </div>
-        <div class="about-divider"></div>
-
-        <!-- ТЕХНАРЬ -->
-        <div class="about-block">
-          <div class="about-role">🏗️ Технарь</div>
-          <div class="about-name">Никита</div>
-          <div class="about-text">Привет! Я — Никита. Занимаюсь настройкой и обслуживанием серверов TopLuck'а.<br>Если нужна помощь в кодинге или по вашему проекту (возможно даже бесплатно) — пишите в лс 😉<br>🌐 Все проекты: <a class="about-link" href="https://unionium.org" onclick="openLink('https://unionium.org')">unionium.org</a></div>
-          <div class="about-contacts">
-            <span class="about-tag">💬 @Depression_Off1cial</span>
-          </div>
-          <div class="about-warn">⛔ Серверы лагают, недоступны или сеть не работает? Пиши @Depression_Off1cial — исправим!</div>
-        </div>
-        <div class="about-divider"></div>
-
-        <!-- СПОНСОР -->
-        <div class="about-block">
-          <div class="about-role">💎 Спонсор</div>
-          <div class="about-name">Дмитрий Бек</div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -899,11 +832,6 @@ async function confirmTopup(){
   else toast('Откройте чат с ботом для оплаты','info');
 }
 
-
-function openLink(url){
-  if(tg?.openLink) tg.openLink(url);
-  else window.open(url,'_blank');
-}
 // ── INIT ──
 window.addEventListener('load', async ()=>{
   // Handle ?tab=games from back button in roulette pages
