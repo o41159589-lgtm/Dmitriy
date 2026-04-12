@@ -90,41 +90,48 @@ def fire_log(coro):
     asyncio.create_task(coro)
 
 async def log_new_user(uid: int, first_name: str, username: str, balance: int):
-    uname = f"@{username}" if username else "нет"
+    safe_name = _html.escape(first_name or "")
+    uname = f"@{_html.escape(username)}" if username else "нет"
     await log(LOG_THREAD_USERS,
         f"👤 <b>Новый игрок</b>\n"
         f"#id{uid}\n"
-        f"Имя: <b>{first_name}</b> ({uname})\n"
+        f"Имя: <b>{safe_name}</b> ({uname})\n"
         f"Стартовый баланс: {balance} 🪙\n"
         f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
 async def log_game(uid: int, name: str, game: str, bet: int, result: str, gain: int, balance: int):
     emoji = "🏆" if "Выигрыш" in result else "💀"
+    safe_name = _html.escape(name or "")
     await log(LOG_THREAD_GAMES,
         f"{emoji} <b>{result}</b> — {game}\n"
         f"#id{uid} #game_{game.lower().replace(' ','_')}\n"
-        f"Игрок: <b>{name}</b>\n"
+        f"Игрок: <b>{safe_name}</b>\n"
         f"Ставка: {bet} 🪙 | Выигрыш: {gain} 🪙\n"
         f"Баланс: {balance} 🪙")
 
 async def log_deposit(uid: int, name: str, amount: int, balance: int, method: str = "Stars"):
+    safe_name = _html.escape(name or "")
+    safe_method = _html.escape(method or "")
     await log(LOG_THREAD_DEPOSIT,
         f"💳 <b>Пополнение баланса</b>\n"
         f"#id{uid} #deposit\n"
-        f"Игрок: <b>{name}</b>\n"
-        f"Сумма: +{amount} 🪙 (через {method})\n"
+        f"Игрок: <b>{safe_name}</b>\n"
+        f"Сумма: +{amount} 🪙 (через {safe_method})\n"
         f"Новый баланс: {balance} 🪙\n"
         f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
 async def log_admin_action(admin_id: int, admin_name: str, action: str, target_uid: int,
                            target_name: str, details: str, incognito: bool = False):
+    safe_aname   = _html.escape(admin_name or "")
+    safe_tname   = _html.escape(target_name or "")
+    safe_details = _html.escape(details or "")
     await log(LOG_THREAD_ADMIN,
         f"🛠 <b>Действие администратора</b>\n"
         f"#admin #id{target_uid}\n"
-        f"Админ: <b>{admin_name}</b> (ID: {admin_id})\n"
+        f"Админ: <b>{safe_aname}</b> (ID: {admin_id})\n"
         f"Действие: {action}\n"
-        f"Цель: <b>{target_name}</b> (ID: {target_uid})\n"
-        f"Детали: {details}\n"
+        f"Цель: <b>{safe_tname}</b> (ID: {target_uid})\n"
+        f"Детали: {safe_details}\n"
         f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}",
         incognito=incognito)
 
@@ -298,26 +305,31 @@ async def cmd_start(message: Message):
 
     # ── 3. SEND GREETING — always, before any logging ──
     try:
-        kb_inline = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🎰 Открыть TopLuck Casino", web_app=WebAppInfo(url=WEBAPP_URL))]])
-
+        safe_name = _html.escape(user.first_name or "Игрок")
         is_new = not existed
         greeting = (
             f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
-            f"👋 Привет, <b>{user.first_name}</b>!\n\n"
+            f"👋 Привет, <b>{safe_name}</b>!\n\n"
             f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
             f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
             f"⭐ 1 монета = 1 Telegram Star\n\n"
             f"Нажми кнопку ниже чтобы начать:"
         ) if is_new else (
-            f"👋 С возвращением, <b>{user.first_name}</b>!\n\n"
+            f"👋 С возвращением, <b>{safe_name}</b>!\n\n"
             f"🍀 <b>TopLuck Casino</b> ждёт тебя!\n\n"
             f"💰 Баланс: <b>{u['balance']}</b> монет\n\n"
             f"Открывай казино:"
         )
+        kb_inline = None
+        if WEBAPP_URL and WEBAPP_URL.startswith("https://"):
+            kb_inline = InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="🎰 Открыть TopLuck Casino", web_app=WebAppInfo(url=WEBAPP_URL))]])
         await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
     except Exception as e:
         logger.error(f"[cmd_start] answer error uid={user.id}: {e}")
+        try:
+            await message.answer(f"👋 Добро пожаловать в TopLuck Casino!\n💰 Баланс: {u.get('balance',0)} монет")
+        except Exception: pass
 
     # ── 4. All side-effects AFTER greeting, fire-and-forget ──
 
@@ -360,7 +372,7 @@ async def _handle_referral(user, param: str):
             fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
         except Exception: pass
         await _safe_send(ref_id,
-            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
+            f"🎉 По вашей ссылке зарегистрировался <b>{_html.escape(user.first_name or '')}</b>!\n"
             f"💰 +10 монет → баланс: <b>{nb}</b>")
     except Exception as e:
         logger.warning(f"[_handle_referral]: {e}")
@@ -398,6 +410,8 @@ async def cmd_help(message: Message):
 @dp.message(Command("admin"))
 async def cmd_admin(message: Message):
     if message.from_user.id not in ADMIN_IDS + DEV_IDS: return
+    if not ADMIN_URL or not ADMIN_URL.startswith("https://"):
+        await message.answer("⚙️ <b>Панель управления</b>\n\nADMIN_URL не настроен.", parse_mode="HTML"); return
     kb = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="🛠 Открыть панель", web_app=WebAppInfo(url=ADMIN_URL))]])
     await message.answer("🛠 <b>Панель управления TopLuck</b>", reply_markup=kb, parse_mode="HTML")
@@ -500,12 +514,14 @@ async def cmd_message(message: Message):
 
     try:
         await bot.send_message(uid,
-            f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}", parse_mode="HTML")
+            f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}",
+            parse_mode="HTML")
         await message.answer(f"✅ Сообщение отправлено пользователю {uid}.")
         u_target = await db.get_user(uid)
         tname = u_target.get("first_name","?") if u_target else "?"
         fire_log(log_admin_action(message.from_user.id, message.from_user.first_name or "",
-            "SEND_MESSAGE", uid, tname, f"Текст: {text[:100]}{'…' if len(text)>100 else ''}"))
+            "SEND_MESSAGE", uid, tname,
+            f"Текст: {text[:100]}{'…' if len(text)>100 else ''}"))
     except TelegramForbiddenError:
         await message.answer(f"❌ Пользователь {uid} заблокировал бота.")
     except Exception as e:
@@ -614,17 +630,27 @@ async def send_backup():
 # ════════════════════════════════════════
 
 async def api_user(req: web.Request):
-    uid = int(req.match_info["uid"])
+    try:
+        uid = int(req.match_info["uid"])
+        if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
+    except (ValueError, KeyError):
+        return web.json_response({"error":"invalid uid"}, status=400)
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"not found"}, status=404)
     return web.json_response(u)
 
 async def api_ensure_user(req: web.Request):
-    data = await req.json()
-    uid = int(data.get("user_id", 0))
-    if not uid: return web.json_response({"error":"no uid"}, status=400)
-    username   = str(data.get("username",""))
-    first_name = str(data.get("first_name",""))
+    try:
+        data = await req.json()
+    except Exception:
+        return web.json_response({"error":"invalid json"}, status=400)
+    try:
+        uid = int(data.get("user_id", 0))
+    except (ValueError, TypeError):
+        return web.json_response({"error":"invalid uid"}, status=400)
+    if uid <= 0: return web.json_response({"error":"no uid"}, status=400)
+    username   = str(data.get("username",""))[:64]
+    first_name = str(data.get("first_name",""))[:64]
     # Check if user exists before ensure (to detect new registrations)
     existed = await db.get_user(uid)
     u = await db.ensure_user(uid, username, first_name)
@@ -634,7 +660,11 @@ async def api_ensure_user(req: web.Request):
     return web.json_response(u)
 
 async def api_history(req: web.Request):
-    uid = int(req.match_info["uid"])
+    try:
+        uid = int(req.match_info["uid"])
+        if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
+    except (ValueError, KeyError):
+        return web.json_response({"error":"invalid uid"}, status=400)
     return web.json_response(await db.get_history(uid))
 
 async def api_invoice(req: web.Request):
@@ -761,9 +791,22 @@ async def api_gift_buy(req: web.Request):
 
         return web.json_response({"ok":True,"new_balance":new_bal})
 
+_VALID_BET_TYPES = {"red","black","green","even","odd","low","high","dozen1","dozen2","dozen3"}
+
 async def api_spin(req: web.Request):
-    data = await req.json()
-    uid, bet_amt, bet_type = int(data.get("user_id",0)), int(data.get("bet",0)), data.get("bet_type","")
+    try:
+        data = await req.json()
+    except Exception:
+        return web.json_response({"error":"invalid json"}, status=400)
+    try:
+        uid     = int(data.get("user_id", 0))
+        bet_amt = int(data.get("bet", 0))
+    except (ValueError, TypeError):
+        return web.json_response({"error":"invalid params"}, status=400)
+    bet_type = str(data.get("bet_type",""))
+    if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
+    if bet_type not in _VALID_BET_TYPES:
+        return web.json_response({"error":"invalid bet_type"}, status=400)
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"user not found"}, status=404)
     if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
@@ -845,8 +888,13 @@ async def api_gta_lobby(req: web.Request):
     return web.json_response({"lobby": lobby, "bets": bets})
 
 async def api_gta_bet(req: web.Request):
-    data = await req.json()
-    uid, amount = int(data.get("user_id",0)), int(data.get("amount",0))
+    try:
+        data = await req.json()
+        uid    = int(data.get("user_id", 0))
+        amount = int(data.get("amount", 0))
+    except Exception:
+        return web.json_response({"error":"invalid params"}, status=400)
+    if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"user not found"}, status=404)
     if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
@@ -997,9 +1045,15 @@ async def api_admin_users(req):
 
 async def api_admin_set_balance(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json()
-    uid, new_bal = int(data["user_id"]), int(data["balance"])
-    old = int(data.get("old_balance",0))
+    try:
+        data    = await req.json()
+        uid     = int(data["user_id"])
+        new_bal = int(data["balance"])
+        old     = int(data.get("old_balance", 0))
+    except (KeyError, ValueError, TypeError, Exception) as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0 or new_bal < 0:
+        return web.json_response({"error": "invalid uid or balance"}, status=400)
     incognito = bool(data.get("incognito", False))
     await db.set_balance(uid, new_bal)
     delta = new_bal - old
@@ -1009,6 +1063,8 @@ async def api_admin_set_balance(req):
             tu2 = await db.get_user(uid)
             tname2 = tu2.get("first_name","?") if tu2 else "?"
             fire_log(log_deposit(uid, tname2, delta, new_bal, "Пополнение администратором"))
+    elif delta < 0:
+        await db.add_history(uid, "admin_deduct", abs(delta), f"Списание администратором: {old}→{new_bal}")
     if not incognito:
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid","0"))
@@ -1023,10 +1079,18 @@ async def api_admin_set_balance(req):
 
 async def api_admin_set_luck(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json()
-    uid, luck = int(data["user_id"]), int(data["luck"])
+    try:
+        data = await req.json()
+        uid  = int(data["user_id"])
+        luck = int(data["luck"])
+    except (KeyError, ValueError, TypeError, Exception) as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0 or not (-1 <= luck <= 100):
+        return web.json_response({"error": "invalid uid or luck (-1..100)"}, status=400)
     incognito = bool(data.get("incognito", False))
     await db.set_luck(uid, luck)
+    luck_str = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
+    await db.add_history(uid, "admin_luck", 0, f"Администратор изменил удачу: {luck_str}")
     if not incognito:
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid","0"))
@@ -1035,23 +1099,29 @@ async def api_admin_set_luck(req):
         except: aname = "Admin"; admin_uid = 0
         tu = await db.get_user(uid)
         tname = tu.get("first_name","?") if tu else "?"
-        luck_str = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
         fire_log(log_admin_action(admin_uid, aname, f"SET_LUCK → {luck_str}", uid, tname, f"Удача: {luck_str}"))
     return web.json_response({"success":True})
 
 async def api_admin_ban(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json()
-    uid = int(data["user_id"]); banned = bool(data.get("banned", True))
-    incognito = bool(data.get("incognito", False))
-    await db.set_banned(uid, banned)
-    # Always notify the affected user regardless of incognito
     try:
-        reason_safe = _html.escape(str(data.get("reason", "—")))
+        data = await req.json()
+        uid  = int(data["user_id"])
+    except (KeyError, ValueError, TypeError, Exception) as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0:
+        return web.json_response({"error": "invalid uid"}, status=400)
+    banned    = bool(data.get("banned", True))
+    incognito = bool(data.get("incognito", False))
+    reason    = str(data.get("reason", "—"))
+    await db.set_banned(uid, banned)
+    # Always notify the affected user
+    try:
+        safe_reason = _html.escape(reason)
         if banned:
             await bot.send_message(uid,
                 f"⛔ <b>Вы заблокированы в TopLuck Casino.</b>\n"
-                f"Причина: {reason_safe}\n"
+                f"Причина: {safe_reason}\n"
                 f"Если считаете это ошибкой — обратитесь к администратору.",
                 parse_mode="HTML")
         else:
@@ -1068,9 +1138,8 @@ async def api_admin_ban(req):
         except: aname = "Admin"; admin_uid = 0
         tu = await db.get_user(uid)
         tname = tu.get("first_name","?") if tu else "?"
-        reason_log = str(data.get("reason","—"))
         fire_log(log_admin_action(admin_uid, aname, "BAN" if banned else "UNBAN",
-            uid, tname, reason_log))
+            uid, tname, reason))
     return web.json_response({"success":True})
 
 async def api_admin_send_message(req):
@@ -1087,7 +1156,7 @@ async def api_admin_send_message(req):
         await bot.send_message(uid,
             f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}",
             parse_mode="HTML")
-        # Log action to admin group thread
+        # Log to admin group thread
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid", "0"))
             au = await db.get_user(admin_uid)
@@ -1119,17 +1188,26 @@ async def serve_html(f):
 async def serve_app(req):   return await serve_html("index.html")
 async def serve_admin(req): return await serve_html("admin_panel.html")
 async def health(req):      return web.Response(text="OK")
+_STATIC_EXTS = {".css",".png",".jpg",".jpeg",".js",".svg",".html",".ico",".webp"}
+
 async def serve_static(req):
     filename = req.match_info.get("filename","")
-    if ".." in filename: return web.Response(text="Forbidden", status=403)
-    p = BASE / filename
-    if not p.exists(): return web.Response(text="Not found", status=404)
-    ext = p.suffix.lower()
-    ct = {".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".js":"application/javascript",
-          ".svg":"image/svg+xml",".html":"text/html"}.get(ext,"application/octet-stream")
+    try:
+        target = (BASE / filename).resolve()
+        target.relative_to(BASE.resolve())  # ValueError if outside BASE
+    except Exception:
+        return web.Response(text="Forbidden", status=403)
+    if not target.exists() or not target.is_file():
+        return web.Response(text="Not found", status=404)
+    ext = target.suffix.lower()
+    if ext not in _STATIC_EXTS:
+        return web.Response(text="Forbidden", status=403)
+    ct = {".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",
+          ".js":"application/javascript",".svg":"image/svg+xml",".html":"text/html",
+          ".ico":"image/x-icon",".webp":"image/webp"}.get(ext,"application/octet-stream")
     if ext in (".html",".css",".js"):
-        return web.Response(text=p.read_text("utf-8"), content_type=ct, charset="utf-8")
-    return web.Response(body=p.read_bytes(), content_type=ct)
+        return web.Response(text=target.read_text("utf-8"), content_type=ct, charset="utf-8")
+    return web.Response(body=target.read_bytes(), content_type=ct)
 
 async def start_web():
     app = web.Application()
