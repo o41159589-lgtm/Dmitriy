@@ -247,47 +247,6 @@
 .ta-confirm{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));
   border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;cursor:pointer;}
 @keyframes spin-once{to{transform:rotate(360deg)}}
-/* ── О НАС ── */
-.about-section{margin-bottom:14px;}
-.about-intro{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:18px;padding:16px;margin-bottom:12px;backdrop-filter:blur(12px);line-height:1.65;font-size:13.5px;color:var(--text);}
-.about-intro strong{color:var(--gold);}
-
-.acc-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;margin-bottom:10px;backdrop-filter:blur(12px);overflow:hidden;transition:border-color .2s;}
-.acc-card.open{border-color:rgba(245,197,66,.25);}
-.acc-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none;}
-.acc-avatar{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.acc-avatar.gold{background:linear-gradient(135deg,rgba(245,197,66,.2),rgba(232,168,0,.08));border:1px solid rgba(245,197,66,.3);}
-.acc-avatar.blue{background:linear-gradient(135deg,rgba(76,201,240,.2),rgba(76,201,240,.06));border:1px solid rgba(76,201,240,.25);}
-.acc-avatar.green{background:linear-gradient(135deg,rgba(45,198,83,.2),rgba(45,198,83,.06));border:1px solid rgba(45,198,83,.25);}
-.acc-avatar.purple{background:linear-gradient(135deg,rgba(123,47,255,.2),rgba(123,47,255,.06));border:1px solid rgba(123,47,255,.25);}
-.acc-avatar.dim{background:linear-gradient(135deg,rgba(96,96,160,.2),rgba(96,96,160,.06));border:1px solid rgba(96,96,160,.2);}
-.acc-meta{flex:1;}
-.acc-role{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:2px;}
-.acc-name{font-family:'Orbitron',monospace;font-size:14px;color:var(--text);font-weight:700;}
-.acc-chevron{color:var(--muted);font-size:16px;transition:transform .25s;flex-shrink:0;}
-.acc-card.open .acc-chevron{transform:rotate(90deg);}
-.acc-body{max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1);}
-.acc-body-inner{padding:0 16px 16px;border-top:1px solid var(--border);padding-top:14px;}
-.acc-text{font-size:13px;color:var(--text);line-height:1.65;margin-bottom:12px;}
-.acc-links{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
-.acc-link{display:inline-flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:6px 11px;font-size:12px;font-weight:600;text-decoration:none;color:var(--text);transition:border-color .2s,color .2s;}
-.acc-link:hover{border-color:var(--gold);color:var(--gold);}
-.acc-link.gold-link{border-color:rgba(245,197,66,.3);color:var(--gold);}
-.acc-link.blue-link{border-color:rgba(76,201,240,.3);color:var(--blue);}
-.acc-link.purple-link{border-color:rgba(123,47,255,.3);color:var(--purple);}
-.acc-donate{background:rgba(245,197,66,.05);border:1px solid rgba(245,197,66,.15);border-radius:12px;padding:10px 13px;font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:8px;}
-.acc-donate a{color:var(--gold);}
-.acc-wallet{font-family:monospace;font-size:10px;color:var(--gold);word-break:break-all;display:block;margin-top:4px;opacity:.85;}
-.acc-bots{margin-top:4px;}
-.acc-bots-title{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.acc-bot-row{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
-.acc-bot-row:last-child{border-bottom:none;}
-.acc-bot-row a{font-size:12px;color:var(--muted);text-decoration:none;}
-.acc-bot-row a:hover{color:var(--gold);}
-.acc-ps{font-size:11px;color:var(--muted);font-style:italic;margin-top:8px;line-height:1.6;}
-.acc-warn{background:rgba(230,57,70,.07);border:1px solid rgba(230,57,70,.2);border-radius:10px;padding:9px 12px;font-size:12px;color:rgba(255,160,160,.9);margin-top:8px;line-height:1.55;}
-.acc-sponsor-note{font-size:13px;color:var(--muted);font-style:italic;margin-top:4px;}
-
 </style>
 </head>
 <body>
@@ -310,8 +269,17 @@
       <div class="sc"><div class="sc-ico">📈</div><div class="sc-lbl">Выиграно</div><div class="sc-val" id="h-won">—</div></div>
     </div>
     <button class="topup-btn" onclick="openTopup()">
-      <span style="font-size:20px">⭐</span> Пополнить (1 монета = 1 Star)
+      <span style="font-size:20px">⭐</span> Пополнить (1 ⭐ = 10 🪙)
     </button>
+    <div class="card">
+      <div class="card-head">💰 Выплаты</div>
+      <div class="card-body">
+        <div class="irow"><span class="irow-l">🔴 Красное / ⚫ Чёрное</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+        <div class="irow"><span class="irow-l">Чёт / Нечёт · 1–18 / 19–36</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+        <div class="irow"><span class="irow-l">Дюжина (1–12 / 13–24)</span><span class="irow-r" style="color:var(--gold)">×3</span></div>
+        <div class="irow"><span class="irow-l">🟢 Зеро</span><span class="irow-r" style="color:var(--gold)">×14</span></div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-head">🔗 Реферальная программа</div>
       <div class="card-body">
@@ -319,119 +287,6 @@
         <button onclick="copyRef()" style="margin-top:10px;width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
       </div>
     </div>
-
-    <!-- ══ О НАС ══ -->
-    <div class="about-section" id="about-section">
-      <div class="card-head" style="font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);letter-spacing:1px;padding:14px 16px 12px;margin-bottom:10px;border-bottom:1px solid var(--border);background:var(--glass-bg);border-radius:16px 16px 0 0;border:1px solid var(--glass-border);">ℹ️ О ПРОЕКТЕ</div>
-
-      <div class="about-intro" style="border-radius:0 0 16px 16px;border-top:none;margin-top:-1px;">
-        <strong>TopLuck Casino</strong> — честный Telegram-казино для проверки удачи.<br>
-        Крути рулетку, участвуй в GTA-розыгрышах, выигрывай монеты и обменивай их на настоящие Telegram-подарки. Все выплаты прозрачны, система честная. <em style="color:var(--muted)">Удача на твоей стороне!</em> 🍀
-      </div>
-
-      <!-- ВЛАДЕЛЕЦ -->
-      <div class="acc-card" id="acc-owner">
-        <div class="acc-head" onclick="toggleAcc('acc-owner')">
-          <div class="acc-avatar gold">👑</div>
-          <div class="acc-meta">
-            <div class="acc-role">Владелец проекта</div>
-            <div class="acc-name">Smishek</div>
-          </div>
-          <span class="acc-chevron">›</span>
-        </div>
-        <div class="acc-body">
-          <div class="acc-body-inner">
-            <p class="acc-text">Привет! Я Smishek — владелец <strong>TopLuck</strong>, который создан чтобы вы могли азартно и честно испытывать удачу. Все мои проекты можно посмотреть по ссылке ниже.</p>
-            <div class="acc-links">
-              <a class="acc-link gold-link" href="https://t.me/smishik_bio" onclick="openLink('https://t.me/smishik_bio')">🌐 Все проекты</a>
-              <a class="acc-link gold-link" href="https://t.me/Smishek" onclick="openLink('https://t.me/Smishek')">💬 @Smishek</a>
-            </div>
-            <div class="acc-donate">
-              💵 <strong style="color:var(--gold)">Донаты приветствуются!</strong><br>
-              Если сервис нравится — поддержи проект звёздами прямо в Telegram.<br>
-              Просто отправь 🌟 звёзды в личные сообщения <a href="https://t.me/Smishek" onclick="openLink('https://t.me/Smishek')">@Smishek</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- РАЗРАБОТЧИК -->
-      <div class="acc-card" id="acc-dev">
-        <div class="acc-head" onclick="toggleAcc('acc-dev')">
-          <div class="acc-avatar blue">🧑‍💻</div>
-          <div class="acc-meta">
-            <div class="acc-role">Разработчик бота</div>
-            <div class="acc-name">Артём</div>
-          </div>
-          <span class="acc-chevron">›</span>
-        </div>
-        <div class="acc-body">
-          <div class="acc-body-inner">
-            <p class="acc-text">Привет! Я Артем — разработчик этого бота. Занимаюсь разработкой Telegram-ботов и не только. Нужен бот? — пиши, сделаем 🤝</p>
-            <div class="acc-links">
-              <a class="acc-link blue-link" href="https://t.me/ArtemKirss" onclick="openLink('https://t.me/ArtemKirss')">💬 @ArtemKirss</a>
-              <a class="acc-link blue-link" href="https://t.me/PythonPr0gramist" onclick="openLink('https://t.me/PythonPr0gramist')">📦 Проекты</a>
-              <a class="acc-link blue-link" href="https://sceletonchik.github.io/Portfolio/portfolio.html" onclick="openLink('https://sceletonchik.github.io/Portfolio/portfolio.html')">👤 Портфолио</a>
-            </div>
-            <div class="acc-donate">
-              💵 <strong style="color:var(--gold)">Поддержи разработку!</strong><br>
-              Отправь 🌟 звёзды в личные сообщения <a href="https://t.me/ArtemKirss" onclick="openLink('https://t.me/ArtemKirss')">@ArtemKirss</a><br>
-              📱 Telegram-кошелёк:<br>
-              <span class="acc-wallet">🪙 UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN 🪙</span>
-            </div>
-            <div class="acc-bots">
-              <div class="acc-bots-title">Боты для @Smishek:</div>
-              <div class="acc-bot-row">🔘 <a href="https://t.me/T0pNetbot" onclick="openLink('https://t.me/T0pNetbot')">TopNet (@T0pNetbot)</a></div>
-              <div class="acc-bot-row">🔘 <a href="https://t.me/Supp0rt_R0bot" onclick="openLink('https://t.me/Supp0rt_R0bot')">Support Smishek (@Supp0rt_R0bot)</a></div>
-              <div class="acc-bot-row">🔘 <a href="https://t.me/Crocodi1ebot" onclick="openLink('https://t.me/Crocodi1ebot')">Crocodile (@Crocodi1ebot)</a></div>
-            </div>
-            <p class="acc-ps">Бот сделан в кратчайшие сроки, нашли баги? — пишите в поддержку, исправим (могут дать награду) 😉</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ТЕХНАРЬ -->
-      <div class="acc-card" id="acc-tech">
-        <div class="acc-head" onclick="toggleAcc('acc-tech')">
-          <div class="acc-avatar green">🏗️</div>
-          <div class="acc-meta">
-            <div class="acc-role">Технарь / Серверы</div>
-            <div class="acc-name">Никита</div>
-          </div>
-          <span class="acc-chevron">›</span>
-        </div>
-        <div class="acc-body">
-          <div class="acc-body-inner">
-            <p class="acc-text">Привет! Я — Никита. Занимаюсь настройкой и обслуживанием серверов TopLuck'а. Нужна помощь в кодинге или по вашему проекту (возможно даже бесплатно) — пишите в лс 😉</p>
-            <div class="acc-links">
-              <a class="acc-link" href="https://t.me/Depression_Off1cial" onclick="openLink('https://t.me/Depression_Off1cial')">💬 @Depression_Off1cial</a>
-              <a class="acc-link" href="https://unionium.org" onclick="openLink('https://unionium.org')">🌐 unionium.org</a>
-            </div>
-            <div class="acc-warn">⛔ Серверы лагают, недоступны или сеть не работает? — пиши <a href="https://t.me/Depression_Off1cial" onclick="openLink('https://t.me/Depression_Off1cial')">@Depression_Off1cial</a>, исправим!</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- СПОНСОР -->
-      <div class="acc-card" id="acc-sponsor">
-        <div class="acc-head" onclick="toggleAcc('acc-sponsor')">
-          <div class="acc-avatar purple">💎</div>
-          <div class="acc-meta">
-            <div class="acc-role">Спонсор</div>
-            <div class="acc-name">Дмитрий Бек</div>
-          </div>
-          <span class="acc-chevron">›</span>
-        </div>
-        <div class="acc-body">
-          <div class="acc-body-inner">
-            <p class="acc-sponsor-note">Поддерживает развитие проекта TopLuck. Спасибо! 🙏</p>
-          </div>
-        </div>
-      </div>
-
-    </div>
-    <!-- ══ КОНЕЦ О НАС ══ -->
-
   </div>
 </div>
 
@@ -484,6 +339,18 @@
         <div class="gc-tags"><span class="gc-tag">Общий банк</span><span class="gc-tag">2+ игроков</span><span class="gc-tag">3–8% комиссия</span></div>
       </div>
       <div class="gc-arrow">›</div>
+    </a>
+    <a class="game-card" href="mines.html" style="border-color:rgba(230,57,70,.2);">
+      <div class="gc-banner" style="background:linear-gradient(135deg,#1a0608,#280a0a);">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(230,57,70,.14),transparent 70%);"></div>
+        <div class="gc-preview">💣</div>
+      </div>
+      <div class="gc-info">
+        <div class="gc-title">Мины</div>
+        <div class="gc-desc">Открывай клетки и собирай алмазы 💎! Одна бомба — и всё потеряно. Кешаутись вовремя!</div>
+        <div class="gc-tags"><span class="gc-tag">×1.01–×24</span><span class="gc-tag">1–24 бомбы</span><span class="gc-tag">от 10 🪙</span></div>
+      </div>
+      <div class="gc-arrow" style="color:var(--red)">›</div>
     </a>
   </div>
 </div>
@@ -544,7 +411,7 @@
     <div class="error-msg" id="buy-error"></div>
     <div class="modal-gift-preview">
       <div class="mg-icon" id="m-icon">🎁</div>
-      <div><div class="mg-name" id="m-name">—</div><div class="mg-price">⭐ <span id="m-price">—</span> монет</div></div>
+      <div><div class="mg-name" id="m-name">—</div><div class="mg-price">🪙 <span id="m-price">—</span> монет</div></div>
     </div>
     <div class="form-group">
       <label class="form-label">Кому:</label>
@@ -580,12 +447,12 @@
   <div class="modal">
     <div class="mh"></div>
     <div class="mt">💳 ПОПОЛНЕНИЕ</div>
-    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:14px">1 монета = 1 ⭐ Telegram Star</p>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p>
     <div class="ta-grid">
-      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50</div><div class="ta-s">50 ⭐</div></div>
-      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100</div><div class="ta-s">100 ⭐</div></div>
-      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250</div><div class="ta-s">250 ⭐</div></div>
-      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500</div><div class="ta-s">500 ⭐</div></div>
+      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 🪙</div></div>
+      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1000 🪙</div></div>
+      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2500 🪙</div></div>
+      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5000 🪙</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <span style="color:var(--muted);font-size:13px;white-space:nowrap">Или введите:</span>
@@ -725,8 +592,8 @@ async function renderHistory(){
   });
   document.getElementById('s-won').textContent=won;
   document.getElementById('s-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен'};
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание'};
   const list=document.getElementById('hist-list');
   if(!items.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
   list.innerHTML=items.slice(0,60).map(i=>{
@@ -788,7 +655,7 @@ async function renderInvHistory(){
   });
   document.getElementById('inv-won').textContent=won;
   document.getElementById('inv-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁'};
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️'};
   const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок',gift_received:'Подарок получен'};
   const list=document.getElementById('inv-hist-list');
   if(!hist.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
@@ -905,7 +772,7 @@ async function confirmPurchase(){
   errEl.classList.remove('show');
 
   const bal = userData?.balance||0;
-  if(bal < pendingGift.star_count){
+  if(bal < pendingGift.star_count * 10){
     errEl.textContent='Недостаточно монет на балансе!';errEl.classList.add('show');return;
   }
 
@@ -925,6 +792,7 @@ async function confirmPurchase(){
     user_id:      UID,
     gift_id:      pendingGift.id || '',
     star_count:   pendingGift.star_count,
+    coin_cost:    pendingGift.star_count * 10,
     source:       pendingSource,
     recipient_id: recipientId,
     anonymous:    anon,
@@ -949,7 +817,7 @@ async function confirmPurchase(){
         tg.openTelegramLink(`https://t.me/${BOT}?start=gift_request`);
     }, 1500);
   }
-  if(userData) userData.balance = res.new_balance ?? (userData.balance - pendingGift.star_count);
+  if(userData) userData.balance = res.new_balance ?? (userData.balance - pendingGift.star_count * 10);
   updateUI();
 }
 
@@ -975,30 +843,6 @@ async function confirmTopup(){
   const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
   if(res?.ok) toast('Инвойс отправлен в чат с ботом!','ok');
   else toast('Откройте чат с ботом для оплаты','info');
-}
-
-
-function openLink(url){
-  if(tg?.openLink) tg.openLink(url);
-  else window.open(url,'_blank');
-}
-
-function toggleAcc(id){
-  const card = document.getElementById(id);
-  const body = card.querySelector('.acc-body');
-  const isOpen = card.classList.contains('open');
-  // close all
-  document.querySelectorAll('.acc-card').forEach(c=>{
-    c.classList.remove('open');
-    c.querySelector('.acc-body').style.maxHeight = '0';
-  });
-  // open this one if it wasn't open
-  if(!isOpen){
-    card.classList.add('open');
-    body.style.maxHeight = body.scrollHeight + 'px';
-    // Re-measure after transition for dynamic content
-    setTimeout(()=>{ body.style.maxHeight = body.scrollHeight + 'px'; }, 50);
-  }
 }
 
 // ── INIT ──

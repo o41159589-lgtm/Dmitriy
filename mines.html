@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Мины — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+.page-wrap{padding:14px 14px 80px;}
+
+/* ── BALANCE BAR ── */
+.bal-bar{display:flex;align-items:center;justify-content:space-between;
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:14px;padding:11px 14px;margin-bottom:14px;backdrop-filter:blur(12px);}
+.bal-bar-left{font-size:12px;color:var(--muted);}
+.bal-bar-val{font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700;}
+
+/* ── SETUP PANEL ── */
+.setup-panel{background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:20px;padding:16px;margin-bottom:14px;backdrop-filter:blur(12px);}
+.setup-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.setup-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;}
+.bet-row{display:flex;gap:6px;align-items:center;}
+.bet-input{background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:16px;
+  width:120px;outline:none;text-align:center;}
+.bet-input:focus{border-color:var(--gold);}
+.bet-quick{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.bq{padding:5px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  font-size:11px;color:var(--muted);font-weight:700;cursor:pointer;font-family:'Orbitron',monospace;
+  transition:all .15s;}
+.bq:hover{border-color:var(--gold);color:var(--gold);}
+
+/* bombs slider */
+.bombs-section{margin-bottom:14px;}
+.bombs-val{font-family:'Orbitron',monospace;font-size:22px;color:var(--red);font-weight:700;}
+.bombs-val span{font-size:12px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-left:4px;}
+.slider-wrap{position:relative;margin:8px 0;}
+input[type=range]{
+  width:100%;-webkit-appearance:none;background:var(--bg3);
+  border-radius:4px;height:6px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(135deg,var(--red),#ff6b6b);
+  box-shadow:0 2px 10px rgba(230,57,70,.5);cursor:pointer;
+  border:2px solid rgba(255,255,255,.2);
+}
+.bombs-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* mult preview */
+.mult-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.mult-chip{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:9px;text-align:center;}
+.mult-chip-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.mult-chip-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;}
+.mult-chip-val.green{color:var(--green);}
+.mult-chip-val.gold{color:var(--gold);}
+.mult-chip-val.red{color:var(--red);}
+
+/* ── GAME AREA ── */
+.game-area{display:none;}
+.game-area.visible{display:block;}
+.setup-panel.hidden{display:none;}
+
+/* live stats */
+.live-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.ls{background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:12px;padding:9px;text-align:center;backdrop-filter:blur(8px);}
+.ls-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
+.ls-v{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;}
+
+/* ── GRID ── */
+.grid-wrap{
+  background:linear-gradient(135deg,#06060f,#0a0a1a);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:20px;padding:14px;margin-bottom:12px;
+  box-shadow:0 0 40px rgba(0,0,0,.6);
+}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;}
+
+.cell{
+  aspect-ratio:1;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .15s,transform .1s,background .15s;
+  user-select:none;
+}
+.cell::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,transparent 60%);
+  pointer-events:none;
+}
+.cell:not(.revealed):not(.bomb):hover{
+  border-color:rgba(245,197,66,.35);
+  background:linear-gradient(135deg,rgba(245,197,66,.08),rgba(245,197,66,.03));
+  transform:scale(1.04);
+}
+.cell:not(.revealed):not(.bomb):active{transform:scale(.97);}
+
+/* hidden pattern */
+.cell:not(.revealed):not(.bomb)::after{
+  content:'';position:absolute;inset:4px;
+  border-radius:8px;opacity:.12;
+  background:repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,.3) 0,rgba(255,255,255,.3) 1px,
+    transparent 1px,transparent 5px
+  );
+}
+
+/* SAFE reveal — diamond */
+.cell.safe{
+  border-color:rgba(45,198,83,.5);
+  background:linear-gradient(135deg,rgba(45,198,83,.15),rgba(45,198,83,.05));
+  cursor:default;animation:cell-pop .3s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes cell-pop{
+  0%{transform:scale(.7);opacity:0;}
+  100%{transform:scale(1);opacity:1;}
+}
+.cell.safe::before{
+  background:linear-gradient(135deg,rgba(45,198,83,.15) 0%,transparent 60%);
+}
+.diamond{
+  font-size:24px;
+  animation:diamond-spin .6s cubic-bezier(.34,1.56,.64,1) both;
+  filter:drop-shadow(0 0 8px rgba(45,198,83,.8));
+}
+@keyframes diamond-spin{
+  0%{transform:scale(0) rotate(-180deg);}
+  100%{transform:scale(1) rotate(0deg);}
+}
+
+/* BOMB reveal */
+.cell.bomb{
+  border-color:rgba(230,57,70,.6);
+  background:linear-gradient(135deg,rgba(230,57,70,.2),rgba(230,57,70,.08));
+  cursor:default;animation:bomb-shake .4s ease both;
+}
+@keyframes bomb-shake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-5px);}
+  40%{transform:translateX(5px);}
+  60%{transform:translateX(-3px);}
+  80%{transform:translateX(3px);}
+}
+.bomb-icon{
+  font-size:22px;
+  animation:bomb-pop .3s cubic-bezier(.34,1.56,.64,1) both;
+  filter:drop-shadow(0 0 8px rgba(230,57,70,.9));
+}
+@keyframes bomb-pop{
+  0%{transform:scale(0);}
+  60%{transform:scale(1.3);}
+  100%{transform:scale(1);}
+}
+
+/* already revealed but not by player (show after loss) */
+.cell.bomb-hidden{
+  border-color:rgba(230,57,70,.25);
+  background:linear-gradient(135deg,rgba(230,57,70,.07),transparent);
+  cursor:default;
+}
+
+/* DISABLED state */
+.cell.disabled{pointer-events:none;opacity:.7;}
+
+/* ── BUTTONS ── */
+.start-btn{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:16px;color:#000;
+  font-family:'Orbitron',monospace;font-size:15px;font-weight:900;
+  letter-spacing:.5px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(245,197,66,.3);
+  transition:opacity .15s,transform .1s;
+}
+.start-btn:active{transform:scale(.98);opacity:.9;}
+.start-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.cashout-btn{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,#2dc653,#1aa840);
+  border:none;border-radius:16px;color:#fff;
+  font-family:'Orbitron',monospace;font-size:15px;font-weight:900;
+  letter-spacing:.5px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(45,198,83,.35);
+  transition:all .2s;
+  animation:cashout-pulse 1.5s ease-in-out infinite;
+}
+@keyframes cashout-pulse{
+  0%,100%{box-shadow:0 4px 20px rgba(45,198,83,.35);}
+  50%{box-shadow:0 4px 30px rgba(45,198,83,.6);}
+}
+.cashout-btn:disabled{opacity:.4;cursor:not-allowed;animation:none;}
+
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.action-btn{padding:12px;border-radius:12px;font-family:'Orbitron',monospace;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.btn-newgame{background:var(--bg3);border:1px solid var(--border);color:var(--muted);}
+.btn-newgame:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── RESULT OVERLAY ── */
+.result-overlay{
+  position:fixed;inset:0;z-index:300;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(12px);
+}
+.result-overlay.show{display:flex;}
+.result-card{
+  background:var(--bg2);border-radius:24px;
+  border:1px solid var(--border);padding:28px 24px;
+  text-align:center;max-width:280px;width:90%;
+  animation:result-pop .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes result-pop{
+  0%{transform:scale(.6);opacity:0;}
+  100%{transform:scale(1);opacity:1;}
+}
+.result-emoji{font-size:64px;margin-bottom:12px;display:block;}
+.result-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;margin-bottom:8px;}
+.result-title.win{color:var(--green);}
+.result-title.lose{color:var(--red);}
+.result-sub{font-size:14px;color:var(--muted);margin-bottom:6px;line-height:1.5;}
+.result-amount{font-family:'Orbitron',monospace;font-size:28px;font-weight:700;margin-bottom:18px;}
+.result-amount.win{color:var(--green);}
+.result-amount.lose{color:var(--red);}
+.result-close{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:13px;font-weight:900;cursor:pointer;}
+
+/* mines count display table */
+.mines-table{margin-top:10px;}
+.mines-table-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.mult-preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.mp{background:var(--bg3);border-radius:8px;padding:5px 4px;text-align:center;border:1px solid var(--border);}
+.mp-k{font-size:9px;color:var(--muted);}
+.mp-v{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <button class="fp-back" onclick="goBack()">‹</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:20px">💣</span>
+    <span class="fp-title">МИНЫ</span>
+  </div>
+  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- BALANCE -->
+  <div class="bal-bar">
+    <div><div class="bal-bar-left">Баланс</div><div class="bal-bar-val">🪙 <span id="bal">—</span></div></div>
+    <div style="font-size:12px;color:var(--muted);text-align:right">💣 = потеря ставки<br>💎 = множитель × ставка</div>
+  </div>
+
+  <!-- SETUP PANEL -->
+  <div class="setup-panel" id="setup-panel">
+    <div>
+      <div class="setup-label" style="margin-bottom:8px">Ставка (мин. 10 🪙)</div>
+      <div class="bet-row">
+        <input class="bet-input" id="bet-input" type="number" min="10" value="50" inputmode="numeric">
+        <span style="color:var(--gold);font-size:18px">🪙</span>
+      </div>
+      <div class="bet-quick">
+        <div class="bq" onclick="setBet(10)">10</div>
+        <div class="bq" onclick="setBet(50)">50</div>
+        <div class="bq" onclick="setBet(100)">100</div>
+        <div class="bq" onclick="setBet(250)">250</div>
+        <div class="bq" onclick="setBet(500)">500</div>
+        <div class="bq" onclick="setBetHalf()">½</div>
+        <div class="bq" onclick="setBetDouble()">×2</div>
+        <div class="bq" onclick="setBetMax()">MAX</div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+
+    <div class="bombs-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="setup-label">Количество бомб</div>
+        <div class="bombs-val" id="bombs-display">3 <span>бомбы</span></div>
+      </div>
+      <input type="range" id="bombs-slider" min="1" max="24" value="3" oninput="onBombsChange(this.value)">
+      <div class="bombs-labels"><span>1</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
+    </div>
+
+    <!-- Multiplier preview -->
+    <div>
+      <div class="setup-label" style="margin-bottom:8px">Потенциальные множители</div>
+      <div class="mult-preview-grid" id="mult-preview"></div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+    <button class="start-btn" id="start-btn" onclick="startGame()">💎 НАЧАТЬ ИГРУ</button>
+  </div>
+
+  <!-- GAME AREA -->
+  <div class="game-area" id="game-area">
+
+    <div class="live-stats">
+      <div class="ls">
+        <div class="ls-l">Ставка</div>
+        <div class="ls-v" id="live-bet" style="color:var(--muted)">—</div>
+      </div>
+      <div class="ls">
+        <div class="ls-l">Множитель</div>
+        <div class="ls-v" id="live-mult" style="color:var(--gold)">×1.00</div>
+      </div>
+      <div class="ls">
+        <div class="ls-l">Выиграть</div>
+        <div class="ls-v" id="live-win" style="color:var(--green)">0</div>
+      </div>
+    </div>
+
+    <div class="grid-wrap">
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <button class="cashout-btn" id="cashout-btn" onclick="cashout()" disabled>
+      💰 КЕШАУТ — <span id="cashout-label">0</span> 🪙
+    </button>
+
+    <div class="action-row">
+      <button class="action-btn btn-newgame" onclick="newGame()">🔄 Новая игра</button>
+      <button class="action-btn" style="background:var(--bg3);border:1px solid var(--border);color:var(--muted);"
+        onclick="goBack()">← Назад</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- RESULT OVERLAY -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <span class="result-emoji" id="res-emoji">💎</span>
+    <div class="result-title" id="res-title">ВЫИГРЫШ!</div>
+    <div class="result-sub" id="res-sub">Ставка: 50 🪙 · ×2.0</div>
+    <div class="result-amount" id="res-amount">+100 🪙</div>
+    <button class="result-close" onclick="closeResult()">🎮 Играть снова</button>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID = tg?.initDataUnsafe?.user?.id || 0;
+
+let userData    = null;
+let gameActive  = false;
+let currentBet  = 50;
+let currentBombs = 3;
+let revealedCells = [];
+let currentMult  = 1.0;
+let currentWin   = 0;
+
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+function goBack(){
+  if(gameActive){
+    if(!confirm('Игра будет потеряна. Выйти?')) return;
+  }
+  window.location.href='main.html?tab=games';
+}
+
+async function loadUser(){
+  if(!UID)return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  if(userData){
+    const b = userData.balance??0;
+    document.getElementById('r-bal').textContent = b;
+    document.getElementById('bal').textContent   = b;
+  }
+}
+
+// ── BET HELPERS ──
+function setBet(v){
+  document.getElementById('bet-input').value = v;
+  currentBet = v;
+}
+function setBetHalf(){
+  const v = Math.max(10, Math.floor((parseInt(document.getElementById('bet-input').value)||50)/2));
+  document.getElementById('bet-input').value = v;
+}
+function setBetDouble(){
+  const v = Math.min(userData?.balance||9999, (parseInt(document.getElementById('bet-input').value)||50)*2);
+  document.getElementById('bet-input').value = v;
+}
+function setBetMax(){
+  document.getElementById('bet-input').value = userData?.balance||0;
+}
+
+// ── MULTIPLIER CALCULATION (mirrors server) ──
+function minesMultClient(safeOpened, bombs, house=0.97){
+  const total=25, safeTotal=25-bombs;
+  if(safeOpened===0) return 1.0;
+  if(safeTotal<=0||safeOpened>safeTotal) return 0;
+  return house * nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
+}
+function nCr(n,r){
+  if(r>n) return 0; if(r===0||r===n) return 1;
+  let res=1;
+  for(let i=0;i<r;i++){res=res*(n-i)/(i+1);}
+  return res;
+}
+
+function onBombsChange(v){
+  currentBombs = parseInt(v);
+  const plural = currentBombs===1?'бомба':currentBombs<5?'бомбы':'бомб';
+  document.getElementById('bombs-display').innerHTML = `${currentBombs} <span>${plural}</span>`;
+  renderMultPreview();
+}
+
+function renderMultPreview(){
+  const b = currentBombs;
+  const safeTotal = 25-b;
+  const steps = Math.min(safeTotal, 8);
+  let html='';
+  for(let k=1;k<=steps;k++){
+    const m = minesMultClient(k,b).toFixed(2);
+    html+=`<div class="mp"><div class="mp-k">${k}💎</div><div class="mp-v">×${m}</div></div>`;
+  }
+  document.getElementById('mult-preview').innerHTML=html;
+}
+
+// ── BUILD GRID ──
+function buildGrid(){
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  for(let i=0;i<25;i++){
+    const cell=document.createElement('div');
+    cell.className='cell';
+    cell.dataset.idx=i;
+    cell.onclick=()=>revealCell(i);
+    grid.appendChild(cell);
+  }
+}
+
+function getCellEl(idx){ return document.querySelector(`.cell[data-idx="${idx}"]`); }
+
+// ── START GAME ──
+async function startGame(){
+  const bet = parseInt(document.getElementById('bet-input').value)||0;
+  if(bet < 10){toast('Минимальная ставка 10 🪙','err');return;}
+  if(!userData || bet > userData.balance){toast('Недостаточно монет','err');return;}
+  if(currentBombs<1||currentBombs>24){toast('Бомбы: 1–24','err');return;}
+
+  document.getElementById('start-btn').disabled=true;
+  const res = await post('/api/mines/start',{
+    user_id: UID, bet, bombs: currentBombs
+  }).catch(()=>null);
+  document.getElementById('start-btn').disabled=false;
+
+  if(!res||res.error){toast(res?.error||'Ошибка соединения','err');return;}
+
+  currentBet   = bet;
+  currentMult  = 1.0;
+  currentWin   = 0;
+  revealedCells= [];
+  gameActive   = true;
+
+  if(userData) userData.balance = res.new_balance;
+  document.getElementById('r-bal').textContent = res.new_balance;
+  document.getElementById('bal').textContent   = res.new_balance;
+
+  document.getElementById('live-bet').textContent  = bet;
+  document.getElementById('live-mult').textContent  = '×1.00';
+  document.getElementById('live-win').textContent   = '0';
+  document.getElementById('cashout-btn').disabled   = true;
+  document.getElementById('cashout-label').textContent = '0';
+
+  document.getElementById('setup-panel').classList.add('hidden');
+  document.getElementById('game-area').classList.add('visible');
+  buildGrid();
+}
+
+// ── REVEAL CELL ──
+async function revealCell(idx){
+  if(!gameActive) return;
+  if(revealedCells.includes(idx)) return;
+  // Disable all cells during request
+  document.querySelectorAll('.cell').forEach(c=>c.classList.add('disabled'));
+
+  const res = await post('/api/mines/reveal',{user_id:UID,cell:idx}).catch(()=>null);
+  document.querySelectorAll('.cell').forEach(c=>c.classList.remove('disabled'));
+
+  if(!res||res.error){toast(res?.error||'Ошибка','err');return;}
+
+  if(res.is_bomb){
+    // BOOM
+    gameActive=false;
+    const cell=getCellEl(idx);
+    cell.className='cell bomb';
+    cell.innerHTML='<span class="bomb-icon">💣</span>';
+
+    // Show all other bombs
+    setTimeout(()=>{
+      (res.bomb_positions||[]).forEach(bi=>{
+        if(bi!==idx){
+          const c=getCellEl(bi);
+          if(c&&!c.classList.contains('safe')){
+            c.className='cell bomb-hidden';
+            c.innerHTML='<span style="font-size:18px;opacity:.6">💣</span>';
+          }
+        }
+      });
+    },300);
+
+    document.getElementById('cashout-btn').disabled=true;
+    showResult(false, currentBet, currentMult, 0);
+  } else {
+    revealedCells.push(idx);
+    const cell=getCellEl(idx);
+    cell.className='cell safe';
+    cell.innerHTML='<span class="diamond">💎</span>';
+
+    currentMult = res.current_mult;
+    currentWin  = res.current_win;
+
+    document.getElementById('live-mult').textContent  = `×${currentMult.toFixed(2)}`;
+    document.getElementById('live-win').textContent   = currentWin;
+    document.getElementById('cashout-label').textContent = currentWin;
+    document.getElementById('cashout-btn').disabled   = false;
+
+    if(res.auto_cashout){
+      gameActive=false;
+      if(userData) userData.balance = res.new_balance;
+      document.getElementById('r-bal').textContent = res.new_balance;
+      document.getElementById('bal').textContent   = res.new_balance;
+      showResult(true, currentBet, currentMult, currentWin);
+    }
+  }
+}
+
+// ── CASHOUT ──
+async function cashout(){
+  if(!gameActive||!revealedCells.length) return;
+  document.getElementById('cashout-btn').disabled=true;
+  const res = await post('/api/mines/cashout',{user_id:UID}).catch(()=>null);
+  if(!res||res.error){toast(res?.error||'Ошибка','err');document.getElementById('cashout-btn').disabled=false;return;}
+
+  gameActive=false;
+  if(userData) userData.balance = res.new_balance;
+  document.getElementById('r-bal').textContent = res.new_balance;
+  document.getElementById('bal').textContent   = res.new_balance;
+  showResult(true, currentBet, res.mult||currentMult, res.won||currentWin);
+}
+
+// ── NEW GAME ──
+function newGame(){
+  if(gameActive){
+    // forfeit current game (server handles on next start)
+    gameActive=false;
+    loadUser(); // refresh balance
+  }
+  document.getElementById('game-area').classList.remove('visible');
+  document.getElementById('setup-panel').classList.remove('hidden');
+  revealedCells=[];
+}
+
+// ── RESULT ──
+function showResult(won, bet, mult, amount){
+  const overlay=document.getElementById('result-overlay');
+  document.getElementById('res-emoji').textContent    = won?'💎':'💣';
+  document.getElementById('res-title').textContent    = won?'КЕШАУТ!':'ВЗРЫВ!';
+  document.getElementById('res-title').className      = `result-title ${won?'win':'lose'}`;
+  document.getElementById('res-sub').textContent      = `Ставка: ${bet} 🪙 · ×${(mult||1).toFixed(2)}`;
+  document.getElementById('res-amount').textContent   = won?`+${amount} 🪙`:`-${bet} 🪙`;
+  document.getElementById('res-amount').className     = `result-amount ${won?'win':'lose'}`;
+  overlay.classList.add('show');
+}
+function closeResult(){
+  document.getElementById('result-overlay').classList.remove('show');
+  newGame();
+  loadUser();
+}
+
+// ── INIT ──
+onBombsChange(3);
+loadUser();
+
+// Restore active game if exists
+(async()=>{
+  if(!UID)return;
+  const status = await get(`/api/mines/status?uid=${UID}`).catch(()=>null);
+  if(status?.active){
+    currentBet   = status.bet;
+    currentBombs = status.bombs;
+    currentMult  = status.current_mult||1;
+    currentWin   = status.current_win||0;
+    revealedCells= status.revealed||[];
+    gameActive   = true;
+    document.getElementById('setup-panel').classList.add('hidden');
+    document.getElementById('game-area').classList.add('visible');
+    buildGrid();
+    status.revealed.forEach(idx=>{
+      const cell=getCellEl(idx);
+      if(cell){cell.className='cell safe';cell.innerHTML='<span class="diamond">💎</span>';}
+    });
+    document.getElementById('live-bet').textContent   = status.bet;
+    document.getElementById('live-mult').textContent  = `×${status.current_mult?.toFixed(2)||'1.00'}`;
+    document.getElementById('live-win').textContent   = status.current_win||0;
+    document.getElementById('cashout-label').textContent = status.current_win||0;
+    document.getElementById('cashout-btn').disabled   = !status.revealed?.length;
+    document.getElementById('bombs-slider').value = status.bombs;
+    onBombsChange(status.bombs);
+    toast(`Восстановлена активная игра!`,'info');
+  }
+})();
+</script>
+</body>
+</html>

@@ -393,7 +393,7 @@
   <div class="modal">
     <div class="modal-drag"></div>
     <div class="modal-title">💳 ПОПОЛНЕНИЕ</div>
-    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:16px">1 монета = 1 ⭐ Telegram Star</p>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:16px">1 ⭐ = 10 монет</p>
     <div class="ta-grid">
       <div class="ta sel" onclick="selTopup(this,50)">
         <div class="ta-c">50</div><div class="ta-s">50 ⭐</div>
@@ -556,8 +556,7 @@ function buildGiftCard(gift, source, idx){
   const isBotSrc = source === 'bot';
   info.innerHTML = `
     <div class="gift-top">
-      <div class="gift-name">${displayName}</div>
-      <div class="gift-price-badge">⭐ ${gift.star_count}</div>
+      <div class="gift-price-badge">⭐ ${gift.star_count} <span style="font-size:11px;opacity:.7">(${gift.star_count*10} 🪙)</span></div>
     </div>
     <div class="gift-desc-text">${
       isBotSrc
@@ -639,7 +638,7 @@ async function confirmPurchase(){
   const errEl = document.getElementById('buy-error');
   errEl.classList.remove('show');
   const bal = userData?.balance||0;
-  if(bal < pendingGift.star_count){
+  if(bal < pendingGift.star_count * 10){
     errEl.textContent='Недостаточно монет на балансе!';errEl.classList.add('show');return;
   }
   const anon = document.getElementById('anon-toggle').checked;
@@ -657,6 +656,7 @@ async function confirmPurchase(){
     gift_name: pendingGift.name||pendingGift.emoji,
     gift_emoji: pendingGift.emoji,
     star_count: pendingGift.star_count,
+    coin_cost:  pendingGift.star_count * 10,
     source: currentSrc,
     recipient_id: recipientId,
     anonymous: anon,

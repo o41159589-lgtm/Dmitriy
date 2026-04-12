@@ -3,6 +3,7 @@ TopLuck Casino Bot — aiogram 3.x + aiosqlite
 Полная версия с группой логов, командами и .env
 """
 import asyncio, time, logging, os, random, io, json, html as _html
+from math import comb
 from pathlib import Path
 from datetime import datetime
 from aiohttp import web
@@ -55,6 +56,14 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=BOT_TOKEN)
 dp  = Dispatcher(storage=MemoryStorage())
 gta_timers: dict[int, asyncio.Task] = {}
+active_mines: dict[int, dict] = {}  # uid -> mine game state
+
+def mines_mult(safe_opened: int, bombs: int, house: float = 0.97) -> float:
+    """Multiplier after opening `safe_opened` safe cells with `bombs` mines on 5×5."""
+    total, safe_total = 25, 25 - bombs
+    if safe_opened == 0: return 1.0
+    if safe_total <= 0 or safe_opened > safe_total: return 0.0
+    return round(house * comb(total, safe_opened) / comb(safe_total, safe_opened), 4)
 
 ROULETTE_NUMBERS = [
     (0,"green"),(32,"red"),(15,"black"),(19,"red"),(4,"black"),(21,"red"),
@@ -110,8 +119,7 @@ async def log_game(uid: int, name: str, game: str, bet: int, result: str, gain: 
         f"Баланс: {balance} 🪙")
 
 async def log_deposit(uid: int, name: str, amount: int, balance: int, method: str = "Stars"):
-    safe_name = _html.escape(name or "")
-    safe_method = _html.escape(method or "")
+    safe_name = _html.escape(name or ""); safe_method = _html.escape(method or "")
     await log(LOG_THREAD_DEPOSIT,
         f"💳 <b>Пополнение баланса</b>\n"
         f"#id{uid} #deposit\n"
@@ -122,8 +130,7 @@ async def log_deposit(uid: int, name: str, amount: int, balance: int, method: st
 
 async def log_admin_action(admin_id: int, admin_name: str, action: str, target_uid: int,
                            target_name: str, details: str, incognito: bool = False):
-    safe_aname   = _html.escape(admin_name or "")
-    safe_tname   = _html.escape(target_name or "")
+    safe_aname = _html.escape(admin_name or ""); safe_tname = _html.escape(target_name or "")
     safe_details = _html.escape(details or "")
     await log(LOG_THREAD_ADMIN,
         f"🛠 <b>Действие администратора</b>\n"
@@ -312,7 +319,7 @@ async def cmd_start(message: Message):
             f"👋 Привет, <b>{safe_name}</b>!\n\n"
             f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
             f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
-            f"⭐ 1 монета = 1 Telegram Star\n\n"
+            f"⭐ 10 монет = 1 Telegram Star\n\n"
             f"Нажми кнопку ниже чтобы начать:"
         ) if is_new else (
             f"👋 С возвращением, <b>{safe_name}</b>!\n\n"
@@ -327,9 +334,6 @@ async def cmd_start(message: Message):
         await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
     except Exception as e:
         logger.error(f"[cmd_start] answer error uid={user.id}: {e}")
-        try:
-            await message.answer(f"👋 Добро пожаловать в TopLuck Casino!\n💰 Баланс: {u.get('balance',0)} монет")
-        except Exception: pass
 
     # ── 4. All side-effects AFTER greeting, fire-and-forget ──
 
@@ -372,7 +376,7 @@ async def _handle_referral(user, param: str):
             fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
         except Exception: pass
         await _safe_send(ref_id,
-            f"🎉 По вашей ссылке зарегистрировался <b>{_html.escape(user.first_name or '')}</b>!\n"
+            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
             f"💰 +10 монет → баланс: <b>{nb}</b>")
     except Exception as e:
         logger.warning(f"[_handle_referral]: {e}")
@@ -410,8 +414,6 @@ async def cmd_help(message: Message):
 @dp.message(Command("admin"))
 async def cmd_admin(message: Message):
     if message.from_user.id not in ADMIN_IDS + DEV_IDS: return
-    if not ADMIN_URL or not ADMIN_URL.startswith("https://"):
-        await message.answer("⚙️ <b>Панель управления</b>\n\nADMIN_URL не настроен.", parse_mode="HTML"); return
     kb = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="🛠 Открыть панель", web_app=WebAppInfo(url=ADMIN_URL))]])
     await message.answer("🛠 <b>Панель управления TopLuck</b>", reply_markup=kb, parse_mode="HTML")
@@ -514,14 +516,8 @@ async def cmd_message(message: Message):
 
     try:
         await bot.send_message(uid,
-            f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}",
-            parse_mode="HTML")
+            f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{text}", parse_mode="HTML")
         await message.answer(f"✅ Сообщение отправлено пользователю {uid}.")
-        u_target = await db.get_user(uid)
-        tname = u_target.get("first_name","?") if u_target else "?"
-        fire_log(log_admin_action(message.from_user.id, message.from_user.first_name or "",
-            "SEND_MESSAGE", uid, tname,
-            f"Текст: {text[:100]}{'…' if len(text)>100 else ''}"))
     except TelegramForbiddenError:
         await message.answer(f"❌ Пользователь {uid} заблокировал бота.")
     except Exception as e:
@@ -580,9 +576,10 @@ async def on_payment(message: Message):
     parts = pl.split("_")
     if parts[0] == "coins" and len(parts) == 3:
         uid, amount = int(parts[1]), int(parts[2])
-        nb = await db.add_to_balance(uid, amount)
-        await db.add_history(uid, "deposit", amount, "Пополнение через Stars")
-        await message.answer(f"✅ Оплата прошла!\n💰 +{amount} монет → баланс: <b>{nb}</b>", parse_mode="HTML")
+        coins = amount * 10  # 1 star = 10 coins
+        nb = await db.add_to_balance(uid, coins)
+        await db.add_history(uid, "deposit", coins, f"Пополнение через Stars ({amount} ⭐)")
+        await message.answer(f"✅ Оплата прошла!\n⭐ {amount} Stars → 💰 +{coins} монет\nБаланс: <b>{nb}</b>", parse_mode="HTML")
         u = await db.get_user(uid)
         name = u.get("first_name","?") if u else "?"
         fire_log(log_deposit(uid, name, amount, nb, "Telegram Stars"))
@@ -630,27 +627,17 @@ async def send_backup():
 # ════════════════════════════════════════
 
 async def api_user(req: web.Request):
-    try:
-        uid = int(req.match_info["uid"])
-        if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
-    except (ValueError, KeyError):
-        return web.json_response({"error":"invalid uid"}, status=400)
+    uid = int(req.match_info["uid"])
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"not found"}, status=404)
     return web.json_response(u)
 
 async def api_ensure_user(req: web.Request):
-    try:
-        data = await req.json()
-    except Exception:
-        return web.json_response({"error":"invalid json"}, status=400)
-    try:
-        uid = int(data.get("user_id", 0))
-    except (ValueError, TypeError):
-        return web.json_response({"error":"invalid uid"}, status=400)
-    if uid <= 0: return web.json_response({"error":"no uid"}, status=400)
-    username   = str(data.get("username",""))[:64]
-    first_name = str(data.get("first_name",""))[:64]
+    data = await req.json()
+    uid = int(data.get("user_id", 0))
+    if not uid: return web.json_response({"error":"no uid"}, status=400)
+    username   = str(data.get("username",""))
+    first_name = str(data.get("first_name",""))
     # Check if user exists before ensure (to detect new registrations)
     existed = await db.get_user(uid)
     u = await db.ensure_user(uid, username, first_name)
@@ -660,11 +647,7 @@ async def api_ensure_user(req: web.Request):
     return web.json_response(u)
 
 async def api_history(req: web.Request):
-    try:
-        uid = int(req.match_info["uid"])
-        if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
-    except (ValueError, KeyError):
-        return web.json_response({"error":"invalid uid"}, status=400)
+    uid = int(req.match_info["uid"])
     return web.json_response(await db.get_history(uid))
 
 async def api_invoice(req: web.Request):
@@ -717,7 +700,7 @@ async def api_gift_buy(req: web.Request):
     if not u: return web.json_response({"error":"user not found"}, status=404)
     if await db.is_banned(uid):
         return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
-    price = star_count
+    price = star_count * 10  # 1 star = 10 coins
     if price <= 0: return web.json_response({"error":"invalid price"}, status=400)
     if u["balance"] < price:
         return web.json_response({"error":"Недостаточно монет на балансе!"}, status=400)
@@ -791,22 +774,9 @@ async def api_gift_buy(req: web.Request):
 
         return web.json_response({"ok":True,"new_balance":new_bal})
 
-_VALID_BET_TYPES = {"red","black","green","even","odd","low","high","dozen1","dozen2","dozen3"}
-
 async def api_spin(req: web.Request):
-    try:
-        data = await req.json()
-    except Exception:
-        return web.json_response({"error":"invalid json"}, status=400)
-    try:
-        uid     = int(data.get("user_id", 0))
-        bet_amt = int(data.get("bet", 0))
-    except (ValueError, TypeError):
-        return web.json_response({"error":"invalid params"}, status=400)
-    bet_type = str(data.get("bet_type",""))
-    if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
-    if bet_type not in _VALID_BET_TYPES:
-        return web.json_response({"error":"invalid bet_type"}, status=400)
+    data = await req.json()
+    uid, bet_amt, bet_type = int(data.get("user_id",0)), int(data.get("bet",0)), data.get("bet_type","")
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"user not found"}, status=404)
     if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
@@ -888,13 +858,8 @@ async def api_gta_lobby(req: web.Request):
     return web.json_response({"lobby": lobby, "bets": bets})
 
 async def api_gta_bet(req: web.Request):
-    try:
-        data = await req.json()
-        uid    = int(data.get("user_id", 0))
-        amount = int(data.get("amount", 0))
-    except Exception:
-        return web.json_response({"error":"invalid params"}, status=400)
-    if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
+    data = await req.json()
+    uid, amount = int(data.get("user_id",0)), int(data.get("amount",0))
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"user not found"}, status=404)
     if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
@@ -1002,6 +967,179 @@ async def _gta_run(lid):
             f"✅ Выплата: <b>{payout}</b> монет\n📊 Баланс: <b>{wu['balance']}</b>", parse_mode="HTML")
     except Exception as e: logger.warning(f"GTA notify: {e}")
 
+
+# ════════════════════════════════════════
+#  MINES GAME API
+# ════════════════════════════════════════
+
+async def api_mines_start(req: web.Request):
+    try:
+        data = await req.json()
+        uid     = int(data.get("user_id", 0))
+        bet     = int(data.get("bet", 0))
+        bombs   = int(data.get("bombs", 3))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
+    if bombs < 1 or bombs > 24: return web.json_response({"error": "bombs must be 1–24"}, status=400)
+    if bet < 10: return web.json_response({"error": "minimum bet is 10"}, status=400)
+
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error": "user not found"}, status=404)
+    if await db.is_banned(uid): return web.json_response({"error": "⛔ Вы заблокированы."}, status=403)
+    if u["balance"] < bet: return web.json_response({"error": "Недостаточно монет"}, status=400)
+
+    # Cancel any existing game (forfeit)
+    if uid in active_mines:
+        await db.add_history(uid, "lose", active_mines[uid]["bet"],
+            f"Мины: незавершённая игра (брошена)")
+
+    # Generate bomb positions
+    positions = list(range(25))
+    random.shuffle(positions)
+    bomb_set = set(positions[:bombs])
+
+    new_bal = await db.add_to_balance(uid, -bet)
+    game_id = str(int(time.time() * 1000))
+
+    active_mines[uid] = {
+        "game_id":   game_id,
+        "bet":       bet,
+        "bombs":     bombs,
+        "bomb_set":  bomb_set,
+        "revealed":  [],
+        "created_at": time.time(),
+    }
+
+    next_mult = mines_mult(1, bombs)
+    return web.json_response({
+        "ok": True,
+        "game_id": game_id,
+        "new_balance": new_bal,
+        "bombs": bombs,
+        "next_mult": next_mult,
+        "current_win": 0,
+    })
+
+async def api_mines_reveal(req: web.Request):
+    try:
+        data    = await req.json()
+        uid     = int(data.get("user_id", 0))
+        cell    = int(data.get("cell", -1))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0 or cell < 0 or cell > 24:
+        return web.json_response({"error": "invalid uid or cell"}, status=400)
+
+    game = active_mines.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
+
+    if cell in game["revealed"] or cell in game["bomb_set"] and False:
+        pass  # allow re-check below
+    if cell in game["revealed"]:
+        return web.json_response({"error": "already revealed"}, status=400)
+
+    is_bomb = cell in game["bomb_set"]
+
+    if is_bomb:
+        # Lose — reveal all bombs
+        del active_mines[uid]
+        await db.update_spin_stats(uid, False, 0, game["bet"])
+        u2 = await db.get_user(uid)
+        name = u2.get("first_name","?") if u2 else "?"
+        fire_log(log_game(uid, name, "Мины",
+            game["bet"], "Проигрыш", 0, u2.get("balance",0) if u2 else 0))
+        return web.json_response({
+            "is_bomb": True,
+            "cell": cell,
+            "bomb_positions": list(game["bomb_set"]),
+            "revealed": game["revealed"],
+            "lost": game["bet"],
+        })
+    else:
+        game["revealed"].append(cell)
+        safe_count  = len(game["revealed"])
+        current_mult = mines_mult(safe_count, game["bombs"])
+        current_win  = round(game["bet"] * current_mult)
+        # Next multiplier (if one more safe cell opened)
+        safe_left    = 25 - game["bombs"] - safe_count
+        next_mult    = mines_mult(safe_count + 1, game["bombs"]) if safe_left > 0 else None
+        # Auto cashout if all safe cells revealed
+        if safe_left == 0:
+            new_bal = await db.add_to_balance(uid, current_win)
+            await db.add_history(uid, "win", current_win,
+                f"Мины: все алмазы! x{current_mult} ({game['bombs']} бомб)")
+            await db.update_spin_stats(uid, True, current_win, 0)
+            del active_mines[uid]
+            u2 = await db.get_user(uid)
+            name = u2.get("first_name","?") if u2 else "?"
+            fire_log(log_game(uid, name, "Мины", game["bet"], "Выигрыш",
+                current_win, new_bal))
+            return web.json_response({
+                "is_bomb": False, "cell": cell,
+                "revealed": game["revealed"],
+                "current_mult": current_mult, "current_win": current_win,
+                "next_mult": None, "auto_cashout": True, "new_balance": new_bal,
+            })
+        return web.json_response({
+            "is_bomb": False, "cell": cell,
+            "revealed": game["revealed"],
+            "current_mult": current_mult, "current_win": current_win,
+            "next_mult": next_mult, "auto_cashout": False,
+        })
+
+async def api_mines_cashout(req: web.Request):
+    try:
+        data = await req.json()
+        uid  = int(data.get("user_id", 0))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
+
+    game = active_mines.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
+    if not game["revealed"]:
+        # Nothing revealed → can only quit, refund bet
+        new_bal = await db.add_to_balance(uid, game["bet"])
+        del active_mines[uid]
+        return web.json_response({"ok": True, "won": game["bet"], "new_balance": new_bal,
+            "refunded": True, "mult": 1.0})
+
+    safe_count   = len(game["revealed"])
+    mult         = mines_mult(safe_count, game["bombs"])
+    won          = round(game["bet"] * mult)
+    new_bal      = await db.add_to_balance(uid, won)
+    await db.add_history(uid, "win", won,
+        f"Мины: кешаут x{mult} ({safe_count} алмазов, {game['bombs']} бомб)")
+    await db.update_spin_stats(uid, True, won, 0)
+    del active_mines[uid]
+    u2   = await db.get_user(uid)
+    name = u2.get("first_name","?") if u2 else "?"
+    fire_log(log_game(uid, name, "Мины", game["bet"], "Выигрыш", won, new_bal))
+    return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
+
+async def api_mines_status(req: web.Request):
+    """Return current game state without revealing bomb positions."""
+    try:
+        uid = int(req.rel_url.query.get("uid", 0))
+    except Exception:
+        return web.json_response({"error": "invalid uid"}, status=400)
+    game = active_mines.get(uid)
+    if not game:
+        return web.json_response({"active": False})
+    safe_count   = len(game["revealed"])
+    current_mult = mines_mult(safe_count, game["bombs"])
+    return web.json_response({
+        "active": True,
+        "game_id": game["game_id"],
+        "bet": game["bet"],
+        "bombs": game["bombs"],
+        "revealed": game["revealed"],
+        "current_mult": current_mult,
+        "current_win": round(game["bet"] * current_mult) if safe_count > 0 else 0,
+        "next_mult": mines_mult(safe_count + 1, game["bombs"]),
+    })
+
 def _is_admin(req):
     try:
         uid = int(req.headers.get("X-Admin-Uid","0"))
@@ -1046,22 +1184,17 @@ async def api_admin_users(req):
 async def api_admin_set_balance(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
     try:
-        data    = await req.json()
-        uid     = int(data["user_id"])
-        new_bal = int(data["balance"])
-        old     = int(data.get("old_balance", 0))
-    except (KeyError, ValueError, TypeError, Exception) as e:
-        return web.json_response({"error": f"invalid params: {e}"}, status=400)
-    if uid <= 0 or new_bal < 0:
-        return web.json_response({"error": "invalid uid or balance"}, status=400)
+        data = await req.json(); uid = int(data["user_id"]); new_bal = int(data["balance"]); old = int(data.get("old_balance",0))
+    except Exception as e:
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if uid <= 0 or new_bal < 0: return web.json_response({"error":"invalid uid or balance"}, status=400)
     incognito = bool(data.get("incognito", False))
     await db.set_balance(uid, new_bal)
     delta = new_bal - old
     if delta > 0:
         await db.add_history(uid, "deposit", delta, "Пополнение администратором")
         if not incognito:
-            tu2 = await db.get_user(uid)
-            tname2 = tu2.get("first_name","?") if tu2 else "?"
+            tu2 = await db.get_user(uid); tname2 = tu2.get("first_name","?") if tu2 else "?"
             fire_log(log_deposit(uid, tname2, delta, new_bal, "Пополнение администратором"))
     elif delta < 0:
         await db.add_history(uid, "admin_deduct", abs(delta), f"Списание администратором: {old}→{new_bal}")
@@ -1080,17 +1213,14 @@ async def api_admin_set_balance(req):
 async def api_admin_set_luck(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
     try:
-        data = await req.json()
-        uid  = int(data["user_id"])
-        luck = int(data["luck"])
-    except (KeyError, ValueError, TypeError, Exception) as e:
-        return web.json_response({"error": f"invalid params: {e}"}, status=400)
-    if uid <= 0 or not (-1 <= luck <= 100):
-        return web.json_response({"error": "invalid uid or luck (-1..100)"}, status=400)
+        data = await req.json(); uid = int(data["user_id"]); luck = int(data["luck"])
+    except Exception as e:
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if uid <= 0 or not (-1 <= luck <= 100): return web.json_response({"error":"invalid uid or luck"}, status=400)
     incognito = bool(data.get("incognito", False))
     await db.set_luck(uid, luck)
-    luck_str = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
-    await db.add_history(uid, "admin_luck", 0, f"Администратор изменил удачу: {luck_str}")
+    luck_str2 = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
+    await db.add_history(uid, "admin_luck", 0, f"Администратор изменил удачу: {luck_str2}")
     if not incognito:
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid","0"))
@@ -1099,73 +1229,51 @@ async def api_admin_set_luck(req):
         except: aname = "Admin"; admin_uid = 0
         tu = await db.get_user(uid)
         tname = tu.get("first_name","?") if tu else "?"
+        luck_str = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
         fire_log(log_admin_action(admin_uid, aname, f"SET_LUCK → {luck_str}", uid, tname, f"Удача: {luck_str}"))
+
     return web.json_response({"success":True})
 
 async def api_admin_ban(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
     try:
-        data = await req.json()
-        uid  = int(data["user_id"])
-    except (KeyError, ValueError, TypeError, Exception) as e:
-        return web.json_response({"error": f"invalid params: {e}"}, status=400)
-    if uid <= 0:
-        return web.json_response({"error": "invalid uid"}, status=400)
-    banned    = bool(data.get("banned", True))
-    incognito = bool(data.get("incognito", False))
-    reason    = str(data.get("reason", "—"))
-    await db.set_banned(uid, banned)
-    # Always notify the affected user
-    try:
-        safe_reason = _html.escape(reason)
-        if banned:
-            await bot.send_message(uid,
-                f"⛔ <b>Вы заблокированы в TopLuck Casino.</b>\n"
-                f"Причина: {safe_reason}\n"
-                f"Если считаете это ошибкой — обратитесь к администратору.",
-                parse_mode="HTML")
-        else:
-            await bot.send_message(uid,
-                "✅ <b>Вы разблокированы в TopLuck Casino.</b>\nДобро пожаловать обратно!",
-                parse_mode="HTML")
+        data = await req.json(); uid = int(data["user_id"])
     except Exception as e:
-        logger.warning(f"[api_admin_ban] notify uid={uid}: {e}")
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
+    banned = bool(data.get("banned", True)); incognito = bool(data.get("incognito", False))
+    reason = str(data.get("reason","—"))
+    await db.set_banned(uid, banned)
+    try:
+        if banned:
+            await bot.send_message(uid, f"⛔ <b>Вы заблокированы в TopLuck Casino.</b>\nПричина: {_html.escape(reason)}\nОбратитесь к администратору если считаете это ошибкой.", parse_mode="HTML")
+        else:
+            await bot.send_message(uid, "✅ <b>Вы разблокированы в TopLuck Casino.</b>\nДобро пожаловать обратно!", parse_mode="HTML")
+    except Exception as e: logger.warning(f"[api_admin_ban] notify uid={uid}: {e}")
     if not incognito:
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid","0"))
-            au = await db.get_user(admin_uid)
-            aname = au.get("first_name","Admin") if au else "Admin"
+            au = await db.get_user(admin_uid); aname = au.get("first_name","Admin") if au else "Admin"
         except: aname = "Admin"; admin_uid = 0
-        tu = await db.get_user(uid)
-        tname = tu.get("first_name","?") if tu else "?"
-        fire_log(log_admin_action(admin_uid, aname, "BAN" if banned else "UNBAN",
-            uid, tname, reason))
+        tu = await db.get_user(uid); tname = tu.get("first_name","?") if tu else "?"
+        fire_log(log_admin_action(admin_uid, aname, "BAN" if banned else "UNBAN", uid, tname, reason))
     return web.json_response({"success":True})
 
 async def api_admin_send_message(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
     try:
-        data = await req.json()
-        uid  = int(data.get("user_id", 0))
-        text = str(data.get("text", "")).strip()
+        data = await req.json(); uid = int(data.get("user_id",0)); text = str(data.get("text","")).strip()
     except Exception as e:
-        return web.json_response({"error": f"invalid params: {e}"}, status=400)
-    if not uid or not text:
-        return web.json_response({"error":"no uid or text"}, status=400)
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if not uid or not text: return web.json_response({"error":"no uid or text"}, status=400)
     try:
-        await bot.send_message(uid,
-            f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}",
-            parse_mode="HTML")
-        # Log to admin group thread
+        await bot.send_message(uid, f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}", parse_mode="HTML")
         try:
-            admin_uid = int(req.headers.get("X-Admin-Uid", "0"))
-            au = await db.get_user(admin_uid)
-            aname = au.get("first_name", "Admin") if au else "Admin"
-        except: aname = "Admin"; admin_uid = 0
-        u_target = await db.get_user(uid)
-        tname = u_target.get("first_name","?") if u_target else "?"
-        fire_log(log_admin_action(admin_uid, aname, "SEND_MESSAGE", uid, tname,
-            f"Текст: {text[:100]}{'…' if len(text)>100 else ''}"))
+            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            au = await db.get_user(admin_uid); aname = au.get("first_name","Admin") if au else "Admin"
+        except: aname="Admin"; admin_uid=0
+        u_t = await db.get_user(uid); tname = u_t.get("first_name","?") if u_t else "?"
+        fire_log(log_admin_action(admin_uid, aname, "SEND_MESSAGE", uid, tname, f"Текст: {text[:100]}{'…' if len(text)>100 else ''}"))
         return web.json_response({"ok": True})
     except TelegramForbiddenError:
         return web.json_response({"error": f"❌ Пользователь {uid} заблокировал бота."}, status=400)
@@ -1189,12 +1297,11 @@ async def serve_app(req):   return await serve_html("index.html")
 async def serve_admin(req): return await serve_html("admin_panel.html")
 async def health(req):      return web.Response(text="OK")
 _STATIC_EXTS = {".css",".png",".jpg",".jpeg",".js",".svg",".html",".ico",".webp"}
-
 async def serve_static(req):
     filename = req.match_info.get("filename","")
     try:
         target = (BASE / filename).resolve()
-        target.relative_to(BASE.resolve())  # ValueError if outside BASE
+        target.relative_to(BASE.resolve())
     except Exception:
         return web.Response(text="Forbidden", status=403)
     if not target.exists() or not target.is_file():
@@ -1224,6 +1331,10 @@ async def start_web():
     app.router.add_post("/api/gta/bet",            api_gta_bet)
     app.router.add_get ("/api/gta/status/{lid}",   api_gta_status)
     app.router.add_post("/api/gift/buy",           api_gift_buy)
+    app.router.add_post("/api/mines/start",        api_mines_start)
+    app.router.add_post("/api/mines/reveal",       api_mines_reveal)
+    app.router.add_post("/api/mines/cashout",      api_mines_cashout)
+    app.router.add_get ("/api/mines/status",       api_mines_status)
     app.router.add_get ("/api/admin/users",        api_admin_users)
     app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
     app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)
