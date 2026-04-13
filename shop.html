@@ -97,33 +97,60 @@
   50%{opacity:.7;transform:scale(1.15);}
 }
 
-/* floating emoji */
+/* ── TG-style gift emoji animation ── */
 .gift-emoji-wrap{
   position:relative;z-index:2;
-  animation:gift-float 3.5s ease-in-out infinite;
+  display:flex;align-items:center;justify-content:center;
 }
-@keyframes gift-float{
-  0%,100%{transform:translateY(0) rotate(-2deg);}
-  50%{transform:translateY(-12px) rotate(2deg);}
-}
+/* main float + breathe */
 .gift-emoji-big{
-  font-size:80px;line-height:1;
-  filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));
-  display:block;
+  font-size:86px;line-height:1;display:block;
+  animation:tg-float 3s ease-in-out infinite,
+             tg-breathe 2s ease-in-out infinite;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.45));
+  will-change:transform,filter;
 }
-
+@keyframes tg-float{
+  0%,100%{transform:translateY(0px) rotate(-1.5deg);}
+  25%{transform:translateY(-10px) rotate(1deg);}
+  50%{transform:translateY(-14px) rotate(2deg);}
+  75%{transform:translateY(-6px) rotate(-0.5deg);}
+}
+@keyframes tg-breathe{
+  0%,100%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.45)) brightness(1);}
+  50%{filter:drop-shadow(0 10px 30px rgba(255,255,255,.15)) brightness(1.08);}
+}
+/* shimmer/halo ring behind emoji */
+.gift-halo{
+  position:absolute;z-index:1;
+  width:100px;height:100px;border-radius:50%;
+  background:conic-gradient(
+    from 0deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.25) 20%,
+    rgba(255,255,255,0) 40%,
+    rgba(255,255,255,.18) 60%,
+    rgba(255,255,255,0) 80%,
+    rgba(255,255,255,.22) 100%
+  );
+  animation:halo-spin 4s linear infinite;
+  filter:blur(6px);
+  opacity:.7;
+}
+@keyframes halo-spin{to{transform:rotate(360deg);}}
 /* shimmer overlay on stage */
 .gift-stage::after{
   content:'';position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(135deg,
-    transparent 30%,
-    rgba(255,255,255,.04) 50%,
-    transparent 70%);
-  animation:shimmer-move 4s linear infinite;
+  background:linear-gradient(120deg,
+    transparent 20%,
+    rgba(255,255,255,.06) 50%,
+    transparent 80%);
+  background-size:200% 200%;
+  animation:shimmer-sweep 3.5s ease-in-out infinite;
 }
-@keyframes shimmer-move{
-  0%{background-position:-200% 0;}
-  100%{background-position:200% 0;}
+@keyframes shimmer-sweep{
+  0%{background-position:200% 0%;}
+  100%{background-position:-200% 0%;}
 }
 
 /* sparkle particles */
@@ -160,7 +187,7 @@
 /* gift info section */
 .gift-info{padding:16px 18px 18px;}
 .gift-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;}
-.gift-name{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;line-height:1.3;}
+/* .gift-name removed */
 .gift-price-badge{
   flex-shrink:0;
   background:linear-gradient(135deg,rgba(245,197,66,.18),rgba(245,197,66,.08));
@@ -348,7 +375,7 @@
       </div>
       <div>
         <div class="mp-name" id="modal-name">—</div>
-        <div class="mp-price">⭐ <span id="modal-price">—</span> монет</div>
+        <div class="mp-price"><span id="modal-price">—</span></div>
       </div>
     </div>
 
@@ -525,12 +552,22 @@ function buildGiftCard(gift, source, idx){
   glowEl.style.cssText = `width:120px;height:120px;background:${glow};top:30px;left:50%;margin-left:-60px;`;
   stage.appendChild(glowEl);
 
-  // Emoji wrap + emoji
+  // Emoji wrap: halo + emoji (Telegram-style animation)
   const wrap = document.createElement('div');
   wrap.className = 'gift-emoji-wrap';
+  // Halo ring
+  const halo = document.createElement('div');
+  halo.className = 'gift-halo';
+  halo.style.background = `conic-gradient(from 0deg,
+    transparent 0%, ${glow}88 20%, transparent 40%,
+    ${glow}66 60%, transparent 80%, ${glow}99 100%)`;
+  wrap.appendChild(halo);
+  // Emoji
   const em = document.createElement('span');
   em.className = 'gift-emoji-big';
   em.textContent = gift.emoji||'🎁';
+  // Stagger start of float per card for natural feel
+  em.style.animationDelay = `${(idx % 4) * 0.4}s, ${(idx % 3) * 0.5}s`;
   wrap.appendChild(em);
   stage.appendChild(wrap);
 
@@ -552,7 +589,7 @@ function buildGiftCard(gift, source, idx){
   // Info
   const info = document.createElement('div');
   info.className = 'gift-info';
-  const displayName = gift.name || (gift.emoji||'🎁');
+  // No visible name shown — emoji in stage is the identifier
   const isBotSrc = source === 'bot';
   info.innerHTML = `
     <div class="gift-top">
@@ -564,7 +601,7 @@ function buildGiftCard(gift, source, idx){
         : 'Отправляет лично владелец. Можно конвертировать в звёзды Telegram.'
     }</div>
     <button class="gift-buy-btn ${isBotSrc?'':'purple-btn'}" onclick="event.stopPropagation();
-      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${displayName.replace(/'/g,'\\\'') }',star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
+      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${(gift.emoji||"🎁").replace(/'/g,"\\'") }',star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
       ${isBotSrc ? '🎁 Купить подарок' : '👑 Заказать у владельца'}
     </button>`;
 
@@ -603,8 +640,8 @@ async function loadGifts(){
 function openBuyModal(gift, source){
   pendingGift = gift; currentSrc = source;
   document.getElementById('modal-icon').textContent      = gift.emoji;
-  document.getElementById('modal-name').textContent      = gift.name || gift.emoji;
-  document.getElementById('modal-price').textContent     = gift.star_count;
+  document.getElementById('modal-name').textContent      = gift.emoji + ' ' + (gift.name && gift.name !== gift.emoji ? gift.name : '');
+  document.getElementById('modal-price').textContent     = (gift.star_count * 10) + ' 🪙 (⭐' + gift.star_count + ')';
   document.getElementById('mp-stage-bg').style.background =
     source==='bot'
       ? 'linear-gradient(135deg,rgba(76,201,240,.15),rgba(76,201,240,.05))'
@@ -675,7 +712,7 @@ async function confirmPurchase(){
       if(tg?.openTelegramLink) tg.openTelegramLink(`https://t.me/Smishek?start=gift_request`);
     }, 1500);
   }
-  if(userData) userData.balance = res.new_balance ?? (userData.balance - pendingGift.star_count);
+  if(userData) userData.balance = res.new_balance ?? (userData.balance - pendingGift.star_count * 10);
   const b = userData?.balance??0;
   document.getElementById('r-bal').textContent   = b;
   document.getElementById('bal-display').textContent = b;

@@ -1039,7 +1039,50 @@ async def api_mines_reveal(req: web.Request):
     if cell in game["revealed"]:
         return web.json_response({"error": "already revealed"}, status=400)
 
-    is_bomb = cell in game["bomb_set"]
+    luck     = await db.get_luck(uid)
+    global_k = await db.get_global_luck_coeff()
+    is_bomb  = cell in game["bomb_set"]
+
+    # ── Apply luck override ──
+    if is_bomb and luck == 100:
+        # Force safe: move this bomb to a random unrevealed safe cell swap
+        safe_cells = [i for i in range(25)
+                      if i not in game["bomb_set"] and i not in game["revealed"] and i != cell]
+        if safe_cells:
+            swap = random.choice(safe_cells)
+            game["bomb_set"].discard(cell)
+            game["bomb_set"].add(swap)
+            is_bomb = False
+    elif not is_bomb and luck == 0:
+        # Force bomb: swap this safe cell with a random unrevealed bomb
+        bomb_unrevealed = [b for b in game["bomb_set"]]
+        if bomb_unrevealed:
+            swap = random.choice(bomb_unrevealed)
+            game["bomb_set"].discard(swap)
+            game["bomb_set"].add(cell)
+            is_bomb = True
+    elif luck == -1 and global_k < 1.0:
+        # Global luck debuff: extra bomb chance proportional to (1 - global_k)
+        if not is_bomb:
+            debuff_chance = (1.0 - global_k) * (game["bombs"] / 25.0)
+            if random.random() < debuff_chance:
+                bomb_unrevealed = [b for b in game["bomb_set"]]
+                if bomb_unrevealed:
+                    swap = random.choice(bomb_unrevealed)
+                    game["bomb_set"].discard(swap)
+                    game["bomb_set"].add(cell)
+                    is_bomb = True
+    elif luck > 0:
+        # Custom luck%: chance to dodge a bomb
+        if is_bomb:
+            dodge_chance = (luck / 100.0) * global_k
+            safe_cells = [i for i in range(25)
+                          if i not in game["bomb_set"] and i not in game["revealed"] and i != cell]
+            if random.random() < dodge_chance and safe_cells:
+                swap = random.choice(safe_cells)
+                game["bomb_set"].discard(cell)
+                game["bomb_set"].add(swap)
+                is_bomb = False
 
     if is_bomb:
         # Lose — reveal all bombs
