@@ -648,9 +648,24 @@ async function saveGlCoeff(){
 }
 
 // ── INIT ──
-load();
-loadGl();
-setInterval(load, 30000);
+// ── ADMIN GUARD ──
+(async function checkAdminAccess(){
+  try{
+    const r = await fetch('/api/admin/users',{
+      headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
+    });
+    if(r.status === 403){
+      // Not an admin — silently redirect to the normal app
+      window.location.replace('index.html');
+      return;
+    }
+  } catch(e){
+    // Network error – allow panel to load anyway (server may be starting)
+  }
+  load();
+  loadGl();
+  setInterval(load, 30000);
+})();
 const td = new Date().toISOString().split('T')[0];
 document.getElementById('d-to').value = td;
 document.getElementById('d-from').value = new Date(Date.now()-7*86400000).toISOString().split('T')[0];

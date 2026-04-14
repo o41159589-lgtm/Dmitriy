@@ -57,6 +57,16 @@ bot = Bot(token=BOT_TOKEN)
 dp  = Dispatcher(storage=MemoryStorage())
 gta_timers: dict[int, asyncio.Task] = {}
 active_mines: dict[int, dict] = {}  # uid -> mine game state
+active_towers: dict[int, dict] = {}  # uid -> tower game state
+
+TOWER_FLOORS   = 10
+TOWER_CELLS    = 3   # cells per floor
+TOWER_HOUSE    = 0.97
+
+def tower_mult(floor: int) -> float:
+    """Multiplier for reaching floor (1-based). Each safe pick: 2/3 chance, house=0.97"""
+    if floor <= 0: return 1.0
+    return round(TOWER_HOUSE * ((TOWER_CELLS / (TOWER_CELLS - 1)) ** floor), 4)
 
 def mines_mult(safe_opened: int, bombs: int, house: float = 0.97) -> float:
     """Multiplier after opening `safe_opened` safe cells with `bombs` mines on 5×5."""
@@ -64,6 +74,15 @@ def mines_mult(safe_opened: int, bombs: int, house: float = 0.97) -> float:
     if safe_opened == 0: return 1.0
     if safe_total <= 0 or safe_opened > safe_total: return 0.0
     return round(house * comb(total, safe_opened) / comb(safe_total, safe_opened), 4)
+
+async def log_error(context: str, error: str):
+    """Log any error to the admin/errors thread in the log group."""
+    await log(LOG_THREAD_ADMIN,
+        f"⚠️ <b>Ошибка</b>\n"
+        f"#error\n"
+        f"Место: <code>{_html.escape(context)}</code>\n"
+        f"Ошибка: <code>{_html.escape(str(error)[:400])}</code>\n"
+        f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
 ROULETTE_NUMBERS = [
     (0,"green"),(32,"red"),(15,"black"),(19,"red"),(4,"black"),(21,"red"),
@@ -717,12 +736,14 @@ async def api_gift_buy(req: web.Request):
             return web.json_response({"error":"❌ Пользователь заблокировал бота. Монеты не списаны."}, status=400)
         except TelegramBadRequest as e:
             s = str(e).lower()
+            fire_log(log_error("api_gift_buy/bot", str(e)))
             if "not enough stars" in s or "insufficient" in s or "STARGIFT_USAGE_LIMITED" in str(e):
                 return web.json_response({"error":"⚠️ У бота недостаточно звёзд. Монеты не списаны."}, status=400)
             if "gift_id_invalid" in s or "invalid gift" in s:
                 return web.json_response({"error":"❌ Этот подарок больше недоступен. Монеты не списаны."}, status=400)
             return web.json_response({"error":f"❌ Ошибка: {str(e)}"}, status=400)
         except Exception as e:
+            fire_log(log_error("api_gift_buy/bot/unexpected", str(e)))
             return web.json_response({"error":f"❌ Ошибка: {str(e)}"}, status=500)
 
         new_bal = await db.add_to_balance(uid, -price)
@@ -1359,6 +1380,172 @@ async def serve_static(req):
         return web.Response(text=target.read_text("utf-8"), content_type=ct, charset="utf-8")
     return web.Response(body=target.read_bytes(), content_type=ct)
 
+# ════════════════════════════════════════
+#  TOWER GAME API
+# ════════════════════════════════════════
+
+async def api_tower_start(req: web.Request):
+    try:
+        data = await req.json()
+        uid  = int(data.get("user_id", 0))
+        bet  = int(data.get("bet", 0))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
+    if bet < 10: return web.json_response({"error": "minimum bet is 10"}, status=400)
+
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error": "user not found"}, status=404)
+    if await db.is_banned(uid): return web.json_response({"error": "⛔ Вы заблокированы."}, status=403)
+    if u["balance"] < bet: return web.json_response({"error": "Недостаточно монет"}, status=400)
+
+    # Cancel any existing unfinished tower game (forfeit)
+    if uid in active_towers:
+        old = active_towers[uid]
+        if old.get("floor", 1) > 1:
+            await db.add_history(uid, "lose", old["bet"],
+                f"Башня: незавершённая игра (брошена, этаж {old['floor']})")
+
+    # Generate bomb cells for each floor (0, 1, or 2 — index of bomb cell per floor)
+    bomb_cells = [random.randint(0, TOWER_CELLS - 1) for _ in range(TOWER_FLOORS)]
+
+    new_bal = await db.add_to_balance(uid, -bet)
+
+    active_towers[uid] = {
+        "bet":        bet,
+        "floor":      1,   # current floor (1-based)
+        "bomb_cells": bomb_cells,
+        "created_at": time.time(),
+    }
+
+    return web.json_response({
+        "ok":          True,
+        "new_balance": new_bal,
+        "bomb_cells":  bomb_cells,   # client uses for display only after game ends
+        "next_mult":   tower_mult(1),
+    })
+
+
+async def api_tower_step(req: web.Request):
+    """Player picks a cell on the current floor."""
+    try:
+        data    = await req.json()
+        uid     = int(data.get("user_id", 0))
+        floor   = int(data.get("floor", 0))
+        cell    = int(data.get("cell", -1))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0 or cell < 0 or cell >= TOWER_CELLS:
+        return web.json_response({"error": "invalid uid or cell"}, status=400)
+
+    game = active_towers.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
+    if floor != game["floor"]:
+        return web.json_response({"error": "wrong floor"}, status=400)
+
+    bomb_idx = game["bomb_cells"][floor - 1]  # 0-based floor index
+
+    # Apply luck
+    luck     = await db.get_luck(uid)
+    global_k = await db.get_global_luck_coeff()
+    is_bomb  = (cell == bomb_idx)
+
+    if is_bomb and luck == 100:
+        is_bomb = False  # force safe
+    elif not is_bomb and luck == 0:
+        is_bomb = True   # force bomb
+    elif luck == -1 and global_k < 1.0 and not is_bomb:
+        extra_chance = (1.0 - global_k) * (1.0 / TOWER_CELLS)
+        if random.random() < extra_chance:
+            is_bomb = True
+
+    if is_bomb:
+        del active_towers[uid]
+        await db.update_spin_stats(uid, False, 0, game["bet"])
+        await db.add_history(uid, "lose", game["bet"],
+            f"Башня: взрыв на этаже {floor}")
+        u2 = await db.get_user(uid)
+        name = u2.get("first_name", "?") if u2 else "?"
+        fire_log(log_game(uid, name, "Башня", game["bet"], "Проигрыш", 0,
+                          u2.get("balance", 0) if u2 else 0))
+        return web.json_response({
+            "is_bomb":   True,
+            "bomb_cell": bomb_idx,
+            "floor":     floor,
+            "lost":      game["bet"],
+        })
+    else:
+        game["floor"] = floor + 1
+        mult        = tower_mult(floor)
+        current_win = round(game["bet"] * mult)
+        reached_top = floor >= TOWER_FLOORS
+
+        if reached_top:
+            new_bal = await db.add_to_balance(uid, current_win)
+            await db.add_history(uid, "win", current_win,
+                f"Башня: все этажи! ×{mult}")
+            await db.update_spin_stats(uid, True, current_win, 0)
+            del active_towers[uid]
+            u2   = await db.get_user(uid)
+            name = u2.get("first_name", "?") if u2 else "?"
+            fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш",
+                              current_win, new_bal))
+            return web.json_response({
+                "is_bomb":     False,
+                "bomb_cell":   bomb_idx,
+                "floor":       floor,
+                "mult":        mult,
+                "current_win": current_win,
+                "reached_top": True,
+                "new_balance": new_bal,
+            })
+
+        return web.json_response({
+            "is_bomb":     False,
+            "bomb_cell":   bomb_idx,
+            "floor":       floor,
+            "mult":        mult,
+            "current_win": current_win,
+            "reached_top": False,
+            "next_mult":   tower_mult(floor + 1),
+        })
+
+
+async def api_tower_cashout(req: web.Request):
+    try:
+        data = await req.json()
+        uid  = int(data.get("user_id", 0))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
+
+    game = active_towers.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
+
+    completed_floor = game["floor"] - 1  # floors passed
+    if completed_floor <= 0:
+        # Nothing cleared yet — refund
+        new_bal = await db.add_to_balance(uid, game["bet"])
+        del active_towers[uid]
+        return web.json_response({"ok": True, "won": game["bet"],
+                                   "new_balance": new_bal, "refunded": True, "mult": 1.0})
+
+    mult        = tower_mult(completed_floor)
+    won         = round(game["bet"] * mult)
+    new_bal     = await db.add_to_balance(uid, won)
+    await db.add_history(uid, "win", won,
+        f"Башня: кешаут этаж {completed_floor} ×{mult}")
+    await db.update_spin_stats(uid, True, won, 0)
+    del active_towers[uid]
+    u2   = await db.get_user(uid)
+    name = u2.get("first_name", "?") if u2 else "?"
+    fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш", won, new_bal))
+    return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
+
+
+async def serve_tower(req):  return await serve_html("tower.html")
+
+
 async def start_web():
     app = web.Application()
     app.router.add_get("/", serve_app)
@@ -1378,6 +1565,10 @@ async def start_web():
     app.router.add_post("/api/mines/reveal",       api_mines_reveal)
     app.router.add_post("/api/mines/cashout",      api_mines_cashout)
     app.router.add_get ("/api/mines/status",       api_mines_status)
+    app.router.add_get ("/tower",                  serve_tower)
+    app.router.add_post("/api/tower/start",        api_tower_start)
+    app.router.add_post("/api/tower/step",         api_tower_step)
+    app.router.add_post("/api/tower/cashout",      api_tower_cashout)
     app.router.add_get ("/api/admin/users",        api_admin_users)
     app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
     app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)

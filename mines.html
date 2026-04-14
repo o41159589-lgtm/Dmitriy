@@ -323,6 +323,18 @@ input[type=range]::-webkit-slider-thumb{
       </div>
     </div>
 
+    <!-- Bombs/Diamonds counter bar -->
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <div style="flex:1;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.25);border-radius:12px;padding:8px 12px;text-align:center;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Бомбы</div>
+        <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--red);font-weight:700" id="stat-bombs">3 💣</div>
+      </div>
+      <div style="flex:1;background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.2);border-radius:12px;padding:8px 12px;text-align:center;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Алмазов осталось</div>
+        <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--blue);font-weight:700" id="stat-diamonds">22 💎</div>
+      </div>
+    </div>
+
     <div class="grid-wrap">
       <div class="grid" id="grid"></div>
     </div>
@@ -411,7 +423,7 @@ function setBetMax(){
 }
 
 // ── MULTIPLIER CALCULATION (mirrors server) ──
-function minesMultClient(safeOpened, bombs, house=0.90){
+function minesMultClient(safeOpened, bombs, house=0.97){
   const total=25, safeTotal=25-bombs;
   if(safeOpened===0) return 1.0;
   if(safeTotal<=0||safeOpened>safeTotal) return 0;
@@ -489,6 +501,10 @@ async function startGame(){
   document.getElementById('cashout-btn').disabled   = true;
   document.getElementById('cashout-label').textContent = '0';
 
+  // Update bombs/diamonds counters
+  document.getElementById('stat-bombs').textContent = `${currentBombs} 💣`;
+  document.getElementById('stat-diamonds').textContent = `${25 - currentBombs} 💎`;
+
   document.getElementById('setup-panel').classList.add('hidden');
   document.getElementById('game-area').classList.add('visible');
   buildGrid();
@@ -541,6 +557,10 @@ async function revealCell(idx){
     document.getElementById('live-win').textContent   = currentWin;
     document.getElementById('cashout-label').textContent = currentWin;
     document.getElementById('cashout-btn').disabled   = false;
+
+    // Update diamonds remaining
+    const diamLeft = (25 - currentBombs) - revealedCells.length;
+    document.getElementById('stat-diamonds').textContent = `${diamLeft} 💎`;
 
     if(res.auto_cashout){
       gameActive=false;

@@ -235,6 +235,39 @@
   margin-bottom:11px;display:none;}
 .error-msg.show{display:block;}
 
+/* ── GIFT ANIMATIONS ── */
+@keyframes gift-float{
+  0%,100%{transform:translateY(0) rotate(-3deg) scale(1);}
+  25%{transform:translateY(-6px) rotate(2deg) scale(1.05);}
+  75%{transform:translateY(-3px) rotate(-1deg) scale(1.02);}
+}
+@keyframes gift-sparkle{
+  0%,100%{opacity:0;transform:scale(0) rotate(0deg);}
+  50%{opacity:1;transform:scale(1) rotate(180deg);}
+}
+@keyframes gift-shine{
+  0%{background-position:-200% center;}
+  100%{background-position:200% center;}
+}
+.gift-card .gift-emoji{
+  display:block;font-size:40px;margin-bottom:7px;line-height:1;
+  animation:gift-float 2.8s ease-in-out infinite;
+  position:relative;
+}
+.gift-card:hover .gift-emoji{animation-duration:1.5s;}
+.gift-card::after{
+  content:'✨';position:absolute;top:6px;right:8px;font-size:12px;
+  animation:gift-sparkle 2s ease-in-out infinite;
+  animation-delay:var(--spark-delay,0s);
+}
+.gift-card:nth-child(2n)::after{--spark-delay:.5s;}
+.gift-card:nth-child(3n)::after{--spark-delay:1s;}
+.gift-card:nth-child(4n)::after{--spark-delay:1.5s;}
+.gift-card .gift-price{
+  background:linear-gradient(90deg,rgba(245,197,66,.12),rgba(255,255,255,.15),rgba(245,197,66,.12));
+  background-size:200% auto;
+  animation:gift-shine 3s linear infinite;
+}
 /* ── О НАС ── */
 .about-person{border-top:1px solid rgba(255,255,255,.06);}
 .about-person:first-child{border-top:none;}
@@ -290,6 +323,20 @@
         <span id="about-arrow" style="font-size:16px;color:var(--muted);transition:transform .25s">›</span>
       </div>
       <div id="about-body" style="display:none">
+        <!-- Project intro -->
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="font-size:28px">🎰</span>
+            <div>
+              <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);font-weight:700">TOPLUCK CASINO</div>
+              <div style="font-size:11px;color:var(--muted)">Telegram Mini App</div>
+            </div>
+          </div>
+          <p style="font-size:13px;line-height:1.65;color:rgba(232,232,240,.8)">
+            <b style="color:var(--text)">TopLuck</b> — это честное Telegram-казино прямо в вашем мессенджере. Крутите рулетку, покоряйте мины, штурмуйте башню и выигрывайте реальные Telegram Stars ⭐<br><br>
+            🔒 Все операции прозрачны · 🎁 Магазин подарков · 🏆 Реферальная программа
+          </p>
+        </div>
         <!-- Owner -->
         <div class="about-person" onclick="togglePerson('owner')">
           <div class="ap-head">
@@ -299,9 +346,9 @@
           </div>
         </div>
         <div class="ap-content" id="cnt-owner" style="display:none">
-          <p>Привет! Я <b>Smishek</b> — владелец <a href="https://t.me/T0pNetbot" target="_blank">TOPLUCK</a> — создан чтобы вы могли безопасно пользоваться интернетом. Все мои проекты можно посмотреть <a href="https://t.me/smishik_bio" target="_blank">здесь</a>.</p>
+          <p>Привет! Я <b>Smishek</b> — владелец <a href="https://t.me/T0pNetbot" target="_blank">TOPLUCK</a>. Проект создан чтобы вы могли безопасно пользоваться интернетом. Все мои проекты: <a href="https://t.me/smishik_bio" target="_blank">@smishik_bio</a>.</p>
           <p>💬 Связь: <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
-          <p>💵 Донаты приветствуются! Если сервис нравится — поддержи проект звёздами прямо в Telegram: просто отправь 🌟 звёзды в личные сообщения <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
+          <p>💵 Донаты приветствуются! Поддержи проект звёздами — отправь 🌟 в ЛС <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
         </div>
         <!-- Developer -->
         <div class="about-person" onclick="togglePerson('dev')">
@@ -312,19 +359,19 @@
           </div>
         </div>
         <div class="ap-content" id="cnt-dev" style="display:none">
-          <p>Привет! Я <b>Артем</b> — разработчик этого бота. Занимаюсь разработкой Telegram-ботов и не только. Если нужен телеграм бот — пиши, сделаем 🤝</p>
-          <p>Мои проекты: <a href="https://t.me/PythonPr0gramist" target="_blank">https://t.me/PythonPr0gramist</a></p>
+          <p>Привет! Я <b>Артем</b> — разработчик этого бота. Занимаюсь разработкой Telegram-ботов и не только. Если нужен бот — пиши, сделаем 🤝</p>
+          <p>Мои проекты: <a href="https://t.me/PythonPr0gramist" target="_blank">@PythonPr0gramist</a></p>
           <p>👤 <a href="https://sceletonchik.github.io/Portfolio/portfolio.html" target="_blank">Портфолио</a></p>
           <p>💬 Связь: <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
-          <p>💵 Донаты приветствуются! Поддержи разработку — отправь 🌟 звёзды в ЛС <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
-          <p>📱 Telegram кошелёк: <code style="font-size:10px;word-break:break-all">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code></p>
+          <p>💵 Донаты — отправь 🌟 звёзды в ЛС <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
+          <p>📱 TON-кошелёк: <code style="font-size:10px;word-break:break-all">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code></p>
           <p style="color:var(--muted);font-size:12px">Бла-бла-бла, кто-то вообще это читает? 😄</p>
           <p style="font-size:12px;color:var(--muted)">Боты для <a href="https://t.me/Smishek" target="_blank">@Smishek</a>:<br>
             🔘 <a href="https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky" target="_blank">TopNet (@T0pNetbot)</a><br>
             🔘 <a href="https://t.me/Supp0rt_R0bot" target="_blank">Support (@Supp0rt_R0bot)</a><br>
             🔘 <a href="https://t.me/Crocodi1ebot" target="_blank">Crocodile (@Crocodi1ebot)</a>
           </p>
-          <p style="font-size:11px;color:var(--muted)">Ps: Бот был сделан в кратчайшие сроки, если найдёте баги — пишите в поддержку, исправим (могут дать награду) 😉</p>
+          <p style="font-size:11px;color:var(--muted)">Ps: Бот сделан в кратчайшие сроки. Нашли баг? Пишите в поддержку — могут дать награду 😉</p>
         </div>
         <!-- Tech -->
         <div class="about-person" onclick="togglePerson('tech')">
@@ -336,18 +383,22 @@
         </div>
         <div class="ap-content" id="cnt-tech" style="display:none">
           <p>Привет! Я — <b>Никита</b>. Занимаюсь настройкой и обслуживанием серверов TOPLUCK.</p>
-          <p>Если нужна любая помощь в кодинге или по вашему проекту (возможно даже бесплатно) — пишите 😉</p>
+          <p>Нужна помощь с кодингом или проектом (возможно бесплатно)? Пишите 😉</p>
           <p>🌐 Связь: <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p>
           <p>🎇 Все проекты: <a href="https://unionium.org" target="_blank">unionium.org</a></p>
-          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают, недоступны или сеть не работает? Пишите мне — исправим!</p>
+          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают или сеть не работает? Пишите мне — исправим!</p>
         </div>
-        <!-- Sponsor -->
-        <div class="about-person" style="border-bottom:none">
-          <div class="ap-head" style="cursor:default">
+        <!-- Sponsor (collapsible) -->
+        <div class="about-person" style="border-bottom:none" onclick="togglePerson('sponsor')">
+          <div class="ap-head">
             <span class="ap-icon">💎</span>
             <div class="ap-title">Спонсор</div>
+            <span class="ap-arr" id="arr-sponsor">›</span>
           </div>
-          <div style="padding:10px 14px;padding-top:0;color:var(--muted);font-size:13px">Дмитрий Бек</div>
+        </div>
+        <div class="ap-content" id="cnt-sponsor" style="display:none;border-bottom:none">
+          <p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p>
+          <p style="color:var(--muted);font-size:12px">Благодаря поддержке спонсора TopLuck продолжает развиваться и радовать игроков!</p>
         </div>
       </div>
     </div>
@@ -422,6 +473,18 @@
         <div class="gc-tags"><span class="gc-tag">×1.01–×24</span><span class="gc-tag">1–24 бомбы</span><span class="gc-tag">от 10 🪙</span></div>
       </div>
       <div class="gc-arrow" style="color:var(--red)">›</div>
+    </a>
+    <a class="game-card" href="tower.html" style="border-color:rgba(76,201,240,.2);">
+      <div class="gc-banner" style="background:linear-gradient(135deg,#060e1a,#0a1828);">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.14),transparent 70%);"></div>
+        <div class="gc-preview">🗼</div>
+      </div>
+      <div class="gc-info">
+        <div class="gc-title">Башня</div>
+        <div class="gc-desc">Поднимайся по этажам! 3 клетки — 1 мина. Каждый этаж умножает ставку. Упадёшь — потеряешь всё!</div>
+        <div class="gc-tags"><span class="gc-tag">×1.3 за этаж</span><span class="gc-tag">до ×10+</span><span class="gc-tag">от 10 🪙</span></div>
+      </div>
+      <div class="gc-arrow" style="color:var(--blue)">›</div>
     </a>
   </div>
 </div>
