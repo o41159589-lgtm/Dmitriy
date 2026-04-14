@@ -238,6 +238,41 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;fo
     </div>
     <div id="gl-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
+
+  <!-- Euro Roulette luck (UI only) -->
+  <div class="settings-block">
+    <div class="settings-title">🎰 ЕВРОПЕЙСКАЯ РУЛЕТКА — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Отображает текущее значение коэффициента для европейской рулетки.<br>
+      <span style="color:var(--muted);font-size:10px">⚠️ Изменяется автоматически при смене глобального коэффициента</span>
+    </p>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="euro-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="euro-slider" min="0" max="100" value="100" oninput="onEuroSlider(this.value)"
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue)">
+    </div>
+  </div>
+
+  <!-- Mines luck (UI only) -->
+  <div class="settings-block">
+    <div class="settings-title">💣 МИНЫ — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Отображает текущее значение коэффициента для игры «Мины».<br>
+      <span style="color:var(--muted);font-size:10px">⚠️ Изменяется автоматически при смене глобального коэффициента</span>
+    </p>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="mines-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--red);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="mines-slider" min="0" max="100" value="100" oninput="onMinesSlider(this.value)"
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--red)">
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -553,12 +588,27 @@ async function loadRev(){
 
 // ── GLOBAL LUCK ──
 let glCoeff = 1.0;
+
+function syncDependentSliders(v){
+  // Euro
+  const euroVal = document.getElementById('euro-val');
+  const euroSlider = document.getElementById('euro-slider');
+  if(euroVal){ euroVal.textContent = v.toFixed(2); euroVal.style.color = v<0.3?'var(--red)':v<0.7?'var(--blue)':'var(--blue)'; }
+  if(euroSlider) euroSlider.value = Math.round(v*100);
+  // Mines
+  const minesVal = document.getElementById('mines-val');
+  const minesSlider = document.getElementById('mines-slider');
+  if(minesVal){ minesVal.textContent = v.toFixed(2); minesVal.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--red)'; }
+  if(minesSlider) minesSlider.value = Math.round(v*100);
+}
+
 async function loadGl(){
   try{
     const d = await api('/api/admin/global_luck');
     glCoeff = d.coeff;
     document.getElementById('gl-val').textContent = glCoeff.toFixed(2);
     document.getElementById('gl-slider').value = Math.round(glCoeff*100);
+    syncDependentSliders(glCoeff);
   } catch{}
 }
 function onGlSlider(v){
@@ -566,6 +616,7 @@ function onGlSlider(v){
   const el = document.getElementById('gl-val');
   el.textContent = glCoeff.toFixed(2);
   el.style.color = glCoeff<0.3?'var(--red)':glCoeff<0.7?'var(--gold)':'var(--green)';
+  syncDependentSliders(glCoeff);
 }
 function setGlCoeff(v){
   glCoeff=v;
@@ -573,6 +624,18 @@ function setGlCoeff(v){
   document.getElementById('gl-slider').value = Math.round(v*100);
   const el = document.getElementById('gl-val');
   el.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--green)';
+  syncDependentSliders(v);
+}
+// Euro/Mines sliders are display-only (no API call)
+function onEuroSlider(v){
+  const c = parseInt(v)/100;
+  const el = document.getElementById('euro-val');
+  if(el){ el.textContent = c.toFixed(2); }
+}
+function onMinesSlider(v){
+  const c = parseInt(v)/100;
+  const el = document.getElementById('mines-val');
+  if(el){ el.textContent = c.toFixed(2); }
 }
 async function saveGlCoeff(){
   try{

@@ -235,6 +235,18 @@
   margin-bottom:11px;display:none;}
 .error-msg.show{display:block;}
 
+/* ── О НАС ── */
+.about-person{border-top:1px solid rgba(255,255,255,.06);}
+.about-person:first-child{border-top:none;}
+.ap-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;}
+.ap-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+.ap-title{flex:1;font-weight:700;font-size:14px;}
+.ap-arr{color:var(--muted);font-size:18px;transition:transform .2s;}
+.ap-arr.open{transform:rotate(90deg);}
+.ap-content{padding:4px 14px 12px 52px;font-size:13px;line-height:1.7;color:rgba(232,232,240,.8);}
+.ap-content p{margin-bottom:5px;}
+.ap-content a{color:var(--gold);text-decoration:none;}
+.ap-content a:hover{text-decoration:underline;}
 /* ── TOPUP MODAL ── */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;}
 .ov.open{display:flex;}
@@ -271,13 +283,72 @@
     <button class="topup-btn" onclick="openTopup()">
       <span style="font-size:20px">⭐</span> Пополнить (1 ⭐ = 10 🪙)
     </button>
-    <div class="card">
-      <div class="card-head">💰 Выплаты</div>
-      <div class="card-body">
-        <div class="irow"><span class="irow-l">🔴 Красное / ⚫ Чёрное</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
-        <div class="irow"><span class="irow-l">Чёт / Нечёт · 1–18 / 19–36</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
-        <div class="irow"><span class="irow-l">Дюжина (1–12 / 13–24)</span><span class="irow-r" style="color:var(--gold)">×3</span></div>
-        <div class="irow"><span class="irow-l">🟢 Зеро</span><span class="irow-r" style="color:var(--gold)">×14</span></div>
+    <!-- О нас -->
+    <div class="card" id="about-card">
+      <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAbout()">
+        <span>ℹ️ О нас</span>
+        <span id="about-arrow" style="font-size:16px;color:var(--muted);transition:transform .25s">›</span>
+      </div>
+      <div id="about-body" style="display:none">
+        <!-- Owner -->
+        <div class="about-person" onclick="togglePerson('owner')">
+          <div class="ap-head">
+            <span class="ap-icon">👑</span>
+            <div class="ap-title">Владелец проекта</div>
+            <span class="ap-arr" id="arr-owner">›</span>
+          </div>
+        </div>
+        <div class="ap-content" id="cnt-owner" style="display:none">
+          <p>Привет! Я <b>Smishek</b> — владелец <a href="https://t.me/T0pNetbot" target="_blank">TOPLUCK</a> — создан чтобы вы могли безопасно пользоваться интернетом. Все мои проекты можно посмотреть <a href="https://t.me/smishik_bio" target="_blank">здесь</a>.</p>
+          <p>💬 Связь: <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
+          <p>💵 Донаты приветствуются! Если сервис нравится — поддержи проект звёздами прямо в Telegram: просто отправь 🌟 звёзды в личные сообщения <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
+        </div>
+        <!-- Developer -->
+        <div class="about-person" onclick="togglePerson('dev')">
+          <div class="ap-head">
+            <span class="ap-icon">🧑‍💻</span>
+            <div class="ap-title">Разработчик бота</div>
+            <span class="ap-arr" id="arr-dev">›</span>
+          </div>
+        </div>
+        <div class="ap-content" id="cnt-dev" style="display:none">
+          <p>Привет! Я <b>Артем</b> — разработчик этого бота. Занимаюсь разработкой Telegram-ботов и не только. Если нужен телеграм бот — пиши, сделаем 🤝</p>
+          <p>Мои проекты: <a href="https://t.me/PythonPr0gramist" target="_blank">https://t.me/PythonPr0gramist</a></p>
+          <p>👤 <a href="https://sceletonchik.github.io/Portfolio/portfolio.html" target="_blank">Портфолио</a></p>
+          <p>💬 Связь: <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
+          <p>💵 Донаты приветствуются! Поддержи разработку — отправь 🌟 звёзды в ЛС <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
+          <p>📱 Telegram кошелёк: <code style="font-size:10px;word-break:break-all">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code></p>
+          <p style="color:var(--muted);font-size:12px">Бла-бла-бла, кто-то вообще это читает? 😄</p>
+          <p style="font-size:12px;color:var(--muted)">Боты для <a href="https://t.me/Smishek" target="_blank">@Smishek</a>:<br>
+            🔘 <a href="https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky" target="_blank">TopNet (@T0pNetbot)</a><br>
+            🔘 <a href="https://t.me/Supp0rt_R0bot" target="_blank">Support (@Supp0rt_R0bot)</a><br>
+            🔘 <a href="https://t.me/Crocodi1ebot" target="_blank">Crocodile (@Crocodi1ebot)</a>
+          </p>
+          <p style="font-size:11px;color:var(--muted)">Ps: Бот был сделан в кратчайшие сроки, если найдёте баги — пишите в поддержку, исправим (могут дать награду) 😉</p>
+        </div>
+        <!-- Tech -->
+        <div class="about-person" onclick="togglePerson('tech')">
+          <div class="ap-head">
+            <span class="ap-icon">🏗</span>
+            <div class="ap-title">Технарь</div>
+            <span class="ap-arr" id="arr-tech">›</span>
+          </div>
+        </div>
+        <div class="ap-content" id="cnt-tech" style="display:none">
+          <p>Привет! Я — <b>Никита</b>. Занимаюсь настройкой и обслуживанием серверов TOPLUCK.</p>
+          <p>Если нужна любая помощь в кодинге или по вашему проекту (возможно даже бесплатно) — пишите 😉</p>
+          <p>🌐 Связь: <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p>
+          <p>🎇 Все проекты: <a href="https://unionium.org" target="_blank">unionium.org</a></p>
+          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают, недоступны или сеть не работает? Пишите мне — исправим!</p>
+        </div>
+        <!-- Sponsor -->
+        <div class="about-person" style="border-bottom:none">
+          <div class="ap-head" style="cursor:default">
+            <span class="ap-icon">💎</span>
+            <div class="ap-title">Спонсор</div>
+          </div>
+          <div style="padding:10px 14px;padding-top:0;color:var(--muted);font-size:13px">Дмитрий Бек</div>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -712,8 +783,7 @@ function giftCard(gift, source){
   }).replace(/"/g,'&quot;');
   return `<div class="${cls}" onclick="openBuyModal(${gd},'${source}')">
     <span class="gift-emoji">${emojiDisplay}</span>
-    <div class="gift-name">${gift.name||emojiDisplay}</div>
-    <div class="gift-desc">${gift.desc||'Telegram подарок'}</div>
+    <div class="gift-desc">${gift.desc||gift.name||'Telegram подарок'}</div>
     ${remaining}
     <div class="gift-price">⭐ ${gift.star_count}</div>
     <button class="gift-buy-btn">Купить</button>
@@ -843,6 +913,23 @@ async function confirmTopup(){
   const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
   if(res?.ok) toast('Инвойс отправлен в чат с ботом!','ok');
   else toast('Откройте чат с ботом для оплаты','info');
+}
+
+// ── О НАС ──
+function toggleAbout(){
+  const body = document.getElementById('about-body');
+  const arrow = document.getElementById('about-arrow');
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  arrow.style.transform = open ? '' : 'rotate(90deg)';
+}
+function togglePerson(id){
+  const cnt = document.getElementById('cnt-'+id);
+  const arr = document.getElementById('arr-'+id);
+  if(!cnt) return;
+  const open = cnt.style.display === 'block';
+  cnt.style.display = open ? 'none' : 'block';
+  if(arr) arr.classList.toggle('open', !open);
 }
 
 // ── INIT ──

@@ -411,7 +411,7 @@ function setBetMax(){
 }
 
 // ── MULTIPLIER CALCULATION (mirrors server) ──
-function minesMultClient(safeOpened, bombs, house=0.97){
+function minesMultClient(safeOpened, bombs, house=0.90){
   const total=25, safeTotal=25-bombs;
   if(safeOpened===0) return 1.0;
   if(safeTotal<=0||safeOpened>safeTotal) return 0;
