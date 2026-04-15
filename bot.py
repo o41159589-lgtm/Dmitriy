@@ -891,7 +891,7 @@ async def api_gta_bet(req: web.Request):
     if lobby["status"] != "open": return web.json_response({"error":"lobby not open"}, status=400)
     await db.add_to_balance(uid, -amount)
     await db.place_gta_bet(lobby["id"], uid, amount)
-    await db.add_history(uid, "lose", amount, f"GTA ставка #{lobby['id']}")
+    # History recorded after spin result (win or lose), not during betting
     bets = await db.get_lobby_bets(lobby["id"])
     unique = len({b["user_id"] for b in bets})
     lid = lobby["id"]
@@ -974,7 +974,10 @@ async def _gta_run(lid):
     await db.add_history(wid,"win",payout,f"GTA #{lid}: банк {pot}, комиссия {commission}")
     await db.update_spin_stats(wid, True, payout, 0)
     for b in bets:
-        if b["user_id"] != wid: await db.update_spin_stats(b["user_id"], False, 0, b["amount"])
+        if b["user_id"] != wid:
+            await db.update_spin_stats(b["user_id"], False, 0, b["amount"])
+            await db.add_history(b["user_id"], "lose", b["amount"],
+                f"GTA #{lid}: выиграл {wname or wid}")
     await db.close_lobby(lid, wid, commission)
 
     wu = await db.get_user(wid)
@@ -1449,15 +1452,20 @@ async def api_tower_step(req: web.Request):
     luck     = await db.get_luck(uid)
     global_k = await db.get_global_luck_coeff()
     is_bomb  = (cell == bomb_idx)
+    luck_saved = False  # track if luck hid the bomb from display
 
     if is_bomb and luck == 100:
-        is_bomb = False  # force safe
+        is_bomb    = False
+        luck_saved = True   # bomb was on the clicked cell — hide indicator
     elif not is_bomb and luck == 0:
-        is_bomb = True   # force bomb
+        is_bomb = True
     elif luck == -1 and global_k < 1.0 and not is_bomb:
         extra_chance = (1.0 - global_k) * (1.0 / TOWER_CELLS)
         if random.random() < extra_chance:
             is_bomb = True
+
+    # bomb_cell to send to client (-1 = hidden because luck saved the player)
+    display_bomb_cell = -1 if luck_saved else bomb_idx
 
     if is_bomb:
         del active_towers[uid]
@@ -1470,7 +1478,7 @@ async def api_tower_step(req: web.Request):
                           u2.get("balance", 0) if u2 else 0))
         return web.json_response({
             "is_bomb":   True,
-            "bomb_cell": bomb_idx,
+            "bomb_cell": display_bomb_cell,
             "floor":     floor,
             "lost":      game["bet"],
         })
@@ -1492,7 +1500,7 @@ async def api_tower_step(req: web.Request):
                               current_win, new_bal))
             return web.json_response({
                 "is_bomb":     False,
-                "bomb_cell":   bomb_idx,
+                "bomb_cell":   display_bomb_cell,
                 "floor":       floor,
                 "mult":        mult,
                 "current_win": current_win,
@@ -1502,7 +1510,7 @@ async def api_tower_step(req: web.Request):
 
         return web.json_response({
             "is_bomb":     False,
-            "bomb_cell":   bomb_idx,
+            "bomb_cell":   display_bomb_cell,
             "floor":       floor,
             "mult":        mult,
             "current_win": current_win,

@@ -529,16 +529,18 @@ async function revealCell(idx){
     cell.className='cell bomb';
     cell.innerHTML='<span class="bomb-icon">💣</span>';
 
-    // Show all other bombs
+    // Show ALL other bombs (no safe-class check — bomb_positions are always unrevealed cells)
     setTimeout(()=>{
       (res.bomb_positions||[]).forEach(bi=>{
-        if(bi!==idx){
-          const c=getCellEl(bi);
-          if(c&&!c.classList.contains('safe')){
-            c.className='cell bomb-hidden';
-            c.innerHTML='<span style="font-size:18px;opacity:.6">💣</span>';
-          }
-        }
+        if(bi===idx) return; // already shown as exploded bomb
+        const c=getCellEl(bi);
+        if(!c) return;
+        // If it was revealed as safe by luck, mark differently so count is visible
+        const wasSafe = c.classList.contains('safe');
+        c.className='cell bomb-hidden';
+        c.innerHTML=wasSafe
+          ? '<span style="font-size:18px">💣</span><span style="font-size:8px;position:absolute;bottom:2px;right:4px;color:var(--gold)">🍀</span>'
+          : '<span style="font-size:18px;opacity:.7">💣</span>';
       });
     },300);
 

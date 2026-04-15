@@ -44,12 +44,29 @@
   position:relative;
   display:flex;flex-direction:column;gap:6px;
   margin-bottom:14px;
-  max-height:calc(100vh - 340px);
+  max-height:380px;
   overflow-y:auto;
   padding:2px 0 4px;
+  scroll-behavior:smooth;
 }
 .tower-container::-webkit-scrollbar{width:3px;}
 .tower-container::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* Tower roof (top of tower visual cap) */
+.tower-roof{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(135deg,rgba(245,197,66,.12),rgba(255,215,0,.06));
+  border:1px solid rgba(245,197,66,.3);border-radius:12px;
+  padding:8px 14px;margin-bottom:6px;flex-shrink:0;
+}
+.tower-roof-label{
+  font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);
+  font-weight:700;letter-spacing:1px;
+}
+.tower-roof-mult{
+  font-family:'Orbitron',monospace;font-size:13px;color:var(--gold);
+  font-weight:900;
+}
 
 /* Single floor row */
 .floor-row{
@@ -326,6 +343,13 @@ function buildMultPreview(){
 function buildTower(){
   const container=document.getElementById('tower');
   container.innerHTML='';
+
+  // Roof indicator
+  const roof=document.createElement('div');
+  roof.className='tower-roof';
+  roof.innerHTML=`<span style="font-size:18px">🏆</span><div><div class="tower-roof-label">ВЕРШИНА БАШНИ</div><div class="tower-roof-mult">×${floorMult(TOTAL_FLOORS).toFixed(2)}</div></div>`;
+  container.appendChild(roof);
+
   // Render floors bottom→top visually (floor TOTAL_FLOORS at top, floor 1 at bottom)
   for(let f=TOTAL_FLOORS;f>=1;f--){
     const row=document.createElement('div');
@@ -441,17 +465,23 @@ async function pickCell(floor, cellIdx){
   }
 
   const chosenCell=document.getElementById(`cell-${floor}-${cellIdx}`);
-  const bombIdx=res.bomb_cell; // which cell was the bomb on this floor
+  const bombIdx=res.bomb_cell; // -1 = hidden by luck
 
   if(res.is_bomb){
-    // Show bomb
+    // Show bomb on chosen cell
     chosenCell.className='tower-cell bomb disabled';
     chosenCell.innerHTML='💣';
     // Show safe cells
     for(let c=0;c<CELLS_PER_FLOOR;c++){
-      if(c!==cellIdx&&c!==bombIdx){
+      if(c!==cellIdx){
         const el=document.getElementById(`cell-${floor}-${c}`);
-        if(el){el.className='tower-cell safe disabled';el.innerHTML='💎';}
+        if(el){
+          if(bombIdx>=0 && c===bombIdx){
+            el.className='tower-cell bomb disabled';el.innerHTML='💣';
+          } else {
+            el.className='tower-cell safe disabled';el.innerHTML='💎';
+          }
+        }
       }
     }
     gameActive=false;
@@ -460,20 +490,19 @@ async function pickCell(floor, cellIdx){
     // Safe — show diamond
     chosenCell.className='tower-cell safe disabled';
     chosenCell.innerHTML='💎';
-    // Show where bomb was
+    // Show where bomb was (only if not hidden by luck)
     for(let c=0;c<CELLS_PER_FLOOR;c++){
-      if(c!==cellIdx){
-        const el=document.getElementById(`cell-${floor}-${c}`);
-        if(!el)continue;
-        if(c===bombIdx){
-          el.className='tower-cell hidden-bomb disabled';
-          el.innerHTML='💣';
-          el.style.opacity='.35';
-        } else {
-          el.className='tower-cell disabled';
-          el.style.opacity='.4';
-          el.innerHTML='<span style="font-size:18px;opacity:.4">—</span>';
-        }
+      if(c===cellIdx) continue;
+      const el=document.getElementById(`cell-${floor}-${c}`);
+      if(!el) continue;
+      if(bombIdx>=0 && c===bombIdx){
+        el.className='tower-cell hidden-bomb disabled';
+        el.innerHTML='💣';
+        el.style.opacity='.38';
+      } else {
+        el.className='tower-cell disabled';
+        el.style.opacity='.35';
+        el.innerHTML='<span style="font-size:16px;opacity:.3">—</span>';
       }
     }
 
