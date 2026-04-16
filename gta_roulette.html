@@ -365,7 +365,7 @@ function startFreeSpinning(players, total){
   gtaSpinAnim=requestAnimationFrame(frame);
 }
 
-function spinAndStop(players, total, finalAngle, winnerId, onDone){
+function spinAndStop(players, total, finalAngle, onDone){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
   const START=gtaAngleOffset;
   const EXTRA=(5+Math.floor((parseInt(String(finalAngle*1000|0).slice(-1))||3)))*Math.PI*2;
@@ -382,14 +382,12 @@ function spinAndStop(players, total, finalAngle, winnerId, onDone){
   function frame(now){
     const t=Math.min((now-t0)/DURATION,1);
     gtaAngleOffset=START+(TARGET-START)*ease(t);
-    // Show winner highlight in last 15% of animation
-    const showWinner = t >= 0.85 ? winnerId : null;
     if(t<1){
-      drawGtaWheel(players,total,showWinner,gtaAngleOffset);
+      drawGtaWheel(players,total,null,gtaAngleOffset);
       gtaSpinAnim=requestAnimationFrame(frame);
     } else {
       gtaAngleOffset=TARGET%(Math.PI*2);
-      drawGtaWheel(players,total,winnerId,gtaAngleOffset);
+      drawGtaWheel(players,total,null,gtaAngleOffset);
       gtaSpinAnim=null;
       if(onDone)onDone();
     }
@@ -492,13 +490,12 @@ function renderGta(lobby, bets){
   if(lobby.status==='done'){
     if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
     tw.style.display='none';
-    // Only trigger the spin-to-winner animation once per lobby
     if(!gtaDoneHandled){
-      gtaDoneHandled = true;
+      gtaDoneHandled=true;
       if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
       st.textContent='🎰 Определяем победителя...';
       const finalAngle=calcWinnerAngle(players,total,lobby.winner_id);
-      spinAndStop(players,total,finalAngle,lobby.winner_id,()=>{
+      spinAndStop(players,total,finalAngle,()=>{
         drawGtaWheel(players,total,lobby.winner_id,gtaAngleOffset);
         st.innerHTML='🏆 Победитель определён! Перезапуск через <b id="rc">5</b> сек...';
         renderPlayers(players,total,lobby.winner_id);

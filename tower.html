@@ -315,11 +315,18 @@ async function post(url,d){
 }
 
 async function loadUser(){
-  if(!UID)return;
-  userData=await get(`/api/user/${UID}`).catch(()=>null);
-  if(!userData)return;
-  document.getElementById('r-bal').textContent=userData.balance??0;
-  document.getElementById('bal').textContent=userData.balance??0;
+  if(!UID) return;
+  const tgObj = window.Telegram?.WebApp;
+  const username   = tgObj?.initDataUnsafe?.user?.username   || '';
+  const first_name = tgObj?.initDataUnsafe?.user?.first_name || '';
+  try {
+    userData = await post('/api/ensure_user', {user_id: UID, username, first_name});
+  } catch(e) {
+    userData = await get(`/api/user/${UID}`).catch(()=>null);
+  }
+  if(!userData) return;
+  document.getElementById('r-bal').textContent = userData.balance ?? 0;
+  document.getElementById('bal').textContent   = userData.balance ?? 0;
 }
 
 // Bet helpers
