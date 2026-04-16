@@ -59,7 +59,6 @@ gta_timers: dict[int, asyncio.Task] = {}
 active_mines: dict[int, dict] = {}  # uid -> mine game state
 active_towers: dict[int, dict] = {}  # uid -> tower game state
 
-TOWER_FLOORS   = 10
 TOWER_CELLS    = 3   # cells per floor
 TOWER_HOUSE    = 0.97
 
@@ -1286,8 +1285,7 @@ async def api_admin_set_luck(req):
     if uid <= 0 or not (-1 <= luck <= 100): return web.json_response({"error":"invalid uid or luck"}, status=400)
     incognito = bool(data.get("incognito", False))
     await db.set_luck(uid, luck)
-    luck_str2 = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
-    await db.add_history(uid, "admin_luck", 0, f"Администратор изменил удачу: {luck_str2}")
+    # Only log to admin group, no user-visible history entry
     if not incognito:
         try:
             admin_uid = int(req.headers.get("X-Admin-Uid","0"))
@@ -1409,22 +1407,18 @@ async def api_tower_start(req: web.Request):
             await db.add_history(uid, "lose", old["bet"],
                 f"Башня: незавершённая игра (брошена, этаж {old['floor']})")
 
-    # Generate bomb cells for each floor (0, 1, or 2 — index of bomb cell per floor)
-    bomb_cells = [random.randint(0, TOWER_CELLS - 1) for _ in range(TOWER_FLOORS)]
-
+    # Generate bomb cell fresh on each step (not pre-generated for infinite tower)
     new_bal = await db.add_to_balance(uid, -bet)
 
     active_towers[uid] = {
         "bet":        bet,
-        "floor":      1,   # current floor (1-based)
-        "bomb_cells": bomb_cells,
+        "floor":      1,
         "created_at": time.time(),
     }
 
     return web.json_response({
         "ok":          True,
         "new_balance": new_bal,
-        "bomb_cells":  bomb_cells,   # client uses for display only after game ends
         "next_mult":   tower_mult(1),
     })
 
@@ -1446,7 +1440,7 @@ async def api_tower_step(req: web.Request):
     if floor != game["floor"]:
         return web.json_response({"error": "wrong floor"}, status=400)
 
-    bomb_idx = game["bomb_cells"][floor - 1]  # 0-based floor index
+    bomb_idx = random.randint(0, TOWER_CELLS - 1)  # fresh random each floor
 
     # Apply luck
     luck     = await db.get_luck(uid)
@@ -1486,27 +1480,6 @@ async def api_tower_step(req: web.Request):
         game["floor"] = floor + 1
         mult        = tower_mult(floor)
         current_win = round(game["bet"] * mult)
-        reached_top = floor >= TOWER_FLOORS
-
-        if reached_top:
-            new_bal = await db.add_to_balance(uid, current_win)
-            await db.add_history(uid, "win", current_win,
-                f"Башня: все этажи! ×{mult}")
-            await db.update_spin_stats(uid, True, current_win, 0)
-            del active_towers[uid]
-            u2   = await db.get_user(uid)
-            name = u2.get("first_name", "?") if u2 else "?"
-            fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш",
-                              current_win, new_bal))
-            return web.json_response({
-                "is_bomb":     False,
-                "bomb_cell":   display_bomb_cell,
-                "floor":       floor,
-                "mult":        mult,
-                "current_win": current_win,
-                "reached_top": True,
-                "new_balance": new_bal,
-            })
 
         return web.json_response({
             "is_bomb":     False,

@@ -287,21 +287,21 @@ const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 const UID = tg?.initDataUnsafe?.user?.id || 0;
 
-const TOTAL_FLOORS = 10;
 const CELLS_PER_FLOOR = 3;
-// Multiplier per floor: each safe step multiplies by ~1.46 (house edge ~3/1 = 33% each step, 97% RTP)
-// floor 1→×1.40, 2→×1.96, ... up to floor 10→×20+
-function floorMult(floor){ // floor 1-based
-  return parseFloat(Math.pow(1.44, floor).toFixed(2));
+const TOWER_HOUSE    = 0.97;
+const PREVIEW_FLOORS = 8; // how many floors to show ahead in setup preview
+
+function floorMult(floor){ // floor 1-based, infinite
+  if(floor<=0) return 1.0;
+  return parseFloat((TOWER_HOUSE * Math.pow(CELLS_PER_FLOOR / (CELLS_PER_FLOOR - 1), floor)).toFixed(2));
 }
 
 let userData = null;
 let currentBet = 0;
-let currentFloor = 0; // 0-based (0 = floor 1)
+let currentFloor = 0;
 let gameActive = false;
-let bombFloors = []; // index of bomb cell per floor (0,1,2)
-let floorResults = []; // 'safe'|'bomb'|null per floor
 let pendingReveal = false;
+let builtFloors = 0;
 
 function toast(m,t='info'){
   const el=document.getElementById('toast');
@@ -327,36 +327,49 @@ function sb(v){document.getElementById('bet-input').value=v;}
 function sbAll(){if(userData)sb(userData.balance);}
 function sbHalf(){if(userData)sb(Math.floor((userData.balance||0)/2));}
 
-// Build mult preview
+// Build mult preview (show first 8 floors)
 function buildMultPreview(){
   const grid=document.getElementById('mult-preview');
   grid.innerHTML='';
-  for(let f=1;f<=TOTAL_FLOORS;f++){
+  for(let f=1;f<=PREVIEW_FLOORS;f++){
     const d=document.createElement('div');
     d.style.cssText=`background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:5px 4px;text-align:center;backdrop-filter:blur(8px);`;
     d.innerHTML=`<div style="font-size:9px;color:var(--muted)">Этаж ${f}</div><div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);font-weight:700">×${floorMult(f).toFixed(2)}</div>`;
     grid.appendChild(d);
   }
+  // Add "..." indicator
+  const more=document.createElement('div');
+  more.style.cssText=`background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:5px 4px;text-align:center;backdrop-filter:blur(8px);grid-column:span 2`;
+  more.innerHTML=`<div style="font-size:10px;color:var(--muted)">∞ Бесконечно растёт...</div>`;
+  grid.appendChild(more);
 }
 
-// Build tower UI
-function buildTower(){
+// How many floors visible above current
+const FLOORS_AHEAD = 3;
+let builtFloors = 0; // how many floor rows exist in DOM
+
+// Build or extend tower DOM up to targetFloor+FLOORS_AHEAD
+function ensureFloors(upToFloor){
   const container=document.getElementById('tower');
-  container.innerHTML='';
-
-  // Roof indicator
-  const roof=document.createElement('div');
-  roof.className='tower-roof';
-  roof.innerHTML=`<span style="font-size:18px">🏆</span><div><div class="tower-roof-label">ВЕРШИНА БАШНИ</div><div class="tower-roof-mult">×${floorMult(TOTAL_FLOORS).toFixed(2)}</div></div>`;
-  container.appendChild(roof);
-
-  // Render floors bottom→top visually (floor TOTAL_FLOORS at top, floor 1 at bottom)
-  for(let f=TOTAL_FLOORS;f>=1;f--){
+  const needed = upToFloor + FLOORS_AHEAD;
+  if(builtFloors === 0){
+    // First build: add roof then floors
+    container.innerHTML='';
+    const roof=document.createElement('div');
+    roof.className='tower-roof';
+    roof.id='tower-roof';
+    roof.innerHTML=`<span style="font-size:18px">∞</span><div><div class="tower-roof-label">БАШНЯ БЕСКОНЕЧНА</div><div class="tower-roof-mult">растёт ∞</div></div>`;
+    container.appendChild(roof);
+  }
+  // Add floors bottom-up: new floors go just after roof
+  // Floors are rendered top→bottom so highest floor is first after roof
+  // We need to insert lower floors AFTER higher ones already in the list
+  // Strategy: append lower floors to bottom of container
+  for(let f=builtFloors+1;f<=needed;f++){
     const row=document.createElement('div');
     row.className='floor-row future';
     row.id=`floor-row-${f}`;
 
-    // Floor label
     const lbl=document.createElement('div');
     lbl.className='floor-label';
     lbl.textContent=f;
@@ -371,7 +384,6 @@ function buildTower(){
       row.appendChild(cell);
     }
 
-    // Mult badge
     const badge=document.createElement('div');
     badge.className='floor-mult';
     badge.textContent=`×${floorMult(f).toFixed(2)}`;
@@ -379,18 +391,26 @@ function buildTower(){
 
     container.appendChild(row);
   }
+  builtFloors = Math.max(builtFloors, needed);
+
+  // Re-sort visually: highest floors first (after roof)
+  // Collect all floor-rows and re-insert sorted desc
+  const roof=document.getElementById('tower-roof');
+  const rows=[...container.querySelectorAll('.floor-row')];
+  rows.sort((a,b)=>parseInt(b.id.split('-')[2])-parseInt(a.id.split('-')[2]));
+  // Clear non-roof children and re-add sorted
+  [...container.children].forEach(c=>{if(c!==roof)c.remove();});
+  rows.forEach(r=>container.appendChild(r));
 }
 
 function activateFloor(floor){
-  // floor is 1-based
-  // Update row classes
-  for(let f=1;f<=TOTAL_FLOORS;f++){
+  ensureFloors(floor);
+  for(let f=1;f<=builtFloors;f++){
     const row=document.getElementById(`floor-row-${f}`);
     if(!row)continue;
     if(f<floor) row.className='floor-row past';
     else if(f===floor) row.className='floor-row current';
     else row.className='floor-row future';
-    // Enable/disable cells
     for(let c=0;c<CELLS_PER_FLOOR;c++){
       const cell=document.getElementById(`cell-${f}-${c}`);
       if(!cell)continue;
@@ -403,11 +423,9 @@ function activateFloor(floor){
       }
     }
   }
-  // Scroll current floor into view
   const row=document.getElementById(`floor-row-${floor}`);
   if(row) setTimeout(()=>row.scrollIntoView({behavior:'smooth',block:'center'}),100);
-
-  document.getElementById('live-floor').textContent=`${floor}/${TOTAL_FLOORS}`;
+  document.getElementById('live-floor').textContent=`Этаж ${floor}`;
   document.getElementById('cashout-btn').disabled = floor <= 1;
 }
 
@@ -423,8 +441,7 @@ async function startGame(){
   if(!res||res.error){toast(res?.error||'Ошибка соединения','err');return;}
 
   currentBet=bet; currentFloor=1; gameActive=true;
-  bombFloors=res.bomb_cells||[]; // array of length TOTAL_FLOORS
-  floorResults=new Array(TOTAL_FLOORS).fill(null);
+  builtFloors=0;
 
   if(userData) userData.balance=res.new_balance;
   document.getElementById('r-bal').textContent=res.new_balance;
@@ -437,7 +454,6 @@ async function startGame(){
 
   document.getElementById('setup-panel').classList.add('hidden');
   document.getElementById('game-area').classList.add('visible');
-  buildTower();
   activateFloor(1);
 }
 
@@ -446,7 +462,6 @@ async function pickCell(floor, cellIdx){
   if(floor!==currentFloor)return;
   pendingReveal=true;
 
-  // Disable all current floor cells during request
   for(let c=0;c<CELLS_PER_FLOOR;c++){
     const el=document.getElementById(`cell-${floor}-${c}`);
     if(el) el.style.pointerEvents='none';
@@ -465,40 +480,45 @@ async function pickCell(floor, cellIdx){
   }
 
   const chosenCell=document.getElementById(`cell-${floor}-${cellIdx}`);
-  const bombIdx=res.bomb_cell; // -1 = hidden by luck
+  // bombIdx: -1 means luck hid the bomb on the clicked cell — place indicator on another cell
+  let bombIdx=res.bomb_cell;
+  if(bombIdx===-1 && !res.is_bomb){
+    // Pick a random non-chosen cell to show the "phantom" bomb
+    const others=[...Array(CELLS_PER_FLOOR).keys()].filter(c=>c!==cellIdx);
+    bombIdx=others[Math.floor(Math.random()*others.length)];
+  }
 
   if(res.is_bomb){
-    // Show bomb on chosen cell
     chosenCell.className='tower-cell bomb disabled';
     chosenCell.innerHTML='💣';
-    // Show safe cells
+    // Always show bomb position — and mark safe cells
     for(let c=0;c<CELLS_PER_FLOOR;c++){
-      if(c!==cellIdx){
-        const el=document.getElementById(`cell-${floor}-${c}`);
-        if(el){
-          if(bombIdx>=0 && c===bombIdx){
-            el.className='tower-cell bomb disabled';el.innerHTML='💣';
-          } else {
-            el.className='tower-cell safe disabled';el.innerHTML='💎';
-          }
-        }
+      if(c===cellIdx) continue;
+      const el=document.getElementById(`cell-${floor}-${c}`);
+      if(!el) continue;
+      if(c===bombIdx){
+        el.className='tower-cell bomb disabled';
+        el.innerHTML='💣';
+        el.style.opacity='0.7';
+      } else {
+        el.className='tower-cell safe disabled';
+        el.innerHTML='💎';
       }
     }
     gameActive=false;
     setTimeout(()=>showResult(false,currentBet,floorMult(floor-1)||1,0,floor),600);
   } else {
-    // Safe — show diamond
     chosenCell.className='tower-cell safe disabled';
     chosenCell.innerHTML='💎';
-    // Show where bomb was (only if not hidden by luck)
+    // Always show where bomb was (real or phantom)
     for(let c=0;c<CELLS_PER_FLOOR;c++){
       if(c===cellIdx) continue;
       const el=document.getElementById(`cell-${floor}-${c}`);
       if(!el) continue;
-      if(bombIdx>=0 && c===bombIdx){
+      if(c===bombIdx){
         el.className='tower-cell hidden-bomb disabled';
         el.innerHTML='💣';
-        el.style.opacity='.38';
+        el.style.opacity='.4';
       } else {
         el.className='tower-cell disabled';
         el.style.opacity='.35';
@@ -513,7 +533,7 @@ async function pickCell(floor, cellIdx){
     document.getElementById('cashout-label').textContent=win;
 
     if(res.reached_top){
-      // All floors cleared — auto cashout
+      // Server says top reached (shouldn't happen with infinite, but handle gracefully)
       gameActive=false;
       if(userData) userData.balance=res.new_balance;
       document.getElementById('r-bal').textContent=res.new_balance;
@@ -555,7 +575,7 @@ function closeResult(){
 }
 
 function newGame(){
-  gameActive=false; currentFloor=1;
+  gameActive=false; currentFloor=1; builtFloors=0;
   document.getElementById('game-area').classList.remove('visible');
   document.getElementById('setup-panel').classList.remove('hidden');
   loadUser();

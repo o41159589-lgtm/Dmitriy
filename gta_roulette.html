@@ -162,6 +162,7 @@ const GTA_COLORS = [
 
 let userData = null;
 let gtaLobbyId = null;
+let gtaDoneHandled = false;
 let gtaPollTimer = null;
 let gtaTimerInterval = null;
 let gtaDeadline = 0;
@@ -364,7 +365,7 @@ function startFreeSpinning(players, total){
   gtaSpinAnim=requestAnimationFrame(frame);
 }
 
-function spinAndStop(players, total, finalAngle, onDone){
+function spinAndStop(players, total, finalAngle, winnerId, onDone){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
   const START=gtaAngleOffset;
   const EXTRA=(5+Math.floor((parseInt(String(finalAngle*1000|0).slice(-1))||3)))*Math.PI*2;
@@ -381,12 +382,14 @@ function spinAndStop(players, total, finalAngle, onDone){
   function frame(now){
     const t=Math.min((now-t0)/DURATION,1);
     gtaAngleOffset=START+(TARGET-START)*ease(t);
+    // Show winner highlight in last 15% of animation
+    const showWinner = t >= 0.85 ? winnerId : null;
     if(t<1){
-      drawGtaWheel(players,total,null,gtaAngleOffset);
+      drawGtaWheel(players,total,showWinner,gtaAngleOffset);
       gtaSpinAnim=requestAnimationFrame(frame);
     } else {
       gtaAngleOffset=TARGET%(Math.PI*2);
-      drawGtaWheel(players,total,null,gtaAngleOffset);
+      drawGtaWheel(players,total,winnerId,gtaAngleOffset);
       gtaSpinAnim=null;
       if(onDone)onDone();
     }
@@ -489,11 +492,13 @@ function renderGta(lobby, bets){
   if(lobby.status==='done'){
     if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
     tw.style.display='none';
-    if(statusChanged||(!gtaSpinAnim&&prevStatus==='spinning')){
+    // Only trigger the spin-to-winner animation once per lobby
+    if(!gtaDoneHandled){
+      gtaDoneHandled = true;
       if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
       st.textContent='🎰 Определяем победителя...';
       const finalAngle=calcWinnerAngle(players,total,lobby.winner_id);
-      spinAndStop(players,total,finalAngle,()=>{
+      spinAndStop(players,total,finalAngle,lobby.winner_id,()=>{
         drawGtaWheel(players,total,lobby.winner_id,gtaAngleOffset);
         st.innerHTML='🏆 Победитель определён! Перезапуск через <b id="rc">5</b> сек...';
         renderPlayers(players,total,lobby.winner_id);
@@ -505,7 +510,7 @@ function renderGta(lobby, bets){
           if(el)el.textContent=cnt;
           if(cnt<=0){
             clearInterval(iv);
-            gtaLobbyId=null;lastLobbyStatus=null;gtaAngleOffset=0;
+            gtaLobbyId=null;lastLobbyStatus=null;gtaAngleOffset=0;gtaDoneHandled=false;
             clearTimeout(gtaPollTimer);gtaPollTimer=null;
             pollGta();
           }
