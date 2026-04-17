@@ -352,11 +352,12 @@ function calcWinnerAngle(players, total, winnerId){
 
 function startFreeSpinning(players, total){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
-  const ACCEL=800, SPEED=0.16;
+  // Ramp up to high speed quickly so players are hard to track
+  const ACCEL=400, SPEED=0.48;
   const t0=performance.now();
   function frame(now){
     const e=now-t0;
-    const spd=e<ACCEL?SPEED*(e/ACCEL)*(e/ACCEL):SPEED;
+    const spd=e<ACCEL?SPEED*(e/ACCEL):SPEED;
     gtaAngleOffset=(gtaAngleOffset+spd)%(Math.PI*2);
     drawGtaWheel(players,total,null,gtaAngleOffset);
     gtaSpinAnim=requestAnimationFrame(frame);
@@ -367,16 +368,17 @@ function startFreeSpinning(players, total){
 function spinAndStop(players, total, finalAngle, onDone){
   if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
   const START=gtaAngleOffset;
-  const EXTRA=(5+Math.floor((parseInt(String(finalAngle*1000|0).slice(-1))||3)))*Math.PI*2;
+  // Add 8 full rotations so wheel clearly spins a lot before stopping
+  const EXTRA=(8+Math.floor((parseInt(String(finalAngle*1000|0).slice(-1))||3)))*Math.PI*2;
   const delta=((finalAngle-START)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
   const safeDelta=delta<0.3?delta+Math.PI*2:delta;
   const TARGET=START+EXTRA+safeDelta;
-  const DURATION=5500;
+  const DURATION=5000;
   const t0=performance.now();
+  // Pure deceleration ease: starts at max speed (matches free-spinning feel), brakes to stop
   function ease(t){
-    if(t<0.05)return t*0.8;
-    const u=(t-0.05)/0.95;
-    return 0.04+0.96*(1-Math.pow(1-u,4.5));
+    // Cubic ease-out: fast start, smooth brake
+    return 1-Math.pow(1-t,3);
   }
   function frame(now){
     const t=Math.min((now-t0)/DURATION,1);
