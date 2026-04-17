@@ -265,10 +265,6 @@
       💰 КЕШАУТ — <span id="cashout-label">0</span> 🪙
     </button>
 
-    <div class="action-row">
-      <button class="action-btn btn-newgame" onclick="newGame()">🔄 Новая игра</button>
-      <button class="action-btn" style="background:var(--bg3);border:1px solid var(--border);color:var(--muted);" onclick="goBack()">← Назад</button>
-    </div>
 
   </div>
 </div>
@@ -353,13 +349,8 @@ function ensureFloors(upToFloor){
   const container=document.getElementById('tower');
   const needed = upToFloor + FLOORS_AHEAD;
   if(builtFloors === 0){
-    // First build: add roof then floors
+    // First build: just clear container, no roof banner
     container.innerHTML='';
-    const roof=document.createElement('div');
-    roof.className='tower-roof';
-    roof.id='tower-roof';
-    roof.innerHTML=`<span style="font-size:18px">∞</span><div><div class="tower-roof-label">БАШНЯ БЕСКОНЕЧНА</div><div class="tower-roof-mult">растёт ∞</div></div>`;
-    container.appendChild(roof);
   }
   // Add floors bottom-up: new floors go just after roof
   // Floors are rendered top→bottom so highest floor is first after roof
@@ -398,8 +389,8 @@ function ensureFloors(upToFloor){
   const roof=document.getElementById('tower-roof');
   const rows=[...container.querySelectorAll('.floor-row')];
   rows.sort((a,b)=>parseInt(b.id.split('-')[2])-parseInt(a.id.split('-')[2]));
-  // Clear non-roof children and re-add sorted
-  [...container.children].forEach(c=>{if(c!==roof)c.remove();});
+  // Clear and re-add sorted
+  container.innerHTML='';
   rows.forEach(r=>container.appendChild(r));
 }
 
