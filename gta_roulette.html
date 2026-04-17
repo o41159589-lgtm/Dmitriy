@@ -162,7 +162,6 @@ const GTA_COLORS = [
 
 let userData = null;
 let gtaLobbyId = null;
-let gtaDoneHandled = false;
 let gtaPollTimer = null;
 let gtaTimerInterval = null;
 let gtaDeadline = 0;
@@ -490,8 +489,7 @@ function renderGta(lobby, bets){
   if(lobby.status==='done'){
     if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
     tw.style.display='none';
-    if(!gtaDoneHandled){
-      gtaDoneHandled=true;
+    if(statusChanged||(!gtaSpinAnim&&prevStatus==='spinning')){
       if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
       st.textContent='🎰 Определяем победителя...';
       const finalAngle=calcWinnerAngle(players,total,lobby.winner_id);
@@ -507,7 +505,7 @@ function renderGta(lobby, bets){
           if(el)el.textContent=cnt;
           if(cnt<=0){
             clearInterval(iv);
-            gtaLobbyId=null;lastLobbyStatus=null;gtaAngleOffset=0;gtaDoneHandled=false;
+            gtaLobbyId=null;lastLobbyStatus=null;gtaAngleOffset=0;
             clearTimeout(gtaPollTimer);gtaPollTimer=null;
             pollGta();
           }
@@ -564,4 +562,3 @@ drawGtaWheel([],1,null,0);
 startGtaPoll();
 </script>
 </body>
-</html>

@@ -972,6 +972,10 @@ async def _gta_run(lid):
     await db.add_to_balance(wid, payout)
     await db.add_history(wid,"win",payout,f"GTA #{lid}: банк {pot}, комиссия {commission}")
     await db.update_spin_stats(wid, True, payout, 0)
+    wu = await db.get_user(wid)
+    wname = wu.get("first_name","?") if wu else "?"
+    fire_log(log_game(wid, wname, "GTA рулетка", winner_row["amount"], "Выигрыш", payout, wu.get("balance",0) if wu else 0))
+
     for b in bets:
         if b["user_id"] != wid:
             await db.update_spin_stats(b["user_id"], False, 0, b["amount"])
@@ -979,9 +983,6 @@ async def _gta_run(lid):
                 f"GTA #{lid}: выиграл {wname or wid}")
     await db.close_lobby(lid, wid, commission)
 
-    wu = await db.get_user(wid)
-    wname = wu.get("first_name","?") if wu else "?"
-    fire_log(log_game(wid, wname, "GTA рулетка", winner_row["amount"], "Выигрыш", payout, wu.get("balance",0) if wu else 0))
 
     try:
         pct = 3 if pot<=500 else 5 if pot<=2000 else 8
