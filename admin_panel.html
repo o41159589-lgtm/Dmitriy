@@ -273,6 +273,31 @@ body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;fo
     </div>
   </div>
 
+  <!-- Tower luck (independent, saved to DB) -->
+  <div class="settings-block">
+    <div class="settings-title">🗼 БАШНЯ — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Независимый коэффициент удачи для Башни.<br>
+      <b style="color:var(--text)">1.0</b> — честная игра ·
+      <b style="color:var(--text)">0.0</b> — башня всегда убивает
+    </p>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="tower-luck-slider" min="0" max="100" value="100" oninput="onTowerLuckSlider(this.value)"
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setTowerLuck(0)">0.0 — Всегда взрыв</div>
+        <div class="pb" onclick="setTowerLuck(0.5)">0.5 — Меньше шансов</div>
+        <div class="pb" onclick="setTowerLuck(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerLuck()">💾 Сохранить</button>
+    </div>
+    <div id="tower-luck-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
 </div>
 
 <script>
@@ -570,11 +595,15 @@ async function loadRev(){
     const d=await api(`/api/admin/revenue?from=${f}&to=${t}`);
     msg.style.display='none';grid.style.display='grid';
     const ep=d.euro_losses-d.euro_wins;
+    const mp=d.mines_losses-d.mines_wins;
+    const tp=d.tower_losses-d.tower_wins;
     grid.innerHTML=`
       <div class="ri"><div class="ri-l">🏙 GTA комиссии</div><div class="ri-v g">+${d.gta_commission}</div></div>
       <div class="ri"><div class="ri-l">🎰 Европ. профит</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
-      <div class="ri"><div class="ri-l">📉 Проиграно игр.</div><div class="ri-v gold">${d.euro_losses}</div></div>
-      <div class="ri"><div class="ri-l">📈 Выплачено игр.</div><div class="ri-v r">-${d.euro_wins}</div></div>
+      <div class="ri"><div class="ri-l">💣 Мины профит</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
+      <div class="ri"><div class="ri-l">🗼 Башня профит</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
+      <div class="ri"><div class="ri-l">📉 Проиграно игр.</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
+      <div class="ri"><div class="ri-l">📈 Выплачено игр.</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
       <div class="ri"><div class="ri-l">💳 Пополнения</div><div class="ri-v gold">${d.deposits}</div></div>
       <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${users.length}</div></div>
       <div class="rev-total">
@@ -588,6 +617,7 @@ async function loadRev(){
 
 // ── GLOBAL LUCK ──
 let glCoeff = 1.0;
+let towerLuckCoeff = 1.0;
 
 function syncDependentSliders(v){
   // Euro
@@ -609,6 +639,12 @@ async function loadGl(){
     document.getElementById('gl-val').textContent = glCoeff.toFixed(2);
     document.getElementById('gl-slider').value = Math.round(glCoeff*100);
     syncDependentSliders(glCoeff);
+  } catch{}
+  try{
+    const d = await api('/api/admin/tower_luck');
+    towerLuckCoeff = d.coeff;
+    document.getElementById('tower-luck-val').textContent = towerLuckCoeff.toFixed(2);
+    document.getElementById('tower-luck-slider').value = Math.round(towerLuckCoeff*100);
   } catch{}
 }
 function onGlSlider(v){
@@ -636,6 +672,30 @@ function onMinesSlider(v){
   const c = parseInt(v)/100;
   const el = document.getElementById('mines-val');
   if(el){ el.textContent = c.toFixed(2); }
+}
+
+// Tower luck (independent, saved)
+function onTowerLuckSlider(v){
+  towerLuckCoeff = parseInt(v)/100;
+  const el = document.getElementById('tower-luck-val');
+  el.textContent = towerLuckCoeff.toFixed(2);
+  el.style.color = towerLuckCoeff<0.3?'var(--red)':towerLuckCoeff<0.7?'var(--gold)':'var(--blue)';
+}
+function setTowerLuck(v){
+  towerLuckCoeff = v;
+  document.getElementById('tower-luck-val').textContent = v.toFixed(2);
+  document.getElementById('tower-luck-slider').value = Math.round(v*100);
+  const el = document.getElementById('tower-luck-val');
+  el.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--blue)';
+}
+async function saveTowerLuck(){
+  try{
+    await api('/api/admin/tower_luck','POST',{coeff:towerLuckCoeff});
+    const st = document.getElementById('tower-luck-status');
+    st.textContent = '✅ Сохранено: '+towerLuckCoeff.toFixed(2);
+    st.style.color = 'var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка сохранения','err'); }
 }
 async function saveGlCoeff(){
   try{

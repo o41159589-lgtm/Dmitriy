@@ -285,11 +285,13 @@ const UID = tg?.initDataUnsafe?.user?.id || 0;
 
 const CELLS_PER_FLOOR = 3;
 const TOWER_HOUSE    = 0.97;
-const PREVIEW_FLOORS = 8; // how many floors to show ahead in setup preview
+const TOWER_MAX_FLOORS = 10; // must match TOWER_MAX_FLOORS in bot.py
+const PREVIEW_FLOORS = TOWER_MAX_FLOORS;
 
-function floorMult(floor){ // floor 1-based, infinite
+function floorMult(floor){ // new formula matching server
   if(floor<=0) return 1.0;
-  return parseFloat((TOWER_HOUSE * Math.pow(CELLS_PER_FLOOR / (CELLS_PER_FLOOR - 1), floor)).toFixed(2));
+  const raw = 1.0 + floor * 0.28 - floor * (floor - 1) * 0.010;
+  return parseFloat((TOWER_HOUSE * Math.max(1.0, raw)).toFixed(2));
 }
 
 let userData = null;
@@ -333,11 +335,6 @@ function buildMultPreview(){
     d.innerHTML=`<div style="font-size:9px;color:var(--muted)">Этаж ${f}</div><div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);font-weight:700">×${floorMult(f).toFixed(2)}</div>`;
     grid.appendChild(d);
   }
-  // Add "..." indicator
-  const more=document.createElement('div');
-  more.style.cssText=`background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:5px 4px;text-align:center;backdrop-filter:blur(8px);grid-column:span 2`;
-  more.innerHTML=`<div style="font-size:10px;color:var(--muted)">∞ Бесконечно растёт...</div>`;
-  grid.appendChild(more);
 }
 
 // How many floors visible above current
@@ -347,7 +344,8 @@ const FLOORS_AHEAD = 3;
 // Build or extend tower DOM up to targetFloor+FLOORS_AHEAD
 function ensureFloors(upToFloor){
   const container=document.getElementById('tower');
-  const needed = upToFloor + FLOORS_AHEAD;
+  const FLOORS_AHEAD = 3;
+  const needed = Math.min(upToFloor + FLOORS_AHEAD, TOWER_MAX_FLOORS);
   if(builtFloors === 0){
     // First build: just clear container, no roof banner
     container.innerHTML='';
@@ -416,7 +414,7 @@ function activateFloor(floor){
   }
   const row=document.getElementById(`floor-row-${floor}`);
   if(row) setTimeout(()=>row.scrollIntoView({behavior:'smooth',block:'center'}),100);
-  document.getElementById('live-floor').textContent=`Этаж ${floor}`;
+  document.getElementById('live-floor').textContent=`Этаж ${floor}/${TOWER_MAX_FLOORS}`;
   document.getElementById('cashout-btn').disabled = floor <= 1;
 }
 

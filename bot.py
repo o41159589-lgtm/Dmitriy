@@ -61,18 +61,28 @@ active_towers: dict[int, dict] = {}  # uid -> tower game state
 
 TOWER_CELLS    = 3   # cells per floor
 TOWER_HOUSE    = 0.97
+TOWER_MAX_FLOORS = 10  # configurable: change this to adjust tower height
 
 def tower_mult(floor: int) -> float:
-    """Multiplier for reaching floor (1-based). Each safe pick: 2/3 chance, house=0.97"""
+    """Multiplier for tower floor. Diminishing returns: big jumps early, small jumps late."""
     if floor <= 0: return 1.0
-    return round(TOWER_HOUSE * ((TOWER_CELLS / (TOWER_CELLS - 1)) ** floor), 4)
+    # Formula gives: floor1=1.24x, floor5=2.13x, floor10=2.81x with decreasing increments
+    raw = 1.0 + floor * 0.28 - floor * (floor - 1) * 0.010
+    return round(TOWER_HOUSE * max(1.0, raw), 4)
 
 def mines_mult(safe_opened: int, bombs: int, house: float = 0.97) -> float:
-    """Multiplier after opening `safe_opened` safe cells with `bombs` mines on 5×5."""
+    """Multiplier after opening safe cells. Power 0.8 dampens extreme values."""
     total, safe_total = 25, 25 - bombs
     if safe_opened == 0: return 1.0
     if safe_total <= 0 or safe_opened > safe_total: return 0.0
-    return round(house * comb(total, safe_opened) / comb(safe_total, safe_opened), 4)
+    raw_ratio = comb(total, safe_opened) / comb(safe_total, safe_opened)
+    return round(house * (raw_ratio ** 0.8), 4)
+
+def bet_luck_factor(bet: int) -> float:
+    """Higher bets get less luck protection. Bet<=100: full. Bet 1000: ~0.65. Bet 10000: ~0.40."""
+    import math
+    if bet <= 100: return 1.0
+    return max(0.15, 1.0 - 0.17 * math.log10(bet / 100))
 
 async def log_error(context: str, error: str):
     """Log any error to the admin/errors thread in the log group."""
@@ -841,6 +851,7 @@ async def api_spin(req: web.Request):
     gain = 0
     if won:
         gain = bet_amt * mult
+        profit = gain - bet_amt
         new_bal = await db.add_to_balance(uid, gain - bet_amt)
         await db.add_history(uid, "win", gain, f"Европ. рулетка: {rn} {rc}, x{mult}")
         await db.update_spin_stats(uid, True, gain, 0)
@@ -848,7 +859,7 @@ async def api_spin(req: web.Request):
             ico = "🟢" if rc=="green" else "🔴" if rc=="red" else "⚫"
             await bot.send_message(uid,
                 f"🎉 <b>Выигрыш в Европейской рулетке!</b>\n{ico} Выпало: <b>{rn}</b> · x{mult}\n"
-                f"💰 +<b>{gain}</b> монет · Баланс: <b>{new_bal}</b>", parse_mode="HTML")
+                f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>", parse_mode="HTML")
         except Exception: pass
     else:
         new_bal = await db.add_to_balance(uid, -bet_amt)
@@ -1065,6 +1076,8 @@ async def api_mines_reveal(req: web.Request):
 
     luck     = await db.get_luck(uid)
     global_k = await db.get_global_luck_coeff()
+    bet_factor = bet_luck_factor(game["bet"])
+    effective_k = global_k * bet_factor
     is_bomb  = cell in game["bomb_set"]
 
     # ── Apply luck override ──
@@ -1085,10 +1098,10 @@ async def api_mines_reveal(req: web.Request):
             game["bomb_set"].discard(swap)
             game["bomb_set"].add(cell)
             is_bomb = True
-    elif luck == -1 and global_k < 1.0:
-        # Global luck debuff: extra bomb chance proportional to (1 - global_k)
+    elif luck == -1 and effective_k < 1.0:
+        # Global luck debuff scaled by bet size
         if not is_bomb:
-            debuff_chance = (1.0 - global_k) * (game["bombs"] / 25.0)
+            debuff_chance = (1.0 - effective_k) * (game["bombs"] / 25.0)
             if random.random() < debuff_chance:
                 bomb_unrevealed = [b for b in game["bomb_set"]]
                 if bomb_unrevealed:
@@ -1097,9 +1110,9 @@ async def api_mines_reveal(req: web.Request):
                     game["bomb_set"].add(cell)
                     is_bomb = True
     elif luck > 0:
-        # Custom luck%: chance to dodge a bomb
+        # Custom luck%: chance to dodge a bomb, scaled by bet
         if is_bomb:
-            dodge_chance = (luck / 100.0) * global_k
+            dodge_chance = (luck / 100.0) * effective_k
             safe_cells = [i for i in range(25)
                           if i not in game["bomb_set"] and i not in game["revealed"] and i != cell]
             if random.random() < dodge_chance and safe_cells:
@@ -1112,6 +1125,8 @@ async def api_mines_reveal(req: web.Request):
         # Lose — reveal all bombs
         del active_mines[uid]
         await db.update_spin_stats(uid, False, 0, game["bet"])
+        await db.add_history(uid, "lose", game["bet"],
+            f"Мины: взрыв ({game['bombs']} бомб)")
         u2 = await db.get_user(uid)
         name = u2.get("first_name","?") if u2 else "?"
         fire_log(log_game(uid, name, "Мины",
@@ -1175,6 +1190,7 @@ async def api_mines_cashout(req: web.Request):
     safe_count   = len(game["revealed"])
     mult         = mines_mult(safe_count, game["bombs"])
     won          = round(game["bet"] * mult)
+    profit       = won - game["bet"]
     new_bal      = await db.add_to_balance(uid, won)
     await db.add_history(uid, "win", won,
         f"Мины: кешаут x{mult} ({safe_count} алмазов, {game['bombs']} бомб)")
@@ -1183,6 +1199,13 @@ async def api_mines_cashout(req: web.Request):
     u2   = await db.get_user(uid)
     name = u2.get("first_name","?") if u2 else "?"
     fire_log(log_game(uid, name, "Мины", game["bet"], "Выигрыш", won, new_bal))
+    try:
+        await bot.send_message(uid,
+            f"💎 <b>Кешаут — Мины!</b>\n"
+            f"🏆 {safe_count} алмазов · ×{mult}\n"
+            f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
+            parse_mode="HTML")
+    except Exception: pass
     return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
 
 async def api_mines_status(req: web.Request):
@@ -1440,22 +1463,27 @@ async def api_tower_step(req: web.Request):
     if not game: return web.json_response({"error": "no active game"}, status=400)
     if floor != game["floor"]:
         return web.json_response({"error": "wrong floor"}, status=400)
+    if floor > TOWER_MAX_FLOORS:
+        return web.json_response({"error": "tower completed"}, status=400)
 
     bomb_idx = random.randint(0, TOWER_CELLS - 1)  # fresh random each floor
 
     # Apply luck
-    luck     = await db.get_luck(uid)
-    global_k = await db.get_global_luck_coeff()
-    is_bomb  = (cell == bomb_idx)
-    luck_saved = False  # track if luck hid the bomb from display
+    luck      = await db.get_luck(uid)
+    global_k  = await db.get_global_luck_coeff()
+    tower_k   = await db.get_tower_luck_coeff()
+    bet_factor = bet_luck_factor(game["bet"])
+    effective_k = global_k * tower_k * bet_factor  # combined luck multiplier
+    is_bomb   = (cell == bomb_idx)
+    luck_saved = False
 
     if is_bomb and luck == 100:
         is_bomb    = False
         luck_saved = True   # bomb was on the clicked cell — hide indicator
     elif not is_bomb and luck == 0:
         is_bomb = True
-    elif luck == -1 and global_k < 1.0 and not is_bomb:
-        extra_chance = (1.0 - global_k) * (1.0 / TOWER_CELLS)
+    elif luck == -1 and effective_k < 1.0 and not is_bomb:
+        extra_chance = (1.0 - effective_k) * (1.0 / TOWER_CELLS)
         if random.random() < extra_chance:
             is_bomb = True
 
@@ -1481,6 +1509,31 @@ async def api_tower_step(req: web.Request):
         game["floor"] = floor + 1
         mult        = tower_mult(floor)
         current_win = round(game["bet"] * mult)
+        reached_top = floor >= TOWER_MAX_FLOORS
+
+        if reached_top:
+            # Auto cashout at top floor
+            new_bal = await db.add_to_balance(uid, current_win)
+            profit = current_win - game["bet"]
+            await db.add_history(uid, "win", current_win,
+                f"Башня: кешаут этаж {floor} ×{mult}")
+            await db.update_spin_stats(uid, True, current_win, 0)
+            del active_towers[uid]
+            u2   = await db.get_user(uid)
+            name = u2.get("first_name", "?") if u2 else "?"
+            fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш", current_win, new_bal))
+            try:
+                await bot.send_message(uid,
+                    f"🗼 <b>Башня покорена!</b>\n"
+                    f"🏆 Этаж {floor}/{TOWER_MAX_FLOORS} · ×{mult}\n"
+                    f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
+                    parse_mode="HTML")
+            except Exception: pass
+            return web.json_response({
+                "is_bomb": False, "bomb_cell": display_bomb_cell, "floor": floor,
+                "mult": mult, "current_win": current_win,
+                "reached_top": True, "new_balance": new_bal,
+            })
 
         return web.json_response({
             "is_bomb":     False,
@@ -1514,6 +1567,7 @@ async def api_tower_cashout(req: web.Request):
 
     mult        = tower_mult(completed_floor)
     won         = round(game["bet"] * mult)
+    profit      = won - game["bet"]
     new_bal     = await db.add_to_balance(uid, won)
     await db.add_history(uid, "win", won,
         f"Башня: кешаут этаж {completed_floor} ×{mult}")
@@ -1522,11 +1576,37 @@ async def api_tower_cashout(req: web.Request):
     u2   = await db.get_user(uid)
     name = u2.get("first_name", "?") if u2 else "?"
     fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш", won, new_bal))
+    try:
+        await bot.send_message(uid,
+            f"🗼 <b>Кешаут — Башня!</b>\n"
+            f"🏆 Этаж {completed_floor} · ×{mult}\n"
+            f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
+            parse_mode="HTML")
+    except Exception: pass
     return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
 
 
 async def serve_tower(req):  return await serve_html("tower.html")
 
+
+async def api_admin_get_tower_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"coeff": await db.get_tower_luck_coeff()})
+
+async def api_admin_set_tower_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); coeff = float(data.get("coeff",1.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_tower_luck_coeff(coeff)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid)
+            aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_TOWER_LUCK", 0, "Все игроки",
+            f"Коэффициент удачи башни → {coeff}", incognito=False))
+    return web.json_response({"ok":True,"coeff":coeff})
 
 async def start_web():
     app = web.Application()
@@ -1560,6 +1640,8 @@ async def start_web():
     app.router.add_get ("/api/admin/revenue",      api_admin_revenue)
     app.router.add_get ("/api/admin/global_luck",  api_admin_get_global_luck)
     app.router.add_post("/api/admin/global_luck",  api_admin_set_global_luck)
+    app.router.add_get ("/api/admin/tower_luck",   api_admin_get_tower_luck)
+    app.router.add_post("/api/admin/tower_luck",   api_admin_set_tower_luck)
     app.router.add_get("/{filename:.+}", serve_static)
     runner = web.AppRunner(app)
     await runner.setup()

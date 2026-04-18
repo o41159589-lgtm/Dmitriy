@@ -593,7 +593,7 @@ function buildGiftCard(gift, source, idx){
   const isBotSrc = source === 'bot';
   info.innerHTML = `
     <div class="gift-top">
-      <div class="gift-price-badge">⭐ ${gift.star_count} <span style="font-size:11px;opacity:.7">(${gift.star_count*10} 🪙)</span></div>
+      <div class="gift-price-badge">${gift.star_count*10} 🪙 <span style="font-size:11px;opacity:.7">(⭐${gift.star_count})</span></div>
     </div>
     <div class="gift-desc-text">${
       isBotSrc

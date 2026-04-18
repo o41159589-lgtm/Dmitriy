@@ -49,6 +49,7 @@ async def init_db():
                 value TEXT DEFAULT ''
             );
             INSERT OR IGNORE INTO settings(key,value) VALUES ('global_luck_coeff','1.0');
+            INSERT OR IGNORE INTO settings(key,value) VALUES ('tower_luck_coeff','1.0');
         """)
         # Migration: add banned column if missing
         try:
@@ -221,11 +222,46 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
         # Итого доход казино
         total_revenue = gta_commission + (euro_losses - euro_wins)
 
+        # Мины — проигрыши и выигрыши
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='lose' AND detail LIKE '%Мины%' AND created_at>=? AND created_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            mines_losses = (await cur.fetchone())[0] or 0
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='win' AND detail LIKE '%Мины%' AND created_at>=? AND created_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            mines_wins = (await cur.fetchone())[0] or 0
+
+        # Башня — проигрыши и выигрыши
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='lose' AND detail LIKE '%Башня%' AND created_at>=? AND created_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            tower_losses = (await cur.fetchone())[0] or 0
+        async with db_conn.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='win' AND detail LIKE '%Башня%' AND created_at>=? AND created_at<=?",
+            (from_ts, to_ts)
+        ) as cur:
+            tower_wins = (await cur.fetchone())[0] or 0
+
+        total_revenue = (gta_commission
+                         + (euro_losses - euro_wins)
+                         + (mines_losses - mines_wins)
+                         + (tower_losses - tower_wins))
+
         return {
             "gta_commission": gta_commission,
             "euro_losses":    euro_losses,
             "euro_wins":      euro_wins,
             "euro_profit":    euro_losses - euro_wins,
+            "mines_losses":   mines_losses,
+            "mines_wins":     mines_wins,
+            "mines_profit":   mines_losses - mines_wins,
+            "tower_losses":   tower_losses,
+            "tower_wins":     tower_wins,
+            "tower_profit":   tower_losses - tower_wins,
             "deposits":       deposits,
             "total_revenue":  total_revenue,
             "from_ts": from_ts,
@@ -245,6 +281,21 @@ async def set_global_luck_coeff(coeff: float):
     async with aiosqlite.connect(DB_PATH) as db_conn:
         await db_conn.execute(
             "INSERT OR REPLACE INTO settings(key,value) VALUES('global_luck_coeff',?)",
+            (str(coeff),))
+        await db_conn.commit()
+
+async def get_tower_luck_coeff() -> float:
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        async with db_conn.execute("SELECT value FROM settings WHERE key='tower_luck_coeff'") as cur:
+            row = await cur.fetchone()
+            try: return float(row[0]) if row else 1.0
+            except: return 1.0
+
+async def set_tower_luck_coeff(coeff: float):
+    coeff = max(0.0, min(2.0, coeff))
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_luck_coeff',?)",
             (str(coeff),))
         await db_conn.commit()
 # ── BAN ──

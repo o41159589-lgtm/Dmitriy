@@ -241,6 +241,18 @@ input[type=range]::-webkit-slider-thumb{
 .mp{background:var(--bg3);border-radius:8px;padding:5px 4px;text-align:center;border:1px solid var(--border);}
 .mp-k{font-size:9px;color:var(--muted);}
 .mp-v{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);font-weight:700;}
+
+/* Multiplier context strip (current ±2) */
+.mult-context{display:flex;gap:5px;align-items:center;justify-content:center;margin-bottom:10px;}
+.mc-step{flex:1;border-radius:10px;padding:7px 4px;text-align:center;border:1px solid var(--border);
+  background:var(--bg3);transition:all .2s;}
+.mc-step.current{background:rgba(45,198,83,.12);border-color:rgba(45,198,83,.4);transform:scale(1.06);}
+.mc-step.past{opacity:.45;}
+.mc-step.future{opacity:.7;}
+.mc-lbl{font-size:9px;color:var(--muted);margin-bottom:2px;}
+.mc-val{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--gold);}
+.mc-step.current .mc-val{color:var(--green);font-size:13px;}
+.mc-arrow{color:var(--muted);font-size:14px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -339,6 +351,9 @@ input[type=range]::-webkit-slider-thumb{
       <div class="grid" id="grid"></div>
     </div>
 
+    <!-- Multiplier context: -2, -1, current, +1, +2 -->
+    <div class="mult-context" id="mult-context"></div>
+
     <button class="cashout-btn" id="cashout-btn" onclick="cashout()" disabled>
       💰 КЕШАУТ — <span id="cashout-label">0</span> 🪙
     </button>
@@ -427,7 +442,8 @@ function minesMultClient(safeOpened, bombs, house=0.97){
   const total=25, safeTotal=25-bombs;
   if(safeOpened===0) return 1.0;
   if(safeTotal<=0||safeOpened>safeTotal) return 0;
-  return house * nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
+  const rawRatio = nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
+  return house * Math.pow(rawRatio, 0.8);
 }
 function nCr(n,r){
   if(r>n) return 0; if(r===0||r===n) return 1;
@@ -453,6 +469,25 @@ function renderMultPreview(){
     html+=`<div class="mp"><div class="mp-k">${k}💎</div><div class="mp-v">×${m}</div></div>`;
   }
   document.getElementById('mult-preview').innerHTML=html;
+}
+
+// ── MULTIPLIER CONTEXT STRIP ──
+function renderMultContext(openedCount){
+  const ctx = document.getElementById('mult-context');
+  if(!ctx) return;
+  const steps = [];
+  for(let d=-2; d<=2; d++){
+    const k = openedCount + d;
+    if(k < 0) continue;
+    const m = k === 0 ? 1.0 : minesMultClient(k, currentBombs);
+    steps.push({k, m, rel: d});
+  }
+  ctx.innerHTML = steps.map((s,i)=>{
+    let cls = s.rel < 0 ? 'past' : s.rel === 0 ? 'current' : 'future';
+    const lbl = s.k === 0 ? 'Старт' : `${s.k} 💎`;
+    const arrow = (i < steps.length-1) ? '<div class="mc-arrow">›</div>' : '';
+    return `<div class="mc-step ${cls}"><div class="mc-lbl">${lbl}</div><div class="mc-val">×${s.m.toFixed(2)}</div></div>${arrow}`;
+  }).join('');
 }
 
 // ── BUILD GRID ──
@@ -508,6 +543,7 @@ async function startGame(){
   document.getElementById('setup-panel').classList.add('hidden');
   document.getElementById('game-area').classList.add('visible');
   buildGrid();
+  renderMultContext(0);
 }
 
 // ── REVEAL CELL ──
@@ -559,6 +595,7 @@ async function revealCell(idx){
     document.getElementById('live-win').textContent   = currentWin;
     document.getElementById('cashout-label').textContent = currentWin;
     document.getElementById('cashout-btn').disabled   = false;
+    renderMultContext(revealedCells.length);
 
     // Update diamonds remaining
     const diamLeft = (25 - currentBombs) - revealedCells.length;
@@ -646,6 +683,7 @@ loadUser();
     document.getElementById('cashout-btn').disabled   = !status.revealed?.length;
     document.getElementById('bombs-slider').value = status.bombs;
     onBombsChange(status.bombs);
+    renderMultContext(status.revealed?.length || 0);
     toast(`Восстановлена активная игра!`,'info');
   }
 })();
