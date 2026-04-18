@@ -641,7 +641,7 @@ function openBuyModal(gift, source){
   pendingGift = gift; currentSrc = source;
   document.getElementById('modal-icon').textContent      = gift.emoji;
   document.getElementById('modal-name').textContent      = gift.emoji + ' ' + (gift.name && gift.name !== gift.emoji ? gift.name : '');
-  document.getElementById('modal-price').textContent     = (gift.star_count * 10) + ' 🪙 (⭐' + gift.star_count + ')';
+  document.getElementById('modal-price').textContent     = '4457'+(gift.star_count * 10) + ' 🪙 (⭐' + gift.star_count + ')';
   document.getElementById('mp-stage-bg').style.background =
     source==='bot'
       ? 'linear-gradient(135deg,rgba(76,201,240,.15),rgba(76,201,240,.05))'
