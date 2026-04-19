@@ -34,7 +34,7 @@
 
 /* Live stats */
 .live-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
-.ls{background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 6px 20px rgba(0,0,0,0.3);border-radius:12px;
+.ls{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;
   padding:10px 8px;text-align:center;backdrop-filter:blur(10px);}
 .ls-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
 .ls-v{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;}
@@ -88,12 +88,12 @@
 /* Cell */
 .tower-cell{
   flex:1;height:52px;border-radius:12px;
-  background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 6px 20px rgba(0,0,0,0.3);
+  background:var(--glass-bg);border:1px solid var(--glass-border);
   display:flex;align-items:center;justify-content:center;
   font-size:22px;cursor:pointer;
   transition:background .15s,border-color .15s,transform .15s;
   position:relative;overflow:hidden;
-  backdrop-filter:blur(20px) saturate(1.5);
+  backdrop-filter:blur(8px);
 }
 .tower-cell::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
@@ -168,7 +168,7 @@
 /* Result overlay */
 .result-overlay{
   position:fixed;inset:0;z-index:300;
-  background:rgba(0,0,0,.8);backdrop-filter:blur(24px) saturate(1.6);
+  background:rgba(0,0,0,.8);backdrop-filter:blur(12px);
   display:none;align-items:center;justify-content:center;flex-direction:column;
   padding:24px;text-align:center;
 }
@@ -203,7 +203,6 @@
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<div class="liquid-bg"></div>
 
 <!-- Topbar -->
 <div class="topbar">
@@ -332,7 +331,7 @@ function buildMultPreview(){
   grid.innerHTML='';
   for(let f=1;f<=PREVIEW_FLOORS;f++){
     const d=document.createElement('div');
-    d.style.cssText=`background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 6px 20px rgba(0,0,0,0.3);border-radius:8px;padding:5px 4px;text-align:center;backdrop-filter:blur(20px) saturate(1.5);`;
+    d.style.cssText=`background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;padding:5px 4px;text-align:center;backdrop-filter:blur(8px);`;
     d.innerHTML=`<div style="font-size:9px;color:var(--muted)">Этаж ${f}</div><div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);font-weight:700">×${floorMult(f).toFixed(2)}</div>`;
     grid.appendChild(d);
   }
