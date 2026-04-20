@@ -13,218 +13,139 @@
   --blue:#4cc9f0;--purple:#7b2fff;--text:#e8e8f0;--muted:#7070a0;
   --border:rgba(245,197,66,0.15);
   --accent:var(--red);
-  --glass-bg:rgba(255,255,255,0.055);
-  --glass-border:rgba(255,255,255,0.12);
-  --glass-blur:22px;
 }
 .incognito-mode{--accent:#2dc653;--border:rgba(45,198,83,0.2);}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:12px 12px 32px;}
-/* liquid bg orbs */
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
-  background:
-    radial-gradient(ellipse 60% 40% at 15% 20%,rgba(230,57,70,0.07) 0%,transparent 70%),
-    radial-gradient(ellipse 50% 35% at 85% 75%,rgba(123,47,255,0.06) 0%,transparent 70%),
-    radial-gradient(ellipse 40% 50% at 55% 5%,rgba(76,201,240,0.04) 0%,transparent 70%);}
 
 /* Header */
-.header{
-  background:linear-gradient(135deg,rgba(26,10,10,0.85),rgba(32,10,10,0.75));
-  border:1px solid rgba(230,57,70,.25);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.6);
-  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.6);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 8px 28px rgba(0,0,0,0.4);
-  border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;position:relative;
-}
-.incognito-mode .header{background:linear-gradient(135deg,rgba(10,26,10,0.85),rgba(10,32,10,0.75));border-color:rgba(45,198,83,.25);}
+.header{background:linear-gradient(135deg,#1a1a2e,#200a0a);border:1px solid rgba(230,57,70,.3);
+  border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;position:relative;}
+.incognito-mode .header{background:linear-gradient(135deg,#0a1a0a,#0a200a);border-color:rgba(45,198,83,.3);}
 .header h1{font-family:'Orbitron',monospace;font-size:17px;color:var(--accent);margin-bottom:3px;}
 .header p{color:var(--muted);font-size:11px;}
 .incognito-badge{display:none;position:absolute;top:10px;right:12px;
-  background:rgba(45,198,83,.15);border:1px solid rgba(45,198,83,0.35);border-radius:8px;
-  padding:3px 8px;font-size:10px;color:var(--green);font-weight:700;
-  backdrop-filter:blur(10px);}
+  background:rgba(45,198,83,.2);border:1px solid var(--green);border-radius:8px;
+  padding:3px 8px;font-size:10px;color:var(--green);font-weight:700;}
 .incognito-mode .incognito-badge{display:block;}
 
 /* Tabs */
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.tab{flex:1;min-width:80px;padding:9px 6px;
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);
+.tab{flex:1;min-width:80px;padding:9px 6px;background:var(--card);border:1px solid var(--border);
   border-radius:10px;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer;
   text-align:center;transition:all .2s;}
-.tab.a{background:var(--accent);color:#fff;border-color:var(--accent);
-  box-shadow:0 4px 16px rgba(230,57,70,.3),inset 0 1px 0 rgba(255,255,255,0.2);}
-.incognito-mode .tab.a{box-shadow:0 4px 16px rgba(45,198,83,.3),inset 0 1px 0 rgba(255,255,255,0.2);}
+.tab.a{background:var(--accent);color:#fff;border-color:var(--accent);}
 .tab-pane{display:none;}.tab-pane.a{display:block;}
 
 /* Stats bar */
 .sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
-.sb{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.5);
-  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 14px rgba(0,0,0,0.28);
-  border-radius:10px;padding:10px 6px;text-align:center;position:relative;overflow:hidden;
-}
-.sb::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,transparent 55%);border-radius:inherit;}
+.sb{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;}
 .sb-v{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);font-weight:700;}
 .sb-l{font-size:10px;color:var(--muted);margin-top:3px;}
 
 /* Search */
-.search{width:100%;
-  background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:10px;
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);
+.search{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;
   padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;
   outline:none;margin-bottom:10px;}
 .search:focus{border-color:var(--gold);}
 
 /* User card */
-.uc{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 4px 14px rgba(0,0,0,0.24);
-  border-radius:14px;margin-bottom:8px;overflow:hidden;}
-.uc.banned{border-color:rgba(230,57,70,.35);background:rgba(230,57,70,.04);}
+.uc{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;overflow:hidden;}
+.uc.banned{border-color:rgba(230,57,70,.4);background:rgba(230,57,70,.04);}
 .uc-top{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;}
 .uc-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--blue));
-  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:700;
-  box-shadow:0 2px 10px rgba(123,47,255,0.3);}
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:700;}
 .uc-av.banned-av{background:linear-gradient(135deg,#8b0000,#e63946);}
 .uc-info{flex:1;min-width:0;}
 .uc-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .uc-id{font-size:10px;color:var(--muted);}
 .uc-bal{font-family:'Orbitron',monospace;color:var(--gold);font-size:14px;font-weight:700;flex-shrink:0;}
-.uc-body{border-top:1px solid rgba(255,255,255,0.06);padding:12px;display:none;flex-direction:column;gap:8px;}
+.uc-body{border-top:1px solid var(--border);padding:12px;display:none;flex-direction:column;gap:8px;}
 .uc.open .uc-body{display:flex;}
 
 /* User detail rows */
 .uinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px;}
-.uinfo-item{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  border-radius:8px;padding:8px 10px;
-  backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
+.uinfo-item{background:var(--bg3);border-radius:8px;padding:8px 10px;}
 .uinfo-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
 .uinfo-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;}
-.uinfo-val.gold{color:var(--gold);}.uinfo-val.green{color:var(--green);}
-.uinfo-val.red{color:var(--red);}.uinfo-val.blue{color:var(--blue);}
+.uinfo-val.gold{color:var(--gold);}
+.uinfo-val.green{color:var(--green);}
+.uinfo-val.red{color:var(--red);}
+.uinfo-val.blue{color:var(--blue);}
 .uinfo-val.muted{color:var(--muted);font-family:'Rajdhani',sans-serif;}
 
 /* Action groups */
-.ag{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  border-radius:10px;padding:10px;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
+.ag{background:var(--bg3);border-radius:10px;padding:10px;}
 .ag-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;font-weight:700;}
 .ag-row{display:flex;gap:5px;align-items:center;margin-bottom:5px;}
-.ag-inp{flex:1;
-  background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);border-radius:7px;
+.ag-inp{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:7px;
   padding:7px 8px;color:var(--text);font-family:'Orbitron',monospace;font-size:12px;
   outline:none;text-align:center;width:0;}
 .ag-inp:focus{border-color:var(--gold);}
 .abtn{padding:7px 10px;border:none;border-radius:7px;font-family:'Rajdhani',sans-serif;
-  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
-  transition:opacity .15s,transform .1s;box-shadow:0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2);}
-.abtn:active{transform:scale(.97);opacity:.85;}
-.abtn.set{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#000;}
-.abtn.add{background:linear-gradient(135deg,#1aa840,var(--green));color:#000;}
-.abtn.sub{background:linear-gradient(135deg,#b02030,var(--red));color:#fff;}
-.abtn.pur{background:linear-gradient(135deg,#5a1fdd,var(--purple));color:#fff;}
-.abtn.ban{background:linear-gradient(135deg,#6b0000,#8b0000);color:#fff;}
-.abtn.unban{background:linear-gradient(135deg,#1aa840,var(--green));color:#000;}
-.abtn.msg{background:linear-gradient(135deg,#2a8fb0,var(--blue));color:#000;}
+  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.abtn.set{background:var(--gold);color:#000;}
+.abtn.add{background:var(--green);color:#000;}
+.abtn.sub{background:var(--red);color:#fff;}
+.abtn.pur{background:var(--purple);color:#fff;}
+.abtn.ban{background:#8b0000;color:#fff;}
+.abtn.unban{background:var(--green);color:#000;}
+.abtn.msg{background:var(--blue);color:#000;}
 
 /* Luck buttons */
 .luck-row{display:flex;gap:4px;flex-wrap:wrap;}
-.lbtn{padding:5px 8px;
-  border:1px solid rgba(255,255,255,0.1);border-radius:6px;
-  background:rgba(255,255,255,0.04);color:var(--muted);font-size:11px;font-weight:700;
-  cursor:pointer;transition:all .15s;
-  backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.lbtn.a,.lbtn:active{background:rgba(123,47,255,0.35);color:#fff;border-color:var(--purple);}
-.lbtn.luck100{background:rgba(45,198,83,.15);border-color:rgba(45,198,83,0.35);color:var(--green);}
-.lbtn.luck100.a{background:rgba(45,198,83,.4);color:#fff;}
-.lbtn.luck0{background:rgba(230,57,70,.12);border-color:rgba(230,57,70,.3);color:rgba(230,57,70,.8);}
-.lbtn.luck0.a{background:rgba(230,57,70,.4);color:#fff;}
+.lbtn{padding:5px 8px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.lbtn.a,.lbtn:active{background:var(--purple);color:#fff;border-color:var(--purple);}
+.lbtn.luck100{background:rgba(45,198,83,.2);border-color:var(--green);color:var(--green);}
+.lbtn.luck100.a{background:var(--green);color:#000;}
+.lbtn.luck0{background:rgba(230,57,70,.15);border-color:rgba(230,57,70,.4);color:rgba(230,57,70,.8);}
+.lbtn.luck0.a{background:var(--red);color:#fff;}
 
 /* Revenue */
-.rev-card{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.09),0 6px 22px rgba(0,0,0,0.32);
-  border-radius:14px;padding:14px;margin-bottom:12px;}
+.rev-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
 .rev-title{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;}
 .period-btns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
-.pb{padding:6px 10px;
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;
-  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
-  backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.pb.a,.pb:active{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#000;border-color:var(--gold);
-  box-shadow:0 3px 12px rgba(245,197,66,0.3),inset 0 1px 0 rgba(255,255,255,0.25);}
+.pb{padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.pb.a,.pb:active{background:var(--gold);color:#000;border-color:var(--gold);}
 .date-row{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
 .date-lbl{font-size:11px;color:var(--muted);white-space:nowrap;}
-.date-inp{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;
-  padding:6px 8px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;
-  outline:none;flex:1;min-width:110px;backdrop-filter:blur(10px);}
+.date-inp{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 8px;
+  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;flex:1;min-width:110px;}
 .rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.ri{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  border-radius:10px;padding:12px;text-align:center;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
+.ri{background:var(--bg3);border-radius:10px;padding:12px;text-align:center;}
 .ri-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
 .ri-v{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;}
 .ri-v.g{color:var(--green);}.ri-v.r{color:var(--red);}.ri-v.gold{color:var(--gold);}
-.rev-total{grid-column:1/-1;
-  background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.18);
-  border-radius:12px;padding:16px;text-align:center;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(245,197,66,0.12);}
+.rev-total{grid-column:1/-1;background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.2);
+  border-radius:12px;padding:16px;text-align:center;}
 .rt-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
 .rt-v{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;}
 
-/* Settings blocks */
-.settings-block{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.09),0 6px 22px rgba(0,0,0,0.3);
-  border-radius:14px;padding:14px;margin-bottom:12px;position:relative;overflow:hidden;}
-.settings-block::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);pointer-events:none;}
+/* Settings */
+.settings-block{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
 .settings-title{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;}
 .incognito-toggle{display:flex;align-items:center;justify-content:space-between;
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
-  border-radius:10px;padding:10px 14px;margin-bottom:10px;
-  backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
+  background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:10px;}
 .it-label{font-size:14px;font-weight:600;}
 .it-sub{font-size:11px;color:var(--muted);margin-top:2px;}
 .toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
 .toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:rgba(0,0,0,0.4);border-radius:12px;
-  border:1px solid rgba(255,255,255,0.12);cursor:pointer;transition:background .2s;
-  backdrop-filter:blur(8px);}
+.toggle-slider{position:absolute;inset:0;background:var(--bg);border-radius:12px;
+  border:1px solid var(--border);cursor:pointer;transition:background .2s;}
 .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;
   border-radius:50%;background:#888;top:2px;left:2px;transition:transform .2s,background .2s;}
 .toggle input:checked+.toggle-slider{background:rgba(45,198,83,.25);border-color:var(--green);}
 .toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--green);}
 
-/* slider container */
-.slider-box{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
-  border-radius:10px;padding:14px;margin-bottom:10px;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-
 /* Toast */
-.toast{position:fixed;top:14px;left:12px;right:12px;
-  background:rgba(14,14,26,0.88);border:1px solid var(--glass-border);
-  backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 8px 32px rgba(0,0,0,.5);
-  border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;z-index:999;text-align:center;
+.toast{position:fixed;top:14px;left:12px;right:12px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;z-index:999;text-align:center;
   transform:translateY(-80px);transition:transform .3s;}
 .toast.show{transform:translateY(0);}
-.toast.ok{border-color:rgba(45,198,83,.4);color:var(--green);}
-.toast.err{border-color:rgba(230,57,70,.4);color:var(--red);}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
 .loader{text-align:center;padding:40px;color:var(--muted);}
 .loader span{font-size:36px;display:block;margin-bottom:10px;animation:spin 1.5s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -301,7 +222,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
       <b style="color:var(--text)">0.0</b> — казино всегда выигрывает<br>
       <span style="color:var(--muted);font-size:10px">Личная удача 100% / 0% остаётся абсолютной при любом коэффициенте</span>
     </p>
-    <div class="slider-box" style="margin-bottom:10px">
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
         <span id="gl-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--gold);font-weight:700">1.0</span>
@@ -325,7 +246,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
       Отображает текущее значение коэффициента для европейской рулетки.<br>
       <span style="color:var(--muted);font-size:10px">⚠️ Изменяется автоматически при смене глобального коэффициента</span>
     </p>
-    <div class="slider-box">
+    <div style="background:var(--bg3);border-radius:10px;padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
         <span id="euro-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">1.0</span>
@@ -342,7 +263,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
       Отображает текущее значение коэффициента для игры «Мины».<br>
       <span style="color:var(--muted);font-size:10px">⚠️ Изменяется автоматически при смене глобального коэффициента</span>
     </p>
-    <div class="slider-box">
+    <div style="background:var(--bg3);border-radius:10px;padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
         <span id="mines-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--red);font-weight:700">1.0</span>
@@ -360,7 +281,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
       <b style="color:var(--text)">1.0</b> — честная игра ·
       <b style="color:var(--text)">0.0</b> — башня всегда убивает
     </p>
-    <div class="slider-box" style="margin-bottom:10px">
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
         <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">1.0</span>
@@ -375,61 +296,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
       <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerLuck()">💾 Сохранить</button>
     </div>
     <div id="tower-luck-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
-
-  <!-- Mines max multiplier -->
-  <div class="settings-block">
-    <div class="settings-title">💎 МИНЫ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Ограничивает максимальный множитель выплаты в игре «Мины».<br>
-      <b style="color:var(--text)">25x</b> — без ограничений · <b style="color:var(--text)">2x</b> — минимальный выигрыш<br>
-      <span style="color:var(--muted);font-size:10px">При 3 бомбах максимум теоретически ~24x; при 24 бомбах — ~24x</span>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Максимальный коэф.:</span>
-        <span id="mines-max-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--red);font-weight:700">25.0x</span>
-      </div>
-      <input type="range" id="mines-max-slider" min="1" max="100" value="25" step="0.5"
-        oninput="onMinesMaxSlider(this.value)"
-        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setMinesMax(2)">2x — Строго</div>
-        <div class="pb" onclick="setMinesMax(5)">5x</div>
-        <div class="pb" onclick="setMinesMax(10)">10x</div>
-        <div class="pb" onclick="setMinesMax(25)">25x — По умолчанию</div>
-        <div class="pb" onclick="setMinesMax(100)">100x — Без лимита</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveMinesMax()">💾 Сохранить</button>
-    </div>
-    <div id="mines-max-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
-
-  <!-- Tower max floors -->
-  <div class="settings-block">
-    <div class="settings-title">🗼 БАШНЯ — МАКСИМАЛЬНОЕ КОЛИЧЕСТВО ЭТАЖЕЙ</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Изменяет высоту башни. Больше этажей — больше риск, выше коэффициент.<br>
-      <b style="color:var(--text)">10</b> — стандарт · <b style="color:var(--text)">5</b> — короткая · <b style="color:var(--text)">20</b> — хардкор<br>
-      <span style="color:var(--muted);font-size:10px">⚠️ Изменение вступает в силу для новых игр. Текущие игры продолжаются со старыми параметрами.</span>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Этажей:</span>
-        <span id="tower-floors-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">10</span>
-      </div>
-      <input type="range" id="tower-floors-slider" min="1" max="50" value="10" step="1"
-        oninput="onTowerFloorsSlider(this.value)"
-        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setTowerFloors(5)">5 — Мини</div>
-        <div class="pb" onclick="setTowerFloors(10)">10 — Стандарт</div>
-        <div class="pb" onclick="setTowerFloors(15)">15 — Расш.</div>
-        <div class="pb" onclick="setTowerFloors(20)">20 — Хардкор</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerFloors()">💾 Сохранить</button>
-    </div>
-    <div id="tower-floors-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
 </div>
@@ -752,8 +618,6 @@ async function loadRev(){
 // ── GLOBAL LUCK ──
 let glCoeff = 1.0;
 let towerLuckCoeff = 1.0;
-let minesMaxMult = 25.0;
-let towerMaxFloors = 10;
 
 function syncDependentSliders(v){
   // Euro
@@ -781,18 +645,6 @@ async function loadGl(){
     towerLuckCoeff = d.coeff;
     document.getElementById('tower-luck-val').textContent = towerLuckCoeff.toFixed(2);
     document.getElementById('tower-luck-slider').value = Math.round(towerLuckCoeff*100);
-  } catch{}
-  try{
-    const d = await api('/api/admin/mines_max_mult');
-    minesMaxMult = d.max_mult;
-    document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1)+'x';
-    document.getElementById('mines-max-slider').value = Math.min(100, minesMaxMult);
-  } catch{}
-  try{
-    const d = await api('/api/admin/tower_max_floors');
-    towerMaxFloors = d.max_floors;
-    document.getElementById('tower-floors-val').textContent = towerMaxFloors;
-    document.getElementById('tower-floors-slider').value = towerMaxFloors;
   } catch{}
 }
 function onGlSlider(v){
@@ -850,54 +702,6 @@ async function saveGlCoeff(){
     await api('/api/admin/global_luck','POST',{coeff:glCoeff});
     const st = document.getElementById('gl-status');
     st.textContent = '✅ Сохранено: '+glCoeff.toFixed(2);
-    st.style.color = 'var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка сохранения','err'); }
-}
-
-// ── MINES MAX MULTIPLIER ──
-function onMinesMaxSlider(v){
-  minesMaxMult = parseFloat(v);
-  const el = document.getElementById('mines-max-val');
-  el.textContent = minesMaxMult.toFixed(1)+'x';
-  el.style.color = minesMaxMult <= 5 ? 'var(--green)' : minesMaxMult <= 15 ? 'var(--gold)' : 'var(--red)';
-}
-function setMinesMax(v){
-  minesMaxMult = v;
-  document.getElementById('mines-max-val').textContent = v.toFixed(1)+'x';
-  document.getElementById('mines-max-slider').value = Math.min(100, v);
-  const el = document.getElementById('mines-max-val');
-  el.style.color = v <= 5 ? 'var(--green)' : v <= 15 ? 'var(--gold)' : 'var(--red)';
-}
-async function saveMinesMax(){
-  try{
-    await api('/api/admin/mines_max_mult','POST',{max_mult: minesMaxMult});
-    const st = document.getElementById('mines-max-status');
-    st.textContent = '✅ Сохранено: макс. '+minesMaxMult.toFixed(1)+'x';
-    st.style.color = 'var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка сохранения','err'); }
-}
-
-// ── TOWER MAX FLOORS ──
-function onTowerFloorsSlider(v){
-  towerMaxFloors = parseInt(v);
-  const el = document.getElementById('tower-floors-val');
-  el.textContent = towerMaxFloors;
-  el.style.color = towerMaxFloors <= 5 ? 'var(--green)' : towerMaxFloors <= 15 ? 'var(--blue)' : 'var(--red)';
-}
-function setTowerFloors(v){
-  towerMaxFloors = v;
-  document.getElementById('tower-floors-val').textContent = v;
-  document.getElementById('tower-floors-slider').value = v;
-  const el = document.getElementById('tower-floors-val');
-  el.style.color = v <= 5 ? 'var(--green)' : v <= 15 ? 'var(--blue)' : 'var(--red)';
-}
-async function saveTowerFloors(){
-  try{
-    await api('/api/admin/tower_max_floors','POST',{max_floors: towerMaxFloors});
-    const st = document.getElementById('tower-floors-status');
-    st.textContent = '✅ Сохранено: '+towerMaxFloors+' этажей';
     st.style.color = 'var(--green)';
     setTimeout(()=>st.textContent='',3000);
   } catch{ toast('Ошибка сохранения','err'); }

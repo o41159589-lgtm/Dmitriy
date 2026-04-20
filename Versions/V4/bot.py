@@ -61,7 +61,7 @@ active_towers: dict[int, dict] = {}  # uid -> tower game state
 
 TOWER_CELLS    = 3   # cells per floor
 TOWER_HOUSE    = 0.97
-TOWER_MAX_FLOORS = 10  # default fallback; actual value loaded from DB per-game
+TOWER_MAX_FLOORS = 10  # configurable: change this to adjust tower height
 
 def tower_mult(floor: int) -> float:
     """Multiplier for tower floor. Diminishing returns: big jumps early, small jumps late."""
@@ -1141,12 +1141,11 @@ async def api_mines_reveal(req: web.Request):
     else:
         game["revealed"].append(cell)
         safe_count  = len(game["revealed"])
-        _mines_max  = await db.get_mines_max_mult()
-        current_mult = min(mines_mult(safe_count, game["bombs"]), _mines_max)
+        current_mult = mines_mult(safe_count, game["bombs"])
         current_win  = round(game["bet"] * current_mult)
         # Next multiplier (if one more safe cell opened)
         safe_left    = 25 - game["bombs"] - safe_count
-        next_mult    = min(mines_mult(safe_count + 1, game["bombs"]), _mines_max) if safe_left > 0 else None
+        next_mult    = mines_mult(safe_count + 1, game["bombs"]) if safe_left > 0 else None
         # Auto cashout if all safe cells revealed
         if safe_left == 0:
             new_bal = await db.add_to_balance(uid, current_win)
@@ -1189,8 +1188,7 @@ async def api_mines_cashout(req: web.Request):
             "refunded": True, "mult": 1.0})
 
     safe_count   = len(game["revealed"])
-    _mines_max   = await db.get_mines_max_mult()
-    mult         = min(mines_mult(safe_count, game["bombs"]), _mines_max)
+    mult         = mines_mult(safe_count, game["bombs"])
     won          = round(game["bet"] * mult)
     profit       = won - game["bet"]
     new_bal      = await db.add_to_balance(uid, won)
@@ -1220,8 +1218,7 @@ async def api_mines_status(req: web.Request):
     if not game:
         return web.json_response({"active": False})
     safe_count   = len(game["revealed"])
-    _mines_max   = await db.get_mines_max_mult()
-    current_mult = min(mines_mult(safe_count, game["bombs"]), _mines_max)
+    current_mult = mines_mult(safe_count, game["bombs"])
     return web.json_response({
         "active": True,
         "game_id": game["game_id"],
@@ -1230,7 +1227,7 @@ async def api_mines_status(req: web.Request):
         "revealed": game["revealed"],
         "current_mult": current_mult,
         "current_win": round(game["bet"] * current_mult) if safe_count > 0 else 0,
-        "next_mult": min(mines_mult(safe_count + 1, game["bombs"]), _mines_max),
+        "next_mult": mines_mult(safe_count + 1, game["bombs"]),
     })
 
 def _is_admin(req):
@@ -1443,12 +1440,10 @@ async def api_tower_start(req: web.Request):
         "created_at": time.time(),
     }
 
-    tower_max_start = await db.get_tower_max_floors()
     return web.json_response({
         "ok":          True,
         "new_balance": new_bal,
         "next_mult":   tower_mult(1),
-        "tower_max":   tower_max_start,
     })
 
 
@@ -1468,8 +1463,7 @@ async def api_tower_step(req: web.Request):
     if not game: return web.json_response({"error": "no active game"}, status=400)
     if floor != game["floor"]:
         return web.json_response({"error": "wrong floor"}, status=400)
-    tower_max = await db.get_tower_max_floors()
-    if floor > tower_max:
+    if floor > TOWER_MAX_FLOORS:
         return web.json_response({"error": "tower completed"}, status=400)
 
     bomb_idx = random.randint(0, TOWER_CELLS - 1)  # fresh random each floor
@@ -1515,7 +1509,7 @@ async def api_tower_step(req: web.Request):
         game["floor"] = floor + 1
         mult        = tower_mult(floor)
         current_win = round(game["bet"] * mult)
-        reached_top = floor >= tower_max
+        reached_top = floor >= TOWER_MAX_FLOORS
 
         if reached_top:
             # Auto cashout at top floor
@@ -1531,7 +1525,7 @@ async def api_tower_step(req: web.Request):
             try:
                 await bot.send_message(uid,
                     f"🗼 <b>Башня покорена!</b>\n"
-                    f"🏆 Этаж {floor}/{tower_max} · ×{mult}\n"
+                    f"🏆 Этаж {floor}/{TOWER_MAX_FLOORS} · ×{mult}\n"
                     f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
                     parse_mode="HTML")
             except Exception: pass
@@ -1549,7 +1543,6 @@ async def api_tower_step(req: web.Request):
             "current_win": current_win,
             "reached_top": False,
             "next_mult":   tower_mult(floor + 1),
-            "tower_max":   tower_max,
         })
 
 
@@ -1615,44 +1608,6 @@ async def api_admin_set_tower_luck(req):
             f"Коэффициент удачи башни → {coeff}", incognito=False))
     return web.json_response({"ok":True,"coeff":coeff})
 
-async def api_admin_get_mines_max_mult(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    return web.json_response({"max_mult": await db.get_mines_max_mult()})
-
-async def api_admin_set_mines_max_mult(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json(); val = float(data.get("max_mult", 25.0))
-    incognito = bool(data.get("incognito", False))
-    await db.set_mines_max_mult(val)
-    if not incognito:
-        try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
-            u = await db.get_user(uid)
-            aname = u.get("first_name","Admin") if u else "Admin"
-        except: aname = "Admin"; uid = 0
-        fire_log(log_admin_action(uid, aname, "SET_MINES_MAX_MULT", 0, "Все игроки",
-            f"Макс. коэф. мин → {val}x", incognito=False))
-    return web.json_response({"ok":True,"max_mult":val})
-
-async def api_admin_get_tower_max_floors(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    return web.json_response({"max_floors": await db.get_tower_max_floors()})
-
-async def api_admin_set_tower_max_floors(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json(); val = int(data.get("max_floors", 10))
-    incognito = bool(data.get("incognito", False))
-    await db.set_tower_max_floors(val)
-    if not incognito:
-        try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
-            u = await db.get_user(uid)
-            aname = u.get("first_name","Admin") if u else "Admin"
-        except: aname = "Admin"; uid = 0
-        fire_log(log_admin_action(uid, aname, "SET_TOWER_MAX_FLOORS", 0, "Все игроки",
-            f"Макс. этажей башни → {val}", incognito=False))
-    return web.json_response({"ok":True,"max_floors":val})
-
 async def start_web():
     app = web.Application()
     app.router.add_get("/", serve_app)
@@ -1687,10 +1642,6 @@ async def start_web():
     app.router.add_post("/api/admin/global_luck",  api_admin_set_global_luck)
     app.router.add_get ("/api/admin/tower_luck",   api_admin_get_tower_luck)
     app.router.add_post("/api/admin/tower_luck",   api_admin_set_tower_luck)
-    app.router.add_get ("/api/admin/mines_max_mult",   api_admin_get_mines_max_mult)
-    app.router.add_post("/api/admin/mines_max_mult",   api_admin_set_mines_max_mult)
-    app.router.add_get ("/api/admin/tower_max_floors", api_admin_get_tower_max_floors)
-    app.router.add_post("/api/admin/tower_max_floors", api_admin_set_tower_max_floors)
     app.router.add_get("/{filename:.+}", serve_static)
     runner = web.AppRunner(app)
     await runner.setup()

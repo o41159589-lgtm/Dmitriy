@@ -50,8 +50,6 @@ async def init_db():
             );
             INSERT OR IGNORE INTO settings(key,value) VALUES ('global_luck_coeff','1.0');
             INSERT OR IGNORE INTO settings(key,value) VALUES ('tower_luck_coeff','1.0');
-            INSERT OR IGNORE INTO settings(key,value) VALUES ('mines_max_mult','25.0');
-            INSERT OR IGNORE INTO settings(key,value) VALUES ('tower_max_floors','10');
         """)
         # Migration: add banned column if missing
         try:
@@ -311,30 +309,3 @@ async def set_banned(uid: int, banned: bool):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("UPDATE users SET banned=? WHERE user_id=?", (1 if banned else 0, uid))
         await db.commit()
-async def get_mines_max_mult() -> float:
-    async with aiosqlite.connect(DB_PATH) as db_conn:
-        async with db_conn.execute("SELECT value FROM settings WHERE key='mines_max_mult'") as cur:
-            row = await cur.fetchone()
-            try: return float(row[0]) if row else 25.0
-            except: return 25.0
-
-async def set_mines_max_mult(val: float):
-    val = max(1.0, min(1000.0, val))
-    async with aiosqlite.connect(DB_PATH) as db_conn:
-        await db_conn.execute(
-            "INSERT OR REPLACE INTO settings(key,value) VALUES('mines_max_mult',?)", (str(val),))
-        await db_conn.commit()
-
-async def get_tower_max_floors() -> int:
-    async with aiosqlite.connect(DB_PATH) as db_conn:
-        async with db_conn.execute("SELECT value FROM settings WHERE key='tower_max_floors'") as cur:
-            row = await cur.fetchone()
-            try: return int(row[0]) if row else 10
-            except: return 10
-
-async def set_tower_max_floors(val: int):
-    val = max(1, min(50, val))
-    async with aiosqlite.connect(DB_PATH) as db_conn:
-        await db_conn.execute(
-            "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_max_floors',?)", (str(val),))
-        await db_conn.commit()

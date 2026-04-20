@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck Casino</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── PAGES ── */
+.page{display:none;min-height:calc(100vh - var(--nav-h));}
+.page.active{display:block;}
+
+/* ── HOME ── */
+.home-content{padding:0 14px 24px;}
+.hero{
+  background:linear-gradient(135deg,#0d0d1e,#160a2e,#0a1020);
+  padding:28px 20px 24px;text-align:center;
+  margin:0 -14px 14px;position:relative;overflow:hidden;
+}
+.hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(245,197,66,.1),transparent 70%);}
+.hero-logo{
+  width:64px;height:64px;border-radius:18px;margin:0 auto 12px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 30px rgba(245,197,66,.15);
+}
+.hero-logo img{width:46px;height:46px;object-fit:contain;}
+.hero h1{
+  font-family:'Orbitron',monospace;font-size:26px;font-weight:900;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold) 40%,#fff 60%,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:5px;position:relative;
+}
+.hero p{color:var(--muted);font-size:13px;line-height:1.5;position:relative;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.sc{
+  background:rgba(255,255,255,0.055);
+  border:1px solid rgba(255,255,255,0.13);
+  border-radius:16px;
+  padding:14px;text-align:center;
+  backdrop-filter:blur(24px) saturate(1.6) brightness(1.05);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6) brightness(1.05);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),inset 1px 0 0 rgba(255,255,255,0.06),0 6px 20px rgba(0,0,0,0.28);
+  position:relative;overflow:hidden;
+}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);pointer-events:none;}
+.sc::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,transparent 55%);border-radius:inherit;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);}
+.sc-ico{font-size:22px;margin-bottom:4px;}
+.sc-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.sc-val{font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700;}
+.topup-btn{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:14px;background:linear-gradient(135deg,#7b2fff,#4361ee);
+  border:none;border-radius:16px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;margin-bottom:14px;
+  box-shadow:0 4px 20px rgba(124,47,255,.3);transition:transform .1s;}
+.topup-btn:active{transform:scale(.98);}
+.irow{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.irow:last-child{border-bottom:none;}
+.irow-l{color:var(--muted);font-size:14px;}
+.irow-r{color:var(--text);font-weight:600;}
+
+/* ── GAMES (roulette page) ── */
+.games-content{padding:14px;}
+.section-label{font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);
+  letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;}
+.game-card{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;overflow:hidden;margin-bottom:14px;
+  backdrop-filter:blur(24px) saturate(1.6);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 8px 28px rgba(0,0,0,0.32);
+  cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;text-decoration:none;display:block;position:relative;
+}
+.game-card:active{transform:scale(.98);}
+.game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);}
+.gc-banner{height:110px;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;}
+.gc-banner.euro{background:linear-gradient(135deg,#0a1a0a,#0a2810);}
+.gc-banner.gta{background:linear-gradient(135deg,#0a0a1e,#1a0830);}
+.gc-glow-euro{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(45,198,83,.12),transparent 70%);}
+.gc-glow-gta{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(123,47,255,.14),transparent 70%);}
+.gc-preview{font-size:56px;position:relative;z-index:1;filter:drop-shadow(0 0 20px rgba(255,255,255,.15));}
+.gc-info{padding:14px 16px;}
+.gc-title{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.gc-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:8px;}
+.gc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.gc-tag{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;padding:3px 8px;font-size:11px;color:var(--muted);font-weight:600;}
+.gc-arrow{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  color:var(--gold);font-size:22px;opacity:.5;}
+
+/* ── INVENTORY ── */
+.inv-content{padding:14px;}
+.inv-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.istat{
+  background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;padding:12px 8px;text-align:center;
+  backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 4px 14px rgba(0,0,0,0.25);
+  position:relative;overflow:hidden;
+}
+.istat::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,transparent 55%);border-radius:inherit;}
+.istat-val{font-family:'Orbitron',monospace;font-size:20px;color:var(--gold);font-weight:700;}
+.istat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+.inv-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.inv-tab{flex:1;padding:9px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;color:var(--muted);font-weight:700;font-size:12px;
+  cursor:pointer;text-align:center;transition:all .2s;}
+.inv-tab.active{background:var(--gold);color:#000;border-color:var(--gold);}
+.inv-item{display:flex;align-items:center;gap:14px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.11);
+  border-radius:16px;padding:14px;margin-bottom:10px;
+  backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 14px rgba(0,0,0,0.22);}
+.inv-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;
+  font-size:24px;flex-shrink:0;}
+.inv-name{font-weight:700;font-size:15px;margin-bottom:3px;}
+.inv-meta{font-size:12px;color:var(--muted);}
+.inv-qty{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);font-weight:700;}
+
+/* ── HISTORY ── */
+.hist-content{padding:14px;}
+.filt{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.fb{flex-shrink:0;padding:8px 12px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.11);
+  border-radius:10px;color:var(--muted);font-weight:700;font-size:12px;
+  cursor:pointer;transition:all .2s;
+  backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
+.fb.a{background:var(--gold);color:#000;border-color:var(--gold);}
+.hstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.hs{background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;padding:12px;text-align:center;
+  backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 4px 14px rgba(0,0,0,0.22);}
+.hs-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.hs-v{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;}
+.hs-v.gr{color:var(--green);}.hs-v.re{color:var(--red);}
+.hi{display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;padding:11px 13px;margin-bottom:8px;
+  backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.09),0 3px 10px rgba(0,0,0,0.18);}
+.hi-ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:16px;flex-shrink:0;}
+.hi-ic.win{background:rgba(45,198,83,.15);}
+.hi-ic.lose{background:rgba(230,57,70,.15);}
+.hi-ic.deposit,.hi-ic.ref{background:rgba(76,201,240,.15);}
+.hi-ic.gift_sent,.hi-ic.gift_received{background:rgba(245,197,66,.15);}
+.hi-b{flex:1;}
+.hi-t{font-weight:600;font-size:14px;}
+.hi-s{font-size:12px;color:var(--muted);margin-top:2px;}
+.hi-a{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;}
+.hi-a.p{color:var(--green);}.hi-a.n{color:var(--red);}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-i{font-size:48px;margin-bottom:12px;}
+
+/* ── SHOP ── */
+.shop-content{padding:14px;}
+.shop-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.shop-tab{flex:1;padding:9px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;color:var(--muted);font-weight:700;font-size:12px;
+  cursor:pointer;text-align:center;transition:all .2s;}
+.shop-tab.active{background:var(--gold);color:#000;border-color:var(--gold);}
+.balance-banner{
+  background:linear-gradient(135deg,rgba(245,197,66,0.1),rgba(232,168,0,0.05));
+  border:1px solid rgba(245,197,66,.22);
+  border-radius:14px;padding:11px 14px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);
+  box-shadow:inset 0 1px 0 rgba(245,197,66,0.15),0 4px 16px rgba(0,0,0,0.22);}
+.bb-label{font-size:13px;color:var(--muted);}
+.bb-val{font-family:'Orbitron',monospace;font-size:17px;color:var(--gold);font-weight:700;}
+.gift-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.gift-card{
+  background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);
+  border-radius:18px;padding:14px;text-align:center;
+  backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.13),inset 1px 0 0 rgba(255,255,255,0.06),0 6px 20px rgba(0,0,0,0.3);
+  cursor:pointer;transition:border-color .25s,transform .15s,box-shadow .25s;position:relative;overflow:hidden;}
+.gift-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);}
+.gift-card:hover{border-color:rgba(245,197,66,0.3);box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),0 10px 30px rgba(0,0,0,0.4);}
+.gift-card:active{transform:scale(.97);}
+.gift-card.limited{border-color:rgba(230,57,70,.3);}
+.gift-card.limited::after{content:'ЛИМИТ';position:absolute;top:8px;right:-12px;
+  background:var(--red);color:#fff;font-size:8px;font-weight:700;
+  font-family:'Orbitron',monospace;padding:2px 20px;transform:rotate(35deg);}
+.gift-emoji{font-size:40px;margin-bottom:7px;display:block;line-height:1;}
+.gift-name{font-weight:700;font-size:13px;margin-bottom:3px;line-height:1.3;}
+.gift-desc{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4;}
+.gift-price{display:inline-flex;align-items:center;gap:4px;
+  background:rgba(245,197,66,.12);border:1px solid rgba(245,197,66,.25);border-radius:7px;
+  padding:4px 9px;font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);
+  font-weight:700;margin-bottom:8px;}
+.gift-remaining{font-size:10px;color:var(--red);margin-bottom:6px;}
+.gift-buy-btn{width:100%;padding:8px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:9px;color:#000;font-family:'Orbitron',monospace;
+  font-size:10px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.gift-buy-btn:active{opacity:.7;}
+.gift-loading{text-align:center;padding:40px 20px;color:var(--muted);}
+.gift-loading-spinner{font-size:32px;animation:spin 1s linear infinite;display:block;margin-bottom:12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.owner-note{background:rgba(123,47,255,.08);border:1px solid rgba(123,47,255,.2);
+  border-radius:12px;padding:11px 13px;margin-bottom:14px;font-size:12px;
+  color:rgba(200,180,255,.8);line-height:1.5;}
+
+/* ── BUY MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.65);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  z-index:200;display:none;align-items:flex-end;}
+.modal-ov.open{display:flex;}
+.modal{
+  background:rgba(14,14,26,0.82);
+  backdrop-filter:blur(32px) saturate(1.8);-webkit-backdrop-filter:blur(32px) saturate(1.8);
+  border-radius:24px 24px 0 0;
+  border-top:1px solid rgba(255,255,255,0.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 -8px 40px rgba(0,0,0,0.5);
+  padding:18px 18px calc(var(--nav-h) + 16px);width:100%;max-height:88vh;overflow-y:auto;
+  animation:su .3s ease;}
+@keyframes su{from{transform:translateY(100%)}}
+.mh{width:40px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px;margin:0 auto 14px;}
+.mt{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);
+  margin-bottom:14px;text-align:center;}
+.modal-gift-preview{display:flex;align-items:center;gap:13px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.13);
+  border-radius:14px;padding:13px;margin-bottom:14px;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
+.mg-icon{font-size:34px;}
+.mg-name{font-weight:700;font-size:15px;}
+.mg-price{font-family:'Orbitron',monospace;font-size:13px;color:var(--gold);margin-top:3px;}
+.form-group{margin-bottom:11px;}
+.form-label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block;font-weight:600;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;
+  outline:none;resize:none;}
+.form-input:focus{border-color:var(--gold);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:11px 13px;margin-bottom:11px;}
+.toggle-label{font-size:13px;font-weight:600;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--bg);border-radius:12px;
+  border:1px solid var(--border);cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;
+  border-radius:50%;background:#888;top:2px;left:2px;transition:transform .2s,background .2s;}
+.toggle input:checked+.toggle-slider{background:rgba(45,198,83,.2);border-color:var(--green);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--green);}
+.recipient-choice{display:flex;gap:7px;margin-bottom:11px;}
+.rc-btn{flex:1;padding:9px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;color:var(--muted);font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .2s;}
+.rc-btn.active{background:rgba(123,47,255,.2);border-color:var(--purple);color:var(--text);}
+.msg-quick{display:flex;gap:6px;margin-top:6px;}
+.mqb{flex:1;padding:7px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-align:center;}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+.btn-cancel{padding:13px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:14px;color:var(--muted);font-family:'Orbitron',monospace;font-size:12px;
+  font-weight:700;cursor:pointer;}
+.btn-confirm{padding:13px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:12px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.btn-confirm:disabled{opacity:.4;cursor:not-allowed;}
+.error-msg{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);
+  border-radius:10px;padding:10px 13px;color:var(--red);font-size:13px;
+  margin-bottom:11px;display:none;}
+.error-msg.show{display:block;}
+
+/* ── GIFT ANIMATIONS ── */
+@keyframes gift-float{
+  0%,100%{transform:translateY(0) rotate(-3deg) scale(1);}
+  25%{transform:translateY(-6px) rotate(2deg) scale(1.05);}
+  75%{transform:translateY(-3px) rotate(-1deg) scale(1.02);}
+}
+@keyframes gift-sparkle{
+  0%,100%{opacity:0;transform:scale(0) rotate(0deg);}
+  50%{opacity:1;transform:scale(1) rotate(180deg);}
+}
+@keyframes gift-shine{
+  0%{background-position:-200% center;}
+  100%{background-position:200% center;}
+}
+.gift-card .gift-emoji{
+  display:block;font-size:40px;margin-bottom:7px;line-height:1;
+  animation:gift-float 2.8s ease-in-out infinite;
+  position:relative;
+}
+.gift-card:hover .gift-emoji{animation-duration:1.5s;}
+.gift-card::after{
+  content:'✨';position:absolute;top:6px;right:8px;font-size:12px;
+  animation:gift-sparkle 2s ease-in-out infinite;
+  animation-delay:var(--spark-delay,0s);
+}
+.gift-card:nth-child(2n)::after{--spark-delay:.5s;}
+.gift-card:nth-child(3n)::after{--spark-delay:1s;}
+.gift-card:nth-child(4n)::after{--spark-delay:1.5s;}
+.gift-card .gift-price{
+  background:linear-gradient(90deg,rgba(245,197,66,.12),rgba(255,255,255,.15),rgba(245,197,66,.12));
+  background-size:200% auto;
+  animation:gift-shine 3s linear infinite;
+}
+/* ── О НАС ── */
+.about-person{border-top:1px solid rgba(255,255,255,.06);}
+.about-person:first-child{border-top:none;}
+.ap-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;}
+.ap-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+.ap-title{flex:1;font-weight:700;font-size:14px;}
+.ap-arr{color:var(--muted);font-size:18px;transition:transform .2s;}
+.ap-arr.open{transform:rotate(90deg);}
+.ap-content{padding:4px 14px 12px 52px;font-size:13px;line-height:1.7;color:rgba(232,232,240,.8);}
+.ap-content p{margin-bottom:5px;}
+.ap-content a{color:var(--gold);text-decoration:none;}
+.ap-content a:hover{text-decoration:underline;}
+/* ── TOPUP MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  z-index:200;display:none;align-items:flex-end;}
+.ov.open{display:flex;}
+.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.ta{padding:16px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
+.ta.sel{border-color:var(--gold);box-shadow:inset 0 1px 0 rgba(245,197,66,0.2),0 0 0 1px rgba(245,197,66,0.15);}
+.ta-c{font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700;}
+.ta-s{font-size:13px;color:var(--muted);margin-top:4px;}
+.ta-confirm{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;cursor:pointer;}
+@keyframes spin-once{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="liquid-bg"></div>
+
+<!-- ══════════════ HOME ══════════════ -->
+<div class="page active" id="page-home">
+  <div class="home-content">
+    <div class="hero">
+      <div class="hero-logo">
+        <img src="logo.png" alt="TopLuck" onerror="this.parentNode.innerHTML='🍀'">
+      </div>
+      <h1>TOPLUCK</h1>
+      <p>Добро пожаловать! Испытай удачу.</p>
+    </div>
+    <div class="sgrid">
+      <div class="sc"><div class="sc-ico">🪙</div><div class="sc-lbl">Баланс</div><div class="sc-val" id="h-bal">—</div></div>
+      <div class="sc"><div class="sc-ico">🎲</div><div class="sc-lbl">Игр</div><div class="sc-val" id="h-spins">—</div></div>
+      <div class="sc"><div class="sc-ico">🏆</div><div class="sc-lbl">Побед</div><div class="sc-val" id="h-wins">—</div></div>
+      <div class="sc"><div class="sc-ico">📈</div><div class="sc-lbl">Выиграно</div><div class="sc-val" id="h-won">—</div></div>
+    </div>
+    <button class="topup-btn" onclick="openTopup()">
+      <span style="font-size:20px">⭐</span> Пополнить (1 ⭐ = 10 🪙)
+    </button>
+    <!-- О нас -->
+    <div class="card" id="about-card">
+      <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAbout()">
+        <span>ℹ️ О нас</span>
+        <span id="about-arrow" style="font-size:16px;color:var(--muted);transition:transform .25s">›</span>
+      </div>
+      <div id="about-body" style="display:none">
+        <!-- Project intro -->
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="font-size:28px">🎰</span>
+            <div>
+              <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);font-weight:700">TOPLUCK CASINO</div>
+              <div style="font-size:11px;color:var(--muted)">Telegram Mini App</div>
+            </div>
+          </div>
+          <p style="font-size:13px;line-height:1.65;color:rgba(232,232,240,.8)">
+            <b style="color:var(--text)">TopLuck</b> — это честное Telegram-казино прямо в вашем мессенджере. Крутите рулетку, покоряйте мины, штурмуйте башню и выигрывайте реальные Telegram Stars ⭐<br><br>
+            🔒 Все операции прозрачны · 🎁 Магазин подарков · 🏆 Реферальная программа
+          </p>
+        </div>
+        <!-- Owner -->
+        <div class="about-person" onclick="togglePerson('owner')">
+          <div class="ap-head">
+            <span class="ap-icon">👑</span>
+            <div class="ap-title">Владелец проекта</div>
+            <span class="ap-arr" id="arr-owner">›</span>
+          </div>
+        </div>
+        <div class="ap-content" id="cnt-owner" style="display:none">
+          <p>Привет! Я <b>Smishek</b> — владелец <a href="https://t.me/T0pNetbot" target="_blank">TOPLUCK</a>. Проект создан чтобы вы могли безопасно пользоваться интернетом. Все мои проекты: <a href="https://t.me/smishik_bio" target="_blank">@smishik_bio</a>.</p>
+          <p>💬 Связь: <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
+          <p>💵 Донаты приветствуются! Поддержи проект звёздами — отправь 🌟 в ЛС <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
+        </div>
+        <!-- Developer -->
+        <div class="about-person" onclick="togglePerson('dev')">
+          <div class="ap-head">
+            <span class="ap-icon">🧑‍💻</span>
+            <div class="ap-title">Разработчик бота</div>
+            <span class="ap-arr" id="arr-dev">›</span>
+          </div>
+        </div>
+        <div class="ap-content" id="cnt-dev" style="display:none">
+          <p>Привет! Я <b>Артем</b> — разработчик этого бота. Занимаюсь разработкой Telegram-ботов и не только. Если нужен бот — пиши, сделаем 🤝</p>
+          <p>Мои проекты: <a href="https://t.me/PythonPr0gramist" target="_blank">@PythonPr0gramist</a></p>
+          <p>👤 <a href="https://sceletonchik.github.io/Portfolio/portfolio.html" target="_blank">Портфолио</a></p>
+          <p>💬 Связь: <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
+          <p>💵 Донаты — отправь 🌟 звёзды в ЛС <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
+          <p>📱 TON-кошелёк: <code id="ton-wallet" onclick="copyTon()" style="font-size:10px;word-break:break-all;cursor:pointer;background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);border-radius:6px;padding:3px 7px;display:inline-block;transition:background .2s;" title="Нажми чтобы скопировать">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code> <span style="font-size:10px;color:var(--muted)">📋</span></p>
+          <p style="color:var(--muted);font-size:12px">Бла-бла-бла, кто-то вообще это читает? 😄</p>
+          <p style="font-size:12px;color:var(--muted)">Боты для <a href="https://t.me/Smishek" target="_blank">@Smishek</a>:<br>
+            🔘 <a href="https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky" target="_blank">TopNet (@T0pNetbot)</a><br>
+            🔘 <a href="https://t.me/Supp0rt_R0bot" target="_blank">Support (@Supp0rt_R0bot)</a><br>
+            🔘 <a href="https://t.me/Crocodi1ebot" target="_blank">Crocodile (@Crocodi1ebot)</a>
+          </p>
+          <p style="font-size:11px;color:var(--muted)">Ps: Бот сделан в кратчайшие сроки. Нашли баг? Пишите в поддержку — могут дать награду 😉</p>
+        </div>
+        <!-- Tech -->
+        <div class="about-person" onclick="togglePerson('tech')">
+          <div class="ap-head">
+            <span class="ap-icon">🏗</span>
+            <div class="ap-title">Технарь</div>
+            <span class="ap-arr" id="arr-tech">›</span>
+          </div>
+        </div>
+        <div class="ap-content" id="cnt-tech" style="display:none">
+          <p>Привет! Я — <b>Никита</b>. Занимаюсь настройкой и обслуживанием серверов TOPLUCK.</p>
+          <p>Нужна помощь с кодингом или проектом (возможно бесплатно)? Пишите 😉</p>
+          <p>🌐 Связь: <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p>
+          <p>🎇 Все проекты: <a href="https://unionium.org" target="_blank">unionium.org</a></p>
+          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают или сеть не работает? Пишите мне — исправим!</p>
+        </div>
+        <!-- Sponsor (collapsible) -->
+        <div class="about-person" style="border-bottom:none" onclick="togglePerson('sponsor')">
+          <div class="ap-head">
+            <span class="ap-icon">💎</span>
+            <div class="ap-title">Спонсор</div>
+            <span class="ap-arr" id="arr-sponsor">›</span>
+          </div>
+        </div>
+        <div class="ap-content" id="cnt-sponsor" style="display:none;border-bottom:none">
+          <p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p>
+          <p style="color:var(--muted);font-size:12px">Благодаря поддержке спонсора TopLuck продолжает развиваться и радовать игроков!</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">🔗 Реферальная программа</div>
+      <div class="card-body">
+        <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
+        <button onclick="copyRef()" style="margin-top:10px;width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ INVENTORY ══════════════ -->
+<div class="page" id="page-inventory">
+  <div class="inv-content">
+    <div class="inv-stats">
+      <div class="istat"><div class="istat-val" id="stat-spins">—</div><div class="istat-lbl">Игр</div></div>
+      <div class="istat"><div class="istat-val" id="stat-wins">—</div><div class="istat-lbl">Побед</div></div>
+      <div class="istat"><div class="istat-val" id="stat-won">—</div><div class="istat-lbl">Выиграно</div></div>
+    </div>
+    <div class="inv-tabs">
+      <div class="inv-tab active" onclick="invTab('items',this)">🎁 Предметы</div>
+      <div class="inv-tab" onclick="invTab('history',this)">📋 История</div>
+    </div>
+    <div id="inv-items"><div class="empty"><div class="empty-i">📭</div><p>Инвентарь пуст</p></div></div>
+    <div id="inv-history" style="display:none">
+      <div class="hstats">
+        <div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="inv-won">0</div></div>
+        <div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="inv-lost">0</div></div>
+      </div>
+      <div id="inv-hist-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ GAMES ══════════════ -->
+<div class="page" id="page-games">
+  <div class="games-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="section-label">🎮 Выбери игру</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="bal-chip" style="font-size:13px;padding:6px 11px;">🪙 <span id="r-bal">0</span></div>
+      </div>
+    </div>
+    <a class="game-card" href="european_roulette.html">
+      <div class="gc-banner euro"><div class="gc-glow-euro"></div><div class="gc-preview">🎰</div></div>
+      <div class="gc-info">
+        <div class="gc-title">Европейская рулетка</div>
+        <div class="gc-desc">Настоящее казино! Крутящееся колесо, 37 секторов. Ставь на цвет, чётность или число.</div>
+        <div class="gc-tags"><span class="gc-tag">×0–×14</span><span class="gc-tag">1 игрок</span><span class="gc-tag">от 10 🪙</span></div>
+      </div>
+      <div class="gc-arrow">›</div>
+    </a>
+    <a class="game-card" href="gta_roulette.html">
+      <div class="gc-banner gta"><div class="gc-glow-gta"></div><div class="gc-preview">🏙</div></div>
+      <div class="gc-info">
+        <div class="gc-title">GTA RP Рулетка</div>
+        <div class="gc-desc">Общий банк! Чем больше ставка — тем выше шанс выиграть всё.</div>
+        <div class="gc-tags"><span class="gc-tag">Общий банк</span><span class="gc-tag">2+ игроков</span><span class="gc-tag">3–8% комиссия</span><span class="gc-tag">от 10 🪙</span></div>
+      </div>
+      <div class="gc-arrow">›</div>
+    </a>
+    <a class="game-card" href="mines.html" style="border-color:rgba(230,57,70,.2);">
+      <div class="gc-banner" style="background:linear-gradient(135deg,#1a0608,#280a0a);">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(230,57,70,.14),transparent 70%);"></div>
+        <div class="gc-preview">💣</div>
+      </div>
+      <div class="gc-info">
+        <div class="gc-title">Мины</div>
+        <div class="gc-desc">Открывай клетки и собирай алмазы 💎! Одна бомба — и всё потеряно. Кешаутись вовремя!</div>
+        <div class="gc-tags"><span class="gc-tag">×0–×24</span><span class="gc-tag">1–24 бомбы</span><span class="gc-tag">от 10 🪙</span></div>
+      </div>
+      <div class="gc-arrow" style="color:var(--red)">›</div>
+    </a>
+    <a class="game-card" href="tower.html" style="border-color:rgba(76,201,240,.2);">
+      <div class="gc-banner" style="background:linear-gradient(135deg,#060e1a,#0a1828);">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.14),transparent 70%);"></div>
+        <div class="gc-preview">🗼</div>
+      </div>
+      <div class="gc-info">
+        <div class="gc-title">Башня</div>
+        <div class="gc-desc">Поднимайся по этажам! 3 клетки — 1 мина. Каждый этаж умножает ставку. Взорвешься — потеряешь всё!</div>
+        <div class="gc-tags"><span class="gc-tag">×0-×2.81+</span><span class="gc-tag">от 10 🪙</span></div>
+      </div>
+      <div class="gc-arrow" style="color:var(--blue)">›</div>
+    </a>
+  </div>
+</div>
+
+<!-- ══════════════ HISTORY ══════════════ -->
+<div class="page" id="page-history">
+  <div class="hist-content">
+    <div class="filt">
+      <div class="fb a" onclick="setF(this,'all')">Все</div>
+      <div class="fb" onclick="setF(this,'win')">Победы</div>
+      <div class="fb" onclick="setF(this,'lose')">Проиг.</div>
+      <div class="fb" onclick="setF(this,'deposit')">Пополн.</div>
+    </div>
+    <div class="hstats">
+      <div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="s-won">0</div></div>
+      <div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="s-lost">0</div></div>
+    </div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- ══════════════ SHOP ══════════════ -->
+<div class="page" id="page-shop">
+  <div class="shop-content">
+    <div class="balance-banner">
+      <div><div class="bb-label">Ваш баланс</div><div class="bb-val">🪙 <span id="shop-bal">—</span></div></div>
+      <button onclick="openTopup()" style="background:linear-gradient(135deg,#7b2fff,#4361ee);border:none;border-radius:10px;color:#fff;padding:7px 12px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;">+ ПОПОЛНИТЬ</button>
+    </div>
+    <div class="shop-tabs">
+      <div class="shop-tab active" onclick="shopTab('bot',this)">🤖 От бота</div>
+      <div class="shop-tab" onclick="shopTab('owner',this)">👑 От владельца</div>
+    </div>
+    <div id="shop-bot">
+      <div class="owner-note" style="border-color:rgba(230,57,70,.3);background:rgba(230,57,70,.07);color:rgba(255,200,200,.9);">
+        🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>
+        ⛔ <b>Нельзя конвертировать в звёзды</b> — эти подарки non-transferable по условиям Telegram.
+      </div>
+      <div id="bot-gifts-inner">
+        <div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div>
+      </div>
+    </div>
+    <div id="shop-owner" style="display:none">
+      <div class="owner-note">
+        👑 <b>Подарок от владельца</b> — те же Telegram-подарки, но отправляет лично владелец.<br>
+        ✅ <b>Можно конвертировать в звёзды</b> — владелец отправляет стандартный подарок, который получатель может конвертировать.<br><br>
+        После покупки владелец получит уведомление и свяжется с вами в Telegram.
+      </div>
+      <div class="gift-grid" id="owner-gifts-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ BUY MODAL ══════════════ -->
+<div class="modal-ov" id="buy-modal" onclick="closeBuyModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"></div>
+    <div class="mt">🎁 КУПИТЬ ПОДАРОК</div>
+    <div class="error-msg" id="buy-error"></div>
+    <div class="modal-gift-preview">
+      <div class="mg-icon" id="m-icon">🎁</div>
+      <div><div class="mg-name" id="m-name">—</div><div class="mg-price">🪙 <span id="m-price">—</span> монет</div></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Кому:</label>
+      <div class="recipient-choice">
+        <div class="rc-btn active" onclick="setRecipient('self',this)">🙋 Себе</div>
+        <div class="rc-btn" onclick="setRecipient('other',this)">👤 По ID</div>
+      </div>
+      <div id="m-recipient-wrap" style="display:none;margin-top:6px">
+        <input class="form-input" id="m-recipient" type="number" placeholder="Telegram ID получателя" inputmode="numeric">
+      </div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">🎭 Анонимно</span>
+      <label class="toggle"><input type="checkbox" id="m-anon"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Подпись (необязательно):</label>
+      <textarea class="form-input" id="m-msg" rows="2" placeholder="Текст подписи..."></textarea>
+      <div class="msg-quick">
+        <div class="mqb" onclick="document.getElementById('m-msg').value=''">Без подписи</div>
+        <div class="mqb" onclick="setAutoMsg()">Авто 🤖</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBuyModal()">Отмена</button>
+      <button class="btn-confirm" id="m-confirm" onclick="confirmPurchase()">Купить ⭐</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOPUP MODAL ══════════════ -->
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)">
+  <div class="modal">
+    <div class="mh"></div>
+    <div class="mt">💳 ПОПОЛНЕНИЕ</div>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p>
+    <div class="ta-grid">
+      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 🪙</div></div>
+      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1000 🪙</div></div>
+      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2500 🪙</div></div>
+      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5000 🪙</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="color:var(--muted);font-size:13px;white-space:nowrap">Или введите:</span>
+      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Своя сумма..." oninput="onCustomInput()"
+        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+          padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:14px;outline:none;text-align:center;"/>
+      <span style="color:var(--gold)">⭐</span>
+    </div>
+    <button class="ta-confirm" onclick="confirmTopup()">Оплатить <span id="ta-amt">50</span> ⭐</button>
+  </div>
+</div>
+
+<!-- ══════════════ NAV (5 tabs: Главная, Инвентарь, Игры, История, Магазин) ══════════════ -->
+<nav class="nav">
+  <div class="nav-ind" id="nav-ind" style="width:20%"></div>
+  <button class="nav-btn active" onclick="showPage('home',this,0)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Главная
+  </button>
+  <button class="nav-btn" onclick="showPage('inventory',this,1)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    Инвентарь
+  </button>
+  <button class="nav-btn" onclick="showPage('games',this,2)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+    Игры
+  </button>
+  <button class="nav-btn" onclick="showPage('history',this,3)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    История
+  </button>
+  <button class="nav-btn" onclick="showPage('shop',this,4)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    Магазин
+  </button>
+</nav>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID        = tg?.initDataUnsafe?.user?.id || 0;
+const USERNAME   = tg?.initDataUnsafe?.user?.username || '';
+const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
+let BOT = 'DmitriyProjectBot'; // overridden from /api/config
+const REF        = `https://t.me/${BOT}?start=ref_${UID}`;
+
+let userData  = null;
+let histData  = [];
+let curF      = 'all';
+let topupAmt  = 50;
+let pendingGift    = null;
+let pendingSource  = 'bot';
+let recipientMode  = 'self';
+let shopGifts      = [];
+let shopLoaded     = false;
+
+// ── OWNER GIFTS: same as bot gifts but sent by owner ──
+// (populated dynamically from shopGifts after loadShopGifts)
+
+// ── TOAST ──
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── API ──
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+// ── REGISTER USER on first load ──
+async function initUser(){
+  if(!UID) return;
+  try {
+    userData = await post('/api/ensure_user',{
+      user_id: UID, username: USERNAME, first_name: FIRST_NAME
+    });
+  } catch(e) {
+    userData = await get(`/api/user/${UID}`).catch(()=>null);
+  }
+  updateUI();
+}
+
+async function loadUser(){
+  if(!UID) return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  updateUI();
+}
+
+function updateUI(){
+  if(!userData) return;
+  const bal = userData.balance??0;
+  document.getElementById('h-bal').textContent    = bal;
+  document.getElementById('h-spins').textContent  = userData.spins??0;
+  document.getElementById('h-wins').textContent   = userData.wins??0;
+  document.getElementById('h-won').textContent    = userData.total_won??0;
+  document.getElementById('stat-spins').textContent = userData.spins??0;
+  document.getElementById('stat-wins').textContent  = userData.wins??0;
+  document.getElementById('stat-won').textContent   = userData.total_won??0;
+  const rbal = document.getElementById('r-bal');
+  if(rbal) rbal.textContent = bal;
+  document.getElementById('shop-bal').textContent = bal;
+}
+
+// ── NAV ──
+function showPage(n, btn, i){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('nav-ind').style.left=(i*20)+'%';
+  if(n==='history') renderHistory();
+  if(n==='inventory') loadInventory();
+  if(n==='shop' && !shopLoaded) loadShopGifts();
+  if(n==='games') loadUser();
+}
+
+function copyRef(){
+  navigator.clipboard?.writeText(REF)
+    .then(()=>toast('Ссылка скопирована!','ok'))
+    .catch(()=>toast(REF,'info'));
+}
+
+// refreshBalance removed
+
+// ── HISTORY ──
+async function renderHistory(){
+  histData = await get(`/api/history/${UID}`).catch(()=>[]);
+  let items = curF==='all'?histData:histData.filter(i=>i.type===curF);
+  let won=0, lost=0;
+  histData.forEach(i=>{
+    if(['win','deposit','ref','gift_received'].includes(i.type)) won+=i.amount;
+    if(['lose','gift_sent'].includes(i.type)) lost+=i.amount;
+  });
+  document.getElementById('s-won').textContent=won;
+  document.getElementById('s-lost').textContent=lost;
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание'};
+  const list=document.getElementById('hist-list');
+  if(!items.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
+  list.innerHTML=items.slice(0,60).map(i=>{
+    const d=new Date(i.created_at*1000);
+    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos=['win','deposit','ref','gift_received'].includes(i.type);
+    return `<div class="hi">
+      <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
+      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
+    </div>`;
+  }).join('');
+}
+function setF(el,f){
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));
+  el.classList.add('a'); curF=f; renderHistory();
+}
+
+// ── INVENTORY ──
+function invTab(tab, el){
+  document.querySelectorAll('.inv-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('inv-items').style.display = tab==='items'?'':'none';
+  document.getElementById('inv-history').style.display = tab==='history'?'':'none';
+  if(tab==='history') renderInvHistory();
+}
+
+async function loadInventory(){
+  if(!UID) return;
+  const hist = await get(`/api/history/${UID}`).catch(()=>[]);
+  const gifts = hist.filter(h=>h.type==='gift_received'||h.type==='gift');
+  const list = document.getElementById('inv-items');
+  if(!gifts.length){
+    list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>Инвентарь пуст.<br>Купи что-нибудь в Магазине!</p></div>';
+    return;
+  }
+  const grouped={};
+  gifts.forEach(g=>{
+    const k=g.detail||'Подарок';
+    if(!grouped[k]) grouped[k]={name:k,count:0,date:g.created_at};
+    grouped[k].count++;
+  });
+  list.innerHTML=Object.values(grouped).map(item=>`
+    <div class="inv-item">
+      <div class="inv-icon">🎁</div>
+      <div style="flex:1"><div class="inv-name">${item.name}</div>
+        <div class="inv-meta">Получен ${new Date(item.date*1000).toLocaleDateString('ru',{day:'numeric',month:'short'})}</div>
+      </div>
+      <div class="inv-qty">×${item.count}</div>
+    </div>`).join('');
+}
+
+async function renderInvHistory(){
+  const hist = await get(`/api/history/${UID}`).catch(()=>[]);
+  let won=0,lost=0;
+  hist.forEach(i=>{
+    if(['win','deposit','ref'].includes(i.type)) won+=i.amount;
+    if(['lose'].includes(i.type)) lost+=i.amount;
+  });
+  document.getElementById('inv-won').textContent=won;
+  document.getElementById('inv-lost').textContent=lost;
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок',gift_received:'Подарок получен'};
+  const list=document.getElementById('inv-hist-list');
+  if(!hist.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
+  list.innerHTML=hist.slice(0,50).map(i=>{
+    const d=new Date(i.created_at*1000);
+    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos=['win','deposit','ref','gift_received'].includes(i.type);
+    return `<div class="hi">
+      <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
+      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── SHOP ──
+function shopTab(tab, el){
+  document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('shop-bot').style.display = tab==='bot'?'':'none';
+  document.getElementById('shop-owner').style.display = tab==='owner'?'':'none';
+}
+
+async function loadShopGifts(){
+  shopLoaded = true;
+  const botDiv = document.getElementById('shop-bot');
+  const botInner = document.getElementById('bot-gifts-inner');
+  try {
+    const data = await get('/api/gifts');
+    shopGifts = data.gifts || [];
+    if(!shopGifts.length){
+      if(botInner) botInner.innerHTML='<div class="empty"><div class="empty-i">🎁</div><p>Подарки временно недоступны</p></div>';
+    } else {
+      renderBotGifts();
+    }
+  } catch(e){
+    if(botInner) botInner.innerHTML='<div class="empty"><div class="empty-i">⚠️</div><p>Не удалось загрузить подарки</p></div>';
+  }
+  renderOwnerGifts();
+}
+
+function giftCard(gift, source){
+  const limited = gift.is_limited && gift.remaining_count !== null;
+  const cls = limited ? 'gift-card limited' : 'gift-card';
+  const emojiDisplay = gift.emoji || '🎁';
+  const remaining = limited ? `<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>` : '';
+  // Safe gift data for onclick
+  const gd = JSON.stringify({
+    id: gift.id||'',
+    emoji: emojiDisplay,
+    name: gift.name||emojiDisplay,
+    star_count: gift.star_count,
+    is_limited: gift.is_limited||false
+  }).replace(/"/g,'&quot;');
+  return `<div class="${cls}" onclick="openBuyModal(${gd},'${source}')">
+    <span class="gift-emoji">${emojiDisplay}</span>
+    <div class="gift-desc">${gift.desc||gift.name||'Telegram подарок'}</div>
+    ${remaining}
+    <div class="gift-price">⭐ ${gift.star_count} <span style="font-size:10px;opacity:.75">(${gift.star_count*10} 🪙 монет)</span></div>
+    <button class="gift-buy-btn">Купить</button>
+  </div>`;
+}
+
+function renderBotGifts(){
+  // Update only the inner grid container — NOTE stays preserved above it
+  const inner = document.getElementById('bot-gifts-inner');
+  if(inner) inner.innerHTML = `<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;
+}
+
+function renderOwnerGifts(){
+  const ownerGrid = document.getElementById('owner-gifts-grid');
+  if(!shopGifts.length){
+    ownerGrid.innerHTML='<div class="empty"><div class="empty-i">🎁</div><p>Подарки временно недоступны</p></div>';
+    return;
+  }
+  ownerGrid.innerHTML = shopGifts.map(g=>giftCard(g,'owner')).join('');
+}
+
+// ── BUY MODAL ──
+function openBuyModal(gift, source){
+  pendingGift = gift;
+  pendingSource = source;
+  document.getElementById('m-icon').textContent = gift.emoji;
+  document.getElementById('m-name').textContent = gift.name || gift.emoji;
+  document.getElementById('m-price').textContent = gift.star_count;
+  document.getElementById('m-msg').value = '';
+  document.getElementById('m-anon').checked = false;
+  document.getElementById('buy-error').classList.remove('show');
+  setRecipient('self', document.querySelector('.rc-btn'));
+  document.getElementById('buy-modal').classList.add('open');
+}
+
+function closeBuyModal(e){
+  if(!e || e.target.id==='buy-modal'){
+    document.getElementById('buy-modal').classList.remove('open');
+  }
+}
+
+function setRecipient(mode, el){
+  recipientMode = mode;
+  document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('m-recipient-wrap').style.display = mode==='other'?'block':'none';
+}
+
+function setAutoMsg(){
+  document.getElementById('m-msg').value = `🎁 Подарок от ${FIRST_NAME}!`;
+}
+
+async function confirmPurchase(){
+  if(!pendingGift) return;
+  const errEl = document.getElementById('buy-error');
+  errEl.classList.remove('show');
+
+  const bal = userData?.balance||0;
+  if(bal < pendingGift.star_count * 10){
+    errEl.textContent='Недостаточно монет на балансе!';errEl.classList.add('show');return;
+  }
+
+  const anon = document.getElementById('m-anon').checked;
+  const msg  = document.getElementById('m-msg').value.trim();
+  let recipientId = UID;
+  if(recipientMode==='other'){
+    const rid = parseInt(document.getElementById('m-recipient').value)||0;
+    if(!rid){errEl.textContent='Введите ID получателя';errEl.classList.add('show');return;}
+    recipientId = rid;
+  }
+
+  const btn = document.getElementById('m-confirm');
+  btn.disabled=true; btn.textContent='Покупаем...';
+
+  const res = await post('/api/gift/buy',{
+    user_id:      UID,
+    gift_id:      pendingGift.id || '',
+    star_count:   pendingGift.star_count,
+    coin_cost:    pendingGift.star_count * 10,
+    source:       pendingSource,
+    recipient_id: recipientId,
+    anonymous:    anon,
+    message:      msg || null,
+    sender_name:  anon ? null : FIRST_NAME,
+    gift_name:    pendingGift.name || pendingGift.emoji,
+    gift_emoji:   pendingGift.emoji,
+  }).catch(()=>null);
+
+  btn.disabled=false; btn.textContent='Купить ⭐';
+
+  if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
+  if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
+
+  document.getElementById('buy-modal').classList.remove('open');
+  if(pendingSource==='bot'){
+    toast(`🎁 Подарок отправлен!`,'ok');
+  } else {
+    toast(`📨 Заявка отправлена владельцу!`,'ok');
+    setTimeout(()=>{
+      if(tg?.openTelegramLink)
+        tg.openTelegramLink(`https://t.me/${BOT}?start=gift_request`);
+    }, 1500);
+  }
+  if(userData) userData.balance = res.new_balance ?? (userData.balance - pendingGift.star_count * 10);
+  updateUI();
+}
+
+// ── TOPUP ──
+function openTopup(){document.getElementById('ov-topup').classList.add('open');}
+function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
+function selAmt(el,v){
+  document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel'); topupAmt=v;
+  document.getElementById('ta-custom').value='';
+  document.getElementById('ta-amt').textContent=v;
+}
+function onCustomInput(){
+  const v=parseInt(document.getElementById('ta-custom').value)||0;
+  if(v>=1){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));topupAmt=v;document.getElementById('ta-amt').textContent=v;}
+}
+async function confirmTopup(){
+  if(!UID){toast('Войдите через Telegram','err');return;}
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;
+  if(custom>=1) topupAmt=custom;
+  if(topupAmt<1){toast('Введите сумму','err');return;}
+  document.getElementById('ov-topup').classList.remove('open');
+  const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
+  if(res?.ok) toast('Инвойс отправлен в чат с ботом!','ok');
+  else toast('Откройте чат с ботом для оплаты','info');
+}
+
+// ── О НАС ──
+function toggleAbout(){
+  const body = document.getElementById('about-body');
+  const arrow = document.getElementById('about-arrow');
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  arrow.style.transform = open ? '' : 'rotate(90deg)';
+}
+function togglePerson(id){
+  const cnt = document.getElementById('cnt-'+id);
+  const arr = document.getElementById('arr-'+id);
+  if(!cnt) return;
+  const open = cnt.style.display === 'block';
+  cnt.style.display = open ? 'none' : 'block';
+  if(arr) arr.classList.toggle('open', !open);
+}
+
+// ── COPY TON WALLET ──
+function copyTon(){
+  const addr = 'UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN';
+  navigator.clipboard?.writeText(addr)
+    .then(()=>{
+      toast('TON-кошелёк скопирован! 📋','ok');
+      const el=document.getElementById('ton-wallet');
+      if(el){el.style.background='rgba(45,198,83,0.18)';setTimeout(()=>{el.style.background='';},1200);}
+    })
+    .catch(()=>{
+      // fallback
+      const ta=document.createElement('textarea');
+      ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+      toast('TON-кошелёк скопирован! 📋','ok');
+    });
+}
+
+// ── INIT ──
+window.addEventListener('load', async ()=>{
+  // Handle ?tab=games from back button in roulette pages
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab');
+  if(tabParam === 'games'){
+    const gamesBtn = document.querySelector('[onclick*="games"]');
+    if(gamesBtn) showPage('games', gamesBtn, 2);
+  }
+  await initUser();
+  setInterval(loadUser, 15000);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Магазин — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+.page-content{padding:14px 14px 20px;}
+
+/* ── BALANCE BANNER ── */
+.balance-banner{
+  background:linear-gradient(135deg,rgba(245,197,66,.1),rgba(232,168,0,.06));
+  border:1px solid rgba(245,197,66,.25);
+  border-radius:18px;padding:14px 18px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(245,197,66,0.15),0 6px 20px rgba(0,0,0,0.28);
+}
+.bb-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.bb-val{font-family:'Orbitron',monospace;font-size:22px;color:var(--gold);font-weight:700;}
+.topup-sm{background:linear-gradient(135deg,#7b2fff,#4361ee);border:none;border-radius:12px;
+  color:#fff;padding:9px 14px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;
+  box-shadow:0 3px 14px rgba(123,47,255,.35),inset 0 1px 0 rgba(255,255,255,0.2);transition:transform .1s;}
+.topup-sm:active{transform:scale(.96);}
+
+/* ── TABS ── */
+.shop-tabs{display:flex;gap:8px;margin-bottom:18px;}
+.shop-tab{flex:1;padding:11px;
+  background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;color:var(--muted);font-weight:700;font-size:13px;
+  cursor:pointer;text-align:center;transition:all .2s;letter-spacing:.3px;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);}
+.shop-tab.active{
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  color:#000;border-color:var(--gold);
+  box-shadow:0 4px 16px rgba(245,197,66,.3),inset 0 1px 0 rgba(255,255,255,0.25);}
+
+/* ── INFO NOTE ── */
+.shop-note{
+  border-radius:14px;padding:11px 14px;margin-bottom:16px;
+  font-size:12px;line-height:1.6;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.shop-note.bot-note{
+  background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.22);
+  color:rgba(255,200,200,.85);
+  box-shadow:inset 0 1px 0 rgba(230,57,70,0.1);}
+.shop-note.owner-note{
+  background:rgba(123,47,255,.08);border:1px solid rgba(123,47,255,.22);
+  color:rgba(200,180,255,.85);
+  box-shadow:inset 0 1px 0 rgba(123,47,255,0.1);}
+
+/* ── GIFT CARD — large single column ── */
+.gift-list{display:flex;flex-direction:column;gap:14px;}
+
+.gift-card{
+  background:var(--glass-bg);
+  border:1px solid var(--glass-border);
+  border-radius:24px;overflow:hidden;
+  backdrop-filter:blur(16px);
+  cursor:pointer;
+  transition:border-color .25s,transform .15s,box-shadow .25s;
+  position:relative;
+}
+.gift-card:active{transform:scale(.98);}
+.gift-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);
+  pointer-events:none;
+}
+.gift-card:hover{
+  border-color:rgba(245,197,66,.3);
+  box-shadow:0 8px 32px rgba(245,197,66,.1);
+}
+.gift-card.limited{border-color:rgba(230,57,70,.35);}
+.gift-card.limited:hover{border-color:rgba(230,57,70,.55);}
+
+.gift-stage{
+  height:180px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+/* gradient bg per type */
+.gift-stage.blue  {background:linear-gradient(135deg,#060d1e,#0a1530);}
+.gift-stage.purple{background:linear-gradient(135deg,#0c0618,#180930);}
+.gift-stage.green {background:linear-gradient(135deg,#061408,#0a2014);}
+.gift-stage.gold  {background:linear-gradient(135deg,#18120a,#241a04);}
+.gift-stage.red   {background:linear-gradient(135deg,#180608,#280a0a);}
+.gift-stage.default{background:linear-gradient(135deg,#0a0a18,#12122a);}
+
+/* glow orb behind emoji */
+.gift-glow{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(40px);
+  opacity:.5;
+  animation:glow-pulse 3s ease-in-out infinite;
+}
+@keyframes glow-pulse{
+  0%,100%{opacity:.4;transform:scale(1);}
+  50%{opacity:.7;transform:scale(1.15);}
+}
+
+/* ── TG-style gift emoji animation ── */
+.gift-emoji-wrap{
+  position:relative;z-index:2;
+  display:flex;align-items:center;justify-content:center;
+}
+/* main float + breathe */
+.gift-emoji-big{
+  font-size:86px;line-height:1;display:block;
+  animation:tg-float 3s ease-in-out infinite,
+             tg-breathe 2s ease-in-out infinite;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.45));
+  will-change:transform,filter;
+}
+@keyframes tg-float{
+  0%,100%{transform:translateY(0px) rotate(-1.5deg);}
+  25%{transform:translateY(-10px) rotate(1deg);}
+  50%{transform:translateY(-14px) rotate(2deg);}
+  75%{transform:translateY(-6px) rotate(-0.5deg);}
+}
+@keyframes tg-breathe{
+  0%,100%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.45)) brightness(1);}
+  50%{filter:drop-shadow(0 10px 30px rgba(255,255,255,.15)) brightness(1.08);}
+}
+/* shimmer/halo ring behind emoji */
+.gift-halo{
+  position:absolute;z-index:1;
+  width:100px;height:100px;border-radius:50%;
+  background:conic-gradient(
+    from 0deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,.25) 20%,
+    rgba(255,255,255,0) 40%,
+    rgba(255,255,255,.18) 60%,
+    rgba(255,255,255,0) 80%,
+    rgba(255,255,255,.22) 100%
+  );
+  animation:halo-spin 4s linear infinite;
+  filter:blur(6px);
+  opacity:.7;
+}
+@keyframes halo-spin{to{transform:rotate(360deg);}}
+/* shimmer overlay on stage */
+.gift-stage::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(120deg,
+    transparent 20%,
+    rgba(255,255,255,.06) 50%,
+    transparent 80%);
+  background-size:200% 200%;
+  animation:shimmer-sweep 3.5s ease-in-out infinite;
+}
+@keyframes shimmer-sweep{
+  0%{background-position:200% 0%;}
+  100%{background-position:-200% 0%;}
+}
+
+/* sparkle particles */
+.gift-stage .spark{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  animation:spark-anim var(--dur,2s) var(--del,0s) ease-in-out infinite;
+}
+@keyframes spark-anim{
+  0%{opacity:0;transform:scale(0) translate(0,0);}
+  30%{opacity:1;transform:scale(1) translate(var(--tx,10px),var(--ty,-10px));}
+  60%{opacity:.6;}
+  100%{opacity:0;transform:scale(0) translate(calc(var(--tx,10px)*1.5),calc(var(--ty,-10px)*1.5));}
+}
+
+/* LIMIT badge */
+.limit-badge{
+  position:absolute;top:12px;right:12px;z-index:5;
+  background:var(--red);color:#fff;
+  font-size:9px;font-weight:700;font-family:'Orbitron',monospace;
+  border-radius:8px;padding:3px 8px;letter-spacing:.5px;
+  box-shadow:0 2px 10px rgba(230,57,70,.5);
+}
+
+/* remaining bar */
+.remain-bar-wrap{
+  position:absolute;bottom:10px;left:14px;right:14px;z-index:5;
+}
+.remain-label{font-size:10px;color:rgba(255,255,255,.5);margin-bottom:3px;text-align:right;}
+.remain-bar{height:3px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;}
+.remain-fill{height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--red),#ff6b6b);
+  transition:width .5s;}
+
+/* gift info section */
+.gift-info{padding:16px 18px 18px;}
+.gift-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px;}
+/* .gift-name removed */
+.gift-price-badge{
+  flex-shrink:0;
+  background:linear-gradient(135deg,rgba(245,197,66,.18),rgba(245,197,66,.08));
+  border:1px solid rgba(245,197,66,.3);border-radius:12px;
+  padding:6px 12px;
+  font-family:'Orbitron',monospace;font-size:15px;color:var(--gold);font-weight:700;
+  white-space:nowrap;
+}
+.gift-desc-text{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:12px;}
+
+.gift-buy-btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;
+  color:#000;font-family:'Orbitron',monospace;font-size:13px;font-weight:900;
+  letter-spacing:.5px;cursor:pointer;
+  box-shadow:0 4px 18px rgba(245,197,66,.3);
+  transition:opacity .15s,transform .1s;
+}
+.gift-buy-btn:active{opacity:.8;transform:scale(.99);}
+.gift-buy-btn.purple-btn{
+  background:linear-gradient(135deg,#7b2fff,#4361ee);
+  box-shadow:0 4px 18px rgba(123,47,255,.3);}
+
+/* loading / empty */
+.gift-loading{text-align:center;padding:48px 20px;color:var(--muted);}
+.gift-loading-icon{font-size:42px;display:block;margin-bottom:12px;
+  animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gift-empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.gift-empty-icon{font-size:48px;margin-bottom:12px;display:block;}
+
+/* ── BUY MODAL ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.65);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  z-index:200;display:none;align-items:flex-end;}
+.modal-ov.open{display:flex;}
+.modal{
+  background:rgba(14,14,26,0.82);
+  backdrop-filter:blur(32px) saturate(1.8);-webkit-backdrop-filter:blur(32px) saturate(1.8);
+  border-radius:26px 26px 0 0;
+  border-top:1px solid rgba(255,255,255,0.15);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 -8px 40px rgba(0,0,0,0.5);
+  padding:18px 18px calc(var(--nav-h,64px) + 18px);
+  width:100%;max-height:92vh;overflow-y:auto;
+  animation:slide-up .3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slide-up{from{transform:translateY(100%)}}
+.modal-drag{width:40px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-family:'Orbitron',monospace;font-size:15px;color:var(--gold);
+  margin-bottom:16px;text-align:center;font-weight:700;}
+
+/* Modal gift preview */
+.modal-preview{
+  display:flex;align-items:center;gap:14px;
+  background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);
+  border-radius:18px;padding:14px;margin-bottom:16px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.mp-stage{
+  width:64px;height:64px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:34px;flex-shrink:0;
+  animation:mp-float 3s ease-in-out infinite;
+}
+@keyframes mp-float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-5px);}
+}
+.mp-name{font-weight:700;font-size:16px;margin-bottom:3px;}
+.mp-price{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);}
+
+.form-label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block;
+  font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.form-group{margin-bottom:12px;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:11px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;
+  outline:none;resize:none;}
+.form-input:focus{border-color:var(--gold);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);border-radius:14px;
+  padding:13px 15px;margin-bottom:12px;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.09);}
+.toggle-label{font-size:14px;font-weight:600;}
+.toggle{position:relative;width:46px;height:26px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:rgba(8,8,15,0.7);border-radius:13px;
+  border:1px solid rgba(255,255,255,0.12);cursor:pointer;transition:all .2s;}
+.toggle-slider::before{content:'';position:absolute;width:20px;height:20px;
+  border-radius:50%;background:#888;top:2px;left:2px;transition:transform .2s,background .2s;}
+.toggle input:checked+.toggle-slider{background:rgba(45,198,83,.2);border-color:var(--green);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--green);}
+.recipient-choice{display:flex;gap:8px;margin-bottom:10px;}
+.rc-btn{flex:1;padding:10px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;color:var(--muted);font-size:13px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .2s;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);}
+.rc-btn.active{background:rgba(123,47,255,.2);border-color:var(--purple);color:var(--text);
+  box-shadow:inset 0 1px 0 rgba(123,47,255,0.2);}
+.quick-btns{display:flex;gap:6px;margin-top:6px;}
+.qb{flex:1;padding:7px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+  border-radius:9px;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-align:center;
+  backdrop-filter:blur(12px);}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+.btn-cancel{padding:14px;
+  background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);
+  border-radius:14px;color:var(--muted);font-family:'Orbitron',monospace;font-size:12px;
+  font-weight:700;cursor:pointer;
+  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.09);}
+.btn-confirm{padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:12px;font-weight:900;cursor:pointer;transition:opacity .15s;
+  box-shadow:0 4px 18px rgba(245,197,66,.3),inset 0 1px 0 rgba(255,255,255,0.25);}
+.btn-confirm:disabled{opacity:.4;cursor:not-allowed;}
+.error-msg{background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);
+  border-radius:10px;padding:10px 14px;color:var(--red);font-size:13px;
+  margin-bottom:12px;display:none;}
+.error-msg.show{display:block;}
+
+/* ── TOPUP MODAL ── */
+.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.ta{padding:16px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
+  text-align:center;cursor:pointer;transition:all .2s;}
+.ta.sel{border-color:var(--gold);box-shadow:inset 0 1px 0 rgba(245,197,66,0.2),0 0 0 1px rgba(245,197,66,0.15);}
+.ta-c{font-family:'Orbitron',monospace;font-size:20px;color:var(--gold);font-weight:700;}
+.ta-s{font-size:13px;color:var(--muted);margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="liquid-bg"></div>
+
+<div class="topbar">
+  <button class="fp-back" onclick="history.back()">‹</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:20px">🛍</span>
+    <span class="fp-title">МАГАЗИН</span>
+  </div>
+  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+</div>
+
+<div class="page-content">
+
+  <div class="balance-banner">
+    <div>
+      <div class="bb-label">Ваш баланс</div>
+      <div class="bb-val">🪙 <span id="bal-display">—</span></div>
+    </div>
+    <button class="topup-sm" onclick="openTopup()">+ ПОПОЛНИТЬ</button>
+  </div>
+
+  <div class="shop-tabs">
+    <div class="shop-tab active" onclick="switchTab('bot',this)">🤖 От бота</div>
+    <div class="shop-tab" onclick="switchTab('owner',this)">👑 От владельца</div>
+  </div>
+
+  <!-- BOT TAB -->
+  <div id="tab-bot">
+    <div class="shop-note bot-note">
+      🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется мгновенно и автоматически.<br>
+      ⛔ <b>Нельзя конвертировать в звёзды</b> — эти подарки non-transferable по условиям Telegram.
+    </div>
+    <div class="gift-list" id="bot-gifts">
+      <div class="gift-loading">
+        <span class="gift-loading-icon">🎁</span>
+        Загружаем подарки...
+      </div>
+    </div>
+  </div>
+
+  <!-- OWNER TAB -->
+  <div id="tab-owner" style="display:none">
+    <div class="shop-note owner-note">
+      👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>
+      ✅ <b>Можно конвертировать в звёзды</b> — стандартный Telegram-подарок.<br>
+      После покупки владелец получит уведомление и свяжется с вами.
+    </div>
+    <div class="gift-list" id="owner-gifts">
+      <div class="gift-loading">
+        <span class="gift-loading-icon">🎁</span>
+        Загружаем...
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BUY MODAL -->
+<div class="modal-ov" id="buy-modal" onclick="closeBuyModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-drag"></div>
+    <div class="modal-title">🎁 КУПИТЬ ПОДАРОК</div>
+    <div class="error-msg" id="buy-error"></div>
+
+    <div class="modal-preview">
+      <div class="mp-stage" id="mp-stage-bg">
+        <span id="modal-icon">🎁</span>
+      </div>
+      <div>
+        <div class="mp-name" id="modal-name">—</div>
+        <div class="mp-price"><span id="modal-price">—</span></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Кому:</label>
+      <div class="recipient-choice">
+        <div class="rc-btn active" onclick="setRecipient('self',this)">🙋 Себе</div>
+        <div class="rc-btn" onclick="setRecipient('other',this)">👤 По ID</div>
+      </div>
+      <div id="recipient-id-wrap" style="display:none;margin-top:8px">
+        <input class="form-input" id="recipient-id" type="number"
+          placeholder="Telegram ID получателя" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <span class="toggle-label">🎭 Анонимно</span>
+      <label class="toggle">
+        <input type="checkbox" id="anon-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Подпись (необязательно):</label>
+      <textarea class="form-input" id="gift-msg" rows="2" placeholder="Текст подписи..."></textarea>
+      <div class="quick-btns">
+        <div class="qb" onclick="document.getElementById('gift-msg').value=''">Без подписи</div>
+        <div class="qb" onclick="setAutoMsg()">Авто 🤖</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBuyModal()">Отмена</button>
+      <button class="btn-confirm" id="confirm-btn" onclick="confirmPurchase()">Купить ⭐</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPUP MODAL -->
+<div class="modal-ov" id="topup-modal" onclick="if(event.target.id==='topup-modal')closeTopup()">
+  <div class="modal">
+    <div class="modal-drag"></div>
+    <div class="modal-title">💳 ПОПОЛНЕНИЕ</div>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:16px">1 ⭐ = 10 монет</p>
+    <div class="ta-grid">
+      <div class="ta sel" onclick="selTopup(this,50)">
+        <div class="ta-c">50</div><div class="ta-s">50 ⭐</div>
+      </div>
+      <div class="ta" onclick="selTopup(this,100)">
+        <div class="ta-c">100</div><div class="ta-s">100 ⭐</div>
+      </div>
+      <div class="ta" onclick="selTopup(this,250)">
+        <div class="ta-c">250</div><div class="ta-s">250 ⭐</div>
+      </div>
+      <div class="ta" onclick="selTopup(this,500)">
+        <div class="ta-c">500</div><div class="ta-s">500 ⭐</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="color:var(--muted);font-size:13px;white-space:nowrap">Или:</span>
+      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Своя сумма..."
+        oninput="onCustom()"
+        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+          padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:14px;
+          outline:none;text-align:center;">
+      <span style="color:var(--gold)">⭐</span>
+    </div>
+    <button class="btn-confirm" style="width:100%;font-size:14px;padding:15px"
+      onclick="confirmTopup()">Оплатить <span id="ta-amt">50</span> ⭐</button>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID        = tg?.initDataUnsafe?.user?.id || 0;
+const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
+
+let userData    = null;
+let pendingGift = null;
+let currentSrc  = 'bot';
+let recipMode   = 'self';
+let topupAmt    = 50;
+
+// ── colour themes per gift position ──
+const THEMES = ['blue','purple','green','gold','red','purple','blue','gold'];
+const GLOW_COLORS = [
+  '#4cc9f0','#9b72ff','#2dc653','#f5c542','#e63946',
+  '#9b72ff','#4cc9f0','#f5c542'
+];
+const SPARK_COLORS = [
+  '#4cc9f0','#fff','#9b72ff','#f5c542','#ff6b6b',
+  '#9b72ff','#4cc9f0','#f5c542'
+];
+
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+async function loadUser(){
+  if(!UID)return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  if(userData){
+    const b = userData.balance??0;
+    document.getElementById('r-bal').textContent = b;
+    document.getElementById('bal-display').textContent = b;
+  }
+}
+
+function switchTab(tab, el){
+  document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-bot').style.display   = tab==='bot'?'':'none';
+  document.getElementById('tab-owner').style.display = tab==='owner'?'':'none';
+}
+
+// ── Sparkle generator ──
+function makeSparkles(stage, color){
+  const positions = [
+    {tx:'28px',ty:'-22px',del:'0s',dur:'2.2s'},
+    {tx:'-24px',ty:'-18px',del:'.4s',dur:'2.5s'},
+    {tx:'18px',ty:'26px',del:'.8s',dur:'1.9s'},
+    {tx:'-30px',ty:'20px',del:'1.2s',dur:'2.3s'},
+    {tx:'36px',ty:'8px',del:'1.8s',dur:'2.1s'},
+  ];
+  positions.forEach(p=>{
+    const s = document.createElement('div');
+    s.className = 'spark';
+    s.style.cssText = `background:${color};left:50%;top:50%;
+      --tx:${p.tx};--ty:${p.ty};--del:${p.del};--dur:${p.dur};`;
+    stage.appendChild(s);
+  });
+}
+
+// ── Build a big gift card ──
+function buildGiftCard(gift, source, idx){
+  const theme = THEMES[idx % THEMES.length];
+  const glow  = GLOW_COLORS[idx % GLOW_COLORS.length];
+  const spark = SPARK_COLORS[idx % SPARK_COLORS.length];
+  const limited = gift.is_limited && gift.remaining_count !== null;
+  const gd = JSON.stringify({
+    id: gift.id||'', emoji: gift.emoji||'🎁',
+    name: gift.name||(gift.emoji||'🎁'),
+    star_count: gift.star_count,
+    is_limited: gift.is_limited||false
+  }).replace(/"/g,'&quot;');
+
+  const card = document.createElement('div');
+  card.className = 'gift-card' + (limited?' limited':'');
+  card.onclick = () => openBuyModal(
+    {id:gift.id||'',emoji:gift.emoji||'🎁',
+     name:gift.name||(gift.emoji||'🎁'),
+     star_count:gift.star_count,is_limited:gift.is_limited||false},
+    source);
+
+  // Limited badge
+  if(limited) card.innerHTML += `<div class="limit-badge">ЛИМИТ</div>`;
+
+  // Stage
+  const stage = document.createElement('div');
+  stage.className = `gift-stage ${theme}`;
+
+  // Glow
+  const glowEl = document.createElement('div');
+  glowEl.className = 'gift-glow';
+  glowEl.style.cssText = `width:120px;height:120px;background:${glow};top:30px;left:50%;margin-left:-60px;`;
+  stage.appendChild(glowEl);
+
+  // Emoji wrap: halo + emoji (Telegram-style animation)
+  const wrap = document.createElement('div');
+  wrap.className = 'gift-emoji-wrap';
+  // Halo ring
+  const halo = document.createElement('div');
+  halo.className = 'gift-halo';
+  halo.style.background = `conic-gradient(from 0deg,
+    transparent 0%, ${glow}88 20%, transparent 40%,
+    ${glow}66 60%, transparent 80%, ${glow}99 100%)`;
+  wrap.appendChild(halo);
+  // Emoji
+  const em = document.createElement('span');
+  em.className = 'gift-emoji-big';
+  em.textContent = gift.emoji||'🎁';
+  // Stagger start of float per card for natural feel
+  em.style.animationDelay = `${(idx % 4) * 0.4}s, ${(idx % 3) * 0.5}s`;
+  wrap.appendChild(em);
+  stage.appendChild(wrap);
+
+  // Sparkles
+  makeSparkles(stage, spark);
+
+  // Remaining bar
+  if(limited && gift.total_count){
+    const pct = Math.max(2, Math.round(gift.remaining_count / gift.total_count * 100));
+    stage.innerHTML += `
+      <div class="remain-bar-wrap">
+        <div class="remain-label">Осталось: ${gift.remaining_count} / ${gift.total_count}</div>
+        <div class="remain-bar"><div class="remain-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }
+
+  card.appendChild(stage);
+
+  // Info
+  const info = document.createElement('div');
+  info.className = 'gift-info';
+  // No visible name shown — emoji in stage is the identifier
+  const isBotSrc = source === 'bot';
+  info.innerHTML = `
+    <div class="gift-top">
+      <div class="gift-price-badge">${gift.star_count*10} 🪙 <span style="font-size:11px;opacity:.7">(⭐${gift.star_count})</span></div>
+    </div>
+    <div class="gift-desc-text">${
+      isBotSrc
+        ? 'Настоящий Telegram‑подарок — отправляется автоматически за считанные секунды.'
+        : 'Отправляет лично владелец. Можно конвертировать в звёзды Telegram.'
+    }</div>
+    <button class="gift-buy-btn ${isBotSrc?'':'purple-btn'}" onclick="event.stopPropagation();
+      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${(gift.emoji||"🎁").replace(/'/g,"\\'") }',star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
+      ${isBotSrc ? '🎁 Купить подарок' : '👑 Заказать у владельца'}
+    </button>`;
+
+  card.appendChild(info);
+  return card;
+}
+
+async function loadGifts(){
+  try{
+    const data = await get('/api/gifts');
+    const gifts = data.gifts || [];
+
+    const botList   = document.getElementById('bot-gifts');
+    const ownerList = document.getElementById('owner-gifts');
+
+    if(!gifts.length){
+      botList.innerHTML   = '<div class="gift-empty"><span class="gift-empty-icon">📭</span>Подарки временно недоступны</div>';
+      ownerList.innerHTML = '<div class="gift-empty"><span class="gift-empty-icon">📭</span>Подарки временно недоступны</div>';
+      return;
+    }
+
+    botList.innerHTML   = '';
+    ownerList.innerHTML = '';
+
+    gifts.forEach((g, i) => {
+      botList.appendChild(buildGiftCard(g, 'bot', i));
+      ownerList.appendChild(buildGiftCard(g, 'owner', i));
+    });
+  } catch(e){
+    document.getElementById('bot-gifts').innerHTML =
+      '<div class="gift-empty"><span class="gift-empty-icon">⚠️</span>Не удалось загрузить подарки</div>';
+  }
+}
+
+// ── BUY MODAL ──
+function openBuyModal(gift, source){
+  pendingGift = gift; currentSrc = source;
+  document.getElementById('modal-icon').textContent      = gift.emoji;
+  document.getElementById('modal-name').textContent      = gift.emoji + ' ' + (gift.name && gift.name !== gift.emoji ? gift.name : '');
+  document.getElementById('modal-price').textContent     = (gift.star_count * 10) + ' 🪙 (⭐' + gift.star_count + ')';
+  document.getElementById('mp-stage-bg').style.background =
+    source==='bot'
+      ? 'linear-gradient(135deg,rgba(76,201,240,.15),rgba(76,201,240,.05))'
+      : 'linear-gradient(135deg,rgba(123,47,255,.2),rgba(123,47,255,.07))';
+  document.getElementById('gift-msg').value = '';
+  document.getElementById('anon-toggle').checked = false;
+  document.getElementById('buy-error').classList.remove('show');
+  setRecipient('self', document.querySelector('.rc-btn'));
+  document.getElementById('confirm-btn').textContent = 'Купить ⭐';
+  document.getElementById('buy-modal').classList.add('open');
+}
+
+function closeBuyModal(e){
+  if(!e || e.target.id==='buy-modal')
+    document.getElementById('buy-modal').classList.remove('open');
+}
+
+function setRecipient(mode, el){
+  recipMode = mode;
+  document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('recipient-id-wrap').style.display = mode==='other'?'block':'none';
+}
+
+function setAutoMsg(){
+  document.getElementById('gift-msg').value = `🎁 Подарок от ${FIRST_NAME}!`;
+}
+
+async function confirmPurchase(){
+  if(!pendingGift) return;
+  const errEl = document.getElementById('buy-error');
+  errEl.classList.remove('show');
+  const bal = userData?.balance||0;
+  if(bal < pendingGift.star_count * 10){
+    errEl.textContent='Недостаточно монет на балансе!';errEl.classList.add('show');return;
+  }
+  const anon = document.getElementById('anon-toggle').checked;
+  const msg  = document.getElementById('gift-msg').value.trim();
+  let recipientId = UID;
+  if(recipMode==='other'){
+    const rid = parseInt(document.getElementById('recipient-id').value)||0;
+    if(!rid){errEl.textContent='Введите ID получателя';errEl.classList.add('show');return;}
+    recipientId = rid;
+  }
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled=true; btn.textContent='Покупаем...';
+  const res = await post('/api/gift/buy',{
+    user_id: UID, gift_id: pendingGift.id||'',
+    gift_name: pendingGift.name||pendingGift.emoji,
+    gift_emoji: pendingGift.emoji,
+    star_count: pendingGift.star_count,
+    coin_cost:  pendingGift.star_count * 10,
+    source: currentSrc,
+    recipient_id: recipientId,
+    anonymous: anon,
+    message: msg||null,
+    sender_name: anon ? null : FIRST_NAME,
+  }).catch(()=>null);
+  btn.disabled=false; btn.textContent='Купить ⭐';
+  if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
+  if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
+  document.getElementById('buy-modal').classList.remove('open');
+  if(currentSrc==='bot'){
+    toast(`🎁 Подарок отправлен!`,'ok');
+  } else {
+    toast(`📨 Заявка отправлена владельцу!`,'ok');
+    setTimeout(()=>{
+      if(tg?.openTelegramLink) tg.openTelegramLink(`https://t.me/Smishek?start=gift_request`);
+    }, 1500);
+  }
+  if(userData) userData.balance = res.new_balance ?? (userData.balance - pendingGift.star_count * 10);
+  const b = userData?.balance??0;
+  document.getElementById('r-bal').textContent   = b;
+  document.getElementById('bal-display').textContent = b;
+}
+
+// ── TOPUP ──
+function openTopup(){ document.getElementById('topup-modal').classList.add('open'); }
+function closeTopup(){ document.getElementById('topup-modal').classList.remove('open'); }
+function selTopup(el,v){
+  document.querySelectorAll('#topup-modal .ta').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel'); topupAmt=v;
+  document.getElementById('ta-custom').value='';
+  document.getElementById('ta-amt').textContent=v;
+}
+function onCustom(){
+  const v=parseInt(document.getElementById('ta-custom').value)||0;
+  if(v>=1){
+    document.querySelectorAll('#topup-modal .ta').forEach(t=>t.classList.remove('sel'));
+    topupAmt=v; document.getElementById('ta-amt').textContent=v;
+  }
+}
+async function confirmTopup(){
+  if(!UID){toast('Войдите через Telegram','err');return;}
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;
+  if(custom>=1) topupAmt=custom;
+  if(topupAmt<1){toast('Введите сумму','err');return;}
+  closeTopup();
+  const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
+  if(res?.ok) toast('Инвойс отправлен в чат с ботом!','ok');
+  else toast('Откройте чат с ботом для оплаты','info');
+}
+
+// ── INIT ──
+loadUser();
+loadGifts();
+</script>
+</body>
+</html>

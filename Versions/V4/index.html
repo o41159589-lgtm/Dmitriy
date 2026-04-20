@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck</title>
+<!-- Load TG script but DON'T call ready() yet — keeps native loader visible until WE dismiss it -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  background:#08080f;width:100%;height:100%;overflow:hidden;
+  font-family:'Rajdhani',sans-serif;
+}
+body{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;
+}
+.bg-glow{
+  position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 40%, rgba(245,197,66,0.08) 0%, transparent 60%),
+             radial-gradient(ellipse at 20% 80%, rgba(123,47,255,0.06) 0%, transparent 50%),
+             radial-gradient(ellipse at 80% 20%, rgba(230,57,70,0.05) 0%, transparent 50%);
+}
+.splash{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  animation:fadeIn .4s ease both;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}}
+
+.logo-wrap{
+  width:130px;height:130px;border-radius:32px;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.16);
+  backdrop-filter:blur(28px) saturate(1.8) brightness(1.1);
+  -webkit-backdrop-filter:blur(28px) saturate(1.8) brightness(1.1);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    inset 1px 0 0 rgba(255,255,255,0.1),
+    0 0 60px rgba(245,197,66,0.18),
+    0 0 0 1px rgba(245,197,66,0.1),
+    0 16px 40px rgba(0,0,0,0.4);
+  animation:pulse 2s ease-in-out infinite;
+  position:relative;overflow:hidden;
+}
+.logo-wrap::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+}
+.logo-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.1) 0%,transparent 55%);
+  border-radius:inherit;pointer-events:none;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 60px rgba(245,197,66,0.18),0 0 0 1px rgba(245,197,66,0.1),0 16px 40px rgba(0,0,0,0.4);}
+  50%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 90px rgba(245,197,66,0.32),0 0 0 1px rgba(245,197,66,0.18),0 16px 40px rgba(0,0,0,0.4);}
+}
+.logo-wrap img{width:90px;height:90px;object-fit:contain;}
+
+.brand{
+  font-family:'Orbitron',monospace;
+  font-size:36px;font-weight:900;letter-spacing:3px;
+  background:linear-gradient(135deg,#e8a800,#f5c542 40%,#fff 60%,#f5c542 80%,#e8a800);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:10px;
+}
+.tagline{
+  color:rgba(255,255,255,0.35);
+  font-size:14px;letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:56px;
+}
+.loader{width:200px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:16px;}
+.loader-bar{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#e8a800,#f5c542,#fff);
+  border-radius:2px;transition:width .08s linear;
+  box-shadow:0 0 10px rgba(245,197,66,0.6);
+}
+.loader-text{color:rgba(255,255,255,0.25);font-size:12px;letter-spacing:1px;}
+.liquid-bg{position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%,rgba(123,47,255,0.07) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 35% at 80% 70%,rgba(245,197,66,0.06) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 50% at 60% 10%,rgba(76,201,240,0.04) 0%,transparent 70%);}
+
+.particles{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+.particle{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:var(--c,#f5c542);opacity:0;
+  animation:float var(--d,4s) var(--delay,0s) ease-in-out infinite;
+}
+@keyframes float{
+  0%{opacity:0;transform:translateY(100vh) scale(0);}
+  10%{opacity:.6;}90%{opacity:.3;}
+  100%{opacity:0;transform:translateY(-20px) scale(1);}
+}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="liquid-bg"></div>
+<div class="particles" id="particles"></div>
+
+<div class="splash">
+  <div class="logo-wrap">
+    <img src="logo.png" alt="TopLuck" onerror="this.style.display='none';this.parentNode.innerHTML='🍀'">
+  </div>
+  <div class="brand">TOPLUCK</div>
+  <div class="tagline">Испытай удачу</div>
+  <div class="loader"><div class="loader-bar" id="lbar"></div></div>
+  <div class="loader-text" id="ltxt">Загрузка...</div>
+</div>
+
+<script>
+// Tell Telegram to expand immediately and hide its own loading indicator
+// so our splash IS the loading screen, not a second screen after it
+const tgApp = window.Telegram?.WebApp;
+if(tgApp){
+  tgApp.expand();
+  // ready() tells TG the app is ready — call it NOW so TG hides its loader
+  // and our page is already visible (we painted synchronously above)
+  tgApp.ready();
+}
+
+// Particles
+const pc = document.getElementById('particles');
+const colors = ['#f5c542','#e8a800','#7b2fff','#e63946','#2dc653'];
+for(let i=0;i<30;i++){
+  const p=document.createElement('div');
+  p.className='particle';
+  p.style.cssText=`left:${Math.random()*100}%;--c:${colors[i%colors.length]};--d:${3+Math.random()*5}s;--delay:${Math.random()*5}s;width:${1+Math.random()*3}px;height:${1+Math.random()*3}px`;
+  pc.appendChild(p);
+}
+
+// Loading bar
+const bar=document.getElementById('lbar');
+const txt=document.getElementById('ltxt');
+const msgs=['Перемешиваем колоду...','Раскручиваем рулетку...','Проверяем удачу...','Добро пожаловать!'];
+let pct=0,msgI=0;
+const iv=setInterval(()=>{
+  pct+=Math.random()*14+6;
+  if(pct>=100){pct=100;clearInterval(iv);}
+  bar.style.width=pct+'%';
+  if(pct>msgI*30&&msgI<msgs.length) txt.textContent=msgs[msgI++];
+  if(pct>=100) setTimeout(()=>{ window.location.href='main.html'; },350);
+},160);
+</script>
+</body>
+</html>
