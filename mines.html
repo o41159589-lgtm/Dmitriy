@@ -392,6 +392,7 @@ let currentBombs = 3;
 let revealedCells = [];
 let currentMult  = 1.0;
 let currentWin   = 0;
+let minesMaxMult = 25.0; // loaded from server
 
 function toast(m,t='info'){
   const el=document.getElementById('toast');
@@ -438,13 +439,14 @@ function setBetMax(){
   document.getElementById('bet-input').value = userData?.balance||0;
 }
 
-// ── MULTIPLIER CALCULATION (mirrors server) ──
+// ── MULTIPLIER CALCULATION (mirrors server, capped by server max) ──
 function minesMultClient(safeOpened, bombs, house=0.97){
   const total=25, safeTotal=25-bombs;
   if(safeOpened===0) return 1.0;
   if(safeTotal<=0||safeOpened>safeTotal) return 0;
   const rawRatio = nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
-  return house * Math.pow(rawRatio, 0.8);
+  const raw = house * Math.pow(rawRatio, 0.8);
+  return Math.min(raw, minesMaxMult); // cap at server max
 }
 function nCr(n,r){
   if(r>n) return 0; if(r===0||r===n) return 1;
@@ -657,6 +659,16 @@ function closeResult(){
 
 // ── INIT ──
 onBombsChange(3);
+
+// Load max mult from server then init preview
+(async()=>{
+  try{
+    const d = await get('/api/admin/mines_max_mult');
+    if(d && d.max_mult) minesMaxMult = d.max_mult;
+  } catch(e){}
+  renderMultPreview();
+})();
+
 loadUser();
 
 // Restore active game if exists

@@ -7,6 +7,12 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="shared.css">
 <style>
+:root{
+  --dur:2s;
+  --del:0s;
+  --tx:10px;
+  --ty:-10px;
+}
 .page-content{padding:14px 14px 20px;}
 
 /* ── BALANCE BANNER ── */
@@ -30,7 +36,7 @@
 .shop-tab{flex:1;padding:11px;
   background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);
   border-radius:14px;color:var(--muted);font-weight:700;font-size:13px;
-  cursor:pointer;text-align:center;transition:all .2s;letter-spacing:.3px;
+  cursor:pointer;text-align:center;transition:all 0.2s;letter-spacing:.3px;
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);}
 .shop-tab.active{
@@ -284,7 +290,7 @@
 .toggle{position:relative;width:46px;height:26px;flex-shrink:0;}
 .toggle input{opacity:0;width:0;height:0;}
 .toggle-slider{position:absolute;inset:0;background:rgba(8,8,15,0.7);border-radius:13px;
-  border:1px solid rgba(255,255,255,0.12);cursor:pointer;transition:all .2s;}
+  border:1px solid rgba(255,255,255,0.12);cursor:pointer;transition:all 0.2s;}
 .toggle-slider::before{content:'';position:absolute;width:20px;height:20px;
   border-radius:50%;background:#888;top:2px;left:2px;transition:transform .2s,background .2s;}
 .toggle input:checked+.toggle-slider{background:rgba(45,198,83,.2);border-color:var(--green);}
@@ -293,7 +299,7 @@
 .rc-btn{flex:1;padding:10px;
   background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
   border-radius:12px;color:var(--muted);font-size:13px;font-weight:600;
-  cursor:pointer;text-align:center;transition:all .2s;
+  cursor:pointer;text-align:center;transition:all 0.2s;
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);}
 .rc-btn.active{background:rgba(123,47,255,.2);border-color:var(--purple);color:var(--text);
@@ -324,10 +330,9 @@
 .ta{padding:16px;
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.12);
-  border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;
+  border-radius:14px;text-align:center;cursor:pointer;transition:all 0.2s;
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);}
-  text-align:center;cursor:pointer;transition:all .2s;}
 .ta.sel{border-color:var(--gold);box-shadow:inset 0 1px 0 rgba(245,197,66,0.2),0 0 0 1px rgba(245,197,66,0.15);}
 .ta-c{font-family:'Orbitron',monospace;font-size:20px;color:var(--gold);font-weight:700;}
 .ta-s{font-size:13px;color:var(--muted);margin-top:4px;}
