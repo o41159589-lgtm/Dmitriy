@@ -104,9 +104,14 @@ body{
 const tgApp = window.Telegram?.WebApp;
 if(tgApp){
   tgApp.expand();
-  // ready() tells TG the app is ready — call it NOW so TG hides its loader
-  // and our page is already visible (we painted synchronously above)
   tgApp.ready();
+}
+
+// ── AUTH GUARD: redirect if not opened via Telegram ──
+const _tgUser = tgApp?.initDataUnsafe?.user;
+if(!_tgUser || !_tgUser.id){
+  // Not opened from Telegram — show login page
+  window.location.replace('not_telegram.html');
 }
 
 // Particles

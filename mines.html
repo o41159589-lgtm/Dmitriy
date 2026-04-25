@@ -440,13 +440,15 @@ function setBetMax(){
 }
 
 // ── MULTIPLIER CALCULATION (mirrors server, capped by server max) ──
+// Uses pure probability formula: each safe reveal the odds get multiplied
+// by (remaining_cells / remaining_safe_cells). House edge = 0.97.
 function minesMultClient(safeOpened, bombs, house=0.97){
   const total=25, safeTotal=25-bombs;
   if(safeOpened===0) return 1.0;
   if(safeTotal<=0||safeOpened>safeTotal) return 0;
+  // nCr(total, safeOpened) / nCr(safeTotal, safeOpened) = true fair payout ratio
   const rawRatio = nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
-  const raw = house * Math.pow(rawRatio, 0.8);
-  return Math.min(raw, minesMaxMult);
+  return Math.min(house * rawRatio, minesMaxMult);
 }
 function nCr(n,r){
   if(r>n) return 0; if(r===0||r===n) return 1;

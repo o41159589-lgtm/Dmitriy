@@ -215,6 +215,23 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
   border-radius:10px;padding:14px;margin-bottom:10px;
   backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
 
+/* Loading overlay */
+.admin-loading{
+  position:fixed;inset:0;background:#0a0a0f;z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+}
+.al-icon{font-size:48px;margin-bottom:20px;animation:al-spin 1.5s linear infinite;}
+@keyframes al-spin{to{transform:rotate(360deg)}}
+.al-title{font-family:'Orbitron',monospace;font-size:15px;color:#f5c542;
+  letter-spacing:2px;margin-bottom:8px;}
+.al-sub{font-size:12px;color:#7070a0;margin-bottom:24px;letter-spacing:1px;}
+.al-bar-wrap{width:220px;height:3px;background:rgba(255,255,255,0.07);
+  border-radius:2px;overflow:hidden;}
+.al-bar{height:100%;width:0%;
+  background:linear-gradient(90deg,#e8a800,#f5c542,#fff);
+  border-radius:2px;transition:width .08s linear;
+  box-shadow:0 0 10px rgba(245,197,66,0.6);}
+
 /* Toast */
 .toast{position:fixed;top:14px;left:12px;right:12px;
   background:rgba(14,14,26,0.88);border:1px solid var(--glass-border);
@@ -231,6 +248,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 </style>
 </head>
 <body>
+<div class="admin-loading" id="admin-loading">
+  <div class="al-icon">⚙️</div>
+  <div class="al-title">TOPLUCK ADMIN</div>
+  <div class="al-sub">Проверка доступа...</div>
+  <div class="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <div class="header">
@@ -370,9 +393,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
   <div class="settings-block">
     <div class="settings-title">🗼 БАШНЯ — УДАЧА</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Коэффициент удачи только для Башни. Не зависит от глобального.<br>
+      Коэффициент удачи только для Башни. <b style="color:var(--text)">Это единственное значение</b>, которое применяется к башне — глобальный коэффициент на башню не влияет.<br>
       <b style="color:var(--text)">1.0</b> — честная игра · <b style="color:var(--text)">0.0</b> — всегда взрыв<br>
-      <span style="color:var(--muted);font-size:10px">Глобальный коэффициент тоже влияет на башню независимо</span>
+      <span style="color:var(--muted);font-size:10px">Глобальный ползунок перемещает этот ползунок для удобства синхронизации</span>
     </p>
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -780,13 +803,12 @@ function syncDependentSliders(v){
   const minesSlider = document.getElementById('mines-slider');
   if(minesVal){ minesVal.textContent = v.toFixed(2); minesVal.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--red)'; }
   if(minesSlider) minesSlider.value = Math.round(v*100);
-  // Tower — global also affects it, show new effective = global × tower_own
-  const towerEffVal = document.getElementById('tower-eff-val');
-  if(towerEffVal){
-    const eff = v * towerLuckCoeff;
-    towerEffVal.textContent = eff.toFixed(2);
-    towerEffVal.style.color = eff<0.3?'var(--red)':eff<0.7?'var(--gold)':'var(--blue)';
-  }
+  // Tower luck — also synced with global (global is the master slider)
+  towerLuckCoeff = v;
+  const towerLuckVal = document.getElementById('tower-luck-val');
+  const towerLuckSlider = document.getElementById('tower-luck-slider');
+  if(towerLuckVal){ towerLuckVal.textContent = v.toFixed(2); towerLuckVal.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--blue)'; }
+  if(towerLuckSlider) towerLuckSlider.value = Math.round(v*100);
 }
 
 async function loadGl(){
@@ -851,7 +873,7 @@ function onMinesSlider(v){
   syncDependentSliders(glCoeff);
 }
 
-// Tower luck (independent, saved)
+// Tower luck (independent slider, but saved as both tower_luck AND global_luck)
 function onTowerLuckSlider(v){
   towerLuckCoeff = parseInt(v)/100;
   const el = document.getElementById('tower-luck-val');
@@ -933,21 +955,53 @@ async function saveTowerFloors(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
-// ── INIT ──
+// ── LOADING OVERLAY ──
+(function startLoadingBar(){
+  const bar = document.getElementById('al-bar');
+  let pct = 0;
+  const iv = setInterval(()=>{
+    pct = Math.min(pct + Math.random()*12 + 4, 90);
+    if(bar) bar.style.width = pct + '%';
+  }, 120);
+  window._stopLoadBar = ()=>{
+    clearInterval(iv);
+    if(bar){ bar.style.width='100%'; }
+    setTimeout(()=>{
+      const el = document.getElementById('admin-loading');
+      if(el){ el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(()=>el.remove(),400); }
+    }, 300);
+  };
+  window._failLoadBar = (redirectUrl)=>{
+    clearInterval(iv);
+    if(bar){ bar.style.width='100%'; bar.style.background='var(--red)'; }
+    setTimeout(()=>{ window.location.replace(redirectUrl); }, 700);
+  };
+})();
+
 // ── ADMIN GUARD ──
 (async function checkAdminAccess(){
+  // First: check Telegram context
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  if(!tgUser || !tgUser.id){
+    window._failLoadBar('not_telegram.html');
+    return;
+  }
+
   try{
     const r = await fetch('/api/admin/users',{
       headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
     });
     if(r.status === 403){
-      // Not an admin — silently redirect to the normal app
-      window.location.replace('index.html');
+      // Not an admin — redirect to main app with correct UID preserved via TG context
+      window._failLoadBar('index.html');
       return;
     }
   } catch(e){
-    // Network error – allow panel to load anyway (server may be starting)
+    // Network error — allow panel through (server may be starting up)
   }
+
+  // Access granted
+  window._stopLoadBar();
   load();
   loadGl();
   setInterval(load, 30000);
