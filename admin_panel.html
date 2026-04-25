@@ -370,17 +370,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
   <div class="settings-block">
     <div class="settings-title">🗼 БАШНЯ — УДАЧА</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Независимый коэффициент удачи для Башни. Финальный эффект = Глобальный × Башня.<br>
-      <b style="color:var(--text)">1.0</b> — честная игра · <b style="color:var(--text)">0.0</b> — всегда взрыв
+      Коэффициент удачи только для Башни. Не зависит от глобального.<br>
+      <b style="color:var(--text)">1.0</b> — честная игра · <b style="color:var(--text)">0.0</b> — всегда взрыв<br>
+      <span style="color:var(--muted);font-size:10px">Глобальный коэффициент тоже влияет на башню независимо</span>
     </p>
     <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="font-size:12px;color:var(--muted)">Коэф. башни:</span>
-        <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">1.0</span>
-      </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:11px;color:var(--muted)">Эффективный (глобал × башня):</span>
-        <span id="tower-eff-val" style="font-family:Orbitron,monospace;font-size:13px;color:var(--blue);font-weight:700">1.0</span>
+        <span style="font-size:12px;color:var(--muted)">Коэффициент башни:</span>
+        <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">1.0</span>
       </div>
       <input type="range" id="tower-luck-slider" min="0" max="100" value="100" oninput="onTowerLuckSlider(this.value)"
         style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px">
@@ -773,17 +770,17 @@ let minesMaxMult = 25.0;
 let towerMaxFloors = 10;
 
 function syncDependentSliders(v){
-  // Euro
+  // Euro — synced with global
   const euroVal = document.getElementById('euro-val');
   const euroSlider = document.getElementById('euro-slider');
   if(euroVal){ euroVal.textContent = v.toFixed(2); euroVal.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--blue)'; }
   if(euroSlider) euroSlider.value = Math.round(v*100);
-  // Mines
+  // Mines — synced with global
   const minesVal = document.getElementById('mines-val');
   const minesSlider = document.getElementById('mines-slider');
   if(minesVal){ minesVal.textContent = v.toFixed(2); minesVal.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--red)'; }
   if(minesSlider) minesSlider.value = Math.round(v*100);
-  // Tower — shows effective combined coeff (global × tower_own)
+  // Tower — global also affects it, show new effective = global × tower_own
   const towerEffVal = document.getElementById('tower-eff-val');
   if(towerEffVal){
     const eff = v * towerLuckCoeff;
@@ -860,9 +857,6 @@ function onTowerLuckSlider(v){
   const el = document.getElementById('tower-luck-val');
   el.textContent = towerLuckCoeff.toFixed(2);
   el.style.color = towerLuckCoeff<0.3?'var(--red)':towerLuckCoeff<0.7?'var(--gold)':'var(--blue)';
-  const eff = glCoeff * towerLuckCoeff;
-  const effEl = document.getElementById('tower-eff-val');
-  if(effEl){ effEl.textContent = eff.toFixed(2); effEl.style.color = eff<0.3?'var(--red)':eff<0.7?'var(--gold)':'var(--blue)'; }
 }
 function setTowerLuck(v){
   towerLuckCoeff = v;
@@ -870,9 +864,6 @@ function setTowerLuck(v){
   document.getElementById('tower-luck-slider').value = Math.round(v*100);
   const el = document.getElementById('tower-luck-val');
   el.style.color = v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--blue)';
-  const eff = glCoeff * v;
-  const effEl = document.getElementById('tower-eff-val');
-  if(effEl){ effEl.textContent = eff.toFixed(2); effEl.style.color = eff<0.3?'var(--red)':eff<0.7?'var(--gold)':'var(--blue)'; }
 }
 async function saveTowerLuck(){
   try{

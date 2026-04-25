@@ -51,7 +51,7 @@ input[type=range]::-webkit-slider-thumb{
 
 /* mult preview */
 .mult-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
-.mult-chip{background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);border-radius:12px;backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);
+.mult-chip{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
   padding:9px;text-align:center;}
 .mult-chip-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
 .mult-chip-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;}
@@ -202,7 +202,7 @@ input[type=range]::-webkit-slider-thumb{
 .action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
 .action-btn{padding:12px;border-radius:12px;font-family:'Orbitron',monospace;
   font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
-.btn-newgame{background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);color:var(--muted);backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);}
+.btn-newgame{background:var(--bg3);border:1px solid var(--border);color:var(--muted);}
 .btn-newgame:hover{border-color:var(--gold);color:var(--gold);}
 
 /* ── RESULT OVERLAY ── */
@@ -214,7 +214,7 @@ input[type=range]::-webkit-slider-thumb{
 .result-overlay.show{display:flex;}
 .result-card{
   background:rgba(14,14,26,0.85);border-radius:24px;backdrop-filter:blur(32px) saturate(1.8);-webkit-backdrop-filter:blur(32px) saturate(1.8);
-  border:1px solid rgba(255,255,255,0.15);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 24px 60px rgba(0,0,0,0.6);padding:28px 24px;
+  border:1px solid var(--border);padding:28px 24px;
   text-align:center;max-width:280px;width:90%;
   animation:result-pop .4s cubic-bezier(.34,1.56,.64,1) both;
 }
@@ -392,7 +392,7 @@ let currentBombs = 3;
 let revealedCells = [];
 let currentMult  = 1.0;
 let currentWin   = 0;
-let minesMaxMult = 25.0; // loaded from server
+let minesMaxMult = 25.0; // loaded from server on init
 
 function toast(m,t='info'){
   const el=document.getElementById('toast');
@@ -446,7 +446,7 @@ function minesMultClient(safeOpened, bombs, house=0.97){
   if(safeTotal<=0||safeOpened>safeTotal) return 0;
   const rawRatio = nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
   const raw = house * Math.pow(rawRatio, 0.8);
-  return Math.min(raw, minesMaxMult); // cap at server max
+  return Math.min(raw, minesMaxMult);
 }
 function nCr(n,r){
   if(r>n) return 0; if(r===0||r===n) return 1;
@@ -659,21 +659,18 @@ function closeResult(){
 
 // ── INIT ──
 onBombsChange(3);
+loadUser();
 
-// Load max mult from server then init preview
+// Fetch server max mult, then render correct preview
 (async()=>{
   try{
     const d = await get('/api/admin/mines_max_mult');
-    if(d && d.max_mult) minesMaxMult = d.max_mult;
+    if(d && typeof d.max_mult === 'number') minesMaxMult = d.max_mult;
   } catch(e){}
   renderMultPreview();
-})();
 
-loadUser();
-
-// Restore active game if exists
-(async()=>{
-  if(!UID)return;
+  // Restore active game if exists
+  if(!UID) return;
   const status = await get(`/api/mines/status?uid=${UID}`).catch(()=>null);
   if(status?.active){
     currentBet   = status.bet;
@@ -690,14 +687,14 @@ loadUser();
       if(cell){cell.className='cell safe';cell.innerHTML='<span class="diamond">💎</span>';}
     });
     document.getElementById('live-bet').textContent   = status.bet;
-    document.getElementById('live-mult').textContent  = `×${status.current_mult?.toFixed(2)||'1.00'}`;
+    document.getElementById('live-mult').textContent  = `×${(status.current_mult||1).toFixed(2)}`;
     document.getElementById('live-win').textContent   = status.current_win||0;
     document.getElementById('cashout-label').textContent = status.current_win||0;
     document.getElementById('cashout-btn').disabled   = !status.revealed?.length;
     document.getElementById('bombs-slider').value = status.bombs;
     onBombsChange(status.bombs);
     renderMultContext(status.revealed?.length || 0);
-    toast(`Восстановлена активная игра!`,'info');
+    toast('Восстановлена активная игра!','info');
   }
 })();
 </script>
