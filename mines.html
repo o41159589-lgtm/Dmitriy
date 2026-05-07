@@ -439,16 +439,20 @@ function setBetMax(){
   document.getElementById('bet-input').value = userData?.balance||0;
 }
 
-// ── MULTIPLIER CALCULATION (mirrors server, capped by server max) ──
-// Uses pure probability formula: each safe reveal the odds get multiplied
-// by (remaining_cells / remaining_safe_cells). House edge = 0.97.
-function minesMultClient(safeOpened, bombs, house=0.97){
+// ── MULTIPLIER CALCULATION ──
+// Scales so that mult(safeTotal) == minesMaxMult (admin-set max).
+// Every intermediate step is unique (strictly monotone) and <minesMaxMult.
+// No step-capping — max is reached ONLY when ALL diamonds are opened.
+function minesMultClient(safeOpened, bombs){
   const total=25, safeTotal=25-bombs;
   if(safeOpened===0) return 1.0;
-  if(safeTotal<=0||safeOpened>safeTotal) return 0;
-  // nCr(total, safeOpened) / nCr(safeTotal, safeOpened) = true fair payout ratio
-  const rawRatio = nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
-  return Math.min(house * rawRatio, minesMaxMult);
+  if(safeTotal<=0||safeOpened>safeTotal) return minesMaxMult;
+  // Fair ratio at k: C(total,k) / C(safeTotal,k)
+  const fairRatioAtK   = nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
+  // Fair ratio at max (all diamonds): C(total,safeTotal) / C(safeTotal,safeTotal) = C(total,safeTotal)
+  const fairRatioAtMax = nCr(total,safeTotal);
+  // Scale so mult(safeTotal) == minesMaxMult exactly
+  return (minesMaxMult * fairRatioAtK) / fairRatioAtMax;
 }
 function nCr(n,r){
   if(r>n) return 0; if(r===0||r===n) return 1;

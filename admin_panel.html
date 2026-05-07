@@ -184,8 +184,58 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 .rt-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
 .rt-v{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;}
 
-/* Settings blocks */
-.settings-block{
+/* Promo codes */
+.promo-card{
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.09),0 6px 22px rgba(0,0,0,0.3);
+  border-radius:14px;padding:14px;margin-bottom:12px;position:relative;overflow:hidden;}
+.promo-card.active-promo{border-color:rgba(45,198,83,.4);background:rgba(45,198,83,.04);}
+.promo-card.expired-promo{border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.02);opacity:.65;}
+.promo-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.14),transparent);pointer-events:none;}
+.promo-head{display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:0;}
+.promo-code{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;flex:1;color:var(--text);}
+.promo-status-badge{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Orbitron',monospace;}
+.badge-active{background:rgba(45,198,83,.2);border:1px solid rgba(45,198,83,.4);color:var(--green);}
+.badge-expired{background:rgba(100,100,100,.15);border:1px solid rgba(100,100,100,.25);color:#888;}
+.badge-eternal{background:rgba(76,201,240,.15);border:1px solid rgba(76,201,240,.3);color:var(--blue);}
+.promo-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.pm{font-size:11px;color:var(--muted);background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:3px 7px;}
+.pm b{color:var(--text);}
+.promo-body{margin-top:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;display:none;flex-direction:column;gap:8px;}
+.promo-card.open .promo-body{display:flex;}
+.promo-row{display:flex;gap:5px;align-items:center;margin-bottom:5px;}
+.promo-inp{flex:1;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,0.12);border-radius:7px;
+  padding:7px 8px;color:var(--text);font-family:'Orbitron',monospace;font-size:12px;outline:none;text-align:center;}
+.promo-inp:focus{border-color:var(--gold);}
+.promo-acts{margin-top:4px;}
+.pa-row{display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:9px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+.pa-num{font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);width:20px;flex-shrink:0;}
+.pa-user{flex:1;color:var(--text);font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(245,197,66,.4);}
+.pa-amt{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;}
+.pa-amt.pos{color:var(--green);}.pa-amt.neg{color:var(--red);}
+.pa-date{font-size:10px;color:var(--muted);}
+.create-promo-block{
+  background:var(--glass-bg);border:1px solid rgba(245,197,66,.2);
+  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  border-radius:14px;padding:14px;margin-bottom:12px;}
+.cp-title{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;}
+.cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.cp-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.cp-inp{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:7px;
+  padding:8px 10px;color:var(--text);font-family:'Orbitron',monospace;font-size:12px;outline:none;}
+.cp-inp:focus{border-color:var(--gold);}
+.cp-toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cp-toggle-lbl{font-size:12px;color:var(--muted);flex:1;}
+.inf-badge{padding:4px 10px;font-size:10px;font-weight:700;font-family:'Orbitron',monospace;
+  background:rgba(76,201,240,.15);border:1px solid rgba(76,201,240,.3);border-radius:6px;
+  color:var(--blue);cursor:pointer;transition:all .15s;}
+.inf-badge.on{background:rgba(76,201,240,.35);color:#fff;}
+
   background:var(--glass-bg);border:1px solid var(--glass-border);
   backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.09),0 6px 22px rgba(0,0,0,0.3);
@@ -265,12 +315,57 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 <div class="tabs">
   <div class="tab a" onclick="switchTab('users',this)">👥 Игроки</div>
   <div class="tab"   onclick="switchTab('revenue',this)">💰 Доход</div>
+  <div class="tab"   onclick="switchTab('promo',this)">🎟 Промокоды</div>
   <div class="tab"   onclick="switchTab('settings',this)">⚙️ Настройки</div>
 </div>
 
 <!-- USERS -->
 <div class="tab-pane a" id="tab-users">
   <div id="users-root"><div class="loader"><span>⚙️</span><p>Загрузка...</p></div></div>
+</div>
+
+<!-- PROMO CODES -->
+<div class="tab-pane" id="tab-promo">
+
+  <!-- Create new promo -->
+  <div class="create-promo-block">
+    <div class="cp-title">➕ СОЗДАТЬ ПРОМОКОД</div>
+    <div style="margin-bottom:8px">
+      <div class="cp-label">Код (латиница/цифры)</div>
+      <input class="cp-inp" id="cp-code" type="text" placeholder="TOPLUCK2024" style="width:100%;text-transform:uppercase">
+    </div>
+    <div class="cp-grid">
+      <div>
+        <div class="cp-label">Начисление 🪙 (может быть −)</div>
+        <input class="cp-inp" id="cp-reward" type="number" placeholder="100" value="100">
+      </div>
+      <div>
+        <div class="cp-label">Активаций</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input class="cp-inp" id="cp-uses" type="number" placeholder="100" value="100" style="flex:1">
+          <div class="inf-badge" id="cp-uses-inf-btn" onclick="toggleInf('uses')" title="Безлимит">∞</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div class="cp-label">Дата окончания</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input class="cp-inp" id="cp-expires" type="date" style="flex:1">
+        <div class="inf-badge" id="cp-expires-inf-btn" onclick="toggleInf('expires')" title="Вечный">∞ навсегда</div>
+      </div>
+    </div>
+    <button class="abtn set" style="width:100%;padding:11px;font-size:13px" onclick="createPromo()">🎟 Создать промокод</button>
+    <div id="cp-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:8px"></div>
+  </div>
+
+  <!-- Promo list -->
+  <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:10px">
+    🎟 АКТИВНЫЕ И ПРОШЕДШИЕ ПРОМОКОДЫ
+  </div>
+  <div id="promo-list">
+    <div class="loader"><span>⚙️</span><p>Загрузка...</p></div>
+  </div>
+
 </div>
 
 <!-- REVENUE -->
@@ -495,6 +590,7 @@ function switchTab(name,btn){
   document.getElementById('tab-'+name).classList.add('a');
   if(name==='revenue') loadRev();
   if(name==='settings') loadGl();
+  if(name==='promo') loadPromos();
 }
 
 async function api(path, method='GET', body=null){
@@ -955,7 +1051,230 @@ async function saveTowerFloors(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
-// ── LOADING OVERLAY ──
+
+// ══════════════════════════════════════════
+// PROMO CODES
+// ══════════════════════════════════════════
+let promos = [];
+let cpUsesInf = false;
+let cpExpiresInf = false;
+
+function toggleInf(field){
+  if(field==='uses'){
+    cpUsesInf = !cpUsesInf;
+    const btn = document.getElementById('cp-uses-inf-btn');
+    const inp = document.getElementById('cp-uses');
+    btn.classList.toggle('on', cpUsesInf);
+    inp.disabled = cpUsesInf;
+    inp.style.opacity = cpUsesInf ? '.4' : '1';
+  } else {
+    cpExpiresInf = !cpExpiresInf;
+    const btn = document.getElementById('cp-expires-inf-btn');
+    const inp = document.getElementById('cp-expires');
+    btn.classList.toggle('on', cpExpiresInf);
+    inp.disabled = cpExpiresInf;
+    inp.style.opacity = cpExpiresInf ? '.4' : '1';
+  }
+}
+
+async function loadPromos(){
+  try{
+    promos = await api('/api/admin/promo');
+    renderPromos();
+  } catch {
+    document.getElementById('promo-list').innerHTML =
+      '<div style="text-align:center;padding:32px;color:var(--red)">Ошибка загрузки</div>';
+  }
+}
+
+function isPromoActive(p){
+  if(p.uses_left !== null && p.uses_left <= 0) return false;
+  if(p.expires_at !== null && p.expires_at < Date.now()/1000) return false;
+  return true;
+}
+
+function renderPromos(){
+  const list = document.getElementById('promo-list');
+  if(!promos.length){
+    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">Промокодов пока нет</div>';
+    return;
+  }
+  // Active first, then expired
+  const sorted = [...promos].sort((a,b) => isPromoActive(b)-isPromoActive(a));
+  list.innerHTML = sorted.map(promoCard).join('');
+}
+
+function promoCard(p){
+  const active = isPromoActive(p);
+  const eternal = p.expires_at === null;
+  const infUses  = p.uses_left === null;
+  const now = Date.now()/1000;
+  const expStr = eternal ? 'Вечный' : new Date(p.expires_at*1000).toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  const usesStr = infUses ? '∞' : p.uses_left;
+  const reward = p.reward;
+  const rewardColor = reward >= 0 ? 'var(--green)' : 'var(--red)';
+  const activations = p.total_activations || 0;
+  return `<div class="promo-card ${active?'active-promo':'expired-promo'}" id="pc-${esc(p.code)}">
+    <div class="promo-head" onclick="togPromo('${esc(p.code)}')">
+      <div style="font-size:16px">${active?'🟢':'⚫'}</div>
+      <div class="promo-code">${esc(p.code)}</div>
+      <div class="promo-status-badge ${active?(eternal?'badge-eternal':'badge-active'):'badge-expired'}">${active?(eternal?'∞ ВЕЧНЫЙ':'АКТИВЕН'):'ИСТЁК'}</div>
+    </div>
+    <div class="promo-meta">
+      <div class="pm">💰 <b style="color:${rewardColor}">${reward>=0?'+':''}${reward} 🪙</b></div>
+      <div class="pm">🔢 Осталось: <b>${usesStr}</b></div>
+      <div class="pm">📅 До: <b>${expStr}</b></div>
+      <div class="pm">✅ Активаций: <b>${activations}</b></div>
+    </div>
+    <div class="promo-body" id="pb-${esc(p.code)}">
+
+      <!-- Edit block -->
+      <div class="ag">
+        <div class="ag-l">✏️ Редактировать</div>
+        <div class="ag-row">
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">Награда:</span>
+          <input class="promo-inp" id="pe-reward-${esc(p.code)}" type="number" value="${reward}" style="max-width:90px">
+          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','reward')">SET</button>
+        </div>
+        <div class="ag-row">
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">Активаций:</span>
+          <input class="promo-inp" id="pe-uses-${esc(p.code)}" type="number" value="${infUses?'':p.uses_left}" placeholder="∞" style="max-width:90px">
+          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','uses')">SET</button>
+          <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','uses_inf')" title="Сделать безлимитным">∞</button>
+        </div>
+        <div class="ag-row">
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">До даты:</span>
+          <input class="promo-inp" id="pe-exp-${esc(p.code)}" type="date" value="${eternal?'':new Date(p.expires_at*1000).toISOString().split('T')[0]}" style="max-width:130px;font-family:'Rajdhani',sans-serif">
+          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','expires')">SET</button>
+          <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','eternal')" title="Сделать вечным">∞</button>
+        </div>
+        <div class="ag-row">
+          <button class="abtn ban" style="flex:1" onclick="deletePromo(event,'${esc(p.code)}')">🗑 Удалить промокод</button>
+        </div>
+      </div>
+
+      <!-- Activations -->
+      <div class="ag">
+        <div class="ag-l">📋 Кто активировал (${activations})</div>
+        <div class="promo-acts" id="pa-${esc(p.code)}">
+          <div style="text-align:center;color:var(--muted);font-size:12px;padding:8px">Нажмите для загрузки</div>
+        </div>
+        <button class="abtn msg" style="width:100%;margin-top:6px" onclick="loadPromoActs(event,'${esc(p.code)}')">📋 Загрузить активации</button>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+function togPromo(code){
+  const el = document.getElementById('pc-'+code);
+  if(el) el.classList.toggle('open');
+}
+
+async function createPromo(){
+  const code    = document.getElementById('cp-code').value.trim().toUpperCase();
+  const reward  = parseInt(document.getElementById('cp-reward').value)||0;
+  const usesInp = parseInt(document.getElementById('cp-uses').value)||100;
+  const uses    = cpUsesInf ? null : usesInp;
+  const expInp  = document.getElementById('cp-expires').value;
+  const expires = cpExpiresInf || !expInp ? null : new Date(expInp).getTime()/1000 + 86399;
+
+  if(!code){toast('Введите код','err');return;}
+  if(code.length < 3){toast('Код должен быть ≥ 3 символа','err');return;}
+
+  const st = document.getElementById('cp-status');
+  st.textContent = '⏳ Создаём...'; st.style.color='var(--muted)';
+
+  try{
+    await api('/api/admin/promo/create','POST',{code, reward, uses_left: uses, expires_at: expires});
+    st.textContent = `✅ Промокод ${code} создан!`; st.style.color='var(--green)';
+    document.getElementById('cp-code').value = '';
+    setTimeout(()=>st.textContent='', 3000);
+    await loadPromos();
+  } catch(e){
+    st.textContent = '❌ Ошибка: код уже существует или нет доступа'; st.style.color='var(--red)';
+  }
+}
+
+async function editPromo(e, code, field){
+  e.stopPropagation();
+  let body = {code};
+  if(field==='reward'){
+    body.reward = parseInt(document.getElementById('pe-reward-'+code).value)||0;
+  } else if(field==='uses'){
+    const v = parseInt(document.getElementById('pe-uses-'+code).value);
+    body.uses_left = isNaN(v) ? null : v;
+  } else if(field==='uses_inf'){
+    body.uses_left = null;
+  } else if(field==='expires'){
+    const v = document.getElementById('pe-exp-'+code).value;
+    body.expires_at = v ? new Date(v).getTime()/1000 + 86399 : null;
+  } else if(field==='eternal'){
+    body.expires_at = null;
+  }
+  try{
+    await api('/api/admin/promo/update','POST',body);
+    toast(`✅ Промокод ${code} обновлён`);
+    await loadPromos();
+    // Re-open the card
+    setTimeout(()=>{
+      const el = document.getElementById('pc-'+code);
+      if(el) el.classList.add('open');
+    }, 100);
+  } catch{ toast('Ошибка обновления','err'); }
+}
+
+async function deletePromo(e, code){
+  e.stopPropagation();
+  if(!confirm(`Удалить промокод ${code}?`)) return;
+  try{
+    await api('/api/admin/promo/delete','POST',{code});
+    toast(`🗑 Промокод ${code} удалён`);
+    await loadPromos();
+  } catch{ toast('Ошибка','err'); }
+}
+
+async function loadPromoActs(e, code){
+  e.stopPropagation();
+  const el = document.getElementById('pa-'+code);
+  el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px">⏳ Загрузка...</div>';
+  try{
+    const acts = await api(`/api/admin/promo/${encodeURIComponent(code)}/activations`);
+    if(!acts.length){
+      el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px">Никто ещё не активировал</div>';
+      return;
+    }
+    el.innerHTML = acts.map((a,i)=>{
+      const d = new Date(a.activated_at*1000).toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+        +' '+new Date(a.activated_at*1000).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+      const amt = a.amount_received;
+      return `<div class="pa-row">
+        <div class="pa-num">#${i+1}</div>
+        <div class="pa-user" onclick="scrollToUser(${a.user_id})" title="Перейти к аккаунту">
+          ${esc(a.first_name||a.username||'ID:'+a.user_id)}
+          ${a.username?'<span style="color:var(--muted);font-size:10px"> @'+esc(a.username)+'</span>':''}
+        </div>
+        <div class="pa-amt ${amt>=0?'pos':'neg'}">${amt>=0?'+':''}${amt}🪙</div>
+        <div class="pa-date">${d}</div>
+      </div>`;
+    }).join('');
+  } catch{
+    el.innerHTML='<div style="text-align:center;color:var(--red);font-size:12px;padding:8px">Ошибка загрузки</div>';
+  }
+}
+
+function scrollToUser(uid){
+  // Switch to users tab and open that user's card
+  const usersTab = document.querySelector('[onclick*="users"]');
+  if(usersTab){ switchTab('users',usersTab); }
+  setTimeout(()=>{
+    const el = document.getElementById('uc-'+uid);
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('open'); }
+    else { toast('Загрузите список игроков сначала','err'); }
+  }, 300);
+}
+
+
 (function startLoadingBar(){
   const bar = document.getElementById('al-bar');
   let pct = 0;

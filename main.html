@@ -157,7 +157,8 @@
 .hi-ic.win{background:rgba(45,198,83,.15);}
 .hi-ic.lose{background:rgba(230,57,70,.15);}
 .hi-ic.deposit,.hi-ic.ref{background:rgba(76,201,240,.15);}
-.hi-ic.gift_sent,.hi-ic.gift_received{background:rgba(245,197,66,.15);}
+.hi-ic.promo{background:rgba(245,197,66,.18);}
+
 .hi-b{flex:1;}
 .hi-t{font-weight:600;font-size:14px;}
 .hi-s{font-size:12px;color:var(--muted);margin-top:2px;}
@@ -369,7 +370,33 @@
     <button class="topup-btn" onclick="openTopup()">
       <span style="font-size:20px">⭐</span> Пополнить (1 ⭐ = 10 🪙)
     </button>
-    <!-- О нас -->
+
+    <!-- PROMO CODE -->
+    <div class="card" id="promo-card" style="margin-bottom:14px">
+      <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="togglePromoPanel()">
+        <span>🎟 Промокод</span>
+        <span id="promo-arrow" style="font-size:16px;color:var(--muted);transition:transform .25s">›</span>
+      </div>
+      <div id="promo-body" style="display:none;padding:14px 16px">
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="promo-inp" type="text"
+            placeholder="Введи промокод..."
+            style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+                   padding:10px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
+                   outline:none;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter')activatePromo()">
+          <button onclick="activatePromo()"
+            style="padding:10px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+                   border:none;border-radius:10px;color:#000;font-family:'Orbitron',monospace;
+                   font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;
+                   box-shadow:0 3px 12px rgba(245,197,66,.3)">
+            ✓ Активировать
+          </button>
+        </div>
+        <div id="promo-result" style="text-align:center;font-size:13px;font-weight:600;min-height:18px"></div>
+      </div>
+    </div>
     <div class="card" id="about-card">
       <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAbout()">
         <span>ℹ️ О нас</span>
@@ -779,8 +806,8 @@ async function renderHistory(){
   });
   document.getElementById('s-won').textContent=won;
   document.getElementById('s-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание'};
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',promo:'🎟'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',promo:'Промокод'};
   const list=document.getElementById('hist-list');
   if(!items.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
   list.innerHTML=items.slice(0,60).map(i=>{
@@ -842,8 +869,8 @@ async function renderInvHistory(){
   });
   document.getElementById('inv-won').textContent=won;
   document.getElementById('inv-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок',gift_received:'Подарок получен'};
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',promo:'🎟'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок',gift_received:'Подарок получен',promo:'Промокод'};
   const list=document.getElementById('inv-hist-list');
   if(!hist.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
   list.innerHTML=hist.slice(0,50).map(i=>{
@@ -1063,6 +1090,37 @@ function copyTon(){
       ta.value=addr;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
       toast('TON-кошелёк скопирован! 📋','ok');
     });
+}
+
+// ── PROMO CODE ──
+function togglePromoPanel(){
+  const body  = document.getElementById('promo-body');
+  const arrow = document.getElementById('promo-arrow');
+  const open  = body.style.display === 'block';
+  body.style.display  = open ? 'none' : 'block';
+  arrow.style.transform = open ? '' : 'rotate(90deg)';
+  if(!open) document.getElementById('promo-inp').focus();
+}
+
+async function activatePromo(){
+  const code = (document.getElementById('promo-inp').value||'').trim().toUpperCase();
+  const res_el = document.getElementById('promo-result');
+  if(!code){ res_el.textContent='Введи промокод'; res_el.style.color='var(--muted)'; return; }
+  if(!UID){ res_el.textContent='Нужен Telegram'; res_el.style.color='var(--red)'; return; }
+
+  res_el.textContent='⏳ Проверяем...'; res_el.style.color='var(--muted)';
+
+  const r = await post('/api/promo/activate', {user_id: UID, code}).catch(()=>null);
+  if(!r){ res_el.textContent='Ошибка соединения'; res_el.style.color='var(--red)'; return; }
+  if(r.error){
+    res_el.textContent = r.error; res_el.style.color='var(--red)'; return;
+  }
+  const amt = r.reward;
+  res_el.textContent = `${amt>=0?'✅ +':'⚠️ '}${amt} 🪙 — промокод активирован!`;
+  res_el.style.color = amt>=0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('promo-inp').value='';
+  toast(`🎟 Промокод активирован! ${amt>=0?'+':''}${amt} 🪙`, amt>=0 ? 'ok' : 'err');
+  if(userData){ userData.balance = r.new_balance; updateUI(); }
 }
 
 // ── INIT ──
