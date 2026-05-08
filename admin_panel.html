@@ -1109,33 +1109,40 @@ async function saveTowerLuck(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
-async function loadGl(){
-  const load = async(url, key, slEl, valEl, color) => {
-    try{
+async function loadGl() {
+  const load = async (url, key, slEl, valEl, color) => {
+    try {
       const d = await api(url);
       const v = d.coeff ?? 1.0;
-      if(slEl) slEl.value = Math.round(v*100);
-      if(valEl){ valEl.textContent = v.toFixed(2); valEl.style.color = _colorCoeff(v); }
+      if (slEl) slEl.value = Math.round(v * 100);
+      if (valEl) {
+        valEl.textContent = v.toFixed(2);
+        valEl.style.color = _colorCoeff(v);
+      }
       return v;
-    } catch{ return 1.0; }
+    } catch {
+      return 1.0;
+    }
   };
-  glCoeff         = await load('/api/admin/global_luck', 'coeff', document.getElementById('gl-slider'), document.getElementById('gl-val'));
-  euroCoeff       = await load('/api/admin/euro_luck', 'coeff', document.getElementById('euro-slider'), document.getElementById('euro-val'));
-  minesCoeff      = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
-  towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
-  try{
+  glCoeff = await load('/api/admin/global_luck', 'coeff', document.getElementById('gl-slider'), document.getElementById('gl-val'));
+  euroCoeff = await load('/api/admin/euro_luck', 'coeff', document.getElementById('euro-slider'), document.getElementById('euro-val'));
+  minesCoeff = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
+  towerLuckCoeff = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
+  try {
     const d = await api('/api/admin/mines_max_mult');
     minesMaxMult = d.max_mult;
-    document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1)+'x';
+    document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1) + 'x';
     document.getElementById('mines-max-slider').value = Math.min(100, minesMaxMult);
-  } catch{}
-  try{
+  } catch {
+  }
+  try {
     const d = await api('/api/admin/tower_max_floors');
     towerMaxFloors = d.max_floors;
     document.getElementById('tower-floors-val').textContent = towerMaxFloors;
     document.getElementById('tower-floors-slider').value = towerMaxFloors;
-  } catch{}
-
+  } catch {
+  }
+}
 // ── MINES MAX MULTIPLIER ──
 function onMinesMaxSlider(v){
   minesMaxMult = parseFloat(v);
