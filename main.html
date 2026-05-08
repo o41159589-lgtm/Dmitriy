@@ -66,39 +66,111 @@
 .irow-l{color:var(--muted);font-size:14px;}
 .irow-r{color:var(--text);font-weight:600;}
 
-/* ── GAMES (roulette page) ── */
+/* ── GAMES — colorful cards ── */
 .games-content{padding:14px;}
-.section-label{font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);
-  letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;}
+.games-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.games-title{font-family:'Orbitron',monospace;font-size:13px;color:var(--text);font-weight:700;letter-spacing:1px;}
+.coin-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  background:linear-gradient(135deg,#e8a800,#f5c542);
+  border-radius:10px;padding:7px 13px;
+  font-family:'Orbitron',monospace;font-size:14px;font-weight:900;
+  color:#1a0800;box-shadow:0 3px 12px rgba(245,197,66,.35),inset 0 1px 0 rgba(255,255,255,.25);
+}
+
 .game-card{
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.12);
-  border-radius:20px;overflow:hidden;margin-bottom:14px;
-  backdrop-filter:blur(24px) saturate(1.6);
-  -webkit-backdrop-filter:blur(24px) saturate(1.6);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 8px 28px rgba(0,0,0,0.32);
-  cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s;text-decoration:none;display:block;position:relative;
+  display:block;text-decoration:none;
+  border-radius:22px;overflow:hidden;margin-bottom:14px;
+  cursor:pointer;transition:transform .15s,box-shadow .2s;position:relative;
+  box-shadow:0 8px 30px rgba(0,0,0,.4);
 }
 .game-card:active{transform:scale(.98);}
-.game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);}
-.gc-banner{height:110px;display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;}
-.gc-banner.euro{background:linear-gradient(135deg,#0a1a0a,#0a2810);}
-.gc-banner.gta{background:linear-gradient(135deg,#0a0a1e,#1a0830);}
-.gc-glow-euro{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(45,198,83,.12),transparent 70%);}
-.gc-glow-gta{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(123,47,255,.14),transparent 70%);}
-.gc-preview{font-size:56px;position:relative;z-index:1;filter:drop-shadow(0 0 20px rgba(255,255,255,.15));}
-.gc-info{padding:14px 16px;}
-.gc-title{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
-.gc-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:8px;}
-.gc-tags{display:flex;gap:6px;flex-wrap:wrap;}
-.gc-tag{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-  border-radius:6px;padding:3px 8px;font-size:11px;color:var(--muted);font-weight:600;}
-.gc-arrow{position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  color:var(--gold);font-size:22px;opacity:.5;}
 
-/* ── INVENTORY ── */
+/* Banner area */
+.gc-banner{
+  height:130px;display:flex;align-items:center;
+  position:relative;overflow:hidden;padding:0 20px;
+}
+/* Euro roulette — emerald green */
+.gc-banner.euro{
+  background:linear-gradient(135deg,#0a2318 0%,#0d3520 40%,#0f4228 100%);
+  border-bottom:1px solid rgba(45,198,83,.2);
+}
+.gc-banner.euro .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(45,198,83,.35),transparent 65%);}
+/* GTA roulette — neon blue-purple */
+.gc-banner.gta{
+  background:linear-gradient(135deg,#080820 0%,#0e0e38 40%,#140a40 100%);
+  border-bottom:1px solid rgba(123,47,255,.2);
+}
+.gc-banner.gta .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(123,47,255,.4),transparent 65%);}
+/* Mines — fiery orange-red */
+.gc-banner.mines{
+  background:linear-gradient(135deg,#1e0803 0%,#2e0a05 40%,#380e06 100%);
+  border-bottom:1px solid rgba(230,57,70,.2);
+}
+.gc-banner.mines .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(230,100,20,.45),transparent 65%);}
+/* Tower — electric blue */
+.gc-banner.tower{
+  background:linear-gradient(135deg,#030d1e 0%,#051428 40%,#071a35 100%);
+  border-bottom:1px solid rgba(76,201,240,.2);
+}
+.gc-banner.tower .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(76,201,240,.35),transparent 65%);}
+
+.gc-glow{position:absolute;inset:0;}
+
+/* Decorative big faded letter background */
+.gc-bg-text{
+  position:absolute;right:-10px;top:50%;transform:translateY(-50%);
+  font-family:'Orbitron',monospace;font-size:90px;font-weight:900;
+  opacity:.06;color:#fff;line-height:1;pointer-events:none;letter-spacing:-4px;
+  user-select:none;
+}
+.gc-text-block{position:relative;z-index:2;flex:1;}
+.gc-game-label{
+  font-family:'Orbitron',monospace;font-size:18px;font-weight:900;
+  color:#fff;letter-spacing:1px;margin-bottom:5px;text-shadow:0 2px 12px rgba(0,0,0,.5);
+}
+.gc-game-label.euro-label{color:#4dff91;}
+.gc-game-label.gta-label{color:#b48fff;}
+.gc-game-label.mines-label{color:#ff7040;}
+.gc-game-label.tower-label{color:#4cc9f0;}
+.gc-game-sub{font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;max-width:180px;}
+.gc-emoji{
+  position:relative;z-index:2;font-size:62px;flex-shrink:0;
+  filter:drop-shadow(0 4px 16px rgba(0,0,0,.5));
+  animation:gc-float 3s ease-in-out infinite;
+}
+@keyframes gc-float{
+  0%,100%{transform:translateY(0) rotate(-3deg);}
+  50%{transform:translateY(-6px) rotate(2deg);}
+}
+.game-card:nth-child(2) .gc-emoji{animation-delay:.4s;}
+.game-card:nth-child(3) .gc-emoji{animation-delay:.8s;}
+.game-card:nth-child(4) .gc-emoji{animation-delay:1.2s;}
+
+/* Bottom info strip */
+.gc-strip{
+  display:flex;align-items:center;padding:11px 18px;gap:8px;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(10px);
+}
+.gc-strip-tags{display:flex;gap:6px;flex:1;flex-wrap:wrap;}
+.gc-stag{
+  padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.65);
+}
+.gc-play-btn{
+  padding:6px 14px;border-radius:8px;font-family:'Orbitron',monospace;
+  font-size:11px;font-weight:700;color:#000;border:none;cursor:pointer;
+  white-space:nowrap;
+}
+.gc-play-btn.green{background:linear-gradient(135deg,#1aa840,#2dc653);}
+.gc-play-btn.purple{background:linear-gradient(135deg,#7b2fff,#a060ff);color:#fff;}
+.gc-play-btn.orange{background:linear-gradient(135deg,#e63946,#ff6030);}
+.gc-play-btn.blue{background:linear-gradient(135deg,#0099cc,#4cc9f0);}
+
+/* Section label */
+.section-label{font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);
+  letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;}/* ── HISTORY ── */
 .inv-content{padding:14px;}
 .inv-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
 .istat{
@@ -157,8 +229,8 @@
 .hi-ic.win{background:rgba(45,198,83,.15);}
 .hi-ic.lose{background:rgba(230,57,70,.15);}
 .hi-ic.deposit,.hi-ic.ref{background:rgba(76,201,240,.15);}
-.hi-ic.promo{background:rgba(245,197,66,.18);}
-
+.hi-ic.gift_sent,.hi-ic.gift_received{background:rgba(245,197,66,.15);}
+.hi-ic.promo{background:rgba(245,197,66,.2);border:1px solid rgba(245,197,66,.2);}
 .hi-b{flex:1;}
 .hi-t{font-weight:600;font-size:14px;}
 .hi-s{font-size:12px;color:var(--muted);margin-top:2px;}
@@ -361,42 +433,69 @@
       <h1>TOPLUCK</h1>
       <p>Добро пожаловать! Испытай удачу.</p>
     </div>
+
+    <!-- Balance highlight -->
+    <div style="
+      background:linear-gradient(135deg,rgba(245,197,66,.1),rgba(232,168,0,.06));
+      border:1px solid rgba(245,197,66,.25);border-radius:18px;padding:16px 18px;
+      margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;
+      box-shadow:inset 0 1px 0 rgba(245,197,66,.15),0 4px 20px rgba(0,0,0,.3);">
+      <div>
+        <div style="font-size:11px;color:rgba(245,197,66,.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Ваш баланс</div>
+        <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--gold);
+          text-shadow:0 0 20px rgba(245,197,66,.4);">🪙 <span id="h-bal">—</span></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Всего выиграно</div>
+        <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--green);font-weight:700">+<span id="h-won">—</span></div>
+      </div>
+    </div>
+
     <div class="sgrid">
-      <div class="sc"><div class="sc-ico">🪙</div><div class="sc-lbl">Баланс</div><div class="sc-val" id="h-bal">—</div></div>
-      <div class="sc"><div class="sc-ico">🎲</div><div class="sc-lbl">Игр</div><div class="sc-val" id="h-spins">—</div></div>
+      <div class="sc"><div class="sc-ico">🎲</div><div class="sc-lbl">Игр сыграно</div><div class="sc-val" id="h-spins">—</div></div>
       <div class="sc"><div class="sc-ico">🏆</div><div class="sc-lbl">Побед</div><div class="sc-val" id="h-wins">—</div></div>
-      <div class="sc"><div class="sc-ico">📈</div><div class="sc-lbl">Выиграно</div><div class="sc-val" id="h-won">—</div></div>
     </div>
     <button class="topup-btn" onclick="openTopup()">
       <span style="font-size:20px">⭐</span> Пополнить (1 ⭐ = 10 🪙)
     </button>
 
     <!-- PROMO CODE -->
-    <div class="card" id="promo-card" style="margin-bottom:14px">
-      <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="togglePromoPanel()">
-        <span>🎟 Промокод</span>
-        <span id="promo-arrow" style="font-size:16px;color:var(--muted);transition:transform .25s">›</span>
+    <div style="
+      background:linear-gradient(135deg,rgba(245,197,66,.07),rgba(232,168,0,.04));
+      border:1px solid rgba(245,197,66,.22);border-radius:18px;margin-bottom:14px;overflow:hidden;
+      box-shadow:inset 0 1px 0 rgba(245,197,66,.12),0 4px 20px rgba(0,0,0,.3);">
+      <div onclick="togglePromoPanel()"
+        style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;
+            background:linear-gradient(135deg,rgba(245,197,66,.2),rgba(245,197,66,.1));
+            border:1px solid rgba(245,197,66,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🎟</div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);font-weight:700">ПРОМОКОД</div>
+            <div style="font-size:11px;color:var(--muted)">Активируй и получи монеты</div>
+          </div>
+        </div>
+        <span id="promo-arrow" style="font-size:20px;color:var(--gold);transition:transform .25s;font-weight:300">›</span>
       </div>
-      <div id="promo-body" style="display:none;padding:14px 16px">
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input id="promo-inp" type="text"
-            placeholder="Введи промокод..."
-            style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
-                   padding:10px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
+      <div id="promo-body" style="display:none;padding:0 16px 16px">
+        <div style="display:flex;gap:8px">
+          <input id="promo-inp" type="text" placeholder="Введи промокод..."
+            style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(245,197,66,.25);border-radius:12px;
+                   padding:11px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
                    outline:none;text-transform:uppercase;"
             oninput="this.value=this.value.toUpperCase()"
             onkeydown="if(event.key==='Enter')activatePromo()">
           <button onclick="activatePromo()"
-            style="padding:10px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
-                   border:none;border-radius:10px;color:#000;font-family:'Orbitron',monospace;
+            style="padding:11px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+                   border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;
                    font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;
-                   box-shadow:0 3px 12px rgba(245,197,66,.3)">
-            ✓ Активировать
-          </button>
+                   box-shadow:0 3px 12px rgba(245,197,66,.3);">✓ Применить</button>
         </div>
-        <div id="promo-result" style="text-align:center;font-size:13px;font-weight:600;min-height:18px"></div>
+        <div id="promo-result" style="text-align:center;font-size:13px;font-weight:600;min-height:16px;margin-top:10px"></div>
       </div>
     </div>
+
+    <!-- О нас -->
     <div class="card" id="about-card">
       <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAbout()">
         <span>ℹ️ О нас</span>
@@ -518,53 +617,89 @@
 <!-- ══════════════ GAMES ══════════════ -->
 <div class="page" id="page-games">
   <div class="games-content">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div class="section-label">🎮 Выбери игру</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="bal-chip" style="font-size:13px;padding:6px 11px;">🪙 <span id="r-bal">0</span></div>
-      </div>
+    <div class="games-header">
+      <div class="games-title">🎮 Выбери игру</div>
+      <div class="coin-pill">🪙 <span id="r-bal">0</span></div>
     </div>
+
     <a class="game-card" href="european_roulette.html">
-      <div class="gc-banner euro"><div class="gc-glow-euro"></div><div class="gc-preview">🎰</div></div>
-      <div class="gc-info">
-        <div class="gc-title">Европейская рулетка</div>
-        <div class="gc-desc">Настоящее казино! Крутящееся колесо, 37 секторов. Ставь на цвет, чётность или число.</div>
-        <div class="gc-tags"><span class="gc-tag">×0–×14</span><span class="gc-tag">1 игрок</span><span class="gc-tag">от 10 🪙</span></div>
+      <div class="gc-banner euro">
+        <div class="gc-glow"></div>
+        <div class="gc-bg-text">ROLL</div>
+        <div class="gc-text-block">
+          <div class="gc-game-label euro-label">РУЛЕТКА</div>
+          <div class="gc-game-sub">Крутящееся колесо, 37 секторов. Ставь на цвет, чётность или число.</div>
+        </div>
+        <div class="gc-emoji">🎰</div>
       </div>
-      <div class="gc-arrow">›</div>
+      <div class="gc-strip">
+        <div class="gc-strip-tags">
+          <span class="gc-stag">×0 – ×14</span>
+          <span class="gc-stag">от 10 🪙</span>
+          <span class="gc-stag">1 игрок</span>
+        </div>
+        <button class="gc-play-btn green">▶ Играть</button>
+      </div>
     </a>
+
     <a class="game-card" href="gta_roulette.html">
-      <div class="gc-banner gta"><div class="gc-glow-gta"></div><div class="gc-preview">🏙</div></div>
-      <div class="gc-info">
-        <div class="gc-title">GTA RP Рулетка</div>
-        <div class="gc-desc">Общий банк! Чем больше ставка — тем выше шанс выиграть всё.</div>
-        <div class="gc-tags"><span class="gc-tag">Общий банк</span><span class="gc-tag">2+ игроков</span><span class="gc-tag">3–8% комиссия</span><span class="gc-tag">от 10 🪙</span></div>
+      <div class="gc-banner gta">
+        <div class="gc-glow"></div>
+        <div class="gc-bg-text">GTA</div>
+        <div class="gc-text-block">
+          <div class="gc-game-label gta-label">GTA РУЛЕТКА</div>
+          <div class="gc-game-sub">Общий банк! Чем больше ставка — тем выше шанс забрать всё.</div>
+        </div>
+        <div class="gc-emoji">🏙</div>
       </div>
-      <div class="gc-arrow">›</div>
+      <div class="gc-strip">
+        <div class="gc-strip-tags">
+          <span class="gc-stag">Общий банк</span>
+          <span class="gc-stag">от 10 🪙</span>
+          <span class="gc-stag">2+ игроков</span>
+        </div>
+        <button class="gc-play-btn purple">▶ Играть</button>
+      </div>
     </a>
-    <a class="game-card" href="mines.html" style="border-color:rgba(230,57,70,.2);">
-      <div class="gc-banner" style="background:linear-gradient(135deg,#1a0608,#280a0a);">
-        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(230,57,70,.14),transparent 70%);"></div>
-        <div class="gc-preview">💣</div>
+
+    <a class="game-card" href="mines.html">
+      <div class="gc-banner mines">
+        <div class="gc-glow"></div>
+        <div class="gc-bg-text">MINE</div>
+        <div class="gc-text-block">
+          <div class="gc-game-label mines-label">МИНЫ</div>
+          <div class="gc-game-sub">Открывай клетки, собирай 💎! Одна бомба — и всё потеряно. Кешаутись!</div>
+        </div>
+        <div class="gc-emoji">💣</div>
       </div>
-      <div class="gc-info">
-        <div class="gc-title">Мины</div>
-        <div class="gc-desc">Открывай клетки и собирай алмазы 💎! Одна бомба — и всё потеряно. Кешаутись вовремя!</div>
-        <div class="gc-tags"><span class="gc-tag">×0–×24</span><span class="gc-tag">1–24 бомбы</span><span class="gc-tag">от 10 🪙</span></div>
+      <div class="gc-strip">
+        <div class="gc-strip-tags">
+          <span class="gc-stag">1–24 бомбы</span>
+          <span class="gc-stag">от 10 🪙</span>
+          <span class="gc-stag">Кешаут</span>
+        </div>
+        <button class="gc-play-btn orange">▶ Играть</button>
       </div>
-      <div class="gc-arrow" style="color:var(--red)">›</div>
     </a>
-    <a class="game-card" href="tower.html" style="border-color:rgba(76,201,240,.2);">
-      <div class="gc-banner" style="background:linear-gradient(135deg,#060e1a,#0a1828);">
-        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(76,201,240,.14),transparent 70%);"></div>
-        <div class="gc-preview">🗼</div>
+
+    <a class="game-card" href="tower.html">
+      <div class="gc-banner tower">
+        <div class="gc-glow"></div>
+        <div class="gc-bg-text">TOWER</div>
+        <div class="gc-text-block">
+          <div class="gc-game-label tower-label">БАШНЯ</div>
+          <div class="gc-game-sub">Поднимайся по этажам! 3 клетки — 1 мина. Каждый этаж умножает выигрыш.</div>
+        </div>
+        <div class="gc-emoji">🗼</div>
       </div>
-      <div class="gc-info">
-        <div class="gc-title">Башня</div>
-        <div class="gc-desc">Поднимайся по этажам! 3 клетки — 1 мина. Каждый этаж умножает ставку. Взорвешься — потеряешь всё!</div>
-        <div class="gc-tags"><span class="gc-tag">×0-×2.81+</span><span class="gc-tag">от 10 🪙</span></div>
+      <div class="gc-strip">
+        <div class="gc-strip-tags">
+          <span class="gc-stag">×1 – ×2.8+</span>
+          <span class="gc-stag">от 10 🪙</span>
+          <span class="gc-stag">Кешаут</span>
+        </div>
+        <button class="gc-play-btn blue">▶ Играть</button>
       </div>
-      <div class="gc-arrow" style="color:var(--blue)">›</div>
     </a>
   </div>
 </div>
@@ -1094,33 +1229,34 @@ function copyTon(){
 
 // ── PROMO CODE ──
 function togglePromoPanel(){
-  const body  = document.getElementById('promo-body');
+  const body = document.getElementById('promo-body');
   const arrow = document.getElementById('promo-arrow');
-  const open  = body.style.display === 'block';
-  body.style.display  = open ? 'none' : 'block';
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
   arrow.style.transform = open ? '' : 'rotate(90deg)';
-  if(!open) document.getElementById('promo-inp').focus();
+  if(!open) setTimeout(()=>document.getElementById('promo-inp').focus(), 100);
 }
 
 async function activatePromo(){
   const code = (document.getElementById('promo-inp').value||'').trim().toUpperCase();
   const res_el = document.getElementById('promo-result');
-  if(!code){ res_el.textContent='Введи промокод'; res_el.style.color='var(--muted)'; return; }
+  if(!code){ res_el.textContent='Введи код промокода'; res_el.style.color='var(--muted)'; return; }
   if(!UID){ res_el.textContent='Нужен Telegram'; res_el.style.color='var(--red)'; return; }
-
   res_el.textContent='⏳ Проверяем...'; res_el.style.color='var(--muted)';
-
-  const r = await post('/api/promo/activate', {user_id: UID, code}).catch(()=>null);
-  if(!r){ res_el.textContent='Ошибка соединения'; res_el.style.color='var(--red)'; return; }
-  if(r.error){
-    res_el.textContent = r.error; res_el.style.color='var(--red)'; return;
+  try{
+    const r = await post('/api/promo/activate', {user_id: UID, code});
+    if(r.error){
+      res_el.textContent = '❌ ' + r.error; res_el.style.color='var(--red)'; return;
+    }
+    const amt = r.reward;
+    res_el.textContent = `${amt>=0?'✅':' ⚠️'} ${amt>=0?'+':''}${amt} 🪙 — промокод активирован!`;
+    res_el.style.color = amt>=0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('promo-inp').value = '';
+    toast(`🎟 ${amt>=0?'+':''}${amt} 🪙 — промокод применён!`, amt>=0?'ok':'err');
+    if(userData){ userData.balance = r.new_balance; updateUI(); }
+  } catch(e){
+    res_el.textContent = '❌ Ошибка соединения с сервером'; res_el.style.color='var(--red)';
   }
-  const amt = r.reward;
-  res_el.textContent = `${amt>=0?'✅ +':'⚠️ '}${amt} 🪙 — промокод активирован!`;
-  res_el.style.color = amt>=0 ? 'var(--green)' : 'var(--red)';
-  document.getElementById('promo-inp').value='';
-  toast(`🎟 Промокод активирован! ${amt>=0?'+':''}${amt} 🪙`, amt>=0 ? 'ok' : 'err');
-  if(userData){ userData.balance = r.new_balance; updateUI(); }
 }
 
 // ── INIT ──

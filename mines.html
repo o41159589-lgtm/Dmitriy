@@ -7,57 +7,82 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="shared.css">
 <style>
-.page-wrap{padding:14px 14px 80px;}
+.page-wrap{padding:14px 14px 88px;}
+
+/* ── COIN DISPLAY ── */
+.coin-display{
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,#e8a800,#f5c542,#ffe066);
+  border-radius:12px;padding:8px 14px;
+  font-family:'Orbitron',monospace;font-size:15px;font-weight:900;
+  color:#1a0800;letter-spacing:.5px;
+  box-shadow:0 3px 14px rgba(245,197,66,.45),inset 0 1px 0 rgba(255,255,255,.3);
+}
+.coin-display .coin-ico{font-size:17px;}
 
 /* ── BALANCE BAR ── */
-.bal-bar{display:flex;align-items:center;justify-content:space-between;
-  background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 4px 16px rgba(0,0,0,0.28);
-  border-radius:14px;padding:11px 14px;margin-bottom:14px;backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);}
-.bal-bar-left{font-size:12px;color:var(--muted);}
-.bal-bar-val{font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700;}
+.bal-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,rgba(30,12,60,.8),rgba(20,8,40,.9));
+  border:1px solid rgba(123,47,255,.3);
+  box-shadow:inset 0 1px 0 rgba(123,47,255,.2),0 4px 20px rgba(123,47,255,.15);
+  border-radius:16px;padding:12px 16px;margin-bottom:14px;
+}
+.bal-bar-left{font-size:11px;color:rgba(180,150,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.bal-bar-val{font-family:'Orbitron',monospace;font-size:20px;color:var(--gold);font-weight:900;}
+.bal-hint{font-size:11px;color:rgba(255,255,255,.3);text-align:right;line-height:1.6;}
 
 /* ── SETUP PANEL ── */
-.setup-panel{background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 4px 16px rgba(0,0,0,0.28);
-  border-radius:20px;padding:16px;margin-bottom:14px;backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);}
+.setup-panel{
+  background:linear-gradient(135deg,rgba(15,5,35,.9),rgba(10,3,25,.95));
+  border:1px solid rgba(123,47,255,.25);
+  box-shadow:inset 0 1px 0 rgba(123,47,255,.15),0 8px 30px rgba(0,0,0,.5);
+  border-radius:20px;padding:18px;margin-bottom:14px;
+}
 .setup-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.setup-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;}
-.bet-row{display:flex;gap:6px;align-items:center;}
-.bet-input{background:var(--bg3);border:1px solid var(--border);border-radius:10px;
-  padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:16px;
-  width:120px;outline:none;text-align:center;}
-.bet-input:focus{border-color:var(--gold);}
-.bet-quick{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
-.bq{padding:5px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  font-size:11px;color:var(--muted);font-weight:700;cursor:pointer;font-family:'Orbitron',monospace;
-  transition:all .15s;}
-.bq:hover{border-color:var(--gold);color:var(--gold);}
+.setup-label{font-size:11px;color:rgba(200,160,255,.8);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.bet-row{display:flex;gap:8px;align-items:center;}
+.bet-input{
+  background:rgba(0,0,0,.5);border:1px solid rgba(245,197,66,.3);border-radius:12px;
+  padding:10px 14px;color:var(--gold);font-family:'Orbitron',monospace;font-size:18px;
+  width:130px;outline:none;text-align:center;font-weight:700;
+}
+.bet-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(245,197,66,.15);}
+.bet-quick{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;}
+.bq{
+  padding:6px 11px;
+  background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.2);border-radius:8px;
+  font-size:11px;color:var(--gold);font-weight:700;cursor:pointer;font-family:'Orbitron',monospace;
+  transition:all .15s;
+}
+.bq:hover{background:rgba(245,197,66,.2);border-color:rgba(245,197,66,.5);}
 
 /* bombs slider */
-.bombs-section{margin-bottom:14px;}
-.bombs-val{font-family:'Orbitron',monospace;font-size:22px;color:var(--red);font-weight:700;}
+.bombs-section{margin-bottom:16px;}
+.bombs-val{font-family:'Orbitron',monospace;font-size:24px;color:var(--red);font-weight:900;}
 .bombs-val span{font-size:12px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-left:4px;}
-.slider-wrap{position:relative;margin:8px 0;}
+.slider-wrap{position:relative;margin:10px 0;}
 input[type=range]{
-  width:100%;-webkit-appearance:none;background:var(--bg3);
-  border-radius:4px;height:6px;outline:none;cursor:pointer;
+  width:100%;-webkit-appearance:none;
+  background:linear-gradient(90deg,rgba(230,57,70,.3),rgba(230,57,70,.15));
+  border-radius:6px;height:8px;outline:none;cursor:pointer;
 }
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
-  background:linear-gradient(135deg,var(--red),#ff6b6b);
-  box-shadow:0 2px 10px rgba(230,57,70,.5);cursor:pointer;
-  border:2px solid rgba(255,255,255,.2);
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+  background:linear-gradient(135deg,#e63946,#ff6b6b);
+  box-shadow:0 2px 12px rgba(230,57,70,.6);cursor:pointer;
+  border:2px solid rgba(255,255,255,.3);
 }
-.bombs-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;}
+.bombs-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px;}
 
 /* mult preview */
-.mult-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
-.mult-chip{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
-  padding:9px;text-align:center;}
-.mult-chip-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
-.mult-chip-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;}
-.mult-chip-val.green{color:var(--green);}
-.mult-chip-val.gold{color:var(--gold);}
-.mult-chip-val.red{color:var(--red);}
+.mult-preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.mp{
+  background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);border-radius:10px;
+  padding:7px 5px;text-align:center;transition:all .2s;
+}
+.mp-k{font-size:9px;color:var(--muted);}
+.mp-v{font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);font-weight:700;}
 
 /* ── GAME AREA ── */
 .game-area{display:none;}
@@ -65,286 +90,313 @@ input[type=range]::-webkit-slider-thumb{
 .setup-panel.hidden{display:none;}
 
 /* live stats */
-.live-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
-.ls{background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 4px 16px rgba(0,0,0,0.28);
-  border-radius:12px;padding:9px;text-align:center;backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);}
-.ls-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
-.ls-v{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;}
+.live-stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;
+}
+.ls{
+  border-radius:14px;padding:11px 8px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.ls.ls-bet{
+  background:linear-gradient(135deg,rgba(20,8,50,.9),rgba(15,5,35,.9));
+  border:1px solid rgba(123,47,255,.3);
+  box-shadow:inset 0 1px 0 rgba(123,47,255,.2);
+}
+.ls.ls-mult{
+  background:linear-gradient(135deg,rgba(10,30,10,.9),rgba(5,20,5,.9));
+  border:1px solid rgba(45,198,83,.3);
+  box-shadow:inset 0 1px 0 rgba(45,198,83,.2);
+}
+.ls.ls-win{
+  background:linear-gradient(135deg,rgba(20,30,5,.9),rgba(10,20,3,.9));
+  border:1px solid rgba(100,220,60,.3);
+  box-shadow:inset 0 1px 0 rgba(100,220,60,.15);
+}
+.ls-l{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.ls-v{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;}
+.ls-v.purple{color:#b48fff;}.ls-v.green{color:var(--green);}.ls-v.bright{color:#90ff60;}
+
+/* ── COUNTERS BAR ── */
+.counters-bar{display:flex;gap:8px;margin-bottom:12px;}
+.counter-pill{
+  flex:1;border-radius:12px;padding:9px 12px;text-align:center;
+}
+.cp-bombs{
+  background:linear-gradient(135deg,rgba(60,0,10,.9),rgba(40,0,5,.9));
+  border:1px solid rgba(230,57,70,.35);
+  box-shadow:0 3px 12px rgba(230,57,70,.15);
+}
+.cp-gems{
+  background:linear-gradient(135deg,rgba(0,20,50,.9),rgba(0,10,35,.9));
+  border:1px solid rgba(76,201,240,.35);
+  box-shadow:0 3px 12px rgba(76,201,240,.1);
+}
+.cp-lbl{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.cp-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:900;}
+.cp-val.red{color:#ff6b6b;}.cp-val.blue{color:var(--blue);}
 
 /* ── GRID ── */
 .grid-wrap{
-  background:linear-gradient(135deg,#06060f,#0a0a1a);
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:20px;padding:14px;margin-bottom:12px;
-  box-shadow:0 0 40px rgba(0,0,0,.6);
+  background:linear-gradient(135deg,#06060f,#0a0818);
+  border:1px solid rgba(123,47,255,.15);
+  border-radius:22px;padding:14px;margin-bottom:12px;
+  box-shadow:0 0 50px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);
 }
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;}
 
 .cell{
-  aspect-ratio:1;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.07);
-  background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  aspect-ratio:1;border-radius:13px;
+  border:1px solid rgba(255,255,255,.06);
+  background:linear-gradient(135deg,rgba(40,20,80,.5),rgba(20,10,50,.4));
   display:flex;align-items:center;justify-content:center;
   font-size:22px;cursor:pointer;position:relative;overflow:hidden;
-  transition:border-color .15s,transform .1s,background .15s;
-  user-select:none;
+  transition:border-color .15s,transform .1s,background .15s;user-select:none;
 }
 .cell::before{
   content:'';position:absolute;inset:0;border-radius:inherit;
-  background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,transparent 60%);
-  pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.06) 0%,transparent 60%);pointer-events:none;
+}
+.cell:not(.revealed):not(.bomb):not(.disabled)::after{
+  content:'';position:absolute;inset:4px;border-radius:8px;opacity:.1;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.4) 0,rgba(255,255,255,.4) 1px,transparent 1px,transparent 5px);
 }
 .cell:not(.revealed):not(.bomb):hover{
-  border-color:rgba(245,197,66,.35);
-  background:linear-gradient(135deg,rgba(245,197,66,.08),rgba(245,197,66,.03));
-  transform:scale(1.04);
+  border-color:rgba(245,197,66,.5);
+  background:linear-gradient(135deg,rgba(245,197,66,.12),rgba(245,197,66,.04));
+  transform:scale(1.05);
+  box-shadow:0 0 14px rgba(245,197,66,.2);
 }
-.cell:not(.revealed):not(.bomb):active{transform:scale(.97);}
+.cell:not(.revealed):not(.bomb):active{transform:scale(.96);}
 
-/* hidden pattern */
-.cell:not(.revealed):not(.bomb)::after{
-  content:'';position:absolute;inset:4px;
-  border-radius:8px;opacity:.12;
-  background:repeating-linear-gradient(
-    45deg,
-    rgba(255,255,255,.3) 0,rgba(255,255,255,.3) 1px,
-    transparent 1px,transparent 5px
-  );
-}
-
-/* SAFE reveal — diamond */
+/* SAFE reveal */
 .cell.safe{
-  border-color:rgba(45,198,83,.5);
-  background:linear-gradient(135deg,rgba(45,198,83,.15),rgba(45,198,83,.05));
+  border-color:rgba(45,198,83,.6);
+  background:linear-gradient(135deg,rgba(45,198,83,.18),rgba(45,198,83,.06));
   cursor:default;animation:cell-pop .3s cubic-bezier(.34,1.56,.64,1) both;
+  box-shadow:0 0 16px rgba(45,198,83,.2);
 }
 @keyframes cell-pop{
-  0%{transform:scale(.7);opacity:0;}
-  100%{transform:scale(1);opacity:1;}
+  0%{transform:scale(.6);opacity:0;}100%{transform:scale(1);opacity:1;}
 }
 .cell.safe::before{
-  background:linear-gradient(135deg,rgba(45,198,83,.15) 0%,transparent 60%);
+  background:linear-gradient(135deg,rgba(45,198,83,.18) 0%,transparent 60%);
 }
-.diamond{
-  font-size:24px;
-  animation:diamond-spin .6s cubic-bezier(.34,1.56,.64,1) both;
-  filter:drop-shadow(0 0 8px rgba(45,198,83,.8));
-}
+.diamond{font-size:24px;animation:diamond-spin .6s cubic-bezier(.34,1.56,.64,1) both;filter:drop-shadow(0 0 10px rgba(45,198,83,.9));}
 @keyframes diamond-spin{
-  0%{transform:scale(0) rotate(-180deg);}
-  100%{transform:scale(1) rotate(0deg);}
+  0%{transform:scale(0) rotate(-180deg);}100%{transform:scale(1) rotate(0deg);}
 }
 
-/* BOMB reveal */
+/* BOMB */
 .cell.bomb{
-  border-color:rgba(230,57,70,.6);
-  background:linear-gradient(135deg,rgba(230,57,70,.2),rgba(230,57,70,.08));
+  border-color:rgba(230,57,70,.7);
+  background:linear-gradient(135deg,rgba(230,57,70,.25),rgba(230,57,70,.1));
   cursor:default;animation:bomb-shake .4s ease both;
+  box-shadow:0 0 20px rgba(230,57,70,.3);
 }
 @keyframes bomb-shake{
-  0%,100%{transform:translateX(0);}
-  20%{transform:translateX(-5px);}
-  40%{transform:translateX(5px);}
-  60%{transform:translateX(-3px);}
-  80%{transform:translateX(3px);}
+  0%,100%{transform:translateX(0);}20%{transform:translateX(-5px);}
+  40%{transform:translateX(5px);}60%{transform:translateX(-3px);}80%{transform:translateX(3px);}
 }
-.bomb-icon{
-  font-size:22px;
-  animation:bomb-pop .3s cubic-bezier(.34,1.56,.64,1) both;
-  filter:drop-shadow(0 0 8px rgba(230,57,70,.9));
-}
-@keyframes bomb-pop{
-  0%{transform:scale(0);}
-  60%{transform:scale(1.3);}
-  100%{transform:scale(1);}
-}
+.bomb-icon{font-size:22px;animation:bomb-pop .3s cubic-bezier(.34,1.56,.64,1) both;filter:drop-shadow(0 0 10px rgba(230,57,70,.9));}
+@keyframes bomb-pop{0%{transform:scale(0);}60%{transform:scale(1.3);}100%{transform:scale(1);}}
 
-/* already revealed but not by player (show after loss) */
 .cell.bomb-hidden{
-  border-color:rgba(230,57,70,.25);
-  background:linear-gradient(135deg,rgba(230,57,70,.07),transparent);
-  cursor:default;
+  border-color:rgba(230,57,70,.2);
+  background:linear-gradient(135deg,rgba(230,57,70,.07),transparent);cursor:default;
 }
-
-/* DISABLED state */
 .cell.disabled{pointer-events:none;opacity:.7;}
 
 /* ── BUTTONS ── */
 .start-btn{
   width:100%;padding:16px;
-  background:linear-gradient(135deg,var(--gold2),var(--gold));
-  border:none;border-radius:16px;color:#000;
-  font-family:'Orbitron',monospace;font-size:15px;font-weight:900;
-  letter-spacing:.5px;cursor:pointer;
-  box-shadow:0 4px 20px rgba(245,197,66,.3);
-  transition:opacity .15s,transform .1s;
-}
-.start-btn:active{transform:scale(.98);opacity:.9;}
-.start-btn:disabled{opacity:.4;cursor:not-allowed;}
-
-.cashout-btn{
-  width:100%;padding:16px;
-  background:linear-gradient(135deg,#2dc653,#1aa840);
+  background:linear-gradient(135deg,#7b2fff,#4361ee,#7b2fff);
+  background-size:200% 100%;
   border:none;border-radius:16px;color:#fff;
   font-family:'Orbitron',monospace;font-size:15px;font-weight:900;
   letter-spacing:.5px;cursor:pointer;
-  box-shadow:0 4px 20px rgba(45,198,83,.35);
-  transition:all .2s;
+  box-shadow:0 4px 24px rgba(123,47,255,.4),inset 0 1px 0 rgba(255,255,255,.2);
+  transition:opacity .15s,transform .1s;
+}
+.start-btn:active{transform:scale(.98);}
+.start-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.cashout-btn{
+  width:100%;padding:17px;
+  background:linear-gradient(135deg,#1aa840,#2dc653,#1aa840);
+  background-size:200% 100%;
+  border:none;border-radius:16px;color:#fff;
+  font-family:'Orbitron',monospace;font-size:16px;font-weight:900;
+  letter-spacing:.5px;cursor:pointer;
+  box-shadow:0 4px 24px rgba(45,198,83,.4),inset 0 1px 0 rgba(255,255,255,.2);
   animation:cashout-pulse 1.5s ease-in-out infinite;
+  transition:all .2s;
 }
 @keyframes cashout-pulse{
-  0%,100%{box-shadow:0 4px 20px rgba(45,198,83,.35);}
-  50%{box-shadow:0 4px 30px rgba(45,198,83,.6);}
+  0%,100%{box-shadow:0 4px 24px rgba(45,198,83,.35);}
+  50%{box-shadow:0 6px 36px rgba(45,198,83,.65),0 0 0 3px rgba(45,198,83,.15);}
 }
 .cashout-btn:disabled{opacity:.4;cursor:not-allowed;animation:none;}
+.cashout-label-coin{font-size:14px;opacity:.9;}
 
 .action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
-.action-btn{padding:12px;border-radius:12px;font-family:'Orbitron',monospace;
-  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
-.btn-newgame{background:var(--bg3);border:1px solid var(--border);color:var(--muted);}
-.btn-newgame:hover{border-color:var(--gold);color:var(--gold);}
+.action-btn{
+  padding:13px;border-radius:12px;font-family:'Orbitron',monospace;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
+}
+.btn-newgame{
+  background:rgba(123,47,255,.12);border:1px solid rgba(123,47,255,.3);color:rgba(180,140,255,.9);
+}
+.btn-newgame:hover{background:rgba(123,47,255,.2);border-color:rgba(123,47,255,.5);}
+.btn-back{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--muted);
+}
 
 /* ── RESULT OVERLAY ── */
 .result-overlay{
   position:fixed;inset:0;z-index:300;
   display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.8);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);
+  background:rgba(0,0,0,.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
 }
 .result-overlay.show{display:flex;}
 .result-card{
-  background:rgba(14,14,26,0.85);border-radius:24px;backdrop-filter:blur(32px) saturate(1.8);-webkit-backdrop-filter:blur(32px) saturate(1.8);
-  border:1px solid var(--border);padding:28px 24px;
-  text-align:center;max-width:280px;width:90%;
+  background:linear-gradient(135deg,rgba(14,6,32,.95),rgba(8,3,20,.98));
+  border-radius:28px;
+  border:1px solid rgba(123,47,255,.3);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 80px rgba(0,0,0,.7);
+  padding:32px 24px;text-align:center;max-width:300px;width:90%;
   animation:result-pop .4s cubic-bezier(.34,1.56,.64,1) both;
 }
-@keyframes result-pop{
-  0%{transform:scale(.6);opacity:0;}
-  100%{transform:scale(1);opacity:1;}
-}
-.result-emoji{font-size:64px;margin-bottom:12px;display:block;}
-.result-title{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;margin-bottom:8px;}
+@keyframes result-pop{0%{transform:scale(.6);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.result-emoji{font-size:72px;margin-bottom:14px;display:block;
+  filter:drop-shadow(0 0 20px rgba(255,255,255,.3));}
+.result-title{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;margin-bottom:8px;}
 .result-title.win{color:var(--green);}
 .result-title.lose{color:var(--red);}
-.result-sub{font-size:14px;color:var(--muted);margin-bottom:6px;line-height:1.5;}
-.result-amount{font-family:'Orbitron',monospace;font-size:28px;font-weight:700;margin-bottom:18px;}
-.result-amount.win{color:var(--green);}
+.result-sub{font-size:14px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.result-amount{font-family:'Orbitron',monospace;font-size:32px;font-weight:900;margin-bottom:20px;}
+.result-amount.win{color:var(--green);text-shadow:0 0 20px rgba(45,198,83,.5);}
 .result-amount.lose{color:var(--red);}
-.result-close{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold2),var(--gold));
-  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
-  font-size:13px;font-weight:900;cursor:pointer;}
+.result-close{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:16px;color:#000;font-family:'Orbitron',monospace;
+  font-size:14px;font-weight:900;cursor:pointer;
+  box-shadow:0 4px 16px rgba(245,197,66,.35);
+}
 
-/* mines count display table */
-.mines-table{margin-top:10px;}
-.mines-table-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.mult-preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
-.mp{background:var(--bg3);border-radius:8px;padding:5px 4px;text-align:center;border:1px solid var(--border);}
-.mp-k{font-size:9px;color:var(--muted);}
-.mp-v{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);font-weight:700;}
-
-/* Multiplier context strip (current ±2) */
+/* Multiplier context strip */
 .mult-context{display:flex;gap:5px;align-items:center;justify-content:center;margin-bottom:10px;}
-.mc-step{flex:1;border-radius:10px;padding:7px 4px;text-align:center;border:1px solid var(--border);
-  background:var(--bg3);transition:all .2s;}
-.mc-step.current{background:rgba(45,198,83,.12);border-color:rgba(45,198,83,.4);transform:scale(1.06);}
-.mc-step.past{opacity:.45;}
-.mc-step.future{opacity:.7;}
-.mc-lbl{font-size:9px;color:var(--muted);margin-bottom:2px;}
-.mc-val{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--gold);}
-.mc-step.current .mc-val{color:var(--green);font-size:13px;}
-.mc-arrow{color:var(--muted);font-size:14px;flex-shrink:0;}
+.mc-step{
+  flex:1;border-radius:11px;padding:8px 4px;text-align:center;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.3);transition:all .2s;
+}
+.mc-step.current{
+  background:rgba(45,198,83,.14);border-color:rgba(45,198,83,.45);
+  transform:scale(1.07);box-shadow:0 0 12px rgba(45,198,83,.2);
+}
+.mc-step.past{opacity:.4;}
+.mc-step.future{opacity:.75;}
+.mc-lbl{font-size:9px;color:rgba(255,255,255,.5);margin-bottom:2px;}
+.mc-val{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:var(--gold);}
+.mc-step.current .mc-val{color:var(--green);font-size:14px;}
+.mc-arrow{color:rgba(255,255,255,.2);font-size:14px;flex-shrink:0;}
+
+/* mines count display */
+.mines-table{margin-top:10px;}
+
 </style>
+</head>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 <div class="liquid-bg"></div>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <button class="fp-back" onclick="goBack()">‹</button>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:20px">💣</span>
-    <span class="fp-title">МИНЫ</span>
+<div class="topbar" style="background:rgba(6,3,18,.85);border-bottom:1px solid rgba(123,47,255,.2);">
+  <button class="fp-back" onclick="goBack()" style="background:rgba(123,47,255,.15);border-color:rgba(123,47,255,.3);color:#b48fff;">‹</button>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#e63946,#ff4d5a);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 16px rgba(230,57,70,.4)">💣</div>
+    <span class="fp-title" style="font-size:17px;letter-spacing:2px;">МИНЫ</span>
   </div>
-  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+  <div class="coin-display"><span class="coin-ico">🪙</span><span id="r-bal">—</span></div>
 </div>
 
 <div class="page-wrap">
 
-  <!-- BALANCE -->
+  <!-- BALANCE BAR -->
   <div class="bal-bar">
-    <div><div class="bal-bar-left">Баланс</div><div class="bal-bar-val">🪙 <span id="bal">—</span></div></div>
-    <div style="font-size:12px;color:var(--muted);text-align:right">💣 = потеря ставки<br>💎 = множитель × ставка</div>
+    <div>
+      <div class="bal-bar-left">Баланс</div>
+      <div class="bal-bar-val">🪙 <span id="bal">—</span></div>
+    </div>
+    <div class="bal-hint">💣 = потеря ставки<br>💎 = множитель × ставка</div>
   </div>
 
   <!-- SETUP PANEL -->
   <div class="setup-panel" id="setup-panel">
-    <div>
-      <div class="setup-label" style="margin-bottom:8px">Ставка (мин. 10 🪙)</div>
-      <div class="bet-row">
-        <input class="bet-input" id="bet-input" type="number" min="10" value="50" inputmode="numeric">
-        <span style="color:var(--gold);font-size:18px">🪙</span>
-      </div>
-      <div class="bet-quick">
-        <div class="bq" onclick="setBet(10)">10</div>
-        <div class="bq" onclick="setBet(50)">50</div>
-        <div class="bq" onclick="setBet(100)">100</div>
-        <div class="bq" onclick="setBet(250)">250</div>
-        <div class="bq" onclick="setBet(500)">500</div>
-        <div class="bq" onclick="setBetHalf()">½</div>
-        <div class="bq" onclick="setBetDouble()">×2</div>
-        <div class="bq" onclick="setBetMax()">MAX</div>
-      </div>
+
+    <div class="setup-label" style="margin-bottom:10px">💰 Ставка (мин. 10 🪙)</div>
+    <div class="bet-row">
+      <input class="bet-input" id="bet-input" type="number" min="10" value="50" inputmode="numeric">
+      <div style="font-family:'Orbitron',monospace;font-size:22px;color:var(--gold);filter:drop-shadow(0 0 8px rgba(245,197,66,.5))">🪙</div>
+    </div>
+    <div class="bet-quick">
+      <div class="bq" onclick="setBet(10)">10</div>
+      <div class="bq" onclick="setBet(50)">50</div>
+      <div class="bq" onclick="setBet(100)">100</div>
+      <div class="bq" onclick="setBet(250)">250</div>
+      <div class="bq" onclick="setBet(500)">500</div>
+      <div class="bq" onclick="setBetHalf()">½</div>
+      <div class="bq" onclick="setBetDouble()">×2</div>
+      <div class="bq" onclick="setBetMax()" style="background:rgba(245,197,66,.15);border-color:rgba(245,197,66,.35)">MAX</div>
     </div>
 
-    <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(123,47,255,.3),transparent);margin:16px 0;"></div>
 
     <div class="bombs-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div class="setup-label">Количество бомб</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="setup-label">💣 Количество бомб</div>
         <div class="bombs-val" id="bombs-display">3 <span>бомбы</span></div>
       </div>
       <input type="range" id="bombs-slider" min="1" max="24" value="3" oninput="onBombsChange(this.value)">
       <div class="bombs-labels"><span>1</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
     </div>
 
-    <!-- Multiplier preview -->
-    <div>
-      <div class="setup-label" style="margin-bottom:8px">Потенциальные множители</div>
-      <div class="mult-preview-grid" id="mult-preview"></div>
-    </div>
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(123,47,255,.3),transparent);margin:16px 0;"></div>
 
-    <div style="height:1px;background:var(--border);margin:14px 0;"></div>
-    <button class="start-btn" id="start-btn" onclick="startGame()">💎 НАЧАТЬ ИГРУ</button>
+    <div class="setup-label" style="margin-bottom:10px">📈 Потенциальные множители</div>
+    <div class="mult-preview-grid" id="mult-preview"></div>
+
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(123,47,255,.3),transparent);margin:16px 0;"></div>
+    <button class="start-btn" id="start-btn" onclick="startGame()">💎 &nbsp;НАЧАТЬ ИГРУ</button>
   </div>
 
   <!-- GAME AREA -->
   <div class="game-area" id="game-area">
 
     <div class="live-stats">
-      <div class="ls">
+      <div class="ls ls-bet">
         <div class="ls-l">Ставка</div>
-        <div class="ls-v" id="live-bet" style="color:var(--muted)">—</div>
+        <div class="ls-v purple" id="live-bet">—</div>
       </div>
-      <div class="ls">
+      <div class="ls ls-mult">
         <div class="ls-l">Множитель</div>
-        <div class="ls-v" id="live-mult" style="color:var(--gold)">×1.00</div>
+        <div class="ls-v green" id="live-mult">×1.00</div>
       </div>
-      <div class="ls">
+      <div class="ls ls-win">
         <div class="ls-l">Выиграть</div>
-        <div class="ls-v" id="live-win" style="color:var(--green)">0</div>
+        <div class="ls-v bright" id="live-win">0 🪙</div>
       </div>
     </div>
 
-    <!-- Bombs/Diamonds counter bar -->
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <div style="flex:1;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.25);border-radius:12px;padding:8px 12px;text-align:center;">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Бомбы</div>
-        <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--red);font-weight:700" id="stat-bombs">3 💣</div>
+    <div class="counters-bar">
+      <div class="counter-pill cp-bombs">
+        <div class="cp-lbl">Бомбы</div>
+        <div class="cp-val red" id="stat-bombs">3 💣</div>
       </div>
-      <div style="flex:1;background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.2);border-radius:12px;padding:8px 12px;text-align:center;">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Алмазов осталось</div>
-        <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--blue);font-weight:700" id="stat-diamonds">22 💎</div>
+      <div class="counter-pill cp-gems">
+        <div class="cp-lbl">Алмазов осталось</div>
+        <div class="cp-val blue" id="stat-diamonds">22 💎</div>
       </div>
     </div>
 
@@ -352,21 +404,18 @@ input[type=range]::-webkit-slider-thumb{
       <div class="grid" id="grid"></div>
     </div>
 
-    <!-- Multiplier context: -2, -1, current, +1, +2 -->
     <div class="mult-context" id="mult-context"></div>
 
     <button class="cashout-btn" id="cashout-btn" onclick="cashout()" disabled>
-      💰 КЕШАУТ — <span id="cashout-label">0</span> 🪙
+      💰 &nbsp;КЕШАУТ &nbsp;—&nbsp; <span id="cashout-label">0</span> <span class="cashout-label-coin">🪙</span>
     </button>
 
-    <div class="action-row">
-      <button class="action-btn btn-newgame" onclick="newGame()">🔄 Новая игра</button>
-      <button class="action-btn" style="background:var(--bg3);border:1px solid var(--border);color:var(--muted);"
-        onclick="goBack()">← Назад</button>
+    <div class="action-row" style="margin-top:12px">
+      <button class="action-btn btn-newgame" onclick="newGame()">🔄 &nbsp;Новая игра</button>
+      <button class="action-btn btn-back" onclick="goBack()">← &nbsp;Назад</button>
     </div>
 
   </div>
-
 </div>
 
 <!-- RESULT OVERLAY -->
@@ -440,25 +489,19 @@ function setBetMax(){
 }
 
 // ── MULTIPLIER CALCULATION ──
-// Scales so that mult(safeTotal) == minesMaxMult (admin-set max).
-// Every intermediate step is unique (strictly monotone) and <minesMaxMult.
-// No step-capping — max is reached ONLY when ALL diamonds are opened.
+// Geometric progression: mult(k) = minesMaxMult ^ (k / safeTotal)
+// Guarantees:
+//   • mult(0)         = 1.00x  (start, nothing opened)
+//   • mult(safeTotal) = minesMaxMult  (ALL diamonds — exact max)
+//   • Every intermediate step is UNIQUE (monotonically increasing)
+//   • Max is reached ONLY when all diamonds are collected
 function minesMultClient(safeOpened, bombs){
-  const total=25, safeTotal=25-bombs;
-  if(safeOpened===0) return 1.0;
-  if(safeTotal<=0||safeOpened>safeTotal) return minesMaxMult;
-  // Fair ratio at k: C(total,k) / C(safeTotal,k)
-  const fairRatioAtK   = nCr(total,safeOpened) / nCr(safeTotal,safeOpened);
-  // Fair ratio at max (all diamonds): C(total,safeTotal) / C(safeTotal,safeTotal) = C(total,safeTotal)
-  const fairRatioAtMax = nCr(total,safeTotal);
-  // Scale so mult(safeTotal) == minesMaxMult exactly
-  return (minesMaxMult * fairRatioAtK) / fairRatioAtMax;
-}
-function nCr(n,r){
-  if(r>n) return 0; if(r===0||r===n) return 1;
-  let res=1;
-  for(let i=0;i<r;i++){res=res*(n-i)/(i+1);}
-  return res;
+  const safeTotal = 25 - bombs;
+  if(safeOpened <= 0)              return 1.0;
+  if(safeTotal <= 0)               return minesMaxMult;
+  if(safeOpened >= safeTotal)      return minesMaxMult;
+  if(minesMaxMult <= 1.0)          return 1.0;
+  return Math.pow(minesMaxMult, safeOpened / safeTotal);
 }
 
 function onBombsChange(v){
@@ -471,31 +514,53 @@ function onBombsChange(v){
 function renderMultPreview(){
   const b = currentBombs;
   const safeTotal = 25-b;
-  const steps = Math.min(safeTotal, 8);
-  let html='';
-  for(let k=1;k<=steps;k++){
-    const m = minesMultClient(k,b).toFixed(2);
-    html+=`<div class="mp"><div class="mp-k">${k}💎</div><div class="mp-v">×${m}</div></div>`;
+  // Show up to 8 steps, always including the last one
+  const showSteps = Math.min(safeTotal, 8);
+  let indices = [];
+  if(safeTotal <= 8){
+    for(let k=1;k<=safeTotal;k++) indices.push(k);
+  } else {
+    // First 7 steps + last step
+    for(let k=1;k<=7;k++) indices.push(k);
+    indices.push(safeTotal);
   }
+  let html='';
+  indices.forEach((k,i)=>{
+    const m = minesMultClient(k,b).toFixed(2);
+    const isLast = k===safeTotal;
+    const ellipsis = (i===7 && safeTotal>8) ? '<div class="mp" style="background:none;border:none;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">…</div>' : '';
+    if(i===7 && safeTotal>8) html += ellipsis;
+    html+=`<div class="mp" style="${isLast?'border-color:rgba(245,197,66,.4);background:rgba(245,197,66,.06)':''}">
+      <div class="mp-k">${k}💎${isLast?' 🏆':''}</div>
+      <div class="mp-v" style="${isLast?'color:var(--gold)':''}">×${m}</div>
+    </div>`;
+  });
   document.getElementById('mult-preview').innerHTML=html;
 }
 
 // ── MULTIPLIER CONTEXT STRIP ──
+// Shows current position ±2 steps; never shows impossible steps (k > safeTotal or k < 0)
 function renderMultContext(openedCount){
   const ctx = document.getElementById('mult-context');
   if(!ctx) return;
+  const safeTotal = 25 - currentBombs;
   const steps = [];
   for(let d=-2; d<=2; d++){
     const k = openedCount + d;
-    if(k < 0) continue;
+    if(k < 0) continue;              // before start — skip
+    if(k > safeTotal) continue;      // impossible cell — skip
     const m = k === 0 ? 1.0 : minesMultClient(k, currentBombs);
     steps.push({k, m, rel: d});
   }
-  ctx.innerHTML = steps.map((s,i)=>{
+  ctx.innerHTML = steps.map((s, i)=>{
     let cls = s.rel < 0 ? 'past' : s.rel === 0 ? 'current' : 'future';
-    const lbl = s.k === 0 ? 'Старт' : `${s.k} 💎`;
+    const lbl = s.k === 0 ? 'Старт' : `${s.k}💎`;
+    const isMax = s.k === safeTotal;
     const arrow = (i < steps.length-1) ? '<div class="mc-arrow">›</div>' : '';
-    return `<div class="mc-step ${cls}"><div class="mc-lbl">${lbl}</div><div class="mc-val">×${s.m.toFixed(2)}</div></div>${arrow}`;
+    return `<div class="mc-step ${cls}" ${isMax?'style="border-color:rgba(245,197,66,.4)"':''}>
+      <div class="mc-lbl">${lbl}${isMax?' 🏆':''}</div>
+      <div class="mc-val">×${s.m.toFixed(2)}</div>
+    </div>${arrow}`;
   }).join('');
 }
 
