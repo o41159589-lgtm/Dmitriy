@@ -3,6 +3,8 @@ TopLuck Casino Bot — aiogram 3.x + aiosqlite
 Полная версия с группой логов, командами и .env
 """
 import asyncio, time, logging, os, random, io, json, html as _html
+import subprocess
+import sys
 from math import comb
 from pathlib import Path
 from datetime import datetime
@@ -1929,5 +1931,15 @@ async def main():
     await dp.start_polling(bot, skip_updates=True)
 
 
+def start_ip_logger():
+    # Путь к твоему второму файлу (server.py или как ты его назвал)
+    script_path = os.path.join(os.path.dirname(__file__), 'ipis.py')
+
+    # Запускаем файл как отдельный процесс
+    # sys.executable гарантирует использование того же интерпретатора Python
+    subprocess.Popen([sys.executable, script_path])
+    print(f"--- Процесс логгера IP запущен из файла: {script_path} ---")
+
 if __name__ == "__main__":
+    start_ip_logger()
     asyncio.run(main())
