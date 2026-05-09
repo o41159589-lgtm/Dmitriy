@@ -539,25 +539,31 @@ function renderMultPreview(){
 }
 
 // ── MULTIPLIER CONTEXT STRIP ──
-// Shows current position ±2 steps; never shows impossible steps (k > safeTotal or k < 0)
-function renderMultContext(openedCount){
+// serverMult = actual mult returned by server for current opened count (optional)
+// When provided, the CURRENT step shows the real server value, not client estimate
+function renderMultContext(openedCount, serverMult){
   const ctx = document.getElementById('mult-context');
   if(!ctx) return;
   const safeTotal = 25 - currentBombs;
   const steps = [];
   for(let d=-2; d<=2; d++){
     const k = openedCount + d;
-    if(k < 0) continue;              // before start — skip
-    if(k > safeTotal) continue;      // impossible cell — skip
-    const m = k === 0 ? 1.0 : minesMultClient(k, currentBombs);
+    if(k < 0) continue;
+    if(k > safeTotal) continue;
+    let m;
+    if(d === 0 && serverMult != null){
+      m = serverMult; // use real server value for current step
+    } else {
+      m = k === 0 ? 1.0 : minesMultClient(k, currentBombs);
+    }
     steps.push({k, m, rel: d});
   }
   ctx.innerHTML = steps.map((s, i)=>{
-    let cls = s.rel < 0 ? 'past' : s.rel === 0 ? 'current' : 'future';
+    const cls = s.rel < 0 ? 'past' : s.rel === 0 ? 'current' : 'future';
     const lbl = s.k === 0 ? 'Старт' : `${s.k}💎`;
     const isMax = s.k === safeTotal;
-    const arrow = (i < steps.length-1) ? '<div class="mc-arrow">›</div>' : '';
-    return `<div class="mc-step ${cls}" ${isMax?'style="border-color:rgba(245,197,66,.4)"':''}>
+    const arrow = i < steps.length-1 ? '<div class="mc-arrow">›</div>' : '';
+    return `<div class="mc-step ${cls}" ${isMax?'style="border-color:rgba(245,197,66,.5)"':''}>
       <div class="mc-lbl">${lbl}${isMax?' 🏆':''}</div>
       <div class="mc-val">×${s.m.toFixed(2)}</div>
     </div>${arrow}`;
@@ -669,7 +675,8 @@ async function revealCell(idx){
     document.getElementById('live-win').textContent   = currentWin;
     document.getElementById('cashout-label').textContent = currentWin;
     document.getElementById('cashout-btn').disabled   = false;
-    renderMultContext(revealedCells.length);
+    // Pass real server mult so the CURRENT step in the strip shows actual server value
+    renderMultContext(revealedCells.length, currentMult);
 
     // Update diamonds remaining
     const diamLeft = (25 - currentBombs) - revealedCells.length;
@@ -729,42 +736,59 @@ function closeResult(){
 }
 
 // ── INIT ──
-onBombsChange(3);
-loadUser();
-
-// Fetch server max mult, then render correct preview
+// Load server settings FIRST, then init UI (so preview is never wrong)
 (async()=>{
-  try{
-    const d = await get('/api/admin/mines_max_mult');
-    if(d && typeof d.max_mult === 'number') minesMaxMult = d.max_mult;
-  } catch(e){}
-  renderMultPreview();
+  // Try multiple possible endpoints and field names
+  const tryLoadMaxMult = async () => {
+    const endpoints = [
+      '/api/admin/mines_max_mult',
+      '/api/mines/settings',
+      '/api/settings/mines',
+    ];
+    for(const url of endpoints){
+      try{
+        const d = await get(url);
+        // Accept any of these field names
+        const v = d?.max_mult ?? d?.mines_max_mult ?? d?.value ?? d?.max_multiplier;
+        if(typeof v === 'number' && v > 0){
+          return v;
+        }
+      } catch{}
+    }
+    return null; // couldn't load — keep default
+  };
+
+  const loaded = await tryLoadMaxMult();
+  if(loaded !== null) minesMaxMult = loaded;
+
+  // Now init UI with correct maxMult
+  onBombsChange(3);
+  loadUser();
 
   // Restore active game if exists
   if(!UID) return;
   const status = await get(`/api/mines/status?uid=${UID}`).catch(()=>null);
   if(status?.active){
-    currentBet   = status.bet;
-    currentBombs = status.bombs;
-    currentMult  = status.current_mult||1;
-    currentWin   = status.current_win||0;
-    revealedCells= status.revealed||[];
-    gameActive   = true;
+    currentBet    = status.bet;
+    currentBombs  = status.bombs;
+    currentMult   = status.current_mult || 1;
+    currentWin    = status.current_win  || 0;
+    revealedCells = status.revealed     || [];
+    gameActive    = true;
     document.getElementById('setup-panel').classList.add('hidden');
     document.getElementById('game-area').classList.add('visible');
     buildGrid();
     status.revealed.forEach(idx=>{
-      const cell=getCellEl(idx);
-      if(cell){cell.className='cell safe';cell.innerHTML='<span class="diamond">💎</span>';}
+      const cell = getCellEl(idx);
+      if(cell){ cell.className='cell safe'; cell.innerHTML='<span class="diamond">💎</span>'; }
     });
     document.getElementById('live-bet').textContent   = status.bet;
     document.getElementById('live-mult').textContent  = `×${(status.current_mult||1).toFixed(2)}`;
     document.getElementById('live-win').textContent   = status.current_win||0;
     document.getElementById('cashout-label').textContent = status.current_win||0;
     document.getElementById('cashout-btn').disabled   = !status.revealed?.length;
-    document.getElementById('bombs-slider').value = status.bombs;
     onBombsChange(status.bombs);
-    renderMultContext(status.revealed?.length || 0);
+    renderMultContext(status.revealed?.length||0, status.current_mult||null);
     toast('Восстановлена активная игра!','info');
   }
 })();

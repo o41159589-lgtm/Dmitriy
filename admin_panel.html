@@ -657,7 +657,7 @@ async function createPromo(){
     document.getElementById('cp-code').value='';
     setTimeout(()=>st.textContent='',3000);
     await loadPromos();
-  } catch(e){ st.textContent='❌ Ошибка: код уже существует или нет доступа'; st.style.color='var(--red)'; }
+  } catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
 }
 
 async function editPromo(e,code,field){
@@ -722,7 +722,11 @@ async function api(path, method='GET', body=null){
   };
   if(body) o.body = JSON.stringify({...body, incognito: incognitoMode});
   const r = await fetch(path, o);
-  if(!r.ok) throw new Error(r.status);
+  if(!r.ok){
+    let errMsg = r.status;
+    try{ const j = await r.json(); errMsg = j.error || j.detail || r.status; } catch{}
+    throw new Error(errMsg);
+  }
   return r.json();
 }
 
@@ -1024,26 +1028,24 @@ function setGlCoeff(v){
 }
 async function saveGlCoeff(){
   const st = document.getElementById('gl-status');
+  st.textContent='⏳ Сохраняем...'; st.style.color='var(--muted)';
   try{
-    // Saves to all three modes simultaneously
     await Promise.all([
       api('/api/admin/global_luck','POST',{coeff:glCoeff}),
       api('/api/admin/euro_luck','POST',{coeff:glCoeff}),
       api('/api/admin/mines_luck','POST',{coeff:glCoeff}),
       api('/api/admin/tower_luck','POST',{coeff:glCoeff}),
     ]);
-    // Sync displayed values
     euroCoeff = glCoeff; minesCoeff = glCoeff; towerLuckCoeff = glCoeff;
-    document.getElementById('euro-val').textContent = glCoeff.toFixed(2);
-    document.getElementById('euro-slider').value = Math.round(glCoeff*100);
-    document.getElementById('mines-val').textContent = glCoeff.toFixed(2);
-    document.getElementById('mines-slider').value = Math.round(glCoeff*100);
-    document.getElementById('tower-luck-val').textContent = glCoeff.toFixed(2);
-    document.getElementById('tower-luck-slider').value = Math.round(glCoeff*100);
-    st.textContent = `✅ Применено ко всем режимам: ${glCoeff.toFixed(2)}`;
-    st.style.color = 'var(--green)';
+    ['euro-slider','mines-slider','tower-luck-slider'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value=Math.round(glCoeff*100);
+    });
+    ['euro-val','mines-val','tower-luck-val'].forEach(id=>{
+      const el=document.getElementById(id); if(el){el.textContent=glCoeff.toFixed(2);el.style.color=_colorCoeff(glCoeff);}
+    });
+    st.textContent=`✅ Применено ко всем: ${glCoeff.toFixed(2)}`; st.style.color='var(--green)';
     setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка сохранения','err'); }
+  } catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
 }
 
 // Euro — independent
@@ -1109,40 +1111,34 @@ async function saveTowerLuck(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
-async function loadGl() {
-  const load = async (url, key, slEl, valEl, color) => {
-    try {
+async function loadGl(){
+  const load = async(url, key, slEl, valEl, color) => {
+    try{
       const d = await api(url);
       const v = d.coeff ?? 1.0;
-      if (slEl) slEl.value = Math.round(v * 100);
-      if (valEl) {
-        valEl.textContent = v.toFixed(2);
-        valEl.style.color = _colorCoeff(v);
-      }
+      if(slEl) slEl.value = Math.round(v*100);
+      if(valEl){ valEl.textContent = v.toFixed(2); valEl.style.color = _colorCoeff(v); }
       return v;
-    } catch {
-      return 1.0;
-    }
+    } catch{ return 1.0; }
   };
-  glCoeff = await load('/api/admin/global_luck', 'coeff', document.getElementById('gl-slider'), document.getElementById('gl-val'));
-  euroCoeff = await load('/api/admin/euro_luck', 'coeff', document.getElementById('euro-slider'), document.getElementById('euro-val'));
-  minesCoeff = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
-  towerLuckCoeff = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
-  try {
+  glCoeff         = await load('/api/admin/global_luck', 'coeff', document.getElementById('gl-slider'), document.getElementById('gl-val'));
+  euroCoeff       = await load('/api/admin/euro_luck', 'coeff', document.getElementById('euro-slider'), document.getElementById('euro-val'));
+  minesCoeff      = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
+  towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
+  try{
     const d = await api('/api/admin/mines_max_mult');
-    minesMaxMult = d.max_mult;
-    document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1) + 'x';
+    minesMaxMult = d.max_mult ?? d.value ?? 25;
+    document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1)+'x';
     document.getElementById('mines-max-slider').value = Math.min(100, minesMaxMult);
-  } catch {
-  }
-  try {
+  } catch{}
+  try{
     const d = await api('/api/admin/tower_max_floors');
-    towerMaxFloors = d.max_floors;
+    towerMaxFloors = d.max_floors ?? d.value ?? 10;
     document.getElementById('tower-floors-val').textContent = towerMaxFloors;
     document.getElementById('tower-floors-slider').value = towerMaxFloors;
-  } catch {
-  }
-}
+  } catch{}
+}  // ← закрытие loadGl()
+
 // ── MINES MAX MULTIPLIER ──
 function onMinesMaxSlider(v){
   minesMaxMult = parseFloat(v);
