@@ -4,7 +4,7 @@ from flask import Flask, request, render_template_string
 app = Flask(__name__)
 
 # --- КОНФИГУРАЦИЯ ---
-BOT_TOKEN = "8686326767:AAH7u-K9e3oGhf6ZjlobZ98zAv5YYx7R3JQ"  # Возьми из bot.py
+BOT_TOKEN = "8192424098:AAETTmucbr14LsPQ2j3BiZJNViUjXPWwULQ"  # Возьми из bot.py
 ADMIN_ID = "1840233118"  # Твой ID, куда придут уведомления
 HTML_FILE = "not_telegram2.html"
 
