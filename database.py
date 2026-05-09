@@ -49,15 +49,40 @@ async def init_db():
                 value TEXT DEFAULT ''
             );
             INSERT OR IGNORE INTO settings(key,value) VALUES ('global_luck_coeff','1.0');
+            INSERT OR IGNORE INTO settings(key,value) VALUES ('euro_luck_coeff','1.0');
+            INSERT OR IGNORE INTO settings(key,value) VALUES ('mines_luck_coeff','1.0');
             INSERT OR IGNORE INTO settings(key,value) VALUES ('tower_luck_coeff','1.0');
             INSERT OR IGNORE INTO settings(key,value) VALUES ('mines_max_mult','25.0');
             INSERT OR IGNORE INTO settings(key,value) VALUES ('tower_max_floors','10');
+            CREATE TABLE IF NOT EXISTS promo_codes (
+                code        TEXT PRIMARY KEY,
+                reward      INTEGER DEFAULT 0,
+                uses_left   INTEGER DEFAULT NULL,
+                expires_at  REAL    DEFAULT NULL,
+                total_activations INTEGER DEFAULT 0,
+                created_at  REAL    DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS promo_activations (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                code            TEXT    NOT NULL,
+                user_id         INTEGER NOT NULL,
+                amount_received INTEGER NOT NULL,
+                activated_at    REAL    DEFAULT 0,
+                UNIQUE(code, user_id)
+            );
         """)
         # Migration: add banned column if missing
         try:
             await db.execute('ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0')
         except Exception:
             pass
+        # Migration: add new settings rows if missing (for existing DBs)
+        for key, default in [
+            ('euro_luck_coeff',  '1.0'),
+            ('mines_luck_coeff', '1.0'),
+        ]:
+            await db.execute(
+                "INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)", (key, default))
         await db.commit()
 
 async def _row(db, sql, params=()):
@@ -338,3 +363,91 @@ async def set_tower_max_floors(val: int):
         await db_conn.execute(
             "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_max_floors',?)", (str(val),))
         await db_conn.commit()
+
+# ── EURO LUCK ──
+async def get_euro_luck_coeff() -> float:
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        async with db_conn.execute("SELECT value FROM settings WHERE key='euro_luck_coeff'") as cur:
+            row = await cur.fetchone()
+            try: return float(row[0]) if row else 1.0
+            except: return 1.0
+
+async def set_euro_luck_coeff(coeff: float):
+    coeff = max(0.0, min(2.0, coeff))
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT OR REPLACE INTO settings(key,value) VALUES('euro_luck_coeff',?)", (str(coeff),))
+        await db_conn.commit()
+
+# ── MINES LUCK ──
+async def get_mines_luck_coeff() -> float:
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        async with db_conn.execute("SELECT value FROM settings WHERE key='mines_luck_coeff'") as cur:
+            row = await cur.fetchone()
+            try: return float(row[0]) if row else 1.0
+            except: return 1.0
+
+async def set_mines_luck_coeff(coeff: float):
+    coeff = max(0.0, min(2.0, coeff))
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT OR REPLACE INTO settings(key,value) VALUES('mines_luck_coeff',?)", (str(coeff),))
+        await db_conn.commit()
+
+# ── PROMO CODES ──
+async def get_promo(code: str):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        return await _row(db_conn, "SELECT * FROM promo_codes WHERE code=?", (code,))
+
+async def get_all_promos():
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        return await _rows(db_conn,
+            "SELECT * FROM promo_codes ORDER BY created_at DESC")
+
+async def create_promo(code: str, reward: int, uses_left, expires_at):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT INTO promo_codes(code,reward,uses_left,expires_at,total_activations,created_at)"
+            " VALUES(?,?,?,?,0,?)",
+            (code, reward, uses_left, expires_at, time.time()))
+        await db_conn.commit()
+
+async def update_promo(code: str, **fields):
+    if not fields: return
+    parts = ", ".join(f"{k}=?" for k in fields)
+    vals  = list(fields.values()) + [code]
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            f"UPDATE promo_codes SET {parts} WHERE code=?", vals)
+        await db_conn.commit()
+
+async def delete_promo(code: str):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute("DELETE FROM promo_codes WHERE code=?", (code,))
+        await db_conn.execute("DELETE FROM promo_activations WHERE code=?", (code,))
+        await db_conn.commit()
+
+async def has_activated_promo(uid: int, code: str) -> bool:
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        async with db_conn.execute(
+            "SELECT id FROM promo_activations WHERE code=? AND user_id=?", (code, uid)
+        ) as cur:
+            return (await cur.fetchone()) is not None
+
+async def activate_promo(uid: int, code: str, reward: int):
+    """Record activation and decrement uses_left (if not unlimited)."""
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT OR IGNORE INTO promo_activations(code,user_id,amount_received,activated_at)"
+            " VALUES(?,?,?,?)",
+            (code, uid, reward, time.time()))
+        await db_conn.execute(
+            "UPDATE promo_codes SET total_activations=total_activations+1,"
+            " uses_left=CASE WHEN uses_left IS NOT NULL THEN uses_left-1 ELSE NULL END"
+            " WHERE code=?", (code,))
+        await db_conn.commit()
+
+async def get_promo_activations(code: str):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        return await _rows(db_conn,
+            "SELECT * FROM promo_activations WHERE code=? ORDER BY activated_at DESC", (code,))

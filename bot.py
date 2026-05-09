@@ -70,13 +70,18 @@ def tower_mult(floor: int) -> float:
     raw = 1.0 + floor * 0.28 - floor * (floor - 1) * 0.010
     return round(TOWER_HOUSE * max(1.0, raw), 4)
 
-def mines_mult(safe_opened: int, bombs: int, house: float = 0.97) -> float:
-    """Multiplier after opening safe cells. Power 0.8 dampens extreme values."""
-    total, safe_total = 25, 25 - bombs
-    if safe_opened == 0: return 1.0
-    if safe_total <= 0 or safe_opened > safe_total: return 0.0
-    raw_ratio = comb(total, safe_opened) / comb(safe_total, safe_opened)
-    return round(house * (raw_ratio ** 0.8), 4)
+def mines_mult(safe_opened: int, bombs: int, max_mult: float = 25.0) -> float:
+    """Geometric multiplier — matches client formula exactly.
+    mult(0)          = 1.0   (game start)
+    mult(safe_total) = max_mult  (all diamonds collected — exact maximum)
+    Intermediate steps: smooth power curve, always < max_mult.
+    """
+    safe_total = 25 - bombs
+    if safe_opened <= 0:               return 1.0
+    if safe_total <= 0:                return round(max_mult, 4)
+    if safe_opened >= safe_total:      return round(max_mult, 4)
+    if max_mult <= 1.0:               return round(max_mult, 4)
+    return round(max_mult ** (safe_opened / safe_total), 4)
 
 def bet_luck_factor(bet: int) -> float:
     """Higher bets get less luck protection. Bet<=100: full. Bet 1000: ~0.65. Bet 10000: ~0.40."""
@@ -812,6 +817,9 @@ async def api_spin(req: web.Request):
     if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
     if bet_amt <= 0 or bet_amt > u["balance"]: return web.json_response({"error":"invalid bet"}, status=400)
     luck, global_k = await db.get_luck(uid), await db.get_global_luck_coeff()
+    euro_k = await db.get_euro_luck_coeff()
+    # Combined: global * euro-specific coefficient
+    effective_global_k = global_k * euro_k
 
     def check(n,c,bt):
         if bt=="red": return c=="red"
@@ -833,12 +841,12 @@ async def api_spin(req: web.Request):
     elif luck == 0:
         rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
     elif luck == -1:
-        if global_k >= 1.0 or random.random() < global_k:
+        if effective_global_k >= 1.0 or random.random() < effective_global_k:
             rn, rc = random.choice(ROULETTE_NUMBERS)
         else:
             rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
     else:
-        effective = min(100, int(luck * global_k))
+        effective = min(100, int(luck * effective_global_k))
         will_win = random.randint(0, 99) < effective
         if will_win and wins: rn, rc = random.choice(wins)
         elif loses:           rn, rc = random.choice(loses)
@@ -1046,12 +1054,14 @@ async def api_mines_start(req: web.Request):
         "created_at": time.time(),
     }
 
-    next_mult = mines_mult(1, bombs)
+    _max_mult = await db.get_mines_max_mult()
+    next_mult = mines_mult(1, bombs, _max_mult)
     return web.json_response({
         "ok": True,
         "game_id": game_id,
         "new_balance": new_bal,
         "bombs": bombs,
+        "max_mult": _max_mult,
         "next_mult": next_mult,
         "current_win": 0,
     })
@@ -1076,8 +1086,9 @@ async def api_mines_reveal(req: web.Request):
 
     luck     = await db.get_luck(uid)
     global_k = await db.get_global_luck_coeff()
+    mines_k  = await db.get_mines_luck_coeff()
     bet_factor = bet_luck_factor(game["bet"])
-    effective_k = global_k * bet_factor
+    effective_k = global_k * mines_k * bet_factor
     is_bomb  = cell in game["bomb_set"]
 
     # ── Apply luck override ──
@@ -1142,11 +1153,12 @@ async def api_mines_reveal(req: web.Request):
         game["revealed"].append(cell)
         safe_count  = len(game["revealed"])
         _mines_max  = await db.get_mines_max_mult()
-        current_mult = min(mines_mult(safe_count, game["bombs"]), _mines_max)
+        # Geometric formula — same as client. No extra min() needed:
+        # mines_mult already caps at max_mult when safe_count == safe_total
+        current_mult = mines_mult(safe_count, game["bombs"], _mines_max)
         current_win  = round(game["bet"] * current_mult)
-        # Next multiplier (if one more safe cell opened)
         safe_left    = 25 - game["bombs"] - safe_count
-        next_mult    = min(mines_mult(safe_count + 1, game["bombs"]), _mines_max) if safe_left > 0 else None
+        next_mult    = mines_mult(safe_count + 1, game["bombs"], _mines_max) if safe_left > 0 else None
         # Auto cashout if all safe cells revealed
         if safe_left == 0:
             new_bal = await db.add_to_balance(uid, current_win)
@@ -1190,7 +1202,7 @@ async def api_mines_cashout(req: web.Request):
 
     safe_count   = len(game["revealed"])
     _mines_max   = await db.get_mines_max_mult()
-    mult         = min(mines_mult(safe_count, game["bombs"]), _mines_max)
+    mult         = mines_mult(safe_count, game["bombs"], _mines_max)
     won          = round(game["bet"] * mult)
     profit       = won - game["bet"]
     new_bal      = await db.add_to_balance(uid, won)
@@ -1652,6 +1664,219 @@ async def api_admin_set_tower_max_floors(req):
         fire_log(log_admin_action(uid, aname, "SET_TOWER_MAX_FLOORS", 0, "Все игроки",
             f"Макс. этажей башни → {val}", incognito=False))
     return web.json_response({"ok":True,"max_floors":val})
+
+# ── EURO LUCK ──
+async def api_admin_get_euro_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"coeff": await db.get_euro_luck_coeff()})
+
+async def api_admin_set_euro_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); coeff = float(data.get("coeff", 1.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_euro_luck_coeff(coeff)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_EURO_LUCK", 0, "Все игроки",
+            f"Коэффициент рулетки → {coeff}", incognito=False))
+    return web.json_response({"ok": True, "coeff": coeff})
+
+# ── MINES LUCK ──
+async def api_admin_get_mines_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"coeff": await db.get_mines_luck_coeff()})
+
+async def api_admin_set_mines_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); coeff = float(data.get("coeff", 1.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_mines_luck_coeff(coeff)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_MINES_LUCK", 0, "Все игроки",
+            f"Коэффициент мин → {coeff}", incognito=False))
+    return web.json_response({"ok": True, "coeff": coeff})
+
+# ── PUBLIC: mines settings (для игровой страницы без авторизации) ──
+async def api_mines_settings_public(req):
+    return web.json_response({
+        "max_mult": await db.get_mines_max_mult(),
+        "mines_luck_coeff": await db.get_mines_luck_coeff(),
+    })
+
+# ── PROMO CODES ──
+async def api_admin_promo_list(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response(await db.get_all_promos())
+
+async def api_admin_promo_create(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    try:
+        data       = await req.json()
+        code       = str(data.get("code","")).strip().upper()
+        reward     = int(data.get("reward", 0))
+        uses_left  = data.get("uses_left")          # None = unlimited
+        expires_at = data.get("expires_at")          # None = eternal
+        if uses_left  is not None: uses_left  = int(uses_left)
+        if expires_at is not None: expires_at = float(expires_at)
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if not code or len(code) < 3:
+        return web.json_response({"error": "code must be ≥ 3 chars"}, status=400)
+    existing = await db.get_promo(code)
+    if existing:
+        return web.json_response({"error": "Промокод уже существует"}, status=409)
+    await db.create_promo(code, reward, uses_left, expires_at)
+    try:
+        uid = int(req.headers.get("X-Admin-Uid","0"))
+        u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
+    except: aname = "Admin"; uid = 0
+    fire_log(log_admin_action(uid, aname, "CREATE_PROMO", 0, "—",
+        f"Промокод: {code}, награда: {reward}, лимит: {uses_left}"))
+    return web.json_response({"ok": True, "code": code})
+
+async def api_admin_promo_update(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    try:
+        data = await req.json()
+        code = str(data.get("code","")).strip().upper()
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if not code: return web.json_response({"error": "no code"}, status=400)
+    existing = await db.get_promo(code)
+    if not existing: return web.json_response({"error": "not found"}, status=404)
+    fields = {}
+    if "reward"     in data: fields["reward"]     = int(data["reward"])
+    if "uses_left"  in data: fields["uses_left"]  = data["uses_left"]  # None ok
+    if "expires_at" in data: fields["expires_at"] = data["expires_at"] # None ok
+    await db.update_promo(code, **fields)
+    return web.json_response({"ok": True})
+
+async def api_admin_promo_delete(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    try:
+        data = await req.json()
+        code = str(data.get("code","")).strip().upper()
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if not code: return web.json_response({"error": "no code"}, status=400)
+    await db.delete_promo(code)
+    return web.json_response({"ok": True})
+
+async def api_admin_promo_activations(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    code = req.match_info.get("code","").upper()
+    if not code: return web.json_response({"error":"no code"}, status=400)
+    acts = await db.get_promo_activations(code)
+    # Enrich with user data
+    result = []
+    for a in acts:
+        u = await db.get_user(a["user_id"])
+        result.append({**a,
+            "first_name": u.get("first_name","") if u else "",
+            "username":   u.get("username","")   if u else "",
+        })
+    return web.json_response(result)
+
+# Public promo activation endpoint (called from mini-app)
+async def api_promo_activate(req):
+    try:
+        data = await req.json()
+        uid  = int(data.get("user_id", 0))
+        code = str(data.get("code","")).strip().upper()
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if not uid or not code:
+        return web.json_response({"error": "missing uid or code"}, status=400)
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error": "user not found"}, status=404)
+    if await db.is_banned(uid): return web.json_response({"error": "⛔ Вы заблокированы."}, status=403)
+
+    promo = await db.get_promo(code)
+    if not promo:
+        return web.json_response({"error": "❌ Промокод не найден"}, status=404)
+
+    now = time.time()
+    if promo["expires_at"] is not None and promo["expires_at"] < now:
+        return web.json_response({"error": "❌ Промокод истёк"}, status=400)
+    if promo["uses_left"] is not None and promo["uses_left"] <= 0:
+        return web.json_response({"error": "❌ Промокод исчерпан"}, status=400)
+
+    already = await db.has_activated_promo(uid, code)
+    if already:
+        return web.json_response({"error": "❌ Вы уже активировали этот промокод"}, status=400)
+
+    reward = promo["reward"]
+    await db.activate_promo(uid, code, reward)
+    new_bal = await db.add_to_balance(uid, reward)
+    await db.add_history(uid, "promo", abs(reward),
+        f"Промокод: {code} ({'+' if reward>=0 else ''}{reward} 🪙)")
+    return web.json_response({"ok": True, "reward": reward, "new_balance": new_bal})
+
+
+    app = web.Application()
+    app.router.add_get("/", serve_app)
+    app.router.add_get("/admin", serve_admin)
+    app.router.add_get("/health", health)
+    app.router.add_post("/api/ensure_user",        api_ensure_user)
+    app.router.add_get ("/api/user/{uid}",         api_user)
+    app.router.add_get ("/api/history/{uid}",      api_history)
+    app.router.add_get ("/api/invoice",            api_invoice)
+    app.router.add_get ("/api/gifts",              api_get_gifts)
+    app.router.add_post("/api/spin",               api_spin)
+    app.router.add_get ("/api/gta/lobby",          api_gta_lobby)
+    app.router.add_post("/api/gta/bet",            api_gta_bet)
+    app.router.add_get ("/api/gta/status/{lid}",   api_gta_status)
+    app.router.add_post("/api/gift/buy",           api_gift_buy)
+    app.router.add_post("/api/mines/start",        api_mines_start)
+    app.router.add_post("/api/mines/reveal",       api_mines_reveal)
+    app.router.add_post("/api/mines/cashout",      api_mines_cashout)
+    app.router.add_get ("/api/mines/status",       api_mines_status)
+    app.router.add_get ("/tower",                  serve_tower)
+    app.router.add_post("/api/tower/start",        api_tower_start)
+    app.router.add_post("/api/tower/step",         api_tower_step)
+    app.router.add_post("/api/tower/cashout",      api_tower_cashout)
+    app.router.add_get ("/api/admin/users",        api_admin_users)
+    app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
+    app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)
+    app.router.add_post("/api/admin/ban",              api_admin_ban)
+    app.router.add_post("/api/admin/send_message",     api_admin_send_message)
+    app.router.add_get ("/api/admin/is_dev",           api_admin_is_dev)
+    app.router.add_get ("/api/admin/revenue",      api_admin_revenue)
+    app.router.add_get ("/api/admin/global_luck",  api_admin_get_global_luck)
+    app.router.add_post("/api/admin/global_luck",  api_admin_set_global_luck)
+    app.router.add_get ("/api/admin/tower_luck",   api_admin_get_tower_luck)
+    app.router.add_post("/api/admin/tower_luck",   api_admin_set_tower_luck)
+    app.router.add_get ("/api/admin/mines_max_mult",   api_admin_get_mines_max_mult)
+    app.router.add_post("/api/admin/mines_max_mult",   api_admin_set_mines_max_mult)
+    app.router.add_get ("/api/admin/tower_max_floors", api_admin_get_tower_max_floors)
+    app.router.add_post("/api/admin/tower_max_floors", api_admin_set_tower_max_floors)
+    # Euro / Mines luck (independent per-game coefficients)
+    app.router.add_get ("/api/admin/euro_luck",        api_admin_get_euro_luck)
+    app.router.add_post("/api/admin/euro_luck",        api_admin_set_euro_luck)
+    app.router.add_get ("/api/admin/mines_luck",       api_admin_get_mines_luck)
+    app.router.add_post("/api/admin/mines_luck",       api_admin_set_mines_luck)
+    # Public mines settings (no auth — for the game page to load max_mult)
+    app.router.add_get ("/api/mines/settings",         api_mines_settings_public)
+    # Promo codes (admin)
+    app.router.add_get ("/api/admin/promo",                              api_admin_promo_list)
+    app.router.add_post("/api/admin/promo/create",                       api_admin_promo_create)
+    app.router.add_post("/api/admin/promo/update",                       api_admin_promo_update)
+    app.router.add_post("/api/admin/promo/delete",                       api_admin_promo_delete)
+    app.router.add_get ("/api/admin/promo/{code}/activations",           api_admin_promo_activations)
+    # Promo activation (public — from mini-app)
+    app.router.add_post("/api/promo/activate",                           api_promo_activate)
+    app.router.add_get("/{filename:.+}", serve_static)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    await web.TCPSite(runner,"0.0.0.0",PORT).start()
+    logger.info(f"HTTP :{PORT}")
 
 async def start_web():
     app = web.Application()
