@@ -66,8 +66,8 @@
 .irow-l{color:var(--muted);font-size:14px;}
 .irow-r{color:var(--text);font-weight:600;}
 
-/* ── GAMES — colorful cards ── */
-.games-content{padding:14px;}
+/* ── GAMES — bold static cards ── */
+.games-content{padding:14px 14px 20px;}
 .games-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .games-title{font-family:'Orbitron',monospace;font-size:13px;color:var(--text);font-weight:700;letter-spacing:1px;}
 .coin-pill{
@@ -79,99 +79,57 @@
 }
 
 .game-card{
-  display:block;text-decoration:none;
+  display:flex;align-items:center;
   border-radius:22px;overflow:hidden;margin-bottom:14px;
-  cursor:pointer;transition:transform .15s,box-shadow .2s;position:relative;
-  box-shadow:0 8px 30px rgba(0,0,0,.4);
+  cursor:pointer;transition:transform .15s,box-shadow .2s;
+  position:relative;min-height:130px;
+  text-decoration:none;
+  box-shadow:0 6px 24px rgba(0,0,0,.45);
 }
 .game-card:active{transform:scale(.98);}
 
-/* Banner area */
-.gc-banner{
-  height:130px;display:flex;align-items:center;
-  position:relative;overflow:hidden;padding:0 20px;
-}
-/* Euro roulette — emerald green */
-.gc-banner.euro{
-  background:linear-gradient(135deg,#0a2318 0%,#0d3520 40%,#0f4228 100%);
-  border-bottom:1px solid rgba(45,198,83,.2);
-}
-.gc-banner.euro .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(45,198,83,.35),transparent 65%);}
-/* GTA roulette — neon blue-purple */
-.gc-banner.gta{
-  background:linear-gradient(135deg,#080820 0%,#0e0e38 40%,#140a40 100%);
-  border-bottom:1px solid rgba(123,47,255,.2);
-}
-.gc-banner.gta .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(123,47,255,.4),transparent 65%);}
-/* Mines — fiery orange-red */
-.gc-banner.mines{
-  background:linear-gradient(135deg,#1e0803 0%,#2e0a05 40%,#380e06 100%);
-  border-bottom:1px solid rgba(230,57,70,.2);
-}
-.gc-banner.mines .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(230,100,20,.45),transparent 65%);}
-/* Tower — electric blue */
-.gc-banner.tower{
-  background:linear-gradient(135deg,#030d1e 0%,#051428 40%,#071a35 100%);
-  border-bottom:1px solid rgba(76,201,240,.2);
-}
-.gc-banner.tower .gc-glow{background:radial-gradient(ellipse at 75% 50%,rgba(76,201,240,.35),transparent 65%);}
+/* Themes */
+.game-card.rolls  { background:linear-gradient(120deg,#1565c0 0%,#1e88e5 55%,#42a5f5 100%); }
+.game-card.mines  { background:linear-gradient(120deg,#e65100 0%,#f57c00 55%,#ffb74d 100%); }
+.game-card.slots  { background:linear-gradient(120deg,#1a1a2e 0%,#2d2d44 55%,#3d3d5c 100%); }
+.game-card.upgrade{ background:linear-gradient(120deg,#bf360c 0%,#e64a19 55%,#ff7043 100%); }
+.game-card.gta    { background:linear-gradient(120deg,#1a0040 0%,#4a148c 55%,#7b1fa2 100%); }
+.game-card.tower  { background:linear-gradient(120deg,#006064 0%,#00838f 55%,#00acc1 100%); }
 
-.gc-glow{position:absolute;inset:0;}
+/* Text block on left */
+.gc-text{
+  flex:1;padding:20px 0 20px 22px;position:relative;z-index:2;
+}
+.gc-name{
+  font-family:'Orbitron',monospace;font-size:22px;font-weight:900;
+  color:#fff;letter-spacing:1px;margin-bottom:7px;
+  text-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.gc-desc{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5;max-width:185px;}
 
-/* Decorative big faded letter background */
-.gc-bg-text{
-  position:absolute;right:-10px;top:50%;transform:translateY(-50%);
-  font-family:'Orbitron',monospace;font-size:90px;font-weight:900;
-  opacity:.06;color:#fff;line-height:1;pointer-events:none;letter-spacing:-4px;
-  user-select:none;
+/* Right image / emoji area */
+.gc-art{
+  width:130px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;z-index:2;overflow:hidden;
+  align-self:stretch;
 }
-.gc-text-block{position:relative;z-index:2;flex:1;}
-.gc-game-label{
-  font-family:'Orbitron',monospace;font-size:18px;font-weight:900;
-  color:#fff;letter-spacing:1px;margin-bottom:5px;text-shadow:0 2px 12px rgba(0,0,0,.5);
+.gc-art-emoji{
+  font-size:72px;
+  filter:drop-shadow(0 4px 16px rgba(0,0,0,.4));
+  transform:rotate(-8deg) scale(1.05);
+  line-height:1;
 }
-.gc-game-label.euro-label{color:#4dff91;}
-.gc-game-label.gta-label{color:#b48fff;}
-.gc-game-label.mines-label{color:#ff7040;}
-.gc-game-label.tower-label{color:#4cc9f0;}
-.gc-game-sub{font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;max-width:180px;}
-.gc-emoji{
-  position:relative;z-index:2;font-size:62px;flex-shrink:0;
-  filter:drop-shadow(0 4px 16px rgba(0,0,0,.5));
-  animation:gc-float 3s ease-in-out infinite;
+/* diagonal dark overlay on the right side to blend */
+.game-card::after{
+  content:'';position:absolute;right:0;top:0;bottom:0;
+  width:48%;
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.15));
+  pointer-events:none;z-index:1;
 }
-@keyframes gc-float{
-  0%,100%{transform:translateY(0) rotate(-3deg);}
-  50%{transform:translateY(-6px) rotate(2deg);}
-}
-.game-card:nth-child(2) .gc-emoji{animation-delay:.4s;}
-.game-card:nth-child(3) .gc-emoji{animation-delay:.8s;}
-.game-card:nth-child(4) .gc-emoji{animation-delay:1.2s;}
-
-/* Bottom info strip */
-.gc-strip{
-  display:flex;align-items:center;padding:11px 18px;gap:8px;
-  background:rgba(0,0,0,.35);backdrop-filter:blur(10px);
-}
-.gc-strip-tags{display:flex;gap:6px;flex:1;flex-wrap:wrap;}
-.gc-stag{
-  padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;
-  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.65);
-}
-.gc-play-btn{
-  padding:6px 14px;border-radius:8px;font-family:'Orbitron',monospace;
-  font-size:11px;font-weight:700;color:#000;border:none;cursor:pointer;
-  white-space:nowrap;
-}
-.gc-play-btn.green{background:linear-gradient(135deg,#1aa840,#2dc653);}
-.gc-play-btn.purple{background:linear-gradient(135deg,#7b2fff,#a060ff);color:#fff;}
-.gc-play-btn.orange{background:linear-gradient(135deg,#e63946,#ff6030);}
-.gc-play-btn.blue{background:linear-gradient(135deg,#0099cc,#4cc9f0);}
-
 /* Section label */
 .section-label{font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);
   letter-spacing:1px;margin-bottom:10px;text-transform:uppercase;}/* ── HISTORY ── */
-.inv-content{padding:14px;}
 .inv-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
 .istat{
   background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
@@ -238,6 +196,86 @@
 .hi-a.p{color:var(--green);}.hi-a.n{color:var(--red);}
 .empty{text-align:center;padding:40px 20px;color:var(--muted);}
 .empty-i{font-size:48px;margin-bottom:12px;}
+
+/* ── PROFILE ── */
+.profile-wrap{padding:16px 14px 24px;}
+.profile-top-card{
+  background:rgba(255,255,255,0.055);
+  border:1px solid rgba(255,255,255,0.13);
+  border-radius:24px;
+  backdrop-filter:blur(24px) saturate(1.6);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 8px 28px rgba(0,0,0,0.32);
+  padding:28px 20px 22px;
+  text-align:center;margin-bottom:14px;position:relative;overflow:hidden;
+}
+.profile-top-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);}
+.prof-avatar{
+  width:84px;height:84px;border-radius:50%;
+  background:linear-gradient(135deg,#7b2fff,#4361ee);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:#fff;
+  margin:0 auto 14px;
+  box-shadow:0 4px 20px rgba(123,47,255,.4),inset 0 1px 0 rgba(255,255,255,.2);
+}
+.prof-name{font-family:'Orbitron',monospace;font-size:19px;font-weight:700;
+  color:var(--text);margin-bottom:4px;}
+.prof-username{font-size:14px;color:var(--muted);}
+.prof-bal-row{
+  background:linear-gradient(135deg,rgba(245,197,66,.1),rgba(232,168,0,.06));
+  border:1px solid rgba(245,197,66,.25);border-radius:16px;
+  padding:13px 16px;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:inset 0 1px 0 rgba(245,197,66,.15);
+}
+.prof-bal-lbl{font-size:11px;color:rgba(245,197,66,.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.prof-bal-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--gold);}
+.prof-topup-btn{
+  padding:9px 16px;background:linear-gradient(135deg,#7b2fff,#4361ee);
+  border:none;border-radius:12px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:12px;font-weight:700;cursor:pointer;
+  box-shadow:0 3px 12px rgba(123,47,255,.35);
+}
+.prof-menu-card{
+  background:rgba(255,255,255,0.055);
+  border:1px solid rgba(255,255,255,0.13);
+  border-radius:20px;overflow:hidden;margin-bottom:12px;
+  backdrop-filter:blur(24px) saturate(1.6);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 6px 20px rgba(0,0,0,0.28);
+}
+.prof-menu-row{
+  display:flex;align-items:center;gap:13px;padding:15px 16px;
+  cursor:pointer;transition:background .15s;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.prof-menu-row:last-child{border-bottom:none;}
+.prof-menu-row:active{background:rgba(255,255,255,0.04);}
+.prof-menu-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+}
+.prof-menu-label{flex:1;font-size:15px;font-weight:600;color:var(--text);}
+.prof-menu-right{font-size:15px;color:var(--muted);font-weight:600;margin-right:4px;}
+.prof-menu-arr{font-size:20px;color:var(--muted);line-height:1;}
+.prof-invite-btn{
+  width:100%;padding:16px;
+  background:#fff;border:none;border-radius:16px;
+  color:#000;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+  cursor:pointer;margin-bottom:14px;
+  box-shadow:0 4px 20px rgba(255,255,255,.1);
+  transition:opacity .15s,transform .1s;
+}
+.prof-invite-btn:active{transform:scale(.98);opacity:.9;}
+.prof-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.prof-stat{
+  background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;padding:12px 8px;text-align:center;
+  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+}
+.prof-stat-val{font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700;}
+.prof-stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
 
 /* ── SHOP ── */
 .shop-content{padding:14px;}
@@ -591,26 +629,87 @@
   </div>
 </div>
 
-<!-- ══════════════ INVENTORY ══════════════ -->
+<!-- ══════════════ PROFILE (бывший Инвентарь) ══════════════ -->
 <div class="page" id="page-inventory">
-  <div class="inv-content">
-    <div class="inv-stats">
-      <div class="istat"><div class="istat-val" id="stat-spins">—</div><div class="istat-lbl">Игр</div></div>
-      <div class="istat"><div class="istat-val" id="stat-wins">—</div><div class="istat-lbl">Побед</div></div>
-      <div class="istat"><div class="istat-val" id="stat-won">—</div><div class="istat-lbl">Выиграно</div></div>
+  <div class="profile-wrap">
+
+    <!-- Avatar + name card -->
+    <div class="profile-top-card">
+      <div class="prof-avatar" id="prof-avatar">?</div>
+      <div class="prof-name" id="prof-name">—</div>
+      <div class="prof-username" id="prof-uname"></div>
     </div>
-    <div class="inv-tabs">
-      <div class="inv-tab active" onclick="invTab('items',this)">🎁 Предметы</div>
-      <div class="inv-tab" onclick="invTab('history',this)">📋 История</div>
-    </div>
-    <div id="inv-items"><div class="empty"><div class="empty-i">📭</div><p>Инвентарь пуст</p></div></div>
-    <div id="inv-history" style="display:none">
-      <div class="hstats">
-        <div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="inv-won">0</div></div>
-        <div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="inv-lost">0</div></div>
+
+    <!-- Balance row -->
+    <div class="prof-bal-row">
+      <div>
+        <div class="prof-bal-lbl">Баланс</div>
+        <div class="prof-bal-val">🪙 <span id="prof-bal">—</span></div>
       </div>
-      <div id="inv-hist-list"></div>
+      <button class="prof-topup-btn" onclick="openTopup()">+ Пополнить</button>
     </div>
+
+    <!-- Stats -->
+    <div class="prof-stats-row">
+      <div class="prof-stat"><div class="prof-stat-val" id="prof-spins">—</div><div class="prof-stat-lbl">Игр</div></div>
+      <div class="prof-stat"><div class="prof-stat-val" id="prof-wins">—</div><div class="prof-stat-lbl">Побед</div></div>
+      <div class="prof-stat"><div class="prof-stat-val" id="prof-won">—</div><div class="prof-stat-lbl">Выиграно</div></div>
+    </div>
+
+    <!-- Menu -->
+    <div class="prof-menu-card">
+      <div class="prof-menu-row" onclick="openTopup()">
+        <div class="prof-menu-icon" style="background:linear-gradient(135deg,#FF9F0A,#FFD60A)">⭐</div>
+        <div class="prof-menu-label">Пополнить звезды</div>
+        <span class="prof-menu-arr">›</span>
+      </div>
+      <div class="prof-menu-row" onclick="showGiftsPanel()">
+        <div class="prof-menu-icon" style="background:linear-gradient(135deg,#0A84FF,#30D158)">🎁</div>
+        <div class="prof-menu-label">Мои подарки</div>
+        <span class="prof-menu-arr">›</span>
+      </div>
+      <div class="prof-menu-row" onclick="showRefPanel()">
+        <div class="prof-menu-icon" style="background:linear-gradient(135deg,#BF5AF2,#9B59F2)">👥</div>
+        <div class="prof-menu-label">Реф. система</div>
+        <span class="prof-menu-right" id="prof-refs">0</span>
+        <span class="prof-menu-arr">›</span>
+      </div>
+      <div class="prof-menu-row" style="cursor:default" onclick="void 0">
+        <div class="prof-menu-label" style="padding-left:2px">Звуки игр</div>
+        <label class="toggle" style="flex-shrink:0">
+          <input type="checkbox" id="prof-sounds" onchange="saveSounds(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Invite friends -->
+    <button class="prof-invite-btn" onclick="copyRef()">Пригласить Друзей</button>
+
+    <!-- Gifts sub-panel (hidden by default) -->
+    <div id="prof-gifts-panel" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button onclick="hideGiftsPanel()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:7px 12px;color:var(--gold);font-size:18px;cursor:pointer;font-weight:700">‹</button>
+        <span style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">МОИ ПОДАРКИ</span>
+      </div>
+      <div id="prof-gifts-list"><div class="empty"><div class="empty-i">📭</div><p>Подарков нет</p></div></div>
+    </div>
+
+    <!-- Ref sub-panel (hidden by default) -->
+    <div id="prof-ref-panel" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button onclick="hideRefPanel()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:7px 12px;color:var(--gold);font-size:18px;cursor:pointer;font-weight:700">‹</button>
+        <span style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">РЕФЕРАЛЬНАЯ ПРОГРАММА</span>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
+          <div class="irow"><span class="irow-l">Рефералов приглашено</span><span class="irow-r" id="ref-count-big">0</span></div>
+          <button onclick="copyRef()" style="margin-top:12px;width:100%;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -622,84 +721,36 @@
       <div class="coin-pill">🪙 <span id="r-bal">0</span></div>
     </div>
 
-    <a class="game-card" href="european_roulette.html">
-      <div class="gc-banner euro">
-        <div class="gc-glow"></div>
-        <div class="gc-bg-text">ROLL</div>
-        <div class="gc-text-block">
-          <div class="gc-game-label euro-label">РУЛЕТКА</div>
-          <div class="gc-game-sub">Крутящееся колесо, 37 секторов. Ставь на цвет, чётность или число.</div>
-        </div>
-        <div class="gc-emoji">🎰</div>
+    <a class="game-card rolls" href="european_roulette.html">
+      <div class="gc-text">
+        <div class="gc-name">РОЛЛС</div>
+        <div class="gc-desc">Крути колесо, ставь на цвет или число и забирай выигрыш!</div>
       </div>
-      <div class="gc-strip">
-        <div class="gc-strip-tags">
-          <span class="gc-stag">×0 – ×14</span>
-          <span class="gc-stag">от 10 🪙</span>
-          <span class="gc-stag">1 игрок</span>
-        </div>
-        <button class="gc-play-btn green">▶ Играть</button>
-      </div>
+      <div class="gc-art"><span class="gc-art-emoji">🎡</span></div>
     </a>
 
-    <a class="game-card" href="gta_roulette.html">
-      <div class="gc-banner gta">
-        <div class="gc-glow"></div>
-        <div class="gc-bg-text">GTA</div>
-        <div class="gc-text-block">
-          <div class="gc-game-label gta-label">GTA РУЛЕТКА</div>
-          <div class="gc-game-sub">Общий банк! Чем больше ставка — тем выше шанс забрать всё.</div>
-        </div>
-        <div class="gc-emoji">🏙</div>
+    <a class="game-card mines" href="mines.html">
+      <div class="gc-text">
+        <div class="gc-name">МИНЫ</div>
+        <div class="gc-desc">Открывай клетки, избегай мин и забирай 💎 подарки!</div>
       </div>
-      <div class="gc-strip">
-        <div class="gc-strip-tags">
-          <span class="gc-stag">Общий банк</span>
-          <span class="gc-stag">от 10 🪙</span>
-          <span class="gc-stag">2+ игроков</span>
-        </div>
-        <button class="gc-play-btn purple">▶ Играть</button>
-      </div>
+      <div class="gc-art"><span class="gc-art-emoji">💣</span></div>
     </a>
 
-    <a class="game-card" href="mines.html">
-      <div class="gc-banner mines">
-        <div class="gc-glow"></div>
-        <div class="gc-bg-text">MINE</div>
-        <div class="gc-text-block">
-          <div class="gc-game-label mines-label">МИНЫ</div>
-          <div class="gc-game-sub">Открывай клетки, собирай 💎! Одна бомба — и всё потеряно. Кешаутись!</div>
-        </div>
-        <div class="gc-emoji">💣</div>
+    <a class="game-card slots" href="gta_roulette.html">
+      <div class="gc-text">
+        <div class="gc-name">СЛОТЫ</div>
+        <div class="gc-desc">Общий банк! Чем больше ставка — тем выше шанс забрать всё.</div>
       </div>
-      <div class="gc-strip">
-        <div class="gc-strip-tags">
-          <span class="gc-stag">1–24 бомбы</span>
-          <span class="gc-stag">от 10 🪙</span>
-          <span class="gc-stag">Кешаут</span>
-        </div>
-        <button class="gc-play-btn orange">▶ Играть</button>
-      </div>
+      <div class="gc-art"><span class="gc-art-emoji">🎰</span></div>
     </a>
 
-    <a class="game-card" href="tower.html">
-      <div class="gc-banner tower">
-        <div class="gc-glow"></div>
-        <div class="gc-bg-text">TOWER</div>
-        <div class="gc-text-block">
-          <div class="gc-game-label tower-label">БАШНЯ</div>
-          <div class="gc-game-sub">Поднимайся по этажам! 3 клетки — 1 мина. Каждый этаж умножает выигрыш.</div>
-        </div>
-        <div class="gc-emoji">🗼</div>
+    <a class="game-card upgrade" href="tower.html">
+      <div class="gc-text">
+        <div class="gc-name">АПГРЕЙД</div>
+        <div class="gc-desc">Поднимайся по этажам, каждый шаг умножает выигрыш!</div>
       </div>
-      <div class="gc-strip">
-        <div class="gc-strip-tags">
-          <span class="gc-stag">×1 – ×2.8+</span>
-          <span class="gc-stag">от 10 🪙</span>
-          <span class="gc-stag">Кешаут</span>
-        </div>
-        <button class="gc-play-btn blue">▶ Играть</button>
-      </div>
+      <div class="gc-art"><span class="gc-art-emoji">🔥</span></div>
     </a>
   </div>
 </div>
@@ -822,8 +873,8 @@
     Главная
   </button>
   <button class="nav-btn" onclick="showPage('inventory',this,1)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-    Инвентарь
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Профиль
   </button>
   <button class="nav-btn" onclick="showPage('games',this,2)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
@@ -901,9 +952,22 @@ function updateUI(){
   document.getElementById('h-spins').textContent  = userData.spins??0;
   document.getElementById('h-wins').textContent   = userData.wins??0;
   document.getElementById('h-won').textContent    = userData.total_won??0;
-  document.getElementById('stat-spins').textContent = userData.spins??0;
-  document.getElementById('stat-wins').textContent  = userData.wins??0;
-  document.getElementById('stat-won').textContent   = userData.total_won??0;
+  // Profile page
+  const initials = (FIRST_NAME||'?')[0].toUpperCase();
+  const avatarEl = document.getElementById('prof-avatar');
+  if(avatarEl) avatarEl.textContent = initials;
+  const nameEl = document.getElementById('prof-name');
+  if(nameEl) nameEl.textContent = FIRST_NAME || '—';
+  const unameEl = document.getElementById('prof-uname');
+  if(unameEl) unameEl.textContent = USERNAME ? '@'+USERNAME : '';
+  const profBal = document.getElementById('prof-bal');
+  if(profBal) profBal.textContent = bal;
+  const profSpins = document.getElementById('prof-spins');
+  if(profSpins) profSpins.textContent = userData.spins??0;
+  const profWins = document.getElementById('prof-wins');
+  if(profWins) profWins.textContent = userData.wins??0;
+  const profWon = document.getElementById('prof-won');
+  if(profWon) profWon.textContent = userData.total_won??0;
   const rbal = document.getElementById('r-bal');
   if(rbal) rbal.textContent = bal;
   document.getElementById('shop-bal').textContent = bal;
@@ -948,11 +1012,12 @@ async function renderHistory(){
   list.innerHTML=items.slice(0,60).map(i=>{
     const d=new Date(i.created_at*1000);
     const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-    const pos=['win','deposit','ref','gift_received'].includes(i.type);
+    const pos = i.type==='promo' ? i.amount>=0 : ['win','deposit','ref','gift_received'].includes(i.type);
+    const displayAmt = Math.abs(i.amount);
     return `<div class="hi">
       <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
       <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
-      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${displayAmt}</div>
     </div>`;
   }).join('');
 }
@@ -961,22 +1026,59 @@ function setF(el,f){
   el.classList.add('a'); curF=f; renderHistory();
 }
 
-// ── INVENTORY ──
-function invTab(tab, el){
-  document.querySelectorAll('.inv-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('inv-items').style.display = tab==='items'?'':'none';
-  document.getElementById('inv-history').style.display = tab==='history'?'':'none';
-  if(tab==='history') renderInvHistory();
+// ── PROFILE ──
+function showGiftsPanel(){
+  document.querySelector('.profile-top-card').style.display='none';
+  document.querySelector('.prof-bal-row').style.display='none';
+  document.querySelector('.prof-stats-row').style.display='none';
+  document.querySelector('.prof-menu-card').style.display='none';
+  document.querySelector('.prof-invite-btn').style.display='none';
+  document.getElementById('prof-gifts-panel').style.display='block';
+  document.getElementById('prof-ref-panel').style.display='none';
+  loadGifts();
 }
-
-async function loadInventory(){
+function hideGiftsPanel(){
+  document.querySelector('.profile-top-card').style.display='';
+  document.querySelector('.prof-bal-row').style.display='';
+  document.querySelector('.prof-stats-row').style.display='';
+  document.querySelector('.prof-menu-card').style.display='';
+  document.querySelector('.prof-invite-btn').style.display='';
+  document.getElementById('prof-gifts-panel').style.display='none';
+}
+function showRefPanel(){
+  document.querySelector('.profile-top-card').style.display='none';
+  document.querySelector('.prof-bal-row').style.display='none';
+  document.querySelector('.prof-stats-row').style.display='none';
+  document.querySelector('.prof-menu-card').style.display='none';
+  document.querySelector('.prof-invite-btn').style.display='none';
+  document.getElementById('prof-ref-panel').style.display='block';
+  document.getElementById('prof-gifts-panel').style.display='none';
+}
+function hideRefPanel(){
+  document.querySelector('.profile-top-card').style.display='';
+  document.querySelector('.prof-bal-row').style.display='';
+  document.querySelector('.prof-stats-row').style.display='';
+  document.querySelector('.prof-menu-card').style.display='';
+  document.querySelector('.prof-invite-btn').style.display='';
+  document.getElementById('prof-ref-panel').style.display='none';
+}
+function saveSounds(on){
+  try{ localStorage.setItem('topluck_sounds', on?'1':'0'); }catch(e){}
+}
+function loadSounds(){
+  try{
+    const v = localStorage.getItem('topluck_sounds');
+    const el = document.getElementById('prof-sounds');
+    if(el && v!==null) el.checked = v==='1';
+  }catch(e){}
+}
+async function loadGifts(){
   if(!UID) return;
   const hist = await get(`/api/history/${UID}`).catch(()=>[]);
   const gifts = hist.filter(h=>h.type==='gift_received'||h.type==='gift');
-  const list = document.getElementById('inv-items');
+  const list = document.getElementById('prof-gifts-list');
   if(!gifts.length){
-    list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>Инвентарь пуст.<br>Купи что-нибудь в Магазине!</p></div>';
+    list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>Подарков нет.<br>Купи что-нибудь в Магазине!</p></div>';
     return;
   }
   const grouped={};
@@ -994,30 +1096,16 @@ async function loadInventory(){
       <div class="inv-qty">×${item.count}</div>
     </div>`).join('');
 }
-
-async function renderInvHistory(){
-  const hist = await get(`/api/history/${UID}`).catch(()=>[]);
-  let won=0,lost=0;
-  hist.forEach(i=>{
-    if(['win','deposit','ref'].includes(i.type)) won+=i.amount;
-    if(['lose'].includes(i.type)) lost+=i.amount;
-  });
-  document.getElementById('inv-won').textContent=won;
-  document.getElementById('inv-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',promo:'🎟'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок',gift_received:'Подарок получен',promo:'Промокод'};
-  const list=document.getElementById('inv-hist-list');
-  if(!hist.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
-  list.innerHTML=hist.slice(0,50).map(i=>{
-    const d=new Date(i.created_at*1000);
-    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-    const pos=['win','deposit','ref','gift_received'].includes(i.type);
-    return `<div class="hi">
-      <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
-      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
-      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
-    </div>`;
-  }).join('');
+async function loadInventory(){
+  if(!UID) return;
+  updateUI();
+  loadSounds();
+  // Load ref count
+  const refs = userData?.refs ?? 0;
+  const refEl = document.getElementById('prof-refs');
+  if(refEl) refEl.textContent = refs;
+  const refBig = document.getElementById('ref-count-big');
+  if(refBig) refBig.textContent = refs;
 }
 
 // ── SHOP ──

@@ -1817,7 +1817,7 @@ async def api_promo_activate(req):
     reward = promo["reward"]
     await db.activate_promo(uid, code, reward)
     new_bal = await db.add_to_balance(uid, reward)
-    await db.add_history(uid, "promo", abs(reward),
+    await db.add_history(uid, "promo", reward,
         f"Промокод: {code} ({'+' if reward>=0 else ''}{reward} 🪙)")
     return web.json_response({"ok": True, "reward": reward, "new_balance": new_bal})
 
