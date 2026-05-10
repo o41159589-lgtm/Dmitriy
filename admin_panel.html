@@ -267,6 +267,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
   <div class="tab"   onclick="switchTab('revenue',this)">💰 Доход</div>
   <div class="tab"   onclick="switchTab('promo',this)">🎟 Промо</div>
   <div class="tab"   onclick="switchTab('settings',this)">⚙️ Настройки</div>
+  <div class="tab"   onclick="switchTab('logs',this)">📋 Логи</div>
 </div>
 
 <!-- USERS -->
@@ -509,6 +510,33 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 
 </div>
 
+<!-- LOGS -->
+<div class="tab-pane" id="tab-logs">
+  <div class="rev-card" style="margin-bottom:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="rev-title" style="margin-bottom:0">📋 ЛОГ ДЕЙСТВИЙ СЕССИИ</div>
+      <div style="display:flex;gap:6px">
+        <button class="abtn msg" onclick="copyLogs()" style="font-size:11px;padding:6px 10px">📋 Копировать</button>
+        <button class="abtn ban" onclick="clearLogs()" style="font-size:11px;padding:6px 10px">🗑 Очистить</button>
+      </div>
+    </div>
+    <p style="color:var(--muted);font-size:11px;line-height:1.6;margin-bottom:10px">
+      Все действия за текущую сессию браузера. Сбрасывается при закрытии вкладки.
+    </p>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      <div id="log-count" style="background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--blue)">0 записей</div>
+      <div id="log-ok-count" style="background:rgba(45,198,83,.1);border:1px solid rgba(45,198,83,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--green)">0 успешных</div>
+      <div id="log-err-count" style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--red)">0 ошибок</div>
+    </div>
+  </div>
+  <div id="logs-list">
+    <div style="text-align:center;color:var(--muted);padding:40px;font-size:13px">
+      <div style="font-size:40px;margin-bottom:10px">📭</div>
+      <p>Действий пока нет.<br>Все запросы к API будут здесь логироваться.</p>
+    </div>
+  </div>
+</div>
+
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
@@ -534,6 +562,92 @@ function switchTab(name,btn){
   if(name==='revenue') loadRev();
   if(name==='settings') loadGl();
   if(name==='promo') loadPromos();
+  if(name==='logs') renderLogs();
+}
+
+// ══════════════════════════════
+// LOGS SYSTEM
+// ══════════════════════════════
+const _adminLogs = [];
+
+function _addLog(method, path, ok, body, result, errMsg){
+  const now = new Date();
+  const ts = now.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const label = _describeAction(method, path, body);
+  _adminLogs.unshift({ts, method, path, ok, label, body: body ? JSON.stringify(body).slice(0,200) : null, result: result ? JSON.stringify(result).slice(0,200) : null, errMsg});
+  if(_adminLogs.length > 500) _adminLogs.length = 500;
+  // Update counters live
+  const total = _adminLogs.length;
+  const okCnt = _adminLogs.filter(l=>l.ok).length;
+  const errCnt = total - okCnt;
+  const cEl = document.getElementById('log-count');
+  const oEl = document.getElementById('log-ok-count');
+  const eEl = document.getElementById('log-err-count');
+  if(cEl) cEl.textContent = total + ' записей';
+  if(oEl) oEl.textContent = okCnt + ' успешных';
+  if(eEl) eEl.textContent = errCnt + ' ошибок';
+}
+
+function _describeAction(method, path, body){
+  if(path.includes('/api/admin/set_balance')) return `💰 Баланс → ${body?.balance ?? '?'} для UID ${body?.user_id ?? '?'}`;
+  if(path.includes('/api/admin/set_luck')) return `🍀 Удача → ${body?.luck ?? '?'}% для UID ${body?.user_id ?? '?'}`;
+  if(path.includes('/api/admin/ban')) return body?.banned ? `⛔ Бан UID ${body?.user_id}` : `✅ Разбан UID ${body?.user_id}`;
+  if(path.includes('/api/admin/send_message')) return `📨 Сообщение → UID ${body?.user_id}: "${(body?.text||'').slice(0,40)}"`;
+  if(path.includes('/api/admin/promo/create')) return `🎟 Создан промокод ${body?.code}, награда ${body?.reward}`;
+  if(path.includes('/api/admin/promo/update')) return `✏️ Изменён промокод ${body?.code}`;
+  if(path.includes('/api/admin/promo/delete')) return `🗑 Удалён промокод ${body?.code}`;
+  if(path.includes('/api/admin/global_luck') && method==='POST') return `🌐 Глобальная удача → ${body?.coeff}`;
+  if(path.includes('/api/admin/euro_luck') && method==='POST') return `🎰 Удача рулетки → ${body?.coeff}`;
+  if(path.includes('/api/admin/mines_luck') && method==='POST') return `💣 Удача мин → ${body?.coeff}`;
+  if(path.includes('/api/admin/tower_luck') && method==='POST') return `🗼 Удача башни → ${body?.coeff}`;
+  if(path.includes('/api/admin/mines_max_mult') && method==='POST') return `💎 Макс. коэф. мин → ${body?.max_mult}x`;
+  if(path.includes('/api/admin/tower_max_floors') && method==='POST') return `🗼 Этажей башни → ${body?.max_floors}`;
+  if(method==='GET') return `📥 GET ${path}`;
+  return `📤 ${method} ${path}`;
+}
+
+function renderLogs(){
+  const el = document.getElementById('logs-list');
+  if(!_adminLogs.length){
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:13px"><div style="font-size:40px;margin-bottom:10px">📭</div><p>Действий пока нет.</p></div>';
+    return;
+  }
+  el.innerHTML = _adminLogs.map((l,i)=>`
+    <div style="
+      background:${l.ok?'rgba(45,198,83,.04)':'rgba(230,57,70,.06)'};
+      border:1px solid ${l.ok?'rgba(45,198,83,.2)':'rgba(230,57,70,.25)'};
+      border-radius:12px;padding:10px 12px;margin-bottom:7px;
+    ">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:${l.errMsg||l.body?'6px':'0'}">
+        <span style="font-size:14px">${l.ok?'✅':'❌'}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;color:var(--text)">${esc(l.label)}</span>
+        <span style="font-size:10px;color:var(--muted);font-family:'Orbitron',monospace">${l.ts}</span>
+      </div>
+      ${l.errMsg?`<div style="font-size:11px;color:var(--red);background:rgba(230,57,70,.08);border-radius:6px;padding:5px 8px;font-family:monospace">❌ ${esc(l.errMsg)}</div>`:''}
+      ${!l.errMsg&&l.result?`<div style="font-size:10px;color:var(--muted);font-family:monospace;margin-top:3px">↳ ${esc(l.result)}</div>`:''}
+    </div>`).join('');
+}
+
+function copyLogs(){
+  if(!_adminLogs.length){toast('Логи пусты','err');return;}
+  const text = _adminLogs.map(l=>
+    `[${l.ts}] ${l.ok?'OK ':'ERR'} ${l.label}${l.errMsg?' → '+l.errMsg:''}${l.result?' → '+l.result:''}`
+  ).join('\n');
+  navigator.clipboard.writeText(text).then(()=>toast('📋 Логи скопированы!')).catch(()=>{
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); toast('📋 Логи скопированы!');
+  });
+}
+
+function clearLogs(){
+  _adminLogs.length = 0;
+  ['log-count','log-ok-count','log-err-count'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=['0 записей','0 успешных','0 ошибок'][i];
+  });
+  renderLogs();
+  toast('🗑 Логи очищены');
 }
 
 // ══════════════════════════════
@@ -721,13 +835,27 @@ async function api(path, method='GET', body=null){
     }
   };
   if(body) o.body = JSON.stringify({...body, incognito: incognitoMode});
-  const r = await fetch(path, o);
-  if(!r.ok){
-    let errMsg = r.status;
-    try{ const j = await r.json(); errMsg = j.error || j.detail || r.status; } catch{}
-    throw new Error(errMsg);
+  let result = null, errMsg = null, ok = false;
+  try {
+    const r = await fetch(path, o);
+    if(!r.ok){
+      let em = r.status;
+      try{ const j = await r.json(); em = j.error || j.detail || r.status; } catch{}
+      errMsg = String(em);
+      _addLog(method, path, false, body, null, errMsg);
+      throw new Error(errMsg);
+    }
+    result = await r.json();
+    ok = true;
+    _addLog(method, path, true, body, result, null);
+    return result;
+  } catch(e) {
+    if(ok === false && !errMsg){
+      errMsg = e.message;
+      _addLog(method, path, false, body, null, errMsg);
+    }
+    throw e;
   }
-  return r.json();
 }
 
 // ── INCOGNITO ──

@@ -1822,6 +1822,36 @@ async def api_promo_activate(req):
     return web.json_response({"ok": True, "reward": reward, "new_balance": new_bal})
 
 
+# ── NOTIFY NOT-TELEGRAM VISITOR ──
+NOT_TG_NOTIFY_UID = 1840233118  # owner who receives visitor notifications
+
+async def api_notify_not_telegram(req: web.Request):
+    """Called by not_telegram.html to notify owner when someone visits without Telegram."""
+    try:
+        data = await req.json()
+        ua       = str(data.get("ua", ""))[:300]
+        ref      = str(data.get("ref", ""))[:200]
+        lang     = str(data.get("lang", ""))[:20]
+        ts       = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        ip = req.headers.get("X-Forwarded-For", req.remote or "unknown").split(",")[0].strip()[:45]
+        msg = (
+            f"🌐 <b>Посетитель без Telegram</b>\n"
+            f"🕐 <code>{ts}</code>\n"
+            f"🌍 IP: <code>{_html.escape(ip)}</code>\n"
+            f"🗣 Язык: <code>{_html.escape(lang)}</code>\n"
+            f"🔗 Referrer: <code>{_html.escape(ref) if ref else '—'}</code>\n"
+            f"💻 UA: <code>{_html.escape(ua[:200])}</code>"
+        )
+        try:
+            await bot.send_message(NOT_TG_NOTIFY_UID, msg, parse_mode="HTML")
+        except Exception as e:
+            logger.warning(f"notify_not_telegram send failed: {e}")
+        return web.json_response({"ok": True})
+    except Exception as e:
+        return web.json_response({"ok": False, "error": str(e)})
+
+
+async def start_web():
     app = web.Application()
     app.router.add_get("/", serve_app)
     app.router.add_get("/admin", serve_admin)
@@ -1874,50 +1904,8 @@ async def api_promo_activate(req):
     app.router.add_get ("/api/admin/promo/{code}/activations",           api_admin_promo_activations)
     # Promo activation (public — from mini-app)
     app.router.add_post("/api/promo/activate",                           api_promo_activate)
-    app.router.add_get("/{filename:.+}", serve_static)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    await web.TCPSite(runner,"0.0.0.0",PORT).start()
-    logger.info(f"HTTP :{PORT}")
-
-async def start_web():
-    app = web.Application()
-    app.router.add_get("/", serve_app)
-    app.router.add_get("/admin", serve_admin)
-    app.router.add_get("/health", health)
-    app.router.add_post("/api/ensure_user",        api_ensure_user)
-    app.router.add_get ("/api/user/{uid}",         api_user)
-    app.router.add_get ("/api/history/{uid}",      api_history)
-    app.router.add_get ("/api/invoice",            api_invoice)
-    app.router.add_get ("/api/gifts",              api_get_gifts)
-    app.router.add_post("/api/spin",               api_spin)
-    app.router.add_get ("/api/gta/lobby",          api_gta_lobby)
-    app.router.add_post("/api/gta/bet",            api_gta_bet)
-    app.router.add_get ("/api/gta/status/{lid}",   api_gta_status)
-    app.router.add_post("/api/gift/buy",           api_gift_buy)
-    app.router.add_post("/api/mines/start",        api_mines_start)
-    app.router.add_post("/api/mines/reveal",       api_mines_reveal)
-    app.router.add_post("/api/mines/cashout",      api_mines_cashout)
-    app.router.add_get ("/api/mines/status",       api_mines_status)
-    app.router.add_get ("/tower",                  serve_tower)
-    app.router.add_post("/api/tower/start",        api_tower_start)
-    app.router.add_post("/api/tower/step",         api_tower_step)
-    app.router.add_post("/api/tower/cashout",      api_tower_cashout)
-    app.router.add_get ("/api/admin/users",        api_admin_users)
-    app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
-    app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)
-    app.router.add_post("/api/admin/ban",              api_admin_ban)
-    app.router.add_post("/api/admin/send_message",     api_admin_send_message)
-    app.router.add_get ("/api/admin/is_dev",           api_admin_is_dev)
-    app.router.add_get ("/api/admin/revenue",      api_admin_revenue)
-    app.router.add_get ("/api/admin/global_luck",  api_admin_get_global_luck)
-    app.router.add_post("/api/admin/global_luck",  api_admin_set_global_luck)
-    app.router.add_get ("/api/admin/tower_luck",   api_admin_get_tower_luck)
-    app.router.add_post("/api/admin/tower_luck",   api_admin_set_tower_luck)
-    app.router.add_get ("/api/admin/mines_max_mult",   api_admin_get_mines_max_mult)
-    app.router.add_post("/api/admin/mines_max_mult",   api_admin_set_mines_max_mult)
-    app.router.add_get ("/api/admin/tower_max_floors", api_admin_get_tower_max_floors)
-    app.router.add_post("/api/admin/tower_max_floors", api_admin_set_tower_max_floors)
+    # Not-Telegram visitor notification
+    app.router.add_post("/api/notify_not_telegram",    api_notify_not_telegram)
     app.router.add_get("/{filename:.+}", serve_static)
     runner = web.AppRunner(app)
     await runner.setup()
@@ -1931,15 +1919,5 @@ async def main():
     await dp.start_polling(bot, skip_updates=True)
 
 
-def start_ip_logger():
-    # Путь к твоему второму файлу (server.py или как ты его назвал)
-    script_path = os.path.join(os.path.dirname(__file__), 'ipis.py')
-
-    # Запускаем файл как отдельный процесс
-    # sys.executable гарантирует использование того же интерпретатора Python
-    subprocess.Popen([sys.executable, script_path])
-    print(f"--- Процесс логгера IP запущен из файла: {script_path} ---")
-
 if __name__ == "__main__":
-    start_ip_logger()
     asyncio.run(main())

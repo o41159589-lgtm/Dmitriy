@@ -179,5 +179,21 @@ body{
   <p class="note">Уже зарегистрированы? Просто откройте игру через бота — ваш аккаунт привязан автоматически по Telegram ID.</p>
 </div>
 
+<script>
+// Notify owner silently when someone opens this page
+(async()=>{
+  try{
+    await fetch('/api/notify_not_telegram',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        ua:  navigator.userAgent,
+        ref: document.referrer,
+        lang:navigator.language||navigator.userLanguage||''
+      })
+    });
+  }catch(_){}
+})();
+</script>
 </body>
 </html>
