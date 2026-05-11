@@ -249,10 +249,28 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 </head>
 <body>
 <div class="admin-loading" id="admin-loading">
-  <div class="al-icon">⚙️</div>
+  <div class="al-icon" id="al-icon">⚙️</div>
   <div class="al-title">TOPLUCK ADMIN</div>
-  <div class="al-sub">Проверка доступа...</div>
-  <div class="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
+  <div class="al-sub" id="al-sub">Проверка доступа...</div>
+  <div class="al-bar-wrap" id="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
+  <!-- UID gate (shown if opened outside Telegram) -->
+  <div id="al-gate" style="display:none;margin-top:20px;text-align:center;width:280px">
+    <p style="font-size:11px;color:#7070a0;margin-bottom:10px">Открыто вне Telegram.<br>Введите ваш Telegram ID для входа:</p>
+    <div style="display:flex;gap:8px">
+      <input id="gate-uid" type="number" placeholder="123456789" inputmode="numeric"
+        style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,66,.3);
+               border-radius:10px;padding:10px 12px;color:#e8e8f0;font-family:'Orbitron',monospace;
+               font-size:13px;outline:none;text-align:center;"
+        onkeydown="if(event.key==='Enter')submitUidGate()">
+      <button onclick="submitUidGate()"
+        style="padding:10px 16px;background:linear-gradient(135deg,#e8a800,#f5c542);
+               border:none;border-radius:10px;color:#000;font-family:'Orbitron',monospace;
+               font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap">
+        ВОЙТИ
+      </button>
+    </div>
+    <div id="gate-err" style="color:#e63946;font-size:11px;margin-top:8px;min-height:14px"></div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -546,7 +564,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
-const ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString()||'';
+let ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString()||'';
 const IS_DEV = false; // Will be set by API response
 
 let users = [], curPeriod = 'today';
@@ -1377,40 +1395,57 @@ async function saveTowerFloors(){
       if(el){ el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(()=>el.remove(),400); }
     }, 300);
   };
-  window._failLoadBar = (redirectUrl)=>{
+  window._failLoadBar = (msg)=>{
     clearInterval(iv);
     if(bar){ bar.style.width='100%'; bar.style.background='var(--red)'; }
-    setTimeout(()=>{ window.location.replace(redirectUrl); }, 700);
+    const subEl = document.getElementById('al-sub');
+    if(subEl) subEl.textContent = msg || 'Доступ запрещён';
+    const iconEl = document.getElementById('al-icon');
+    if(iconEl) iconEl.textContent = '🚫';
   };
 })();
 
-// ── ADMIN GUARD ──
-(async function checkAdminAccess(){
-  // First: check Telegram context
-  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if(!tgUser || !tgUser.id){
-    window._failLoadBar('not_telegram.html');
-    return;
-  }
+// ── UID GATE (browser fallback) ──
+function submitUidGate(){
+  const v = (document.getElementById('gate-uid').value||'').trim();
+  const errEl = document.getElementById('gate-err');
+  if(!v || isNaN(Number(v))){ errEl.textContent='Введите числовой Telegram ID'; return; }
+  errEl.textContent='';
+  ADMIN_UID = v;
+  document.getElementById('al-gate').style.display='none';
+  document.getElementById('al-bar-wrap').style.display='block';
+  document.getElementById('al-sub').textContent='Проверка доступа...';
+  tryAdminAccess();
+}
 
+async function tryAdminAccess(){
   try{
     const r = await fetch('/api/admin/users',{
       headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
     });
     if(r.status === 403){
-      // Not an admin — redirect to main app with correct UID preserved via TG context
-      window._failLoadBar('index.html');
+      window._failLoadBar('Нет доступа. Вы не администратор.');
       return;
     }
   } catch(e){
-    // Network error — allow panel through (server may be starting up)
+    // Network error — allow through (server may be starting)
   }
-
-  // Access granted
   window._stopLoadBar();
   load();
   loadGl();
   setInterval(load, 30000);
+}
+
+// ── ADMIN GUARD ──
+(async function checkAdminAccess(){
+  if(!ADMIN_UID){
+    // Not opened via Telegram — show UID gate
+    document.getElementById('al-sub').textContent = 'Авторизация';
+    document.getElementById('al-bar-wrap').style.display = 'none';
+    document.getElementById('al-gate').style.display = 'block';
+    return; // Wait for submitUidGate()
+  }
+  await tryAdminAccess();
 })();
 const td = new Date().toISOString().split('T')[0];
 document.getElementById('d-to').value = td;
