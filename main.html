@@ -336,7 +336,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 .hi-a.p{color:var(--green);}
 .hi-a.n{color:var(--red);}
 
-/* ══ SHOP ══ */
+/* ══ SHOP — Telegram-style gift cards ══ */
 .shop-content{padding:14px;}
 .shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .shop-title{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--text);}
@@ -347,25 +347,110 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
   font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--gold);
 }
 
-/* Gift cards */
-.gifts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* Gift grid — 2 per row */
+.gift-grid, .gifts-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+/* Main gift card — Telegram inspired */
 .gift-card{
-  background:var(--card-bg);border:1px solid var(--card-br);
-  border-radius:var(--r);padding:16px 12px;text-align:center;
-  cursor:pointer;transition:transform .12s,border-color .15s;
-  position:relative;overflow:hidden;
+  background:var(--card-bg);
+  border:1px solid var(--card-br);
+  border-radius:20px;
+  padding:16px 12px 14px;
+  text-align:center;
+  cursor:pointer;
+  transition:transform .12s, border-color .15s, box-shadow .15s;
+  position:relative;
+  overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;
 }
-.gift-card:active{transform:scale(.97);}
-.gift-card:hover{border-color:rgba(245,197,66,.25);}
-.gift-card .gift-emoji{display:block;font-size:38px;margin-bottom:8px;line-height:1;}
-.gift-card .gift-name{font-weight:700;font-size:14px;margin-bottom:4px;}
-.gift-card .gift-price{
-  font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);
+.gift-card:active{transform:scale(.96);}
+.gift-card:hover{border-color:rgba(245,197,66,.3);box-shadow:0 6px 24px rgba(0,0,0,.35);}
+.gift-card.limited{border-color:rgba(255,69,58,.3);}
+
+/* Limited ribbon */
+.gift-card.limited::before{
+  content:'ЛИМ';position:absolute;top:9px;right:-14px;
+  background:var(--red);color:#fff;font-size:8px;font-weight:700;
+  font-family:'Orbitron',monospace;padding:3px 22px;transform:rotate(35deg);
+  letter-spacing:.5px;
+}
+
+/* Gift emoji / sticker area */
+.gift-emoji-wrap{
+  width:72px;height:72px;border-radius:18px;
+  background:linear-gradient(135deg,rgba(245,197,66,.1),rgba(191,90,242,.08));
+  border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 10px;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.gift-emoji-wrap .gift-emoji{
+  font-size:40px;line-height:1;display:block;
+}
+/* Legacy class (plain span without wrap) */
+.gift-card > .gift-emoji{
+  font-size:40px;line-height:1;display:block;
+  width:72px;height:72px;border-radius:18px;
+  background:linear-gradient(135deg,rgba(245,197,66,.1),rgba(191,90,242,.08));
+  border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 10px;box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.gift-name{
+  font-weight:700;font-size:13px;color:var(--text);
+  margin-bottom:6px;line-height:1.3;
+}
+.gift-desc{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4;}
+.gift-remaining{font-size:10px;color:var(--red);margin-bottom:6px;font-weight:700;}
+.gift-price{
+  display:inline-flex;align-items:center;gap:4px;
   background:rgba(245,197,66,.1);border:1px solid rgba(245,197,66,.2);
-  border-radius:8px;padding:4px 8px;display:inline-block;
+  border-radius:8px;padding:5px 10px;
+  font-family:'Orbitron',monospace;font-size:12px;font-weight:900;color:var(--gold);
+  margin-bottom:10px;
 }
-.gift-card .gift-stars{font-size:11px;color:var(--muted);margin-top:4px;}
-@keyframes gift-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.gift-stars{font-size:10px;color:var(--muted);margin-bottom:8px;}
+.gift-buy-btn{
+  width:100%;padding:9px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:11px;color:#000;
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:900;
+  cursor:pointer;transition:opacity .15s;letter-spacing:.3px;
+}
+.gift-buy-btn:active{opacity:.8;}
+.gift-loading{text-align:center;padding:40px 20px;color:var(--muted);}
+.gift-loading-spinner{font-size:32px;animation:spin 1s linear infinite;display:block;margin-bottom:12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.owner-note{
+  background:rgba(191,90,242,.06);border:1px solid rgba(191,90,242,.15);
+  border-radius:14px;padding:12px 14px;margin-bottom:12px;
+  font-size:12px;color:rgba(200,180,255,.8);line-height:1.6;
+}
+
+/* Buy modal gift preview */
+.modal-gift-preview{
+  display:flex;align-items:center;gap:14px;
+  background:var(--card-bg);border:1px solid var(--card-br);
+  border-radius:16px;padding:14px;margin-bottom:16px;
+}
+.mg-icon{
+  width:56px;height:56px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(245,197,66,.12),rgba(191,90,242,.1));
+  border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;font-size:30px;
+}
+.mg-name{font-weight:700;font-size:16px;color:var(--text);margin-bottom:3px;}
+.mg-price{font-family:'Orbitron',monospace;font-size:13px;color:var(--gold);}
+.error-msg{
+  background:rgba(255,69,58,.08);border:1px solid rgba(255,69,58,.25);
+  border-radius:12px;padding:10px 13px;color:var(--red);font-size:13px;
+  margin-bottom:12px;display:none;
+}
+.error-msg.show{display:block;}
 
 /* ══ TOPBAR (pages with back) ══ */
 .topbar{
@@ -861,7 +946,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 <div class="ov" id="buy-modal" onclick="closeBuyModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="mh"></div>
-    <div class="mt">🎁 КУПИТЬ ПОДАРОК</div>
+    <div class="mt">КУПИТЬ ПОДАРОК</div>
     <div class="error-msg" id="buy-error"></div>
     <div class="modal-gift-preview">
       <div class="mg-icon" id="m-icon">🎁</div>
@@ -1116,8 +1201,45 @@ function hideRefPanel(){
   document.querySelector('.prof-invite-btn').style.display='';
   document.getElementById('prof-ref-panel').style.display='none';
 }
+// ── SOUNDS SYSTEM (Web Audio API) ──
+let __audioCtx = null;
+function _getCtx(){ if(!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return __audioCtx; }
+function _soundEnabled(){ try{ return localStorage.getItem('topluck_sounds')==='1'; }catch(e){ return false; } }
+
+function playSound(type){
+  if(!_soundEnabled()) return;
+  try{
+    const ctx = _getCtx();
+    const g = ctx.createGain(); g.connect(ctx.destination);
+    const o = ctx.createOscillator(); o.connect(g);
+    const t = ctx.currentTime;
+    if(type==='win'){
+      o.type='sine';
+      [523,659,784,1047].forEach((f,i)=>o.frequency.setValueAtTime(f, t+i*.1));
+      g.gain.setValueAtTime(.22, t); g.gain.exponentialRampToValueAtTime(.001, t+.75);
+      o.start(t); o.stop(t+.75);
+    } else if(type==='lose'){
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(280, t); o.frequency.exponentialRampToValueAtTime(70, t+.45);
+      g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t+.5);
+      o.start(t); o.stop(t+.5);
+    } else if(type==='coin'){
+      o.type='sine';
+      o.frequency.setValueAtTime(900, t); o.frequency.setValueAtTime(1200, t+.06);
+      g.gain.setValueAtTime(.14, t); g.gain.exponentialRampToValueAtTime(.001, t+.22);
+      o.start(t); o.stop(t+.22);
+    } else if(type==='click'){
+      o.type='sine'; o.frequency.setValueAtTime(440, t);
+      g.gain.setValueAtTime(.07, t); g.gain.exponentialRampToValueAtTime(.001, t+.09);
+      o.start(t); o.stop(t+.09);
+    }
+  } catch(e){}
+}
+window.playSound = playSound; // expose to game pages
+
 function saveSounds(on){
   try{ localStorage.setItem('topluck_sounds', on?'1':'0'); }catch(e){}
+  if(on) playSound('coin'); // preview sound when toggling on
 }
 function loadSounds(){
   try{
@@ -1191,21 +1313,21 @@ async function loadShopGifts(){
 function giftCard(gift, source){
   const limited = gift.is_limited && gift.remaining_count !== null;
   const cls = limited ? 'gift-card limited' : 'gift-card';
-  const emojiDisplay = gift.emoji || '🎁';
+  const emoji = gift.emoji || '🎁';
   const remaining = limited ? `<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>` : '';
-  // Safe gift data for onclick
   const gd = JSON.stringify({
     id: gift.id||'',
-    emoji: emojiDisplay,
-    name: gift.name||emojiDisplay,
+    emoji: emoji,
+    name: gift.name||emoji,
     star_count: gift.star_count,
     is_limited: gift.is_limited||false
   }).replace(/"/g,'&quot;');
   return `<div class="${cls}" onclick="openBuyModal(${gd},'${source}')">
-    <span class="gift-emoji">${emojiDisplay}</span>
-    <div class="gift-desc">${gift.desc||gift.name||'Telegram подарок'}</div>
+    <div class="gift-emoji-wrap"><span class="gift-emoji">${emoji}</span></div>
+    <div class="gift-name">${gift.name||'Подарок'}</div>
+    <div class="gift-price">⭐ ${gift.star_count}</div>
+    <div class="gift-stars">${gift.star_count*10} 🪙 монет</div>
     ${remaining}
-    <div class="gift-price">⭐ ${gift.star_count} <span style="font-size:10px;opacity:.75">(${gift.star_count*10} 🪙 монет)</span></div>
     <button class="gift-buy-btn">Купить</button>
   </div>`;
 }
@@ -1299,7 +1421,7 @@ async function confirmPurchase(){
 
   document.getElementById('buy-modal').classList.remove('open');
   if(pendingSource==='bot'){
-    toast(`🎁 Подарок отправлен!`,'ok');
+    toast(`🎁 Подарок отправлен!`,'ok'); playSound('win');
   } else {
     toast(`📨 Заявка отправлена владельцу!`,'ok');
     setTimeout(()=>{
@@ -1391,10 +1513,11 @@ async function activatePromo(){
       res_el.textContent = '❌ ' + r.error; res_el.style.color='var(--red)'; return;
     }
     const amt = r.reward;
-    res_el.textContent = `${amt>=0?'✅':' ⚠️'} ${amt>=0?'+':''}${amt} 🪙 — промокод активирован!`;
+    res_el.textContent = `${amt>=0?'✅':'⚠️'} ${amt>=0?'+':''}${amt} 🪙 — промокод активирован!`;
     res_el.style.color = amt>=0 ? 'var(--green)' : 'var(--red)';
     document.getElementById('promo-inp').value = '';
     toast(`🎟 ${amt>=0?'+':''}${amt} 🪙 — промокод применён!`, amt>=0?'ok':'err');
+    playSound(amt>=0 ? 'coin' : 'lose');
     if(userData){ userData.balance = r.new_balance; updateUI(); }
   } catch(e){
     res_el.textContent = '❌ Ошибка соединения с сервером'; res_el.style.color='var(--red)';

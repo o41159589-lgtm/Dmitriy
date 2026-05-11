@@ -697,6 +697,8 @@ function clearLogs(){
   });
   toast('🗑 Логи очищены');
 }
+
+function _describeAction(method, path, body){
   if(path.includes('/api/admin/set_balance')) return `💰 Баланс → ${body?.balance ?? '?'} для UID ${body?.user_id ?? '?'}`;
   if(path.includes('/api/admin/set_luck')) return `🍀 Удача → ${body?.luck ?? '?'}% для UID ${body?.user_id ?? '?'}`;
   if(path.includes('/api/admin/ban')) return body?.banned ? `⛔ Бан UID ${body?.user_id}` : `✅ Разбан UID ${body?.user_id}`;
