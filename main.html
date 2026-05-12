@@ -307,11 +307,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 
 /* ══ HISTORY ══ */
 .hist-content{padding:14px;}
-.hist-filter{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.hist-filter{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:5px;margin-bottom:12px;
+}
 .hf{
-  padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+  padding:8px 4px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;
   background:var(--card-bg);border:1px solid var(--card-br);color:var(--muted);
-  white-space:nowrap;transition:all .15s;
+  text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:all .15s;line-height:1.3;
 }
 .hf.a{background:var(--gold);color:#000;border-color:var(--gold);}
 .hi{
@@ -608,88 +612,17 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <div class="hero-logo">
         <img src="logo.png" alt="TopLuck" onerror="this.parentNode.innerHTML='🍀'">
       </div>
-      <h1>TOPLUCK</h1>
-      <p>Добро пожаловать! Испытай удачу.</p>
-    </div>
-
-    <!-- Balance card -->
-    <div class="bal-card">
       <div>
-        <div class="bal-card-lbl">Ваш баланс</div>
-        <div class="bal-card-num">🪙 <span id="h-bal">—</span></div>
-      </div>
-      <div class="bal-card-right">
-        <div class="bal-card-right-lbl">Всего выиграно</div>
-        <div class="bal-card-right-val">+<span id="h-won">—</span></div>
+        <h1>TOPLUCK</h1>
+        <p>Испытай удачу вместе с нами!</p>
       </div>
     </div>
 
-    <div class="sgrid">
-      <div class="sc"><div class="sc-ico">🎲</div><div class="sc-lbl">Игр сыграно</div><div class="sc-val" id="h-spins">—</div></div>
-      <div class="sc"><div class="sc-ico">🏆</div><div class="sc-lbl">Побед</div><div class="sc-val" id="h-wins">—</div></div>
-    </div>
-    <button class="topup-btn" onclick="openTopup()">
-      <span style="font-size:20px">⭐</span> Пополнить (1 ⭐ = 10 🪙)
-    </button>
-
-    <!-- PROMO CODE -->
-    <div style="
-      background:linear-gradient(135deg,rgba(245,197,66,.07),rgba(232,168,0,.04));
-      border:1px solid rgba(245,197,66,.22);border-radius:18px;margin-bottom:14px;overflow:hidden;
-      box-shadow:inset 0 1px 0 rgba(245,197,66,.12),0 4px 20px rgba(0,0,0,.3);">
-      <div onclick="togglePromoPanel()"
-        style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:34px;height:34px;border-radius:10px;
-            background:linear-gradient(135deg,rgba(245,197,66,.2),rgba(245,197,66,.1));
-            border:1px solid rgba(245,197,66,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🎟</div>
-          <div>
-            <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);font-weight:700">ПРОМОКОД</div>
-            <div style="font-size:11px;color:var(--muted)">Активируй и получи монеты</div>
-          </div>
-        </div>
-        <span id="promo-arrow" style="font-size:20px;color:var(--gold);transition:transform .25s;font-weight:300">›</span>
-      </div>
-      <div id="promo-body" style="display:none;padding:0 16px 16px">
-        <div style="display:flex;gap:8px">
-          <input id="promo-inp" type="text" placeholder="Введи промокод..."
-            style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(245,197,66,.25);border-radius:12px;
-                   padding:11px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
-                   outline:none;text-transform:uppercase;"
-            oninput="this.value=this.value.toUpperCase()"
-            onkeydown="if(event.key==='Enter')activatePromo()">
-          <button onclick="activatePromo()"
-            style="padding:11px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
-                   border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;
-                   font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;
-                   box-shadow:0 3px 12px rgba(245,197,66,.3);">✓ Применить</button>
-        </div>
-        <div id="promo-result" style="text-align:center;font-size:13px;font-weight:600;min-height:16px;margin-top:10px"></div>
-      </div>
-    </div>
-
-    <!-- О нас -->
+    <!-- О нас — всегда раскрыт -->
     <div class="card" id="about-card">
-      <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAbout()">
-        <span>ℹ️ О нас</span>
-        <span id="about-arrow" style="font-size:16px;color:var(--muted);transition:transform .25s">›</span>
-      </div>
-      <div id="about-body" style="display:none">
-        <!-- Project intro -->
-        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <span style="font-size:28px">🎰</span>
-            <div>
-              <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);font-weight:700">TOPLUCK CASINO</div>
-              <div style="font-size:11px;color:var(--muted)">Telegram Mini App</div>
-            </div>
-          </div>
-          <p style="font-size:13px;line-height:1.65;color:rgba(232,232,240,.8)">
-            <b style="color:var(--text)">TopLuck</b> — это честное Telegram-казино прямо в вашем мессенджере. Крутите рулетку, покоряйте мины, штурмуйте башню и выигрывайте реальные Telegram Stars ⭐<br><br>
-            🔒 Все операции прозрачны · 🎁 Магазин подарков · 🏆 Реферальная программа
-          </p>
-        </div>
-        <!-- Owner -->
+      <div class="card-head">ℹ️ О нас</div>
+      <div id="about-body">
+        <!-- Владелец -->
         <div class="about-person" onclick="togglePerson('owner')">
           <div class="ap-head">
             <span class="ap-icon">👑</span>
@@ -716,14 +649,14 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>👤 <a href="https://sceletonchik.github.io/Portfolio/portfolio.html" target="_blank">Портфолио</a></p>
           <p>💬 Связь: <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
           <p>💵 Донаты — отправь 🌟 звёзды в ЛС <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
-          <p>📱 TON-кошелёк: <code id="ton-wallet" onclick="copyTon()" style="font-size:10px;word-break:break-all;cursor:pointer;background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);border-radius:6px;padding:3px 7px;display:inline-block;transition:background .2s;" title="Нажми чтобы скопировать">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code> <span style="font-size:10px;color:var(--muted)">📋</span></p>
+          <p>📱 TON-кошелёк: <code id="ton-wallet" onclick="copyTon()" style="font-size:10px;word-break:break-all;cursor:pointer;background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);border-radius:6px;padding:3px 7px;display:inline-block;" title="Нажми чтобы скопировать">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code> 📋</p>
           <p style="color:var(--muted);font-size:12px">Бла-бла-бла, кто-то вообще это читает? 😄</p>
           <p style="font-size:12px;color:var(--muted)">Боты для <a href="https://t.me/Smishek" target="_blank">@Smishek</a>:<br>
             🔘 <a href="https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky" target="_blank">TopNet (@T0pNetbot)</a><br>
             🔘 <a href="https://t.me/Supp0rt_R0bot" target="_blank">Support (@Supp0rt_R0bot)</a><br>
             🔘 <a href="https://t.me/Crocodi1ebot" target="_blank">Crocodile (@Crocodi1ebot)</a>
           </p>
-          <p style="font-size:11px;color:var(--muted)">Ps: Бот сделан в кратчайшие сроки. Нашли баг? Пишите в поддержку — могут дать награду 😉</p>
+          <p style="font-size:11px;color:var(--muted)">Ps: Нашли баг? Пишите в поддержку — могут дать награду 😉</p>
         </div>
         <!-- Tech -->
         <div class="about-person" onclick="togglePerson('tech')">
@@ -738,9 +671,9 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>Нужна помощь с кодингом или проектом (возможно бесплатно)? Пишите 😉</p>
           <p>🌐 Связь: <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p>
           <p>🎇 Все проекты: <a href="https://unionium.org" target="_blank">unionium.org</a></p>
-          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают или сеть не работает? Пишите мне — исправим!</p>
+          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают или сеть не работает? Пишите мне!</p>
         </div>
-        <!-- Sponsor (collapsible) -->
+        <!-- Sponsor -->
         <div class="about-person" style="border-bottom:none" onclick="togglePerson('sponsor')">
           <div class="ap-head">
             <span class="ap-icon">💎</span>
@@ -750,15 +683,8 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         </div>
         <div class="ap-content" id="cnt-sponsor" style="display:none;border-bottom:none">
           <p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p>
-          <p style="color:var(--muted);font-size:12px">Благодаря поддержке спонсора TopLuck продолжает развиваться и радовать игроков!</p>
+          <p style="color:var(--muted);font-size:12px">Благодаря поддержке спонсора TopLuck продолжает развиваться!</p>
         </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head">🔗 Реферальная программа</div>
-      <div class="card-body">
-        <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
-        <button onclick="copyRef()" style="margin-top:10px;width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
       </div>
     </div>
   </div>
@@ -809,6 +735,11 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         <span class="prof-menu-right" id="prof-refs">0</span>
         <span class="prof-menu-arr">›</span>
       </div>
+      <div class="prof-menu-row" onclick="showPromoPanel()">
+        <div class="prof-menu-icon" style="background:linear-gradient(135deg,#f5c542,#e8a800)">🎟</div>
+        <div class="prof-menu-label">Промокод</div>
+        <span class="prof-menu-arr">›</span>
+      </div>
       <div class="prof-menu-row" style="cursor:default" onclick="void 0">
         <div class="prof-menu-label" style="padding-left:2px">Звуки игр</div>
         <label class="toggle" style="flex-shrink:0">
@@ -830,7 +761,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <div id="prof-gifts-list"><div class="empty"><div class="empty-i">📭</div><p>Подарков нет</p></div></div>
     </div>
 
-    <!-- Ref sub-panel (hidden by default) -->
+    <!-- Ref sub-panel -->
     <div id="prof-ref-panel" style="display:none">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <button onclick="hideRefPanel()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:7px 12px;color:var(--gold);font-size:18px;cursor:pointer;font-weight:700">‹</button>
@@ -840,8 +771,32 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         <div class="card-body">
           <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
           <div class="irow"><span class="irow-l">Рефералов приглашено</span><span class="irow-r" id="ref-count-big">0</span></div>
-          <button onclick="copyRef()" style="margin-top:12px;width:100%;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
+          <button onclick="copyRef()" style="margin-top:12px;width:100%;padding:12px;background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.25);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать ссылку</button>
         </div>
+      </div>
+      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;margin:12px 0 8px">КТО И КОГДА ПЕРЕШЁЛ</div>
+      <div id="ref-history-list"><div class="empty"><div class="empty-i">📭</div><p>Рефералов пока нет</p></div></div>
+    </div>
+
+    <!-- Promo sub-panel -->
+    <div id="prof-promo-panel" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button onclick="hidePromoPanel()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:7px 12px;color:var(--gold);font-size:18px;cursor:pointer;font-weight:700">‹</button>
+        <span style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">ПРОМОКОД</span>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(245,197,66,.07),rgba(232,168,0,.04));border:1px solid rgba(245,197,66,.22);border-radius:var(--r);padding:16px;margin-bottom:10px;">
+        <div style="display:flex;gap:8px">
+          <input id="promo-inp" type="text" placeholder="Введи промокод..."
+            style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(245,197,66,.25);border-radius:12px;
+                   padding:11px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;outline:none;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter')activatePromo()">
+          <button onclick="activatePromo()"
+            style="padding:11px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+                   border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;
+                   font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;">✓ OK</button>
+        </div>
+        <div id="promo-result" style="text-align:center;font-size:13px;font-weight:600;min-height:16px;margin-top:10px"></div>
       </div>
     </div>
 
@@ -895,6 +850,9 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   <div class="hist-content">
     <div class="hist-filter">
       <div class="hf a" onclick="setF(this,'all')">Все</div>
+      <div class="hf" onclick="setF(this,'additions')">➕ Добавления</div>
+      <div class="hf" onclick="setF(this,'subtractions')">➖ Списания</div>
+      <div class="hf" onclick="setF(this,'ref')">🤝 Рефералы</div>
       <div class="hf" onclick="setF(this,'win')">🏆 Победы</div>
       <div class="hf" onclick="setF(this,'lose')">💀 Проигрыши</div>
       <div class="hf" onclick="setF(this,'deposit')">💳 Пополнения</div>
@@ -1134,29 +1092,38 @@ function copyRef(){
 // refreshBalance removed
 
 // ── HISTORY ──
+const HIST_POS_TYPES = ['win','deposit','ref','gift_received','admin_credit'];
+const HIST_NEG_TYPES = ['lose','gift_sent','admin_deduct'];
+
 async function renderHistory(){
   histData = await get(`/api/history/${UID}`).catch(()=>[]);
-  let items = curF==='all'?histData:histData.filter(i=>i.type===curF);
+  let items;
+  if(curF === 'all')          items = histData;
+  else if(curF === 'additions')   items = histData.filter(i => HIST_POS_TYPES.includes(i.type) || (i.type==='promo' && i.amount>0));
+  else if(curF === 'subtractions')items = histData.filter(i => HIST_NEG_TYPES.includes(i.type) || (i.type==='promo' && i.amount<0));
+  else                            items = histData.filter(i => i.type === curF);
+
   let won=0, lost=0;
   histData.forEach(i=>{
-    if(['win','deposit','ref','gift_received'].includes(i.type)) won+=i.amount;
-    if(['lose','gift_sent'].includes(i.type)) lost+=i.amount;
+    if(HIST_POS_TYPES.includes(i.type) || (i.type==='promo'&&i.amount>0)) won  += Math.abs(i.amount);
+    if(HIST_NEG_TYPES.includes(i.type) || (i.type==='promo'&&i.amount<0)) lost += Math.abs(i.amount);
   });
-  document.getElementById('s-won').textContent=won;
-  document.getElementById('s-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',promo:'🎟'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',promo:'Промокод'};
-  const list=document.getElementById('hist-list');
+  document.getElementById('s-won').textContent  = won;
+  document.getElementById('s-lost').textContent = lost;
+
+  const ICONS ={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод'};
+  const list = document.getElementById('hist-list');
   if(!items.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
-  list.innerHTML=items.slice(0,60).map(i=>{
-    const d=new Date(i.created_at*1000);
-    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-    const pos = i.type==='promo' ? i.amount>=0 : ['win','deposit','ref','gift_received'].includes(i.type);
-    const displayAmt = Math.abs(i.amount);
+  list.innerHTML=items.slice(0,80).map(i=>{
+    const d   = new Date(i.created_at*1000);
+    const dt  = d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos = i.type==='promo' ? i.amount>=0 : HIST_POS_TYPES.includes(i.type);
+    const amt = Math.abs(i.amount);
     return `<div class="hi">
       <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
       <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
-      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${displayAmt}</div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${amt}</div>
     </div>`;
   }).join('');
 }
