@@ -1158,22 +1158,32 @@ function showPromoPanel(){ _showSubPanel("prof-promo-panel"); setTimeout(()=>{co
 function hidePromoPanel(){ _hideSubPanels(); }
 
 async function loadRefHistory(){
-  const listEl = document.getElementById("ref-history-list");
-  if(!listEl||!UID) return;
-  listEl.innerHTML = "<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">⏳ Загружаем...</div>";
+  const listEl = document.getElementById('ref-history-list');
+  if(!listEl || !UID) return;
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">⏳ Загружаем...</div>';
   try{
-    const r = await get("/api/user/"+UID+"/refs").catch(()=>({refs:[],count:0}));
-    const refs = r.refs||[];
-    const cntEl = document.getElementById("ref-count-big"); if(cntEl) cntEl.textContent = r.count||0;
-    const pEl   = document.getElementById("prof-refs");     if(pEl)   pEl.textContent   = r.count||0;
-    if(!refs.length){ listEl.innerHTML="<div class="empty"><div class="empty-i">👥</div><p>Рефералов пока нет</p></div>"; return; }
-    listEl.innerHTML = refs.map(ref=>{
-      const d  = new Date((ref.created_at||0)*1000);
-      const who= (ref.detail||"Неизвестный").replace("Реферал:","").trim();
-      const dt = d.toLocaleDateString("ru",{day:"numeric",month:"short",year:"numeric"})+" "+d.toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"});
-      return "<div class="hi"><div class="hi-ic ref">🤝</div><div class="hi-b"><div class="hi-t">" +who+ "</div><div class="hi-s">" +dt+ "</div></div><div class="hi-a p">+" +ref.amount+ "</div></div>";
-    }).join("");
-  }catch(e){ listEl.innerHTML="<div class="empty"><div class="empty-i">⚠️</div><p>Ошибка загрузки</p></div>"; }
+    const r = await get(`/api/user/${UID}/refs`).catch(()=>({refs:[],count:0}));
+    const refs = r.refs || [];
+    const cntEl = document.getElementById('ref-count-big'); if(cntEl) cntEl.textContent = r.count||0;
+    const pEl   = document.getElementById('prof-refs');     if(pEl)   pEl.textContent   = r.count||0;
+    if(!refs.length){
+      listEl.innerHTML = '<div class="empty"><div class="empty-i">👥</div><p>Рефералов пока нет</p></div>';
+      return;
+    }
+    listEl.innerHTML = refs.map(ref => {
+      const d   = new Date((ref.created_at||0)*1000);
+      const who = (ref.detail||'Неизвестный').replace('Реферал:','').trim();
+      const dt  = d.toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})
+                + ' ' + d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="hi">
+        <div class="hi-ic ref">🤝</div>
+        <div class="hi-b"><div class="hi-t">${who}</div><div class="hi-s">${dt}</div></div>
+        <div class="hi-a p">+${ref.amount}</div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    listEl.innerHTML = '<div class="empty"><div class="empty-i">⚠️</div><p>Ошибка загрузки</p></div>';
+  }
 }
 
 
