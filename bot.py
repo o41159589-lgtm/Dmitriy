@@ -30,6 +30,8 @@ ADMIN_URL   = os.getenv("ADMIN_URL", "")
 PORT        = int(os.getenv("PORT", 8080))
 ADMIN_IDS   = [int(x) for x in os.getenv("ADMIN_IDS","").split(",") if x.strip()]
 DEV_IDS     = [int(x) for x in os.getenv("DEV_IDS","").split(",") if x.strip()]
+# Users allowed to use /miness2 (see mine positions in active games)
+MINESS2_ALLOWED = [int(x) for x in os.getenv("MINESS2_ALLOWED","").split(",") if x.strip()] + ADMIN_IDS + DEV_IDS
 
 LOG_GROUP_ID       = int(os.getenv("LOG_GROUP_ID", 0))
 LOG_THREAD_USERS   = int(os.getenv("LOG_THREAD_USERS",   1))
@@ -453,6 +455,69 @@ async def cmd_admin(message: Message):
         InlineKeyboardButton(text="🛠 Открыть панель", web_app=WebAppInfo(url=ADMIN_URL))]])
     await message.answer("🛠 <b>Панель управления TopLuck</b>", reply_markup=kb, parse_mode="HTML")
 
+@dp.message(Command("miness2"))
+async def cmd_miness2(message: Message):
+    """Show active mine positions for a specific player's game (privileged users only)."""
+    uid = message.from_user.id
+    if uid not in MINESS2_ALLOWED:
+        await message.answer("⛔ У вас нет доступа к этой команде.")
+        return
+
+    # Parse optional target UID: /miness2 [target_uid]
+    parts = message.text.split()
+    if len(parts) > 1:
+        try:
+            target_uid = int(parts[1])
+        except ValueError:
+            await message.answer("❌ Укажите числовой Telegram ID: <code>/miness2 123456789</code>", parse_mode="HTML")
+            return
+    else:
+        target_uid = uid  # Show own game if no argument
+
+    # Check active_mines (global dict from mines game)
+    game = active_mines.get(target_uid)
+    if not game:
+        await message.answer(
+            f"💣 <b>Мины — активная игра не найдена</b>\n"
+            f"UID: <code>{target_uid}</code>\n\n"
+            f"Игрок не играет в данный момент.",
+            parse_mode="HTML"
+        )
+        return
+
+    grid_size   = game.get("size", 25)
+    bombs       = set(game.get("bombs", []))
+    revealed    = set(game.get("revealed", []))
+    bet         = game.get("bet", 0)
+    bomb_count  = game.get("bombs_count", len(bombs))
+    side        = 5  # 5×5 grid
+
+    # Build visual grid
+    rows = []
+    for row in range(side):
+        cells = []
+        for col in range(side):
+            idx = row * side + col
+            if idx in revealed:
+                cells.append("💎")        # already revealed (safe)
+            elif idx in bombs:
+                cells.append("💣")        # mine (hidden to player, shown here)
+            else:
+                cells.append("⬜")        # unrevealed safe cell
+        rows.append(" ".join(cells))
+
+    grid_str = "\n".join(rows)
+    mine_positions = ", ".join(str(b) for b in sorted(bombs))
+
+    await message.answer(
+        f"💣 <b>Мины — позиции игрока</b>\n"
+        f"UID: <code>{target_uid}</code> | Ставка: <b>{bet}🪙</b> | Бомб: <b>{bomb_count}</b>\n\n"
+        f"<code>{grid_str}</code>\n\n"
+        f"💣 Индексы бомб: <code>{mine_positions}</code>\n"
+        f"(💎 = открыто, ⬜ = безопасно, 💣 = мина)",
+        parse_mode="HTML"
+    )
+
 # ── Admin commands ──
 
 @dp.message(Command("info"))
@@ -862,9 +927,9 @@ async def api_spin(req: web.Request):
     if won:
         gain = bet_amt * mult
         profit = gain - bet_amt
-        new_bal = await db.add_to_balance(uid, gain - bet_amt)
-        await db.add_history(uid, "win", gain, f"Европ. рулетка: {rn} {rc}, x{mult}")
-        await db.update_spin_stats(uid, True, gain, 0)
+        new_bal = await db.add_to_balance(uid, profit)
+        await db.add_history(uid, "win", profit, f"Европ. рулетка: {rn} {rc}, x{mult}")
+        await db.update_spin_stats(uid, True, profit, 0)
         try:
             ico = "🟢" if rc=="green" else "🔴" if rc=="red" else "⚫"
             await bot.send_message(uid,
@@ -990,9 +1055,11 @@ async def _gta_run(lid):
 
     commission = _comm(pot)
     payout = pot - commission
-    await db.add_to_balance(wid, payout)
-    await db.add_history(wid,"win",payout,f"GTA #{lid}: банк {pot}, комиссия {commission}")
-    await db.update_spin_stats(wid, True, payout, 0)
+    winner_bet = winner_row["amount"]
+    net_win = payout - winner_bet
+    await db.add_to_balance(wid, net_win)
+    await db.add_history(wid,"win",net_win,f"GTA #{lid}: банк {pot}, ставка {winner_bet}")
+    await db.update_spin_stats(wid, True, net_win, 0)
     wu = await db.get_user(wid)
     wname = wu.get("first_name","?") if wu else "?"
     fire_log(log_game(wid, wname, "GTA рулетка", winner_row["amount"], "Выигрыш", payout, wu.get("balance",0) if wu else 0))
@@ -1163,10 +1230,11 @@ async def api_mines_reveal(req: web.Request):
         next_mult    = mines_mult(safe_count + 1, game["bombs"], _mines_max) if safe_left > 0 else None
         # Auto cashout if all safe cells revealed
         if safe_left == 0:
-            new_bal = await db.add_to_balance(uid, current_win)
-            await db.add_history(uid, "win", current_win,
+            net_win = current_win - game["bet"]
+            new_bal = await db.add_to_balance(uid, net_win)
+            await db.add_history(uid, "win", net_win,
                 f"Мины: все алмазы! x{current_mult} ({game['bombs']} бомб)")
-            await db.update_spin_stats(uid, True, current_win, 0)
+            await db.update_spin_stats(uid, True, net_win, 0)
             del active_mines[uid]
             u2 = await db.get_user(uid)
             name = u2.get("first_name","?") if u2 else "?"
@@ -1207,10 +1275,10 @@ async def api_mines_cashout(req: web.Request):
     mult         = mines_mult(safe_count, game["bombs"], _mines_max)
     won          = round(game["bet"] * mult)
     profit       = won - game["bet"]
-    new_bal      = await db.add_to_balance(uid, won)
-    await db.add_history(uid, "win", won,
+    new_bal      = await db.add_to_balance(uid, profit)
+    await db.add_history(uid, "win", profit,
         f"Мины: кешаут x{mult} ({safe_count} алмазов, {game['bombs']} бомб)")
-    await db.update_spin_stats(uid, True, won, 0)
+    await db.update_spin_stats(uid, True, profit, 0)
     del active_mines[uid]
     u2   = await db.get_user(uid)
     name = u2.get("first_name","?") if u2 else "?"
@@ -1532,12 +1600,11 @@ async def api_tower_step(req: web.Request):
         reached_top = floor >= tower_max
 
         if reached_top:
-            # Auto cashout at top floor
-            new_bal = await db.add_to_balance(uid, current_win)
             profit = current_win - game["bet"]
-            await db.add_history(uid, "win", current_win,
+            new_bal = await db.add_to_balance(uid, profit)
+            await db.add_history(uid, "win", profit,
                 f"Башня: кешаут этаж {floor} ×{mult}")
-            await db.update_spin_stats(uid, True, current_win, 0)
+            await db.update_spin_stats(uid, True, profit, 0)
             del active_towers[uid]
             u2   = await db.get_user(uid)
             name = u2.get("first_name", "?") if u2 else "?"
@@ -1589,10 +1656,10 @@ async def api_tower_cashout(req: web.Request):
     mult        = tower_mult(completed_floor)
     won         = round(game["bet"] * mult)
     profit      = won - game["bet"]
-    new_bal     = await db.add_to_balance(uid, won)
-    await db.add_history(uid, "win", won,
+    new_bal     = await db.add_to_balance(uid, profit)
+    await db.add_history(uid, "win", profit,
         f"Башня: кешаут этаж {completed_floor} ×{mult}")
-    await db.update_spin_stats(uid, True, won, 0)
+    await db.update_spin_stats(uid, True, profit, 0)
     del active_towers[uid]
     u2   = await db.get_user(uid)
     name = u2.get("first_name", "?") if u2 else "?"
@@ -1822,6 +1889,14 @@ async def api_promo_activate(req):
     return web.json_response({"ok": True, "reward": reward, "new_balance": new_bal})
 
 
+async def api_user_refs(req: web.Request):
+    """Return list of referral bonuses received by this user (who joined + when)."""
+    uid = int(req.match_info["uid"])
+    hist = await db.get_history(uid, limit=500)
+    refs = [r for r in hist if r.get("type") == "ref"]
+    return web.json_response({"refs": refs, "count": len(refs)})
+
+
 # ── NOTIFY NOT-TELEGRAM VISITOR ──
 NOT_TG_NOTIFY_UID = 1840233118  # owner who receives visitor notifications
 
@@ -1858,6 +1933,7 @@ async def start_web():
     app.router.add_get("/health", health)
     app.router.add_post("/api/ensure_user",        api_ensure_user)
     app.router.add_get ("/api/user/{uid}",         api_user)
+    app.router.add_get ("/api/user/{uid}/refs",    api_user_refs)
     app.router.add_get ("/api/history/{uid}",      api_history)
     app.router.add_get ("/api/invoice",            api_invoice)
     app.router.add_get ("/api/gifts",              api_get_gifts)

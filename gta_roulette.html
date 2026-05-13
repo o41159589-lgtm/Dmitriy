@@ -561,4 +561,69 @@ initUser();
 drawGtaWheel([],1,null,0);
 startGtaPoll();
 </script>
+<script>
+// ── SOUND ENGINE (shared, reads localStorage topluck_sounds) ──
+(function(){
+  let _ctx=null;
+  function _c(){ if(!_ctx) _ctx=new (window.AudioContext||window.webkitAudioContext)(); return _ctx; }
+  function _on(){ try{return localStorage.getItem("topluck_sounds")==="1";}catch(e){return false;} }
+  window.SND={
+    play:function(type){
+      if(!_on()) return;
+      try{
+        const ctx=_c(),g=ctx.createGain(),o=ctx.createOscillator();
+        g.connect(ctx.destination); o.connect(g);
+        const t=ctx.currentTime;
+        if(type==="win"){
+          o.type="sine";
+          [523,659,784,1047].forEach((f,i)=>o.frequency.setValueAtTime(f,t+i*.1));
+          g.gain.setValueAtTime(.22,t); g.gain.exponentialRampToValueAtTime(.001,t+.75);
+          o.start(t); o.stop(t+.75);
+        } else if(type==="lose"){
+          o.type="sawtooth";
+          o.frequency.setValueAtTime(280,t); o.frequency.exponentialRampToValueAtTime(70,t+.45);
+          g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.001,t+.5);
+          o.start(t); o.stop(t+.5);
+        } else if(type==="tick"){
+          o.type="sine"; o.frequency.setValueAtTime(660,t);
+          g.gain.setValueAtTime(.08,t); g.gain.exponentialRampToValueAtTime(.001,t+.07);
+          o.start(t); o.stop(t+.07);
+        } else if(type==="coin"){
+          o.type="sine";
+          o.frequency.setValueAtTime(900,t); o.frequency.setValueAtTime(1200,t+.06);
+          g.gain.setValueAtTime(.14,t); g.gain.exponentialRampToValueAtTime(.001,t+.22);
+          o.start(t); o.stop(t+.22);
+        } else if(type==="step"){
+          o.type="sine"; o.frequency.setValueAtTime(440+200*(Math.random()),t);
+          g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.001,t+.18);
+          o.start(t); o.stop(t+.18);
+        } else if(type==="bomb"){
+          o.type="sawtooth";
+          o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(20,t+.6);
+          g.gain.setValueAtTime(.3,t); g.gain.exponentialRampToValueAtTime(.001,t+.7);
+          // Add noise-like crackle via second oscillator
+          const o2=ctx.createOscillator(),g2=ctx.createGain();
+          o2.connect(g2); g2.connect(ctx.destination);
+          o2.type="square"; o2.frequency.setValueAtTime(60,t);
+          g2.gain.setValueAtTime(.2,t); g2.gain.exponentialRampToValueAtTime(.001,t+.5);
+          o2.start(t); o2.stop(t+.5);
+          o.start(t); o.stop(t+.7);
+        } else if(type==="spin"){
+          // Spinning wheel sound - rising frequency
+          o.type="sine";
+          o.frequency.setValueAtTime(200,t); o.frequency.linearRampToValueAtTime(600,t+1.5);
+          g.gain.setValueAtTime(.1,t); g.gain.linearRampToValueAtTime(.05,t+1.4);
+          g.gain.exponentialRampToValueAtTime(.001,t+2);
+          o.start(t); o.stop(t+2);
+        } else if(type==="bet"){
+          o.type="sine"; o.frequency.setValueAtTime(523,t);
+          g.gain.setValueAtTime(.1,t); g.gain.exponentialRampToValueAtTime(.001,t+.15);
+          o.start(t); o.stop(t+.15);
+        }
+      }catch(e){}
+    }
+  };
+})();
+
+</script>
 </body>

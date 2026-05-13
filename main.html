@@ -307,11 +307,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 
 /* ══ HISTORY ══ */
 .hist-content{padding:14px;}
-.hist-filter{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.hist-filter{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:5px;margin-bottom:12px;
+}
 .hf{
-  padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+  padding:8px 4px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;
   background:var(--card-bg);border:1px solid var(--card-br);color:var(--muted);
-  white-space:nowrap;transition:all .15s;
+  text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:all .15s;line-height:1.3;
 }
 .hf.a{background:var(--gold);color:#000;border-color:var(--gold);}
 .hi{
@@ -608,88 +612,17 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <div class="hero-logo">
         <img src="logo.png" alt="TopLuck" onerror="this.parentNode.innerHTML='🍀'">
       </div>
-      <h1>TOPLUCK</h1>
-      <p>Добро пожаловать! Испытай удачу.</p>
-    </div>
-
-    <!-- Balance card -->
-    <div class="bal-card">
       <div>
-        <div class="bal-card-lbl">Ваш баланс</div>
-        <div class="bal-card-num">🪙 <span id="h-bal">—</span></div>
-      </div>
-      <div class="bal-card-right">
-        <div class="bal-card-right-lbl">Всего выиграно</div>
-        <div class="bal-card-right-val">+<span id="h-won">—</span></div>
+        <h1>TOPLUCK</h1>
+        <p>Испытай удачу вместе с нами!</p>
       </div>
     </div>
 
-    <div class="sgrid">
-      <div class="sc"><div class="sc-ico">🎲</div><div class="sc-lbl">Игр сыграно</div><div class="sc-val" id="h-spins">—</div></div>
-      <div class="sc"><div class="sc-ico">🏆</div><div class="sc-lbl">Побед</div><div class="sc-val" id="h-wins">—</div></div>
-    </div>
-    <button class="topup-btn" onclick="openTopup()">
-      <span style="font-size:20px">⭐</span> Пополнить (1 ⭐ = 10 🪙)
-    </button>
-
-    <!-- PROMO CODE -->
-    <div style="
-      background:linear-gradient(135deg,rgba(245,197,66,.07),rgba(232,168,0,.04));
-      border:1px solid rgba(245,197,66,.22);border-radius:18px;margin-bottom:14px;overflow:hidden;
-      box-shadow:inset 0 1px 0 rgba(245,197,66,.12),0 4px 20px rgba(0,0,0,.3);">
-      <div onclick="togglePromoPanel()"
-        style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:34px;height:34px;border-radius:10px;
-            background:linear-gradient(135deg,rgba(245,197,66,.2),rgba(245,197,66,.1));
-            border:1px solid rgba(245,197,66,.3);display:flex;align-items:center;justify-content:center;font-size:18px;">🎟</div>
-          <div>
-            <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--gold);font-weight:700">ПРОМОКОД</div>
-            <div style="font-size:11px;color:var(--muted)">Активируй и получи монеты</div>
-          </div>
-        </div>
-        <span id="promo-arrow" style="font-size:20px;color:var(--gold);transition:transform .25s;font-weight:300">›</span>
-      </div>
-      <div id="promo-body" style="display:none;padding:0 16px 16px">
-        <div style="display:flex;gap:8px">
-          <input id="promo-inp" type="text" placeholder="Введи промокод..."
-            style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(245,197,66,.25);border-radius:12px;
-                   padding:11px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;
-                   outline:none;text-transform:uppercase;"
-            oninput="this.value=this.value.toUpperCase()"
-            onkeydown="if(event.key==='Enter')activatePromo()">
-          <button onclick="activatePromo()"
-            style="padding:11px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
-                   border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;
-                   font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;
-                   box-shadow:0 3px 12px rgba(245,197,66,.3);">✓ Применить</button>
-        </div>
-        <div id="promo-result" style="text-align:center;font-size:13px;font-weight:600;min-height:16px;margin-top:10px"></div>
-      </div>
-    </div>
-
-    <!-- О нас -->
+    <!-- О нас — всегда раскрыт -->
     <div class="card" id="about-card">
-      <div class="card-head" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleAbout()">
-        <span>ℹ️ О нас</span>
-        <span id="about-arrow" style="font-size:16px;color:var(--muted);transition:transform .25s">›</span>
-      </div>
-      <div id="about-body" style="display:none">
-        <!-- Project intro -->
-        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <span style="font-size:28px">🎰</span>
-            <div>
-              <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);font-weight:700">TOPLUCK CASINO</div>
-              <div style="font-size:11px;color:var(--muted)">Telegram Mini App</div>
-            </div>
-          </div>
-          <p style="font-size:13px;line-height:1.65;color:rgba(232,232,240,.8)">
-            <b style="color:var(--text)">TopLuck</b> — это честное Telegram-казино прямо в вашем мессенджере. Крутите рулетку, покоряйте мины, штурмуйте башню и выигрывайте реальные Telegram Stars ⭐<br><br>
-            🔒 Все операции прозрачны · 🎁 Магазин подарков · 🏆 Реферальная программа
-          </p>
-        </div>
-        <!-- Owner -->
+      <div class="card-head">ℹ️ О нас</div>
+      <div id="about-body">
+        <!-- Владелец -->
         <div class="about-person" onclick="togglePerson('owner')">
           <div class="ap-head">
             <span class="ap-icon">👑</span>
@@ -716,14 +649,14 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>👤 <a href="https://sceletonchik.github.io/Portfolio/portfolio.html" target="_blank">Портфолио</a></p>
           <p>💬 Связь: <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
           <p>💵 Донаты — отправь 🌟 звёзды в ЛС <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
-          <p>📱 TON-кошелёк: <code id="ton-wallet" onclick="copyTon()" style="font-size:10px;word-break:break-all;cursor:pointer;background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);border-radius:6px;padding:3px 7px;display:inline-block;transition:background .2s;" title="Нажми чтобы скопировать">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code> <span style="font-size:10px;color:var(--muted)">📋</span></p>
+          <p>📱 TON-кошелёк: <code id="ton-wallet" onclick="copyTon()" style="font-size:10px;word-break:break-all;cursor:pointer;background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);border-radius:6px;padding:3px 7px;display:inline-block;" title="Нажми чтобы скопировать">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code> 📋</p>
           <p style="color:var(--muted);font-size:12px">Бла-бла-бла, кто-то вообще это читает? 😄</p>
           <p style="font-size:12px;color:var(--muted)">Боты для <a href="https://t.me/Smishek" target="_blank">@Smishek</a>:<br>
             🔘 <a href="https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky" target="_blank">TopNet (@T0pNetbot)</a><br>
             🔘 <a href="https://t.me/Supp0rt_R0bot" target="_blank">Support (@Supp0rt_R0bot)</a><br>
             🔘 <a href="https://t.me/Crocodi1ebot" target="_blank">Crocodile (@Crocodi1ebot)</a>
           </p>
-          <p style="font-size:11px;color:var(--muted)">Ps: Бот сделан в кратчайшие сроки. Нашли баг? Пишите в поддержку — могут дать награду 😉</p>
+          <p style="font-size:11px;color:var(--muted)">Ps: Нашли баг? Пишите в поддержку — могут дать награду 😉</p>
         </div>
         <!-- Tech -->
         <div class="about-person" onclick="togglePerson('tech')">
@@ -738,9 +671,9 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>Нужна помощь с кодингом или проектом (возможно бесплатно)? Пишите 😉</p>
           <p>🌐 Связь: <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p>
           <p>🎇 Все проекты: <a href="https://unionium.org" target="_blank">unionium.org</a></p>
-          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают или сеть не работает? Пишите мне — исправим!</p>
+          <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают или сеть не работает? Пишите мне!</p>
         </div>
-        <!-- Sponsor (collapsible) -->
+        <!-- Sponsor -->
         <div class="about-person" style="border-bottom:none" onclick="togglePerson('sponsor')">
           <div class="ap-head">
             <span class="ap-icon">💎</span>
@@ -750,15 +683,8 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         </div>
         <div class="ap-content" id="cnt-sponsor" style="display:none;border-bottom:none">
           <p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p>
-          <p style="color:var(--muted);font-size:12px">Благодаря поддержке спонсора TopLuck продолжает развиваться и радовать игроков!</p>
+          <p style="color:var(--muted);font-size:12px">Благодаря поддержке спонсора TopLuck продолжает развиваться!</p>
         </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head">🔗 Реферальная программа</div>
-      <div class="card-body">
-        <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
-        <button onclick="copyRef()" style="margin-top:10px;width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
       </div>
     </div>
   </div>
@@ -809,6 +735,11 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         <span class="prof-menu-right" id="prof-refs">0</span>
         <span class="prof-menu-arr">›</span>
       </div>
+      <div class="prof-menu-row" onclick="showPromoPanel()">
+        <div class="prof-menu-icon" style="background:linear-gradient(135deg,#f5c542,#e8a800)">🎟</div>
+        <div class="prof-menu-label">Промокод</div>
+        <span class="prof-menu-arr">›</span>
+      </div>
       <div class="prof-menu-row" style="cursor:default" onclick="void 0">
         <div class="prof-menu-label" style="padding-left:2px">Звуки игр</div>
         <label class="toggle" style="flex-shrink:0">
@@ -830,7 +761,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <div id="prof-gifts-list"><div class="empty"><div class="empty-i">📭</div><p>Подарков нет</p></div></div>
     </div>
 
-    <!-- Ref sub-panel (hidden by default) -->
+    <!-- Ref sub-panel -->
     <div id="prof-ref-panel" style="display:none">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <button onclick="hideRefPanel()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:7px 12px;color:var(--gold);font-size:18px;cursor:pointer;font-weight:700">‹</button>
@@ -840,8 +771,32 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         <div class="card-body">
           <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
           <div class="irow"><span class="irow-l">Рефералов приглашено</span><span class="irow-r" id="ref-count-big">0</span></div>
-          <button onclick="copyRef()" style="margin-top:12px;width:100%;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать реф.ссылку</button>
+          <button onclick="copyRef()" style="margin-top:12px;width:100%;padding:12px;background:rgba(245,197,66,.08);border:1px solid rgba(245,197,66,.25);border-radius:12px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;">🔗 Скопировать ссылку</button>
         </div>
+      </div>
+      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;margin:12px 0 8px">КТО И КОГДА ПЕРЕШЁЛ</div>
+      <div id="ref-history-list"><div class="empty"><div class="empty-i">📭</div><p>Рефералов пока нет</p></div></div>
+    </div>
+
+    <!-- Promo sub-panel -->
+    <div id="prof-promo-panel" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button onclick="hidePromoPanel()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:7px 12px;color:var(--gold);font-size:18px;cursor:pointer;font-weight:700">‹</button>
+        <span style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">ПРОМОКОД</span>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(245,197,66,.07),rgba(232,168,0,.04));border:1px solid rgba(245,197,66,.22);border-radius:var(--r);padding:16px;margin-bottom:10px;">
+        <div style="display:flex;gap:8px">
+          <input id="promo-inp" type="text" placeholder="Введи промокод..."
+            style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(245,197,66,.25);border-radius:12px;
+                   padding:11px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;outline:none;text-transform:uppercase;"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter')activatePromo()">
+          <button onclick="activatePromo()"
+            style="padding:11px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+                   border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;
+                   font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap;">✓ OK</button>
+        </div>
+        <div id="promo-result" style="text-align:center;font-size:13px;font-weight:600;min-height:16px;margin-top:10px"></div>
       </div>
     </div>
 
@@ -858,34 +813,34 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 
     <a class="game-card rolls" href="european_roulette.html">
       <div class="gc-text">
-        <div class="gc-name">РОЛЛС</div>
-        <div class="gc-desc">Крути колесо, ставь на цвет или число и забирай выигрыш!</div>
+        <div class="gc-name">Европейская рулетка</div>
+        <div class="gc-desc">Крути колесо, ставь на красное/чёрное или число — до ×36!</div>
       </div>
       <div class="gc-art"><span class="gc-art-emoji">🎡</span></div>
     </a>
 
+    <a class="game-card gta" href="gta_roulette.html">
+      <div class="gc-text">
+        <div class="gc-name">ГТА рулетка</div>
+        <div class="gc-desc">Общий банк! Чем больше ставка — тем выше шанс сорвать куш.</div>
+      </div>
+      <div class="gc-art"><span class="gc-art-emoji">🏎️</span></div>
+    </a>
+
     <a class="game-card mines" href="mines.html">
       <div class="gc-text">
-        <div class="gc-name">МИНЫ</div>
-        <div class="gc-desc">Открывай клетки, избегай мин и забирай 💎 подарки!</div>
+        <div class="gc-name">Мины</div>
+        <div class="gc-desc">Открывай клетки, избегай мин, забирай 💎 или кешаутись вовремя!</div>
       </div>
       <div class="gc-art"><span class="gc-art-emoji">💣</span></div>
     </a>
 
-    <a class="game-card slots" href="gta_roulette.html">
+    <a class="game-card tower" href="tower.html">
       <div class="gc-text">
-        <div class="gc-name">СЛОТЫ</div>
-        <div class="gc-desc">Общий банк! Чем больше ставка — тем выше шанс забрать всё.</div>
+        <div class="gc-name">Башня</div>
+        <div class="gc-desc">Поднимайся по этажам — каждый шаг умножает твой выигрыш!</div>
       </div>
-      <div class="gc-art"><span class="gc-art-emoji">🎰</span></div>
-    </a>
-
-    <a class="game-card upgrade" href="tower.html">
-      <div class="gc-text">
-        <div class="gc-name">АПГРЕЙД</div>
-        <div class="gc-desc">Поднимайся по этажам, каждый шаг умножает выигрыш!</div>
-      </div>
-      <div class="gc-art"><span class="gc-art-emoji">🔥</span></div>
+      <div class="gc-art"><span class="gc-art-emoji">🗼</span></div>
     </a>
   </div>
 </div>
@@ -895,6 +850,9 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   <div class="hist-content">
     <div class="hist-filter">
       <div class="hf a" onclick="setF(this,'all')">Все</div>
+      <div class="hf" onclick="setF(this,'additions')">➕ Добавления</div>
+      <div class="hf" onclick="setF(this,'subtractions')">➖ Списания</div>
+      <div class="hf" onclick="setF(this,'ref')">🤝 Рефералы</div>
       <div class="hf" onclick="setF(this,'win')">🏆 Победы</div>
       <div class="hf" onclick="setF(this,'lose')">💀 Проигрыши</div>
       <div class="hf" onclick="setF(this,'deposit')">💳 Пополнения</div>
@@ -918,7 +876,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         <button onclick="openTopup()" style="background:linear-gradient(135deg,var(--gold2),var(--gold));border:none;border-radius:10px;color:#000;padding:7px 12px;font-family:'Orbitron',monospace;font-size:11px;font-weight:900;cursor:pointer;">+ ТОП</button>
       </div>
     </div>
-    <div class="hist-filter" style="margin-bottom:12px">
+    <div class="hist-filter" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
       <div class="hf a" onclick="shopTab('bot',this)">🤖 От бота</div>
       <div class="hf" onclick="shopTab('owner',this)">👑 От владельца</div>
     </div>
@@ -1134,29 +1092,38 @@ function copyRef(){
 // refreshBalance removed
 
 // ── HISTORY ──
+const HIST_POS_TYPES = ['win','deposit','ref','gift_received','admin_credit'];
+const HIST_NEG_TYPES = ['lose','gift_sent','admin_deduct'];
+
 async function renderHistory(){
   histData = await get(`/api/history/${UID}`).catch(()=>[]);
-  let items = curF==='all'?histData:histData.filter(i=>i.type===curF);
+  let items;
+  if(curF === 'all')          items = histData;
+  else if(curF === 'additions')   items = histData.filter(i => HIST_POS_TYPES.includes(i.type) || (i.type==='promo' && i.amount>0));
+  else if(curF === 'subtractions')items = histData.filter(i => HIST_NEG_TYPES.includes(i.type) || (i.type==='promo' && i.amount<0));
+  else                            items = histData.filter(i => i.type === curF);
+
   let won=0, lost=0;
   histData.forEach(i=>{
-    if(['win','deposit','ref','gift_received'].includes(i.type)) won+=i.amount;
-    if(['lose','gift_sent'].includes(i.type)) lost+=i.amount;
+    if(HIST_POS_TYPES.includes(i.type) || (i.type==='promo'&&i.amount>0)) won  += Math.abs(i.amount);
+    if(HIST_NEG_TYPES.includes(i.type) || (i.type==='promo'&&i.amount<0)) lost += Math.abs(i.amount);
   });
-  document.getElementById('s-won').textContent=won;
-  document.getElementById('s-lost').textContent=lost;
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',promo:'🎟'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',promo:'Промокод'};
-  const list=document.getElementById('hist-list');
+  document.getElementById('s-won').textContent  = won;
+  document.getElementById('s-lost').textContent = lost;
+
+  const ICONS ={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод'};
+  const list = document.getElementById('hist-list');
   if(!items.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
-  list.innerHTML=items.slice(0,60).map(i=>{
-    const d=new Date(i.created_at*1000);
-    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-    const pos = i.type==='promo' ? i.amount>=0 : ['win','deposit','ref','gift_received'].includes(i.type);
-    const displayAmt = Math.abs(i.amount);
+  list.innerHTML=items.slice(0,80).map(i=>{
+    const d   = new Date(i.created_at*1000);
+    const dt  = d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos = i.type==='promo' ? i.amount>=0 : HIST_POS_TYPES.includes(i.type);
+    const amt = Math.abs(i.amount);
     return `<div class="hi">
       <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
       <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
-      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${displayAmt}</div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${amt}</div>
     </div>`;
   }).join('');
 }
@@ -1166,123 +1133,49 @@ function setF(el,f){
 }
 
 // ── PROFILE ──
-function showGiftsPanel(){
-  document.querySelector('.profile-top-card').style.display='none';
-  document.querySelector('.prof-bal-row').style.display='none';
-  document.querySelector('.prof-stats-row').style.display='none';
-  document.querySelector('.prof-menu-card').style.display='none';
-  document.querySelector('.prof-invite-btn').style.display='none';
-  document.getElementById('prof-gifts-panel').style.display='block';
-  document.getElementById('prof-ref-panel').style.display='none';
-  loadGifts();
-}
-function hideGiftsPanel(){
-  document.querySelector('.profile-top-card').style.display='';
-  document.querySelector('.prof-bal-row').style.display='';
-  document.querySelector('.prof-stats-row').style.display='';
-  document.querySelector('.prof-menu-card').style.display='';
-  document.querySelector('.prof-invite-btn').style.display='';
-  document.getElementById('prof-gifts-panel').style.display='none';
-}
-function showRefPanel(){
-  document.querySelector('.profile-top-card').style.display='none';
-  document.querySelector('.prof-bal-row').style.display='none';
-  document.querySelector('.prof-stats-row').style.display='none';
-  document.querySelector('.prof-menu-card').style.display='none';
-  document.querySelector('.prof-invite-btn').style.display='none';
-  document.getElementById('prof-ref-panel').style.display='block';
-  document.getElementById('prof-gifts-panel').style.display='none';
-}
-function hideRefPanel(){
-  document.querySelector('.profile-top-card').style.display='';
-  document.querySelector('.prof-bal-row').style.display='';
-  document.querySelector('.prof-stats-row').style.display='';
-  document.querySelector('.prof-menu-card').style.display='';
-  document.querySelector('.prof-invite-btn').style.display='';
-  document.getElementById('prof-ref-panel').style.display='none';
-}
-// ── SOUNDS SYSTEM (Web Audio API) ──
-let __audioCtx = null;
-function _getCtx(){ if(!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return __audioCtx; }
-function _soundEnabled(){ try{ return localStorage.getItem('topluck_sounds')==='1'; }catch(e){ return false; } }
+// ── PROFILE PANELS ──
+const _profCards = () => ['.profile-top-card','.prof-bal-row','.prof-stats-row','.prof-menu-card','.prof-invite-btn']
+  .map(s=>document.querySelector(s)).filter(Boolean);
 
-function playSound(type){
-  if(!_soundEnabled()) return;
-  try{
-    const ctx = _getCtx();
-    const g = ctx.createGain(); g.connect(ctx.destination);
-    const o = ctx.createOscillator(); o.connect(g);
-    const t = ctx.currentTime;
-    if(type==='win'){
-      o.type='sine';
-      [523,659,784,1047].forEach((f,i)=>o.frequency.setValueAtTime(f, t+i*.1));
-      g.gain.setValueAtTime(.22, t); g.gain.exponentialRampToValueAtTime(.001, t+.75);
-      o.start(t); o.stop(t+.75);
-    } else if(type==='lose'){
-      o.type='sawtooth';
-      o.frequency.setValueAtTime(280, t); o.frequency.exponentialRampToValueAtTime(70, t+.45);
-      g.gain.setValueAtTime(.18, t); g.gain.exponentialRampToValueAtTime(.001, t+.5);
-      o.start(t); o.stop(t+.5);
-    } else if(type==='coin'){
-      o.type='sine';
-      o.frequency.setValueAtTime(900, t); o.frequency.setValueAtTime(1200, t+.06);
-      g.gain.setValueAtTime(.14, t); g.gain.exponentialRampToValueAtTime(.001, t+.22);
-      o.start(t); o.stop(t+.22);
-    } else if(type==='click'){
-      o.type='sine'; o.frequency.setValueAtTime(440, t);
-      g.gain.setValueAtTime(.07, t); g.gain.exponentialRampToValueAtTime(.001, t+.09);
-      o.start(t); o.stop(t+.09);
-    }
-  } catch(e){}
-}
-window.playSound = playSound; // expose to game pages
-
-function saveSounds(on){
-  try{ localStorage.setItem('topluck_sounds', on?'1':'0'); }catch(e){}
-  if(on) playSound('coin'); // preview sound when toggling on
-}
-function loadSounds(){
-  try{
-    const v = localStorage.getItem('topluck_sounds');
-    const el = document.getElementById('prof-sounds');
-    if(el && v!==null) el.checked = v==='1';
-  }catch(e){}
-}
-async function loadGifts(){
-  if(!UID) return;
-  const hist = await get(`/api/history/${UID}`).catch(()=>[]);
-  const gifts = hist.filter(h=>h.type==='gift_received'||h.type==='gift');
-  const list = document.getElementById('prof-gifts-list');
-  if(!gifts.length){
-    list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>Подарков нет.<br>Купи что-нибудь в Магазине!</p></div>';
-    return;
-  }
-  const grouped={};
-  gifts.forEach(g=>{
-    const k=g.detail||'Подарок';
-    if(!grouped[k]) grouped[k]={name:k,count:0,date:g.created_at};
-    grouped[k].count++;
+function _showSubPanel(id){
+  _profCards().forEach(el=>el.style.display='none');
+  ["prof-gifts-panel","prof-ref-panel","prof-promo-panel"].forEach(p=>{
+    const el=document.getElementById(p); if(el) el.style.display='none';
   });
-  list.innerHTML=Object.values(grouped).map(item=>`
-    <div class="inv-item">
-      <div class="inv-icon">🎁</div>
-      <div style="flex:1"><div class="inv-name">${item.name}</div>
-        <div class="inv-meta">Получен ${new Date(item.date*1000).toLocaleDateString('ru',{day:'numeric',month:'short'})}</div>
-      </div>
-      <div class="inv-qty">×${item.count}</div>
-    </div>`).join('');
+  const el=document.getElementById(id); if(el) el.style.display='block';
 }
-async function loadInventory(){
-  if(!UID) return;
-  updateUI();
-  loadSounds();
-  // Load ref count
-  const refs = userData?.refs ?? 0;
-  const refEl = document.getElementById('prof-refs');
-  if(refEl) refEl.textContent = refs;
-  const refBig = document.getElementById('ref-count-big');
-  if(refBig) refBig.textContent = refs;
+function _hideSubPanels(){
+  _profCards().forEach(el=>el.style.display='');
+  ["prof-gifts-panel","prof-ref-panel","prof-promo-panel"].forEach(p=>{
+    const el=document.getElementById(p); if(el) el.style.display='none';
+  });
 }
+function showGiftsPanel(){ _showSubPanel("prof-gifts-panel"); loadGifts(); }
+function hideGiftsPanel(){ _hideSubPanels(); }
+function showRefPanel()  { _showSubPanel("prof-ref-panel");   loadRefHistory(); }
+function hideRefPanel()  { _hideSubPanels(); }
+function showPromoPanel(){ _showSubPanel("prof-promo-panel"); setTimeout(()=>{const el=document.getElementById("promo-inp");if(el)el.focus();},150); }
+function hidePromoPanel(){ _hideSubPanels(); }
+
+async function loadRefHistory(){
+  const listEl = document.getElementById("ref-history-list");
+  if(!listEl||!UID) return;
+  listEl.innerHTML = "<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">⏳ Загружаем...</div>";
+  try{
+    const r = await get("/api/user/"+UID+"/refs").catch(()=>({refs:[],count:0}));
+    const refs = r.refs||[];
+    const cntEl = document.getElementById("ref-count-big"); if(cntEl) cntEl.textContent = r.count||0;
+    const pEl   = document.getElementById("prof-refs");     if(pEl)   pEl.textContent   = r.count||0;
+    if(!refs.length){ listEl.innerHTML="<div class="empty"><div class="empty-i">👥</div><p>Рефералов пока нет</p></div>"; return; }
+    listEl.innerHTML = refs.map(ref=>{
+      const d  = new Date((ref.created_at||0)*1000);
+      const who= (ref.detail||"Неизвестный").replace("Реферал:","").trim();
+      const dt = d.toLocaleDateString("ru",{day:"numeric",month:"short",year:"numeric"})+" "+d.toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"});
+      return "<div class="hi"><div class="hi-ic ref">🤝</div><div class="hi-b"><div class="hi-t">" +who+ "</div><div class="hi-s">" +dt+ "</div></div><div class="hi-a p">+" +ref.amount+ "</div></div>";
+    }).join("");
+  }catch(e){ listEl.innerHTML="<div class="empty"><div class="empty-i">⚠️</div><p>Ошибка загрузки</p></div>"; }
+}
+
 
 // ── SHOP ──
 function shopTab(tab, el){
@@ -1457,14 +1350,8 @@ async function confirmTopup(){
   else toast('Откройте чат с ботом для оплаты','info');
 }
 
-// ── О НАС ──
-function toggleAbout(){
-  const body = document.getElementById('about-body');
-  const arrow = document.getElementById('about-arrow');
-  const open = body.style.display === 'block';
-  body.style.display = open ? 'none' : 'block';
-  arrow.style.transform = open ? '' : 'rotate(90deg)';
-}
+// ── О НАС — О нас always open, sub-items collapsible ──
+function toggleAbout(){} // О нас is always expanded — no-op
 function togglePerson(id){
   const cnt = document.getElementById('cnt-'+id);
   const arr = document.getElementById('arr-'+id);
@@ -1473,6 +1360,39 @@ function togglePerson(id){
   cnt.style.display = open ? 'none' : 'block';
   if(arr) arr.classList.toggle('open', !open);
 }
+
+// ── loadInventory (called when profile tab opened) ──
+async function loadInventory(){
+  if(!UID) return;
+  updateUI(); loadSounds();
+  try{
+    const r = await get(`/api/user/${UID}/refs`).catch(()=>({count:0}));
+    const cnt = r.count||0;
+    const el = document.getElementById('prof-refs'); if(el) el.textContent=cnt;
+    const el2= document.getElementById('ref-count-big'); if(el2) el2.textContent=cnt;
+  }catch(e){}
+}
+
+// ── loadGifts (opened from profile → Мои подарки) ──
+async function loadGifts(){
+  if(!UID) return;
+  const hist = await get(`/api/history/${UID}`).catch(()=>[]);
+  const gifts = hist.filter(h=>h.type==='gift_received'||h.type==='gift');
+  const list = document.getElementById('prof-gifts-list');
+  if(!list) return;
+  if(!gifts.length){ list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>Подарков нет.<br>Купи что-нибудь в Магазине!</p></div>'; return; }
+  const grouped={};
+  gifts.forEach(g=>{ const k=g.detail||'Подарок'; if(!grouped[k]) grouped[k]={name:k,count:0,date:g.created_at}; grouped[k].count++; });
+  list.innerHTML=Object.values(grouped).map(item=>`
+    <div class="inv-item"><div class="inv-icon">🎁</div>
+      <div style="flex:1"><div class="inv-name">${item.name}</div>
+        <div class="inv-meta">Получен ${new Date(item.date*1000).toLocaleDateString('ru',{day:'numeric',month:'short'})}</div></div>
+      <div class="inv-qty">×${item.count}</div></div>`).join('');
+}
+
+// saveSounds / loadSounds
+function saveSounds(on){ try{ localStorage.setItem('topluck_sounds',on?'1':'0'); }catch(e){} if(on) playSound('coin'); }
+function loadSounds(){ try{ const v=localStorage.getItem('topluck_sounds'); const el=document.getElementById('prof-sounds'); if(el&&v!==null) el.checked=v==='1'; }catch(e){} }
 
 // ── COPY TON WALLET ──
 function copyTon(){
@@ -1491,15 +1411,7 @@ function copyTon(){
     });
 }
 
-// ── PROMO CODE ──
-function togglePromoPanel(){
-  const body = document.getElementById('promo-body');
-  const arrow = document.getElementById('promo-arrow');
-  const open = body.style.display === 'block';
-  body.style.display = open ? 'none' : 'block';
-  arrow.style.transform = open ? '' : 'rotate(90deg)';
-  if(!open) setTimeout(()=>document.getElementById('promo-inp').focus(), 100);
-}
+// ── PROMO CODE (called from profile promo panel) ──
 
 async function activatePromo(){
   const code = (document.getElementById('promo-inp').value||'').trim().toUpperCase();

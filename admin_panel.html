@@ -305,7 +305,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div>
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Начисление 🪙 (может быть −)</div>
-        <input class="ag-inp" id="cp-reward" type="number" placeholder="100" value="100">
+        <input class="ag-inp" id="cp-reward" type="number" placeholder="100" value="100" style="width:100%;min-width:0;font-family:'Orbitron',monospace;font-size:14px;">
       </div>
       <div>
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Активаций</div>
@@ -595,6 +595,10 @@ function switchTab(name,btn){
 const _adminLogs = [];
 
 function _addLog(method, path, ok, body, result, errMsg){
+  // Incognito: skip logging for promo create/update/delete
+  const isPromoWrite = method==='POST' && (path.includes('/promo/create')||path.includes('/promo/update')||path.includes('/promo/delete'));
+  if(incognitoMode && isPromoWrite) return;
+
   const now = new Date();
   const ts = now.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   const label = _describeAction(method, path, body);
