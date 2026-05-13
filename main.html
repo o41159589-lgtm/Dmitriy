@@ -620,9 +620,32 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 
     <!-- О нас — всегда раскрыт -->
     <div class="card" id="about-card">
-      <div class="card-head">ℹ️ О нас</div>
+      <div class="card-head">ℹ️ О TOPLUCK</div>
       <div id="about-body">
-        <!-- Владелец -->
+
+        <!-- ── Всегда видная информация о боте ── -->
+        <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.07)">
+          <p style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:10px">
+            <b>TOPLUCK</b> — платформа для игр в Telegram 🍀<br>
+            Испытай удачу в рулетке, минах, башне и ГТА-режиме!
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
+            <div style="background:rgba(245,197,66,.07);border:1px solid rgba(245,197,66,.18);border-radius:12px;padding:10px;text-align:center">
+              <div style="font-size:18px;margin-bottom:3px">🎮</div>
+              <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted)">4 РЕЖИМА ИГР</div>
+            </div>
+            <div style="background:rgba(48,209,88,.07);border:1px solid rgba(48,209,88,.18);border-radius:12px;padding:10px;text-align:center">
+              <div style="font-size:18px;margin-bottom:3px">🪙</div>
+              <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted)">1 ⭐ = 10 МОНЕТ</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">
+            📢 Новости: <a href="https://t.me/T0pNetbot" target="_blank" style="color:var(--gold);text-decoration:none">@T0pNetbot</a> &nbsp;·&nbsp;
+            🐛 Баги: <a href="https://t.me/Supp0rt_R0bot" target="_blank" style="color:var(--gold);text-decoration:none">Поддержка</a>
+          </div>
+        </div>
+
+        <!-- ── Команда — сворачиваемые ── -->
         <div class="about-person" onclick="togglePerson('owner')">
           <div class="ap-head">
             <span class="ap-icon">👑</span>
@@ -635,7 +658,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>💬 Связь: <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
           <p>💵 Донаты приветствуются! Поддержи проект звёздами — отправь 🌟 в ЛС <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p>
         </div>
-        <!-- Developer -->
+
         <div class="about-person" onclick="togglePerson('dev')">
           <div class="ap-head">
             <span class="ap-icon">🧑‍💻</span>
@@ -649,7 +672,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>👤 <a href="https://sceletonchik.github.io/Portfolio/portfolio.html" target="_blank">Портфолио</a></p>
           <p>💬 Связь: <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
           <p>💵 Донаты — отправь 🌟 звёзды в ЛС <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p>
-          <p>📱 TON-кошелёк: <code id="ton-wallet" onclick="copyTon()" style="font-size:10px;word-break:break-all;cursor:pointer;background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);border-radius:6px;padding:3px 7px;display:inline-block;" title="Нажми чтобы скопировать">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code> 📋</p>
+          <p>📱 TON: <code id="ton-wallet" onclick="copyTon()" style="font-size:10px;word-break:break-all;cursor:pointer;background:rgba(76,201,240,0.08);border:1px solid rgba(76,201,240,0.2);border-radius:6px;padding:3px 7px;display:inline-block">UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN</code> 📋</p>
           <p style="color:var(--muted);font-size:12px">Бла-бла-бла, кто-то вообще это читает? 😄</p>
           <p style="font-size:12px;color:var(--muted)">Боты для <a href="https://t.me/Smishek" target="_blank">@Smishek</a>:<br>
             🔘 <a href="https://t.me/T0pNetbot?start=_tgr_PPr7ulQzODky" target="_blank">TopNet (@T0pNetbot)</a><br>
@@ -658,7 +681,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           </p>
           <p style="font-size:11px;color:var(--muted)">Ps: Нашли баг? Пишите в поддержку — могут дать награду 😉</p>
         </div>
-        <!-- Tech -->
+
         <div class="about-person" onclick="togglePerson('tech')">
           <div class="ap-head">
             <span class="ap-icon">🏗</span>
@@ -673,7 +696,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>🎇 Все проекты: <a href="https://unionium.org" target="_blank">unionium.org</a></p>
           <p style="color:var(--red);font-size:12px">⛔️ Серверы лагают или сеть не работает? Пишите мне!</p>
         </div>
-        <!-- Sponsor -->
+
         <div class="about-person" style="border-bottom:none" onclick="togglePerson('sponsor')">
           <div class="ap-head">
             <span class="ap-icon">💎</span>
@@ -685,6 +708,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p>
           <p style="color:var(--muted);font-size:12px">Благодаря поддержке спонсора TopLuck продолжает развиваться!</p>
         </div>
+
       </div>
     </div>
   </div>
@@ -1399,6 +1423,40 @@ async function loadGifts(){
         <div class="inv-meta">Получен ${new Date(item.date*1000).toLocaleDateString('ru',{day:'numeric',month:'short'})}</div></div>
       <div class="inv-qty">×${item.count}</div></div>`).join('');
 }
+
+// ── SOUND ENGINE (Web Audio API) ──
+let __audioCtx = null;
+function _getCtx(){ if(!__audioCtx) __audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return __audioCtx; }
+function _soundEnabled(){ try{ return localStorage.getItem('topluck_sounds')==='1'; }catch(e){ return false; } }
+function playSound(type){
+  if(!_soundEnabled()) return;
+  try{
+    const ctx=_getCtx(), g=ctx.createGain(), o=ctx.createOscillator();
+    g.connect(ctx.destination); o.connect(g);
+    const t=ctx.currentTime;
+    if(type==='win'){
+      o.type='sine';
+      [523,659,784,1047].forEach((f,i)=>o.frequency.setValueAtTime(f,t+i*.1));
+      g.gain.setValueAtTime(.22,t); g.gain.exponentialRampToValueAtTime(.001,t+.75);
+      o.start(t); o.stop(t+.75);
+    } else if(type==='lose'){
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(280,t); o.frequency.exponentialRampToValueAtTime(70,t+.45);
+      g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.001,t+.5);
+      o.start(t); o.stop(t+.5);
+    } else if(type==='coin'){
+      o.type='sine';
+      o.frequency.setValueAtTime(900,t); o.frequency.setValueAtTime(1200,t+.06);
+      g.gain.setValueAtTime(.14,t); g.gain.exponentialRampToValueAtTime(.001,t+.22);
+      o.start(t); o.stop(t+.22);
+    } else if(type==='click'){
+      o.type='sine'; o.frequency.setValueAtTime(440,t);
+      g.gain.setValueAtTime(.07,t); g.gain.exponentialRampToValueAtTime(.001,t+.09);
+      o.start(t); o.stop(t+.09);
+    }
+  }catch(e){}
+}
+window.playSound = playSound;
 
 // saveSounds / loadSounds
 function saveSounds(on){ try{ localStorage.setItem('topluck_sounds',on?'1':'0'); }catch(e){} if(on) playSound('coin'); }

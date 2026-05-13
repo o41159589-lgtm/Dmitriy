@@ -1430,7 +1430,13 @@ async function tryAdminAccess(){
       headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
     });
     if(r.status === 403){
-      window._failLoadBar('Нет доступа. Вы не администратор.');
+      // Not an admin — send back to main app
+      // index.html reads TG context automatically, so user lands in main.html as normal
+      const bar = document.getElementById('al-bar');
+      if(bar){ bar.style.background='var(--red)'; bar.style.width='100%'; }
+      const sub = document.getElementById('al-sub');
+      if(sub) sub.textContent='Нет доступа...';
+      setTimeout(()=> window.location.replace('index.html'), 900);
       return;
     }
   } catch(e){
