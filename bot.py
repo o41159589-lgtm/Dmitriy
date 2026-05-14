@@ -415,7 +415,7 @@ async def _handle_referral(user, param: str):
             # Log to dedicated Рефералы thread
             try:
                 await bot.send_message(
-                    LOG_CHAT,
+                    LOG_GROUP_ID,
                     f"🔗 <b>Новый реферал</b>\n"
                     f"Пригласил: <b>{ref_name}</b> (<code>{ref_id}</code>)\n"
                     f"Перешёл: <b>{user.first_name}</b> (<code>{user.id}</code>)\n"
