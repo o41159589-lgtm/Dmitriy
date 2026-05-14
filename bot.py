@@ -42,6 +42,7 @@ LOG_THREAD_DEPOSIT = int(os.getenv("LOG_THREAD_DEPOSIT", 4))
 LOG_THREAD_BROADCAST=int(os.getenv("LOG_THREAD_BROADCAST",5))
 LOG_THREAD_ADMIN   = int(os.getenv("LOG_THREAD_ADMIN",   6))
 LOG_THREAD_BACKUP  = int(os.getenv("LOG_THREAD_BACKUP",  7))
+LOG_THREAD_REFS    = int(os.getenv("LOG_THREAD_REFS",    9))  # Рефералы тема
 
 GTA_MIN_PLAYERS = int(os.getenv("GTA_MIN_PLAYERS", 2))
 GTA_SPIN_DELAY  = int(os.getenv("GTA_SPIN_DELAY",  15))
@@ -408,10 +409,23 @@ async def _handle_referral(user, param: str):
         nb = await db.add_to_balance(ref_id, 10)
         await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
         try:
-            ref_u2 = await db.get_user(ref_id)
+            ref_u2   = await db.get_user(ref_id)
             ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
             fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
+            # Log to dedicated Рефералы thread
+            try:
+                await bot.send_message(
+                    LOG_CHAT,
+                    f"🔗 <b>Новый реферал</b>\n"
+                    f"Пригласил: <b>{ref_name}</b> (<code>{ref_id}</code>)\n"
+                    f"Перешёл: <b>{user.first_name}</b> (<code>{user.id}</code>)\n"
+                    f"Бонус: +10 монет | Баланс: <b>{nb}</b>",
+                    message_thread_id=LOG_THREAD_REFS,
+                    parse_mode="HTML"
+                )
+            except Exception: pass
         except Exception: pass
+        # Notify referrer in PM
         await _safe_send(ref_id,
             f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
             f"💰 +10 монет → баланс: <b>{nb}</b>")
@@ -485,12 +499,12 @@ async def cmd_miness2(message: Message):
         )
         return
 
-    grid_size   = game.get("size", 25)
-    bombs       = set(game.get("bombs", []))
-    revealed    = set(game.get("revealed", []))
-    bet         = game.get("bet", 0)
-    bomb_count  = game.get("bombs_count", len(bombs))
-    side        = 5  # 5×5 grid
+    grid_size  = 25
+    bombs      = game.get("bomb_set", set())   # set of bomb indices
+    revealed   = set(game.get("revealed", []))
+    bet        = game.get("bet", 0)
+    bomb_count = game.get("bombs", len(bombs))  # integer count
+    side       = 5
 
     # Build visual grid
     rows = []
@@ -1231,7 +1245,7 @@ async def api_mines_reveal(req: web.Request):
         # Auto cashout if all safe cells revealed
         if safe_left == 0:
             net_win = current_win - game["bet"]
-            new_bal = await db.add_to_balance(uid, net_win)
+            new_bal = await db.add_to_balance(uid, current_win)   # bet was pre-deducted
             await db.add_history(uid, "win", net_win,
                 f"Мины: все алмазы! x{current_mult} ({game['bombs']} бомб)")
             await db.update_spin_stats(uid, True, net_win, 0)
@@ -1275,7 +1289,7 @@ async def api_mines_cashout(req: web.Request):
     mult         = mines_mult(safe_count, game["bombs"], _mines_max)
     won          = round(game["bet"] * mult)
     profit       = won - game["bet"]
-    new_bal      = await db.add_to_balance(uid, profit)
+    new_bal      = await db.add_to_balance(uid, won)   # bet was pre-deducted at start
     await db.add_history(uid, "win", profit,
         f"Мины: кешаут x{mult} ({safe_count} алмазов, {game['bombs']} бомб)")
     await db.update_spin_stats(uid, True, profit, 0)
@@ -1601,7 +1615,7 @@ async def api_tower_step(req: web.Request):
 
         if reached_top:
             profit = current_win - game["bet"]
-            new_bal = await db.add_to_balance(uid, profit)
+            new_bal = await db.add_to_balance(uid, current_win)   # bet pre-deducted
             await db.add_history(uid, "win", profit,
                 f"Башня: кешаут этаж {floor} ×{mult}")
             await db.update_spin_stats(uid, True, profit, 0)
@@ -1656,7 +1670,7 @@ async def api_tower_cashout(req: web.Request):
     mult        = tower_mult(completed_floor)
     won         = round(game["bet"] * mult)
     profit      = won - game["bet"]
-    new_bal     = await db.add_to_balance(uid, profit)
+    new_bal     = await db.add_to_balance(uid, won)   # bet pre-deducted at start
     await db.add_history(uid, "win", profit,
         f"Башня: кешаут этаж {completed_floor} ×{mult}")
     await db.update_spin_stats(uid, True, profit, 0)
@@ -1890,11 +1904,23 @@ async def api_promo_activate(req):
 
 
 async def api_user_refs(req: web.Request):
-    """Return list of referral bonuses received by this user (who joined + when)."""
+    """Referral bonuses received + list of users invited by this user."""
     uid = int(req.match_info["uid"])
     hist = await db.get_history(uid, limit=500)
     refs = [r for r in hist if r.get("type") == "ref"]
-    return web.json_response({"refs": refs, "count": len(refs)})
+    # Also get all users where referrer_id == uid (who did this user invite)
+    invited = []
+    try:
+        async with db._pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT user_id, first_name, created_at FROM users WHERE referrer_id=? ORDER BY created_at DESC",
+                uid
+            ) if hasattr(db, '_pool') else []
+            invited = [{"user_id": r["user_id"], "first_name": r["first_name"],
+                        "created_at": r["created_at"]} for r in rows]
+    except Exception:
+        pass
+    return web.json_response({"refs": refs, "count": len(refs), "invited": invited})
 
 
 # ── NOTIFY NOT-TELEGRAM VISITOR ──

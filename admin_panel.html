@@ -990,7 +990,9 @@ function filterU(q){
 
 function fmtDate(ts){
   if(!ts) return '—';
-  return new Date(ts*1000).toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  const d = new Date(ts*1000);
+  return d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'})
+       + ' ' + d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 
 function winrate(u){
@@ -1027,6 +1029,12 @@ function uCard(u){
         <div class="uinfo-item"><div class="uinfo-label">🎯 Винрейт</div><div class="uinfo-val gold">${winrate(u)}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">📅 Регистрация</div><div class="uinfo-val muted">${fmtDate(u.created_at)}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🍀 Удача</div><div class="uinfo-val">${luck}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🔗 Рефералы</div><div class="uinfo-val blue" id="ref-cnt-${u.user_id}">—</div></div>
+      </div>
+      <!-- Refs list (lazy-loaded) -->
+      <div id="refs-panel-${u.user_id}" style="display:none;margin:8px 0">
+        <button class="abtn msg" style="width:100%;margin-bottom:6px" onclick="loadUserRefs(${u.user_id})">👥 Показать рефералов</button>
+        <div id="refs-list-${u.user_id}" style="font-size:12px;color:var(--muted)"></div>
       </div>
       <!-- Balance -->
       <div class="ag">
@@ -1075,7 +1083,38 @@ function uCard(u){
   </div>`;
 }
 
-function tog(uid){ document.getElementById('uc-'+uid).classList.toggle('open'); }
+function tog(uid){
+  const card = document.getElementById('uc-'+uid);
+  card.classList.toggle('open');
+  if(card.classList.contains('open')){
+    // Show refs panel and load count
+    const rp = document.getElementById('refs-panel-'+uid);
+    if(rp) rp.style.display='block';
+    loadUserRefsCount(uid);
+  }
+}
+async function loadUserRefsCount(uid){
+  try{
+    const r = await api(`/api/user/${uid}/refs`);
+    const el = document.getElementById('ref-cnt-'+uid);
+    if(el) el.textContent = r.count||0;
+  }catch(e){}
+}
+async function loadUserRefs(uid){
+  const listEl = document.getElementById('refs-list-'+uid);
+  if(!listEl) return;
+  listEl.innerHTML = '⏳ Загружаем...';
+  try{
+    const r = await api(`/api/user/${uid}/refs`);
+    const refs = r.refs||[];
+    if(!refs.length){ listEl.innerHTML='<i>Рефералов нет</i>'; return; }
+    listEl.innerHTML = refs.map(ref=>{
+      const who = (ref.detail||'').replace('Реферал:','').trim()||'?';
+      const dt  = fmtDate(ref.created_at);
+      return `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">🤝 <b>${esc(who)}</b> · ${dt} · +${ref.amount}🪙</div>`;
+    }).join('');
+  }catch(e){ listEl.innerHTML='<i style="color:var(--red)">Ошибка</i>'; }
+}
 
 async function sbal(e,uid){
   e.stopPropagation();

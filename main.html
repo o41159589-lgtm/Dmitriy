@@ -625,23 +625,41 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 
         <!-- ── Всегда видная информация о боте ── -->
         <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.07)">
-          <p style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:10px">
+          <p style="font-size:14px;line-height:1.7;color:var(--text);margin-bottom:12px">
             <b>TOPLUCK</b> — платформа для игр в Telegram 🍀<br>
             Испытай удачу в рулетке, минах, башне и ГТА-режиме!
           </p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
-            <div style="background:rgba(245,197,66,.07);border:1px solid rgba(245,197,66,.18);border-radius:12px;padding:10px;text-align:center">
-              <div style="font-size:18px;margin-bottom:3px">🎮</div>
-              <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted)">4 РЕЖИМА ИГР</div>
-            </div>
-            <div style="background:rgba(48,209,88,.07);border:1px solid rgba(48,209,88,.18);border-radius:12px;padding:10px;text-align:center">
-              <div style="font-size:18px;margin-bottom:3px">🪙</div>
-              <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted)">1 ⭐ = 10 МОНЕТ</div>
-            </div>
-          </div>
-          <div style="font-size:12px;color:var(--muted);line-height:1.6">
-            📢 Новости: <a href="https://t.me/T0pNetbot" target="_blank" style="color:var(--gold);text-decoration:none">@T0pNetbot</a> &nbsp;·&nbsp;
-            🐛 Баги: <a href="https://t.me/Supp0rt_R0bot" target="_blank" style="color:var(--gold);text-decoration:none">Поддержка</a>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="https://t.me/T0pNetbot" target="_blank"
+               style="display:flex;align-items:center;gap:10px;background:rgba(76,201,240,.07);
+                      border:1px solid rgba(76,201,240,.18);border-radius:12px;padding:11px 14px;
+                      text-decoration:none;color:var(--text);">
+              <span style="font-size:20px">📢</span>
+              <div>
+                <div style="font-weight:700;font-size:14px">Канал с выдачами</div>
+                <div style="font-size:11px;color:var(--muted)">@T0pNetbot — новости и выдачи призов</div>
+              </div>
+            </a>
+            <a href="https://t.me/smishik_bio" target="_blank"
+               style="display:flex;align-items:center;gap:10px;background:rgba(191,90,242,.07);
+                      border:1px solid rgba(191,90,242,.18);border-radius:12px;padding:11px 14px;
+                      text-decoration:none;color:var(--text);">
+              <span style="font-size:20px">✨</span>
+              <div>
+                <div style="font-weight:700;font-size:14px">Интересный канал</div>
+                <div style="font-size:11px;color:var(--muted)">@smishik_bio — все проекты владельца</div>
+              </div>
+            </a>
+            <a href="https://t.me/Supp0rt_R0bot" target="_blank"
+               style="display:flex;align-items:center;gap:10px;background:rgba(48,209,88,.07);
+                      border:1px solid rgba(48,209,88,.18);border-radius:12px;padding:11px 14px;
+                      text-decoration:none;color:var(--text);">
+              <span style="font-size:20px">🛟</span>
+              <div>
+                <div style="font-weight:700;font-size:14px">Поддержка</div>
+                <div style="font-size:11px;color:var(--muted)">@Supp0rt_R0bot — нашли баг? пишите!</div>
+              </div>
+            </a>
           </div>
         </div>
 
@@ -1069,29 +1087,23 @@ async function loadUser(){
 function updateUI(){
   if(!userData) return;
   const bal = userData.balance??0;
-  document.getElementById('h-bal').textContent    = bal;
-  document.getElementById('h-spins').textContent  = userData.spins??0;
-  document.getElementById('h-wins').textContent   = userData.wins??0;
-  document.getElementById('h-won').textContent    = userData.total_won??0;
+  // Home page placeholders (may not exist — safe access)
+  const _s = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  _s('h-bal',   bal);
+  _s('h-spins', userData.spins??0);
+  _s('h-wins',  userData.wins??0);
+  _s('h-won',   userData.total_won??0);
   // Profile page
   const initials = (FIRST_NAME||'?')[0].toUpperCase();
-  const avatarEl = document.getElementById('prof-avatar');
-  if(avatarEl) avatarEl.textContent = initials;
-  const nameEl = document.getElementById('prof-name');
-  if(nameEl) nameEl.textContent = FIRST_NAME || '—';
-  const unameEl = document.getElementById('prof-uname');
-  if(unameEl) unameEl.textContent = USERNAME ? '@'+USERNAME : '';
-  const profBal = document.getElementById('prof-bal');
-  if(profBal) profBal.textContent = bal;
-  const profSpins = document.getElementById('prof-spins');
-  if(profSpins) profSpins.textContent = userData.spins??0;
-  const profWins = document.getElementById('prof-wins');
-  if(profWins) profWins.textContent = userData.wins??0;
-  const profWon = document.getElementById('prof-won');
-  if(profWon) profWon.textContent = userData.total_won??0;
-  const rbal = document.getElementById('r-bal');
-  if(rbal) rbal.textContent = bal;
-  document.getElementById('shop-bal').textContent = bal;
+  _s('prof-avatar', initials);
+  _s('prof-name',   FIRST_NAME||'Игрок');
+  _s('prof-uname',  USERNAME ? '@'+USERNAME : '');
+  _s('prof-bal',    bal);
+  _s('prof-spins',  userData.spins??0);
+  _s('prof-wins',   userData.wins??0);
+  _s('prof-won',    userData.total_won??0);
+  _s('r-bal',       bal);
+  _s('shop-bal',    bal);
 }
 
 // ── NAV ──
