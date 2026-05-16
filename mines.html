@@ -306,6 +306,15 @@ input[type=range]::-webkit-slider-thumb{
 .mines-table{margin-top:10px;}
 
 </style>
+<script>
+// Redirect if not opened via Telegram
+(function(){
+  const tg = window.Telegram?.WebApp;
+  if(!tg?.initDataUnsafe?.user?.id){
+    window.location.replace('not_telegram.html');
+  }
+})();
+</script>
 </head>
 </head>
 <body>

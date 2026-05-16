@@ -248,30 +248,19 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 </style>
 </head>
 <body>
-<div class="admin-loading" id="admin-loading">
-  <div class="al-icon" id="al-icon">⚙️</div>
-  <div class="al-title">TOPLUCK ADMIN</div>
-  <div class="al-sub" id="al-sub">Проверка доступа...</div>
-  <div class="al-bar-wrap" id="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
-  <!-- UID gate (shown if opened outside Telegram) -->
-  <div id="al-gate" style="display:none;margin-top:20px;text-align:center;width:280px">
-    <p style="font-size:11px;color:#7070a0;margin-bottom:10px">Открыто вне Telegram.<br>Введите ваш Telegram ID для входа:</p>
-    <div style="display:flex;gap:8px">
-      <input id="gate-uid" type="number" placeholder="123456789" inputmode="numeric"
-        style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,66,.3);
-               border-radius:10px;padding:10px 12px;color:#e8e8f0;font-family:'Orbitron',monospace;
-               font-size:13px;outline:none;text-align:center;"
-        onkeydown="if(event.key==='Enter')submitUidGate()">
-      <button onclick="submitUidGate()"
-        style="padding:10px 16px;background:linear-gradient(135deg,#e8a800,#f5c542);
-               border:none;border-radius:10px;color:#000;font-family:'Orbitron',monospace;
-               font-size:12px;font-weight:900;cursor:pointer;white-space:nowrap">
-        ВОЙТИ
-      </button>
-    </div>
-    <div id="gate-err" style="color:#e63946;font-size:11px;margin-top:8px;min-height:14px"></div>
-  </div>
-</div>
+<!-- No UID gate: non-Telegram → not_telegram.html, non-admin → index.html silently -->
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){ tg.ready(); tg.expand(); }
+
+// Immediately redirect if not in Telegram
+if(!tg?.initDataUnsafe?.user?.id){
+  window.location.replace('not_telegram.html');
+}
+
+let ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString() || '';
+const IS_DEV = false;
 <div class="toast" id="toast"></div>
 
 <div class="header">
@@ -501,29 +490,29 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 
   <!-- Tower max floors -->
   <div class="settings-block">
-    <div class="settings-title">🗼 БАШНЯ — МАКСИМАЛЬНОЕ КОЛИЧЕСТВО ЭТАЖЕЙ</div>
+    <div class="settings-title">🗼 БАШНЯ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Изменяет высоту башни. Больше этажей — больше риск, выше коэффициент.<br>
-      <b style="color:var(--text)">10</b> — стандарт · <b style="color:var(--text)">5</b> — короткая · <b style="color:var(--text)">20</b> — хардкор<br>
-      <span style="color:var(--muted);font-size:10px">⚠️ Изменение вступает в силу для новых игр. Текущие игры продолжаются со старыми параметрами.</span>
+      Башня останавливается когда коэффициент достигает этого значения.<br>
+      <b style="color:var(--text)">×5.0</b> — стандарт · <b style="color:var(--text)">×3.0</b> — мягко · <b style="color:var(--text)">×10.0</b> — хардкор<br>
+      <span style="color:var(--muted);font-size:10px">⚠️ Вступает в силу для новых игр.</span>
     </p>
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Этажей:</span>
-        <span id="tower-floors-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">10</span>
+        <span style="font-size:12px;color:var(--muted)">Макс. коэф.:</span>
+        <span id="tower-mult-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">×5.0</span>
       </div>
-      <input type="range" id="tower-floors-slider" min="1" max="50" value="10" step="1"
-        oninput="onTowerFloorsSlider(this.value)"
+      <input type="range" id="tower-mult-slider" min="1.5" max="20" value="5" step="0.5"
+        oninput="onTowerMultSlider(this.value)"
         style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px">
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setTowerFloors(5)">5 — Мини</div>
-        <div class="pb" onclick="setTowerFloors(10)">10 — Стандарт</div>
-        <div class="pb" onclick="setTowerFloors(15)">15 — Расш.</div>
-        <div class="pb" onclick="setTowerFloors(20)">20 — Хардкор</div>
+        <div class="pb" onclick="setTowerMult(3)">×3 — Мягко</div>
+        <div class="pb" onclick="setTowerMult(5)">×5 — Стандарт</div>
+        <div class="pb" onclick="setTowerMult(8)">×8 — Расш.</div>
+        <div class="pb" onclick="setTowerMult(15)">×15 — Хардкор</div>
       </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerFloors()">💾 Сохранить</button>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerMult()">💾 Сохранить</button>
     </div>
-    <div id="tower-floors-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+    <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
 </div>
@@ -1369,10 +1358,10 @@ async function loadGl(){
     document.getElementById('mines-max-slider').value = Math.min(100, minesMaxMult);
   } catch{}
   try{
-    const d = await api('/api/admin/tower_max_floors');
-    towerMaxFloors = d.max_floors ?? d.value ?? 10;
-    document.getElementById('tower-floors-val').textContent = towerMaxFloors;
-    document.getElementById('tower-floors-slider').value = towerMaxFloors;
+    const d = await api('/api/admin/tower_max_mult');
+    towerMaxFloors = d.max_mult ?? 5.0;
+    document.getElementById('tower-mult-val').textContent = '×'+parseFloat(towerMaxFloors).toFixed(1);
+    document.getElementById('tower-mult-slider').value = towerMaxFloors;
   } catch{}
 }  // ← закрытие loadGl()
 
@@ -1400,25 +1389,25 @@ async function saveMinesMax(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
-// ── TOWER MAX FLOORS ──
-function onTowerFloorsSlider(v){
-  towerMaxFloors = parseInt(v);
-  const el = document.getElementById('tower-floors-val');
-  el.textContent = towerMaxFloors;
-  el.style.color = towerMaxFloors <= 5 ? 'var(--green)' : towerMaxFloors <= 15 ? 'var(--blue)' : 'var(--red)';
+// ── TOWER MAX MULTIPLIER ──
+function onTowerMultSlider(v){
+  towerMaxFloors = parseFloat(v);
+  const el = document.getElementById('tower-mult-val');
+  el.textContent = '×'+parseFloat(v).toFixed(1);
+  el.style.color = v <= 3 ? 'var(--green)' : v <= 7 ? 'var(--blue)' : 'var(--red)';
 }
-function setTowerFloors(v){
+function setTowerMult(v){
   towerMaxFloors = v;
-  document.getElementById('tower-floors-val').textContent = v;
-  document.getElementById('tower-floors-slider').value = v;
-  const el = document.getElementById('tower-floors-val');
-  el.style.color = v <= 5 ? 'var(--green)' : v <= 15 ? 'var(--blue)' : 'var(--red)';
+  document.getElementById('tower-mult-val').textContent = '×'+parseFloat(v).toFixed(1);
+  document.getElementById('tower-mult-slider').value = v;
+  const el = document.getElementById('tower-mult-val');
+  el.style.color = v <= 3 ? 'var(--green)' : v <= 7 ? 'var(--blue)' : 'var(--red)';
 }
-async function saveTowerFloors(){
+async function saveTowerMult(){
   try{
-    await api('/api/admin/tower_max_floors','POST',{max_floors: towerMaxFloors});
-    const st = document.getElementById('tower-floors-status');
-    st.textContent = '✅ Сохранено: '+towerMaxFloors+' этажей';
+    await api('/api/admin/tower_max_mult','POST',{max_mult: towerMaxFloors});
+    const st = document.getElementById('tower-mult-status');
+    st.textContent = '✅ Сохранено: ×'+parseFloat(towerMaxFloors).toFixed(1);
     st.style.color = 'var(--green)';
     setTimeout(()=>st.textContent='',3000);
   } catch{ toast('Ошибка сохранения','err'); }
@@ -1427,78 +1416,24 @@ async function saveTowerFloors(){
 // ── LOADING OVERLAY ──
 (function startLoadingBar(){
   const bar = document.getElementById('al-bar');
+  if(!bar) return;
   let pct = 0;
-  const iv = setInterval(()=>{
-    pct = Math.min(pct + Math.random()*12 + 4, 90);
-    if(bar) bar.style.width = pct + '%';
-  }, 120);
+  const iv = setInterval(()=>{ pct = Math.min(pct + Math.random()*12+4, 90); bar.style.width=pct+'%'; },120);
   window._stopLoadBar = ()=>{
-    clearInterval(iv);
-    if(bar){ bar.style.width='100%'; }
-    setTimeout(()=>{
-      const el = document.getElementById('admin-loading');
-      if(el){ el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(()=>el.remove(),400); }
-    }, 300);
-  };
-  window._failLoadBar = (msg)=>{
-    clearInterval(iv);
-    if(bar){ bar.style.width='100%'; bar.style.background='var(--red)'; }
-    const subEl = document.getElementById('al-sub');
-    if(subEl) subEl.textContent = msg || 'Доступ запрещён';
-    const iconEl = document.getElementById('al-icon');
-    if(iconEl) iconEl.textContent = '🚫';
+    clearInterval(iv); if(bar) bar.style.width='100%';
+    setTimeout(()=>{ const el=document.getElementById('admin-loading'); if(el){el.style.transition='opacity .4s';el.style.opacity='0';setTimeout(()=>el.remove(),400);}},300);
   };
 })();
-
-// ── UID GATE (browser fallback) ──
-function submitUidGate(){
-  const v = (document.getElementById('gate-uid').value||'').trim();
-  const errEl = document.getElementById('gate-err');
-  if(!v || isNaN(Number(v))){ errEl.textContent='Введите числовой Telegram ID'; return; }
-  errEl.textContent='';
-  ADMIN_UID = v;
-  document.getElementById('al-gate').style.display='none';
-  document.getElementById('al-bar-wrap').style.display='block';
-  document.getElementById('al-sub').textContent='Проверка доступа...';
-  tryAdminAccess();
-}
-
+function submitUidGate(){}
 async function tryAdminAccess(){
   try{
-    const r = await fetch('/api/admin/users',{
-      headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
-    });
-    if(r.status === 403){
-      // Not an admin — send back to main app
-      // index.html reads TG context automatically, so user lands in main.html as normal
-      const bar = document.getElementById('al-bar');
-      if(bar){ bar.style.background='var(--red)'; bar.style.width='100%'; }
-      const sub = document.getElementById('al-sub');
-      if(sub) sub.textContent='Нет доступа...';
-      setTimeout(()=> window.location.replace('index.html'), 900);
-      return;
-    }
-  } catch(e){
-    // Network error — allow through (server may be starting)
-  }
-  window._stopLoadBar();
-  load();
-  loadGl();
-  setInterval(load, 30000);
+    const r = await fetch('/api/admin/users',{headers:{'X-Admin-Uid':ADMIN_UID,'X-Admin-Key':ADMIN_UID}});
+    if(r.status===403){ window.location.replace('index.html'); return; }
+  }catch(e){}
+  window._stopLoadBar(); load(); loadGl(); setInterval(load,30000);
 }
+(async function checkAdminAccess(){ await tryAdminAccess(); })();
 
-// ── ADMIN GUARD ──
-(async function checkAdminAccess(){
-  if(!ADMIN_UID){
-    // Not opened via Telegram — show UID gate
-    document.getElementById('al-sub').textContent = 'Авторизация';
-    document.getElementById('al-bar-wrap').style.display = 'none';
-    document.getElementById('al-gate').style.display = 'block';
-    return; // Wait for submitUidGate()
-  }
-  await tryAdminAccess();
-})();
-const td = new Date().toISOString().split('T')[0];
 document.getElementById('d-to').value = td;
 document.getElementById('d-from').value = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
 

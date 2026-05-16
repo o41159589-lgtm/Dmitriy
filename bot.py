@@ -375,9 +375,9 @@ async def cmd_start(message: Message):
 
     # ── 4. All side-effects AFTER greeting, fire-and-forget ──
 
-    # Referral
+    # Referral — only credit if user is brand new
     parts = message.text.split(maxsplit=1)
-    if len(parts) > 1 and parts[1].startswith("ref_"):
+    if len(parts) > 1 and parts[1].startswith("ref_") and not existed:
         asyncio.create_task(_handle_referral(user, parts[1]))
 
     if len(parts) > 1 and parts[1].startswith("gift_request"):
@@ -398,7 +398,7 @@ async def _safe_send(uid: int, text: str, parse_mode: str = "HTML"):
         logger.warning(f"[_safe_send] uid={uid}: {e}")
 
 async def _handle_referral(user, param: str):
-    """Handle referral bonus in background."""
+    """Credit referrer for a brand-new user joining via referral link."""
     try:
         ref_id = int(param.split("_")[1])
         if ref_id == user.id:
@@ -406,28 +406,29 @@ async def _handle_referral(user, param: str):
         ref_u = await db.get_user(ref_id)
         if not ref_u:
             return
+        plain_name = user.first_name or "Игрок"
+        safe_name  = _html.escape(plain_name)
         nb = await db.add_to_balance(ref_id, 10)
-        await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
+        await db.add_history(ref_id, "ref", 10, f"Реферал: {plain_name}")
         try:
             ref_u2   = await db.get_user(ref_id)
-            ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
-            fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
-            # Log to dedicated Рефералы thread
+            ref_name_plain = ref_u2.get("first_name","?") if ref_u2 else "?"
+            ref_name_safe  = _html.escape(ref_name_plain)
+            fire_log(log_deposit(ref_id, ref_name_plain, 10, nb, f"Реферал (+{plain_name})"))
             try:
                 await bot.send_message(
-                    LOG_GROUP_ID,
+                    LOG_CHAT,
                     f"🔗 <b>Новый реферал</b>\n"
-                    f"Пригласил: <b>{ref_name}</b> (<code>{ref_id}</code>)\n"
-                    f"Перешёл: <b>{user.first_name}</b> (<code>{user.id}</code>)\n"
+                    f"Пригласил: <b>{ref_name_safe}</b> (<code>{ref_id}</code>)\n"
+                    f"Перешёл: <b>{safe_name}</b> (<code>{user.id}</code>)\n"
                     f"Бонус: +10 монет | Баланс: <b>{nb}</b>",
                     message_thread_id=LOG_THREAD_REFS,
                     parse_mode="HTML"
                 )
             except Exception: pass
         except Exception: pass
-        # Notify referrer in PM
         await _safe_send(ref_id,
-            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
+            f"🎉 По вашей ссылке зарегистрировался <b>{safe_name}</b>!\n"
             f"💰 +10 монет → баланс: <b>{nb}</b>")
     except Exception as e:
         logger.warning(f"[_handle_referral]: {e}")
@@ -1540,11 +1541,13 @@ async def api_tower_start(req: web.Request):
     }
 
     tower_max_start = await db.get_tower_max_floors()
+    tower_mult_cap  = await db.get_tower_max_mult()
     return web.json_response({
         "ok":          True,
         "new_balance": new_bal,
         "next_mult":   tower_mult(1),
         "tower_max":   tower_max_start,
+        "mult_cap":    tower_mult_cap,
     })
 
 
@@ -1565,6 +1568,7 @@ async def api_tower_step(req: web.Request):
     if floor != game["floor"]:
         return web.json_response({"error": "wrong floor"}, status=400)
     tower_max = await db.get_tower_max_floors()
+    tower_mult_cap = await db.get_tower_max_mult()
     if floor > tower_max:
         return web.json_response({"error": "tower completed"}, status=400)
 
@@ -1611,7 +1615,7 @@ async def api_tower_step(req: web.Request):
         game["floor"] = floor + 1
         mult        = tower_mult(floor)
         current_win = round(game["bet"] * mult)
-        reached_top = floor >= tower_max
+        reached_top = floor >= tower_max or current_mult >= tower_mult_cap
 
         if reached_top:
             profit = current_win - game["bet"]
@@ -1747,6 +1751,25 @@ async def api_admin_set_tower_max_floors(req):
         fire_log(log_admin_action(uid, aname, "SET_TOWER_MAX_FLOORS", 0, "Все игроки",
             f"Макс. этажей башни → {val}", incognito=False))
     return web.json_response({"ok":True,"max_floors":val})
+
+async def api_admin_get_tower_max_mult(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"max_mult": await db.get_tower_max_mult()})
+
+async def api_admin_set_tower_max_mult(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); val = float(data.get("max_mult", 5.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_tower_max_mult(val)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid)
+            aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_TOWER_MAX_MULT", 0, "Все игроки",
+            f"Макс. коэф. башни → ×{val}", incognito=False))
+    return web.json_response({"ok":True,"max_mult":val})
 
 # ── EURO LUCK ──
 async def api_admin_get_euro_luck(req):
@@ -1991,6 +2014,8 @@ async def start_web():
     app.router.add_post("/api/admin/mines_max_mult",   api_admin_set_mines_max_mult)
     app.router.add_get ("/api/admin/tower_max_floors", api_admin_get_tower_max_floors)
     app.router.add_post("/api/admin/tower_max_floors", api_admin_set_tower_max_floors)
+    app.router.add_get ("/api/admin/tower_max_mult",   api_admin_get_tower_max_mult)
+    app.router.add_post("/api/admin/tower_max_mult",   api_admin_set_tower_max_mult)
     # Euro / Mines luck (independent per-game coefficients)
     app.router.add_get ("/api/admin/euro_luck",        api_admin_get_euro_luck)
     app.router.add_post("/api/admin/euro_luck",        api_admin_set_euro_luck)

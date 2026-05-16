@@ -1032,6 +1032,12 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
+
+// Redirect non-Telegram users immediately
+if(!tg?.initDataUnsafe?.user?.id){
+  window.location.replace('not_telegram.html');
+}
+
 const UID        = tg?.initDataUnsafe?.user?.id || 0;
 const USERNAME   = tg?.initDataUnsafe?.user?.username || '';
 const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
@@ -1087,23 +1093,30 @@ async function loadUser(){
 function updateUI(){
   if(!userData) return;
   const bal = userData.balance??0;
-  // Home page placeholders (may not exist — safe access)
   const _s = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
-  _s('h-bal',   bal);
-  _s('h-spins', userData.spins??0);
-  _s('h-wins',  userData.wins??0);
-  _s('h-won',   userData.total_won??0);
-  // Profile page
-  const initials = (FIRST_NAME||'?')[0].toUpperCase();
-  _s('prof-avatar', initials);
-  _s('prof-name',   FIRST_NAME||'Игрок');
-  _s('prof-uname',  USERNAME ? '@'+USERNAME : '');
-  _s('prof-bal',    bal);
-  _s('prof-spins',  userData.spins??0);
-  _s('prof-wins',   userData.wins??0);
-  _s('prof-won',    userData.total_won??0);
-  _s('r-bal',       bal);
-  _s('shop-bal',    bal);
+  _s('h-bal', bal); _s('h-spins', userData.spins??0);
+  _s('h-wins', userData.wins??0); _s('h-won', userData.total_won??0);
+  // Profile avatar — use TG photo_url if available, else initials
+  const photoUrl = tg?.initDataUnsafe?.user?.photo_url || '';
+  const avatarEl = document.getElementById('prof-avatar');
+  if(avatarEl){
+    if(photoUrl){
+      avatarEl.style.backgroundImage = `url(${photoUrl})`;
+      avatarEl.style.backgroundSize  = 'cover';
+      avatarEl.style.backgroundPosition = 'center';
+      avatarEl.textContent = '';
+    } else {
+      avatarEl.textContent = (FIRST_NAME||'?')[0].toUpperCase();
+    }
+  }
+  _s('prof-name',  FIRST_NAME||'Игрок');
+  _s('prof-uname', USERNAME ? '@'+USERNAME : '');
+  _s('prof-bal',   bal);
+  _s('prof-spins', userData.spins??0);
+  _s('prof-wins',  userData.wins??0);
+  _s('prof-won',   userData.total_won??0);
+  _s('r-bal',      bal);
+  _s('shop-bal',   bal);
 }
 
 // ── NAV ──
@@ -1208,7 +1221,9 @@ async function loadRefHistory(){
     }
     listEl.innerHTML = refs.map(ref => {
       const d   = new Date((ref.created_at||0)*1000);
-      const who = (ref.detail||'Неизвестный').replace('Реферал:','').trim();
+      const raw = (ref.detail||'').replace('Реферал:','').trim() || 'Неизвестный';
+      // Escape HTML entities so names like <Максим> render correctly
+      const who = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const dt  = d.toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})
                 + ' ' + d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
       return `<div class="hi">

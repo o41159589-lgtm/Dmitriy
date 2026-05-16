@@ -364,6 +364,20 @@ async def set_tower_max_floors(val: int):
             "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_max_floors',?)", (str(val),))
         await db_conn.commit()
 
+async def get_tower_max_mult() -> float:
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        async with db_conn.execute("SELECT value FROM settings WHERE key='tower_max_mult'") as cur:
+            row = await cur.fetchone()
+            try: return float(row[0]) if row else 5.0
+            except: return 5.0
+
+async def set_tower_max_mult(val: float):
+    val = max(1.1, min(100.0, val))
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_max_mult',?)", (str(val),))
+        await db_conn.commit()
+
 # ── EURO LUCK ──
 async def get_euro_luck_coeff() -> float:
     async with aiosqlite.connect(DB_PATH) as db_conn:

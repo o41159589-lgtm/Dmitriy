@@ -139,6 +139,15 @@
 .pay-name{font-size:12px;color:var(--muted);margin-bottom:3px;}
 .pay-val{font-family:'Orbitron',monospace;font-size:15px;color:var(--gold);font-weight:700;}
 </style>
+<script>
+// Redirect if not opened via Telegram
+(function(){
+  const tg = window.Telegram?.WebApp;
+  if(!tg?.initDataUnsafe?.user?.id){
+    window.location.replace('not_telegram.html');
+  }
+})();
+</script>
 </head>
 <body>
 <div class="toast" id="toast"></div>

@@ -77,6 +77,15 @@
 .info-l{color:var(--muted);}
 .info-r{color:var(--text);font-weight:600;}
 </style>
+<script>
+// Redirect if not opened via Telegram
+(function(){
+  const tg = window.Telegram?.WebApp;
+  if(!tg?.initDataUnsafe?.user?.id){
+    window.location.replace('not_telegram.html');
+  }
+})();
+</script>
 </head>
 <body>
 <div class="toast" id="toast"></div>

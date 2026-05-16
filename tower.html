@@ -200,6 +200,15 @@
 .fi-label{font-size:12px;color:var(--muted);}
 .fi-val{font-family:'Orbitron',monospace;font-size:13px;color:var(--blue);font-weight:700;margin-left:auto;}
 </style>
+<script>
+// Redirect if not opened via Telegram
+(function(){
+  const tg = window.Telegram?.WebApp;
+  if(!tg?.initDataUnsafe?.user?.id){
+    window.location.replace('not_telegram.html');
+  }
+})();
+</script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
