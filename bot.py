@@ -417,7 +417,7 @@ async def _handle_referral(user, param: str):
             fire_log(log_deposit(ref_id, ref_name_plain, 10, nb, f"Реферал (+{plain_name})"))
             try:
                 await bot.send_message(
-                    LOG_CHAT,
+                    LOG_GROUP_ID,
                     f"🔗 <b>Новый реферал</b>\n"
                     f"Пригласил: <b>{ref_name_safe}</b> (<code>{ref_id}</code>)\n"
                     f"Перешёл: <b>{safe_name}</b> (<code>{user.id}</code>)\n"
@@ -1615,7 +1615,7 @@ async def api_tower_step(req: web.Request):
         game["floor"] = floor + 1
         mult        = tower_mult(floor)
         current_win = round(game["bet"] * mult)
-        reached_top = floor >= tower_max or current_mult >= tower_mult_cap
+        reached_top = floor >= tower_max or mult >= tower_mult_cap
 
         if reached_top:
             profit = current_win - game["bet"]

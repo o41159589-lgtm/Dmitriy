@@ -289,17 +289,17 @@ const IS_DEV = false;
     <div class="settings-title">➕ СОЗДАТЬ ПРОМОКОД</div>
     <div style="margin-bottom:8px">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Код</div>
-      <input class="ag-inp" id="cp-code" type="text" placeholder="TOPLUCK2024" style="width:100%;text-transform:uppercase;font-family:'Orbitron',monospace">
+      <input class="ag-inp" id="cp-code" type="text" placeholder="TOPLUCK2024" style="width:100%;text-transform:uppercase;font-family:'Orbitron',monospace"/>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div>
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Начисление 🪙 (может быть −)</div>
-        <input class="ag-inp" id="cp-reward" type="number" placeholder="100" value="100" style="width:100%;min-width:0;font-family:'Orbitron',monospace;font-size:14px;">
+        <input class="ag-inp" id="cp-reward" type="number" placeholder="100" value="100" style="width:100%;min-width:0;font-family:'Orbitron',monospace;font-size:14px;"/>
       </div>
       <div>
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Активаций</div>
         <div style="display:flex;gap:5px">
-          <input class="ag-inp" id="cp-uses" type="number" placeholder="100" value="100" style="flex:1">
+          <input class="ag-inp" id="cp-uses" type="number" placeholder="100" value="100" style="flex:1"/>
           <button class="abtn pur" id="cp-inf-btn" onclick="toggleCpInf('uses')" title="Безлимит" style="padding:6px 9px;font-size:13px">∞</button>
         </div>
       </div>
@@ -307,7 +307,7 @@ const IS_DEV = false;
     <div style="margin-bottom:12px">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Дата окончания</div>
       <div style="display:flex;gap:5px">
-        <input class="ag-inp" id="cp-expires" type="date" style="flex:1">
+        <input class="ag-inp" id="cp-expires" type="date" style="flex:1"/>
         <button class="abtn pur" id="cp-eternal-btn" onclick="toggleCpInf('eternal')" title="Вечный" style="padding:6px 9px;font-size:11px">∞ всегда</button>
       </div>
     </div>
@@ -336,8 +336,8 @@ const IS_DEV = false;
     </div>
     <div id="custom-wrap" style="display:none">
       <div class="date-row">
-        <span class="date-lbl">С:</span><input class="date-inp" type="date" id="d-from">
-        <span class="date-lbl">По:</span><input class="date-inp" type="date" id="d-to">
+        <span class="date-lbl">С:</span><input class="date-inp" type="date" id="d-from"/>
+        <span class="date-lbl">По:</span><input class="date-inp" type="date" id="d-to"/>
         <button class="abtn set" onclick="loadRev()">OK</button>
       </div>
     </div>
@@ -358,7 +358,7 @@ const IS_DEV = false;
         <div class="it-sub">Действия не логируются в группу логов</div>
       </div>
       <label class="toggle">
-        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)">
+        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)"/>
         <span class="toggle-slider"></span>
       </label>
     </div>
@@ -380,7 +380,7 @@ const IS_DEV = false;
         <span id="gl-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
       </div>
       <input type="range" id="gl-slider" min="0" max="100" value="100" oninput="onGlSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px">
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <div class="pb" onclick="setGlCoeff(0)">0.0 — Всегда проигрыш</div>
         <div class="pb" onclick="setGlCoeff(0.5)">0.5 — Меньше шансов</div>
@@ -403,7 +403,7 @@ const IS_DEV = false;
         <span id="euro-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--green);font-weight:700">1.0</span>
       </div>
       <input type="range" id="euro-slider" min="0" max="100" value="100" oninput="onEuroSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--green);margin-bottom:10px">
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--green);margin-bottom:10px"/>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <div class="pb" onclick="setEuroCoeff(0)">0.0</div>
         <div class="pb" onclick="setEuroCoeff(0.5)">0.5</div>
@@ -426,7 +426,7 @@ const IS_DEV = false;
         <span id="mines-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--red);font-weight:700">1.0</span>
       </div>
       <input type="range" id="mines-slider" min="0" max="100" value="100" oninput="onMinesSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px">
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px"/>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <div class="pb" onclick="setMinesCoeff(0)">0.0</div>
         <div class="pb" onclick="setMinesCoeff(0.5)">0.5</div>
@@ -449,7 +449,7 @@ const IS_DEV = false;
         <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--blue);font-weight:700">1.0</span>
       </div>
       <input type="range" id="tower-luck-slider" min="0" max="100" value="100" oninput="onTowerLuckSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px">
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px"/>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <div class="pb" onclick="setTowerLuck(0)">0.0 — Всегда взрыв</div>
         <div class="pb" onclick="setTowerLuck(0.5)">0.5</div>
@@ -475,7 +475,7 @@ const IS_DEV = false;
       </div>
       <input type="range" id="mines-max-slider" min="1" max="100" value="25" step="0.5"
         oninput="onMinesMaxSlider(this.value)"
-        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px">
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px"/>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <div class="pb" onclick="setMinesMax(2)">2x — Строго</div>
         <div class="pb" onclick="setMinesMax(5)">5x</div>
@@ -503,7 +503,7 @@ const IS_DEV = false;
       </div>
       <input type="range" id="tower-mult-slider" min="1.5" max="20" value="5" step="0.5"
         oninput="onTowerMultSlider(this.value)"
-        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px">
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px"/>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <div class="pb" onclick="setTowerMult(3)">×3 — Мягко</div>
         <div class="pb" onclick="setTowerMult(5)">×5 — Стандарт</div>
@@ -787,18 +787,18 @@ function renderPromos(){
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✏️ Изменить</div>
         <div class="ag-row" style="margin-bottom:6px">
           <span style="font-size:11px;color:var(--muted);white-space:nowrap">Награда:</span>
-          <input class="ag-inp" id="pe-rew-${esc(p.code)}" type="number" value="${p.reward}" style="max-width:90px;text-align:center">
+          <input class="ag-inp" id="pe-rew-${esc(p.code)}" type="number" value="${p.reward}" style="max-width:90px;text-align:center"/>
           <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','reward')">SET</button>
         </div>
         <div class="ag-row" style="margin-bottom:6px">
           <span style="font-size:11px;color:var(--muted);white-space:nowrap">Активаций:</span>
-          <input class="ag-inp" id="pe-uses-${esc(p.code)}" type="number" value="${infUses?'':p.uses_left}" placeholder="∞" style="max-width:90px;text-align:center">
+          <input class="ag-inp" id="pe-uses-${esc(p.code)}" type="number" value="${infUses?'':p.uses_left}" placeholder="∞" style="max-width:90px;text-align:center"/>
           <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','uses')">SET</button>
           <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','uses_inf')" title="Безлимит">∞</button>
         </div>
         <div class="ag-row" style="margin-bottom:10px">
           <span style="font-size:11px;color:var(--muted);white-space:nowrap">До даты:</span>
-          <input class="ag-inp" id="pe-exp-${esc(p.code)}" type="date" value="${eternal?'':new Date(p.expires_at*1000).toISOString().split('T')[0]}" style="max-width:140px">
+          <input class="ag-inp" id="pe-exp-${esc(p.code)}" type="date" value="${eternal?'':new Date(p.expires_at*1000).toISOString().split('T')[0]}" style="max-width:140px"/>
           <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','expires')">SET</button>
           <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','eternal')" title="Вечный">∞</button>
         </div>
@@ -963,7 +963,7 @@ function renderUsers(list){
       <div class="sb"><div class="sb-v">${s.lucky}</div><div class="sb-l">Подкручено</div></div>
       <div class="sb"><div class="sb-v" style="color:var(--red)">${s.banned}</div><div class="sb-l">Заблок.</div></div>
     </div>
-    <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)">
+    <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)"/>
     <div id="ulist">${list.map(uCard).join('')}</div>`;
 }
 
@@ -1029,11 +1029,11 @@ function uCard(u){
       <div class="ag">
         <div class="ag-l">💰 Управление балансом</div>
         <div class="ag-row">
-          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0">
+          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0"/>
           <button class="abtn set" onclick="sbal(event,${u.user_id})">SET</button>
         </div>
         <div class="ag-row">
-          <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1">
+          <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1"/>
           <button class="abtn add" onclick="dbal(event,${u.user_id},1)">+Начислить</button>
           <button class="abtn sub" onclick="dbal(event,${u.user_id},-1)">−Снять</button>
         </div>
@@ -1050,7 +1050,7 @@ function uCard(u){
           <div class="lbtn luck100 ${u.luck_pct===100?'a':''}" onclick="sluck(event,${u.user_id},100)">100%★</div>
         </div>
         <div class="ag-row" style="margin-top:6px">
-          <input class="ag-inp" id="li-${u.user_id}" type="number" min="0" max="100" placeholder="0–100">
+          <input class="ag-inp" id="li-${u.user_id}" type="number" min="0" max="100" placeholder="0–100"/>
           <button class="abtn pur" onclick="sluck_c(event,${u.user_id})">Задать</button>
         </div>
       </div>
@@ -1058,7 +1058,7 @@ function uCard(u){
       <div class="ag">
         <div class="ag-l">📩 Сообщение / ⛔ Бан</div>
         <div class="ag-row">
-          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..." style="font-family:'Rajdhani',sans-serif;font-size:13px;">
+          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..." style="font-family:'Rajdhani',sans-serif;font-size:13px;"/>
           <button class="abtn msg" onclick="sendMsg(event,${u.user_id})">📨</button>
         </div>
         <div class="ag-row">
