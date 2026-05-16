@@ -249,18 +249,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 </head>
 <body>
 <!-- No UID gate: non-Telegram → not_telegram.html, non-admin → index.html silently -->
-
 <script>
-const tg = window.Telegram?.WebApp;
-if(tg){ tg.ready(); tg.expand(); }
-
-// Immediately redirect if not in Telegram
-if(!tg?.initDataUnsafe?.user?.id){
-  window.location.replace('not_telegram.html');
-}
-
-let ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString() || '';
-const IS_DEV = false;
+(function(){
+  const _tg = window.Telegram?.WebApp;
+  if(_tg){ _tg.ready(); _tg.expand(); }
+  if(!_tg?.initDataUnsafe?.user?.id){
+    window.location.replace('not_telegram.html');
+  }
+})();
+</script>
 <div class="toast" id="toast"></div>
 
 <div class="header">
@@ -369,9 +366,9 @@ const IS_DEV = false;
   <div class="settings-block">
     <div class="settings-title">🌐 ГЛОБАЛЬНЫЙ КОЭФФИЦИЕНТ УДАЧИ</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Применяется ко <b style="color:var(--text)">всем режимам сразу</b> (Рулетка + Мины + Башня).<br>
+      Применяется ко <b style="color:var(--text)">всем режимам сразу</b> (Рулетка + Мины + Башня).<br/>
       <b style="color:var(--green)">1.0</b> — честная игра ·
-      <b style="color:var(--red)">0.0</b> — казино всегда выигрывает<br>
+      <b style="color:var(--red)">0.0</b> — казино всегда выигрывает<br/>
       <span style="color:rgba(255,255,255,.3);font-size:10px">Личная удача 100% / 0% остаётся абсолютной при любом коэффициенте</span>
     </p>
     <div class="slider-box" style="margin-bottom:10px">
@@ -464,8 +461,8 @@ const IS_DEV = false;
   <div class="settings-block">
     <div class="settings-title">💎 МИНЫ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Ограничивает максимальный множитель выплаты в игре «Мины».<br>
-      <b style="color:var(--text)">25x</b> — без ограничений · <b style="color:var(--text)">2x</b> — минимальный выигрыш<br>
+      Ограничивает максимальный множитель выплаты в игре «Мины».<br/>
+      <b style="color:var(--text)">25x</b> — без ограничений · <b style="color:var(--text)">2x</b> — минимальный выигрыш<br/>
       <span style="color:var(--muted);font-size:10px">При 3 бомбах максимум теоретически ~24x; при 24 бомбах — ~24x</span>
     </p>
     <div class="slider-box" style="margin-bottom:10px">
@@ -492,8 +489,8 @@ const IS_DEV = false;
   <div class="settings-block">
     <div class="settings-title">🗼 БАШНЯ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Башня останавливается когда коэффициент достигает этого значения.<br>
-      <b style="color:var(--text)">×5.0</b> — стандарт · <b style="color:var(--text)">×3.0</b> — мягко · <b style="color:var(--text)">×10.0</b> — хардкор<br>
+      Башня останавливается когда коэффициент достигает этого значения.<br/>
+      <b style="color:var(--text)">×5.0</b> — стандарт · <b style="color:var(--text)">×3.0</b> — мягко · <b style="color:var(--text)">×10.0</b> — хардкор<br/>
       <span style="color:var(--muted);font-size:10px">⚠️ Вступает в силу для новых игр.</span>
     </p>
     <div class="slider-box" style="margin-bottom:10px">
