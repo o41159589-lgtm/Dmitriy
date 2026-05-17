@@ -606,7 +606,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 <div class="toast" id="toast"></div>
 <div class="liquid-bg"></div>
 <!-- ══════════════ HOME ══════════════ -->
-<div class="page active" id="page-home">
+<div class="page" id="page-home">
   <div class="home-content">
     <div class="hero">
       <div class="hero-logo">
@@ -752,6 +752,21 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <button class="prof-topup-btn" onclick="openTopup()">+ Пополнить</button>
     </div>
 
+    <!-- Level bar -->
+    <div style="background:var(--card-bg);border:1px solid var(--card-br);border-radius:var(--r);padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:1px">УРОВЕНЬ</div>
+        <div style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--gold)" id="prof-level">0</div>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden">
+        <div id="prof-xp-bar" style="height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:3px;width:0%;transition:width .6s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px">
+        <div style="font-size:10px;color:var(--muted)">XP: <span id="prof-xp">0</span></div>
+        <div style="font-size:10px;color:var(--muted)">до ур. <span id="prof-xp-next">100</span></div>
+      </div>
+    </div>
+
     <!-- Stats -->
     <div class="prof-stats-row">
       <div class="prof-stat"><div class="prof-stat-val" id="prof-spins">—</div><div class="prof-stat-lbl">Игр</div></div>
@@ -777,6 +792,12 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         <span class="prof-menu-right" id="prof-refs">0</span>
         <span class="prof-menu-arr">›</span>
       </div>
+      <div class="prof-menu-row" onclick="showTasksPanel()">
+        <div class="prof-menu-icon" style="background:linear-gradient(135deg,#30D158,#34C759)">✅</div>
+        <div class="prof-menu-label">Задания</div>
+        <span class="prof-menu-right" id="prof-tasks-done" style="color:var(--green)"></span>
+        <span class="prof-menu-arr">›</span>
+      </div>
       <div class="prof-menu-row" onclick="showPromoPanel()">
         <div class="prof-menu-icon" style="background:linear-gradient(135deg,#f5c542,#e8a800)">🎟</div>
         <div class="prof-menu-label">Промокод</div>
@@ -785,7 +806,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <div class="prof-menu-row" style="cursor:default" onclick="void 0">
         <div class="prof-menu-label" style="padding-left:2px">Звуки игр</div>
         <label class="toggle" style="flex-shrink:0">
-          <input type="checkbox" id="prof-sounds" onchange="saveSounds(this.checked)">
+          <input type="checkbox" id="prof-sounds" onchange="saveSounds(this.checked)"/>
           <span class="toggle-slider"></span>
         </label>
       </div>
@@ -832,7 +853,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
             style="flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(245,197,66,.25);border-radius:12px;
                    padding:11px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:13px;outline:none;text-transform:uppercase;"
             oninput="this.value=this.value.toUpperCase()"
-            onkeydown="if(event.key==='Enter')activatePromo()">
+            onkeydown="if(event.key==='Enter')activatePromo()"/>
           <button onclick="activatePromo()"
             style="padding:11px 16px;background:linear-gradient(135deg,var(--gold2),var(--gold));
                    border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;
@@ -842,11 +863,20 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       </div>
     </div>
 
+    <!-- Tasks sub-panel -->
+    <div id="prof-tasks-panel" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button onclick="hideTasksPanel()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:10px;padding:7px 12px;color:var(--gold);font-size:18px;cursor:pointer;font-weight:700">‹</button>
+        <span style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">ЗАДАНИЯ</span>
+      </div>
+      <div id="tasks-list"><div class="empty"><div class="empty-i">⏳</div><p>Загружаем задания...</p></div></div>
+    </div>
+
   </div>
 </div>
 
 <!-- ══════════════ GAMES ══════════════ -->
-<div class="page" id="page-games">
+<div class="page active" id="page-games">
   <div class="games-content">
     <div class="games-header">
       <div class="games-title">🎮 Выбери игру</div>
@@ -1004,19 +1034,19 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   </div>
 </div>
 
-<!-- ══════════════ NAV (5 tabs: Главная, Инвентарь, Игры, История, Магазин) ══════════════ -->
+<!-- ══════════════ NAV ══════════════ -->
 <nav class="nav">
-  <div class="nav-ind" id="nav-ind" style="width:20%"></div>
-  <button class="nav-btn active" onclick="showPage('home',this,0)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Главная
+  <div class="nav-ind" id="nav-ind" style="width:20%;left:40%"></div>
+  <button class="nav-btn" onclick="showPage('home',this,0)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    Инфо
   </button>
   <button class="nav-btn" onclick="showPage('inventory',this,1)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     Профиль
   </button>
-  <button class="nav-btn" onclick="showPage('games',this,2)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+  <button class="nav-btn active" onclick="showPage('games',this,2)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 10v4M10 12h4"/><circle cx="17" cy="12" r="1"/><circle cx="19" cy="12" r="0"/></svg>
     Игры
   </button>
   <button class="nav-btn" onclick="showPage('history',this,3)">
@@ -1096,17 +1126,16 @@ function updateUI(){
   const _s = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   _s('h-bal', bal); _s('h-spins', userData.spins??0);
   _s('h-wins', userData.wins??0); _s('h-won', userData.total_won??0);
-  // Profile avatar — use TG photo_url if available, else initials
   const photoUrl = tg?.initDataUnsafe?.user?.photo_url || '';
   const avatarEl = document.getElementById('prof-avatar');
   if(avatarEl){
     if(photoUrl){
-      avatarEl.style.backgroundImage = `url(${photoUrl})`;
-      avatarEl.style.backgroundSize  = 'cover';
-      avatarEl.style.backgroundPosition = 'center';
-      avatarEl.textContent = '';
+      avatarEl.style.backgroundImage=`url(${photoUrl})`;
+      avatarEl.style.backgroundSize='cover';
+      avatarEl.style.backgroundPosition='center';
+      avatarEl.textContent='';
     } else {
-      avatarEl.textContent = (FIRST_NAME||'?')[0].toUpperCase();
+      avatarEl.textContent=(FIRST_NAME||'?')[0].toUpperCase();
     }
   }
   _s('prof-name',  FIRST_NAME||'Игрок');
@@ -1117,6 +1146,8 @@ function updateUI(){
   _s('prof-won',   userData.total_won??0);
   _s('r-bal',      bal);
   _s('shop-bal',   bal);
+  // Level XP bar
+  updateLevelUI(userData.xp||0, userData.level||0);
 }
 
 // ── NAV ──
@@ -1199,12 +1230,111 @@ function _hideSubPanels(){
     const el=document.getElementById(p); if(el) el.style.display='none';
   });
 }
+function _showSubPanel(id){
+  _profCards().forEach(el=>el.style.display='none');
+  ["prof-gifts-panel","prof-ref-panel","prof-promo-panel","prof-tasks-panel"].forEach(p=>{
+    const el=document.getElementById(p); if(el) el.style.display='none';
+  });
+  const el=document.getElementById(id); if(el) el.style.display='block';
+}
+function _hideSubPanels(){
+  _profCards().forEach(el=>el.style.display='');
+  ["prof-gifts-panel","prof-ref-panel","prof-promo-panel","prof-tasks-panel"].forEach(p=>{
+    const el=document.getElementById(p); if(el) el.style.display='none';
+  });
+}
 function showGiftsPanel(){ _showSubPanel("prof-gifts-panel"); loadGifts(); }
 function hideGiftsPanel(){ _hideSubPanels(); }
 function showRefPanel()  { _showSubPanel("prof-ref-panel");   loadRefHistory(); }
 function hideRefPanel()  { _hideSubPanels(); }
 function showPromoPanel(){ _showSubPanel("prof-promo-panel"); setTimeout(()=>{const el=document.getElementById("promo-inp");if(el)el.focus();},150); }
 function hidePromoPanel(){ _hideSubPanels(); }
+function showTasksPanel(){ _showSubPanel("prof-tasks-panel"); loadTasks(); }
+function hideTasksPanel(){ _hideSubPanels(); }
+
+// ── XP / LEVEL helpers ──
+function xpForLevel(lvl){ return lvl*(lvl+1)*50; }
+function updateLevelUI(xp, level){
+  const _s = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  _s('prof-level', level);
+  _s('prof-xp', xp);
+  const nextXp = xpForLevel(level+1);
+  _s('prof-xp-next', nextXp);
+  const prevXp = xpForLevel(level);
+  const pct = nextXp > prevXp ? Math.round((xp-prevXp)/(nextXp-prevXp)*100) : 100;
+  const bar = document.getElementById('prof-xp-bar');
+  if(bar) bar.style.width = Math.min(100,pct)+'%';
+}
+
+// ── TASKS ──
+let _tasksCache = null;
+async function loadTasks(){
+  const listEl = document.getElementById('tasks-list');
+  if(!listEl) return;
+  listEl.innerHTML = '<div class="empty"><div class="empty-i">⏳</div><p>Загружаем...</p></div>';
+  try{
+    const r = await get(`/api/tasks?user_id=${UID}`);
+    const tasks = r.tasks||[];
+    _tasksCache = tasks;
+    const done = tasks.filter(t=>t.completed).length;
+    const dEl = document.getElementById('prof-tasks-done');
+    if(dEl) dEl.textContent = done ? `${done}/${tasks.length}` : '';
+    if(!tasks.length){
+      listEl.innerHTML='<div class="empty"><div class="empty-i">📋</div><p>Заданий пока нет</p></div>';
+      return;
+    }
+    const ICONS = {channel:'📢',group:'👥',bot:'🤖',spend:'🎰',deposit:'💳'};
+    listEl.innerHTML = tasks.map(t=>`
+      <div style="background:var(--card-bg);border:1px solid ${t.completed?'rgba(48,209,88,.25)':'var(--card-br)'};
+        border-radius:16px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:12px;background:${t.completed?'rgba(48,209,88,.15)':'rgba(255,255,255,.06)'};
+          display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
+          ${t.completed ? '✅' : (ICONS[t.type]||'📋')}
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px;color:${t.completed?'var(--muted)':'var(--text)'}">${t.title}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${t.description||''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold);font-weight:700">+${t.reward}🪙</div>
+          ${!t.completed ? `<button onclick="doTask(${t.id},'${t.type}','${t.target||''}')"
+            style="margin-top:5px;padding:5px 10px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+              border:none;border-radius:8px;color:#000;font-size:11px;font-weight:700;cursor:pointer">
+            Выполнить</button>` : '<div style="font-size:11px;color:var(--green);margin-top:3px">Готово ✓</div>'}
+        </div>
+      </div>`).join('');
+  } catch(e){
+    listEl.innerHTML='<div class="empty"><div class="empty-i">⚠️</div><p>Ошибка загрузки</p></div>';
+  }
+}
+
+async function doTask(taskId, type, target){
+  // For channel/group/bot — open link first, then claim
+  if(target && (type==='channel'||type==='group'||type==='bot')){
+    const url = target.startsWith('http') ? target : `https://t.me/${target.replace('@','')}`;
+    tg?.openTelegramLink ? tg.openTelegramLink(url) : window.open(url,'_blank');
+    setTimeout(()=>claimTask(taskId), 2000);
+  } else {
+    claimTask(taskId);
+  }
+}
+
+async function claimTask(taskId){
+  try{
+    const r = await fetch('/api/tasks/complete',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id:UID, task_id:taskId})
+    }).then(r=>r.json());
+    if(r.ok){
+      toast(`✅ +${r.reward} монет за задание!`,'ok');
+      playSound('coin');
+      if(userData){ userData.balance = r.new_balance; updateUI(); }
+      await loadTasks();
+    } else {
+      toast(r.error||'Ошибка','err');
+    }
+  } catch(e){ toast('Ошибка','err'); }
+}
 
 async function loadRefHistory(){
   const listEl = document.getElementById('ref-history-list');
@@ -1534,12 +1664,14 @@ async function activatePromo(){
 // ── INIT ──
 window.addEventListener('load', async ()=>{
   // Handle ?tab=games from back button in roulette pages
+  // Default to games tab (or override from URL param)
   const urlParams = new URLSearchParams(window.location.search);
-  const tabParam = urlParams.get('tab');
-  if(tabParam === 'games'){
-    const gamesBtn = document.querySelector('[onclick*="games"]');
-    if(gamesBtn) showPage('games', gamesBtn, 2);
-  }
+  const tabParam  = urlParams.get('tab') || 'games';
+  const tabIndex  = {home:0, inventory:1, games:2, history:3, shop:4};
+  const idx = tabIndex[tabParam] ?? 2;
+  const btn = document.querySelector(`[onclick*="'${tabParam}'"]`);
+  if(btn) showPage(tabParam, btn, idx);
+  else    showPage('games', document.querySelectorAll('.nav-btn')[2], 2);
   await initUser();
   setInterval(loadUser, 15000);
 });

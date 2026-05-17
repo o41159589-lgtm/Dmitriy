@@ -54,6 +54,24 @@ async def init_db():
             INSERT OR IGNORE INTO settings(key,value) VALUES ('tower_luck_coeff','1.0');
             INSERT OR IGNORE INTO settings(key,value) VALUES ('mines_max_mult','25.0');
             INSERT OR IGNORE INTO settings(key,value) VALUES ('tower_max_floors','10');
+            CREATE TABLE IF NOT EXISTS tasks (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                type        TEXT NOT NULL,
+                title       TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                reward      INTEGER NOT NULL,
+                target      TEXT DEFAULT '',
+                target_count INTEGER DEFAULT 1,
+                active      INTEGER DEFAULT 1,
+                created_at  REAL DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS user_tasks (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL,
+                task_id     INTEGER NOT NULL,
+                completed_at REAL DEFAULT 0,
+                UNIQUE(user_id, task_id)
+            );
             CREATE TABLE IF NOT EXISTS promo_codes (
                 code        TEXT PRIMARY KEY,
                 reward      INTEGER DEFAULT 0,
@@ -74,8 +92,16 @@ async def init_db():
         # Migration: add banned column if missing
         try:
             await db.execute('ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0')
-        except Exception:
-            pass
+        except Exception: pass
+        try:
+            await db.execute('ALTER TABLE users ADD COLUMN referrer_id INTEGER DEFAULT NULL')
+        except Exception: pass
+        try:
+            await db.execute('ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0')
+        except Exception: pass
+        try:
+            await db.execute('ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 0')
+        except Exception: pass
         # Migration: add new settings rows if missing (for existing DBs)
         for key, default in [
             ('euro_luck_coeff',  '1.0'),
@@ -364,20 +390,6 @@ async def set_tower_max_floors(val: int):
             "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_max_floors',?)", (str(val),))
         await db_conn.commit()
 
-async def get_tower_max_mult() -> float:
-    async with aiosqlite.connect(DB_PATH) as db_conn:
-        async with db_conn.execute("SELECT value FROM settings WHERE key='tower_max_mult'") as cur:
-            row = await cur.fetchone()
-            try: return float(row[0]) if row else 5.0
-            except: return 5.0
-
-async def set_tower_max_mult(val: float):
-    val = max(1.1, min(100.0, val))
-    async with aiosqlite.connect(DB_PATH) as db_conn:
-        await db_conn.execute(
-            "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_max_mult',?)", (str(val),))
-        await db_conn.commit()
-
 # ── EURO LUCK ──
 async def get_euro_luck_coeff() -> float:
     async with aiosqlite.connect(DB_PATH) as db_conn:
@@ -465,3 +477,121 @@ async def get_promo_activations(code: str):
     async with aiosqlite.connect(DB_PATH) as db_conn:
         return await _rows(db_conn,
             "SELECT * FROM promo_activations WHERE code=? ORDER BY activated_at DESC", (code,))
+# ── XP / LEVELS ──
+def xp_for_level(level: int) -> int:
+    """XP required to REACH this level from 0. Progressive like Telegram."""
+    return level * (level + 1) * 50  # L1=100, L2=300, L3=600, L4=1000...
+
+def calc_level(xp: int) -> int:
+    """Return level for given XP amount."""
+    lvl = 0
+    while xp_for_level(lvl + 1) <= xp:
+        lvl += 1
+    return lvl
+
+async def add_xp(uid: int, xp_gain: int):
+    """Add XP and update level if changed."""
+    if xp_gain <= 0: return
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        db_conn.row_factory = aiosqlite.Row
+        async with db_conn.execute("SELECT xp, level FROM users WHERE user_id=?", (uid,)) as cur:
+            row = await cur.fetchone()
+        if not row: return
+        new_xp  = (row['xp'] or 0) + xp_gain
+        new_lvl = calc_level(new_xp)
+        await db_conn.execute(
+            "UPDATE users SET xp=?, level=? WHERE user_id=?",
+            (new_xp, new_lvl, uid))
+        await db_conn.commit()
+        return new_lvl
+
+async def set_level(uid: int, level: int):
+    xp = xp_for_level(level)
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "UPDATE users SET level=?, xp=? WHERE user_id=?", (level, xp, uid))
+        await db_conn.commit()
+
+# ── REFERRER ──
+async def set_referrer(uid: int, referrer_id: int):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "UPDATE users SET referrer_id=? WHERE user_id=? AND referrer_id IS NULL",
+            (referrer_id, uid))
+        await db_conn.commit()
+
+async def get_referrer(uid: int):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        db_conn.row_factory = aiosqlite.Row
+        async with db_conn.execute(
+            "SELECT referrer_id FROM users WHERE user_id=?", (uid,)) as cur:
+            row = await cur.fetchone()
+            return row['referrer_id'] if row else None
+
+# ── TASKS ──
+async def get_tasks(active_only=True):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        sql = "SELECT * FROM tasks"
+        if active_only: sql += " WHERE active=1"
+        sql += " ORDER BY created_at DESC"
+        return await _rows(db_conn, sql)
+
+async def get_task(task_id: int):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        return await _row(db_conn, "SELECT * FROM tasks WHERE id=?", (task_id,))
+
+async def create_task(type_: str, title: str, description: str, reward: int, target: str, target_count: int):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        cur = await db_conn.execute(
+            "INSERT INTO tasks(type,title,description,reward,target,target_count,active,created_at)"
+            " VALUES(?,?,?,?,?,?,1,?)",
+            (type_, title, description, reward, target, target_count, time.time()))
+        await db_conn.commit()
+        return cur.lastrowid
+
+async def update_task(task_id: int, **fields):
+    if not fields: return
+    parts = ", ".join(f"{k}=?" for k in fields)
+    vals  = list(fields.values()) + [task_id]
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(f"UPDATE tasks SET {parts} WHERE id=?", vals)
+        await db_conn.commit()
+
+async def delete_task(task_id: int):
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute("DELETE FROM tasks WHERE id=?", (task_id,))
+        await db_conn.execute("DELETE FROM user_tasks WHERE task_id=?", (task_id,))
+        await db_conn.commit()
+
+async def get_user_tasks(uid: int):
+    """Return list of task_ids completed by this user."""
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        rows = await _rows(db_conn,
+            "SELECT task_id FROM user_tasks WHERE user_id=?", (uid,))
+        return [r['task_id'] for r in rows]
+
+async def complete_task(uid: int, task_id: int) -> bool:
+    """Mark task as completed. Returns True if newly completed."""
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        try:
+            await db_conn.execute(
+                "INSERT INTO user_tasks(user_id,task_id,completed_at) VALUES(?,?,?)",
+                (uid, task_id, time.time()))
+            await db_conn.commit()
+            return True
+        except Exception:
+            return False
+
+async def get_tower_max_mult() -> float:
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        async with db_conn.execute("SELECT value FROM settings WHERE key='tower_max_mult'") as cur:
+            row = await cur.fetchone()
+            try: return float(row[0]) if row else 5.0
+            except: return 5.0
+
+async def set_tower_max_mult(val: float):
+    val = max(1.1, min(100.0, val))
+    async with aiosqlite.connect(DB_PATH) as db_conn:
+        await db_conn.execute(
+            "INSERT OR REPLACE INTO settings(key,value) VALUES('tower_max_mult',?)", (str(val),))
+        await db_conn.commit()

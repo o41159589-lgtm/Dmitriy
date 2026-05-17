@@ -30,8 +30,6 @@ ADMIN_URL   = os.getenv("ADMIN_URL", "")
 PORT        = int(os.getenv("PORT", 8080))
 ADMIN_IDS   = [int(x) for x in os.getenv("ADMIN_IDS","").split(",") if x.strip()]
 DEV_IDS     = [int(x) for x in os.getenv("DEV_IDS","").split(",") if x.strip()]
-# Users allowed to use /miness2 (see mine positions in active games)
-MINESS2_ALLOWED = [int(x) for x in os.getenv("MINESS2_ALLOWED","").split(",") if x.strip()] + ADMIN_IDS + DEV_IDS
 
 LOG_GROUP_ID       = int(os.getenv("LOG_GROUP_ID", 0))
 LOG_THREAD_USERS   = int(os.getenv("LOG_THREAD_USERS",   1))
@@ -42,7 +40,6 @@ LOG_THREAD_DEPOSIT = int(os.getenv("LOG_THREAD_DEPOSIT", 4))
 LOG_THREAD_BROADCAST=int(os.getenv("LOG_THREAD_BROADCAST",5))
 LOG_THREAD_ADMIN   = int(os.getenv("LOG_THREAD_ADMIN",   6))
 LOG_THREAD_BACKUP  = int(os.getenv("LOG_THREAD_BACKUP",  7))
-LOG_THREAD_REFS    = int(os.getenv("LOG_THREAD_REFS",    9))  # Рефералы тема
 
 GTA_MIN_PLAYERS = int(os.getenv("GTA_MIN_PLAYERS", 2))
 GTA_SPIN_DELAY  = int(os.getenv("GTA_SPIN_DELAY",  15))
@@ -375,9 +372,9 @@ async def cmd_start(message: Message):
 
     # ── 4. All side-effects AFTER greeting, fire-and-forget ──
 
-    # Referral — only credit if user is brand new
+    # Referral
     parts = message.text.split(maxsplit=1)
-    if len(parts) > 1 and parts[1].startswith("ref_") and not existed:
+    if len(parts) > 1 and parts[1].startswith("ref_"):
         asyncio.create_task(_handle_referral(user, parts[1]))
 
     if len(parts) > 1 and parts[1].startswith("gift_request"):
@@ -398,7 +395,7 @@ async def _safe_send(uid: int, text: str, parse_mode: str = "HTML"):
         logger.warning(f"[_safe_send] uid={uid}: {e}")
 
 async def _handle_referral(user, param: str):
-    """Credit referrer for a brand-new user joining via referral link."""
+    """Handle referral bonus in background."""
     try:
         ref_id = int(param.split("_")[1])
         if ref_id == user.id:
@@ -406,29 +403,16 @@ async def _handle_referral(user, param: str):
         ref_u = await db.get_user(ref_id)
         if not ref_u:
             return
-        plain_name = user.first_name or "Игрок"
-        safe_name  = _html.escape(plain_name)
         nb = await db.add_to_balance(ref_id, 10)
-        await db.add_history(ref_id, "ref", 10, f"Реферал: {plain_name}")
+        await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
+        await db.set_referrer(user.id, ref_id)
         try:
-            ref_u2   = await db.get_user(ref_id)
-            ref_name_plain = ref_u2.get("first_name","?") if ref_u2 else "?"
-            ref_name_safe  = _html.escape(ref_name_plain)
-            fire_log(log_deposit(ref_id, ref_name_plain, 10, nb, f"Реферал (+{plain_name})"))
-            try:
-                await bot.send_message(
-                    LOG_GROUP_ID,
-                    f"🔗 <b>Новый реферал</b>\n"
-                    f"Пригласил: <b>{ref_name_safe}</b> (<code>{ref_id}</code>)\n"
-                    f"Перешёл: <b>{safe_name}</b> (<code>{user.id}</code>)\n"
-                    f"Бонус: +10 монет | Баланс: <b>{nb}</b>",
-                    message_thread_id=LOG_THREAD_REFS,
-                    parse_mode="HTML"
-                )
-            except Exception: pass
+            ref_u2 = await db.get_user(ref_id)
+            ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
+            fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
         except Exception: pass
         await _safe_send(ref_id,
-            f"🎉 По вашей ссылке зарегистрировался <b>{safe_name}</b>!\n"
+            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
             f"💰 +10 монет → баланс: <b>{nb}</b>")
     except Exception as e:
         logger.warning(f"[_handle_referral]: {e}")
@@ -469,69 +453,6 @@ async def cmd_admin(message: Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="🛠 Открыть панель", web_app=WebAppInfo(url=ADMIN_URL))]])
     await message.answer("🛠 <b>Панель управления TopLuck</b>", reply_markup=kb, parse_mode="HTML")
-
-@dp.message(Command("miness2"))
-async def cmd_miness2(message: Message):
-    """Show active mine positions for a specific player's game (privileged users only)."""
-    uid = message.from_user.id
-    if uid not in MINESS2_ALLOWED:
-        await message.answer("⛔ У вас нет доступа к этой команде.")
-        return
-
-    # Parse optional target UID: /miness2 [target_uid]
-    parts = message.text.split()
-    if len(parts) > 1:
-        try:
-            target_uid = int(parts[1])
-        except ValueError:
-            await message.answer("❌ Укажите числовой Telegram ID: <code>/miness2 123456789</code>", parse_mode="HTML")
-            return
-    else:
-        target_uid = uid  # Show own game if no argument
-
-    # Check active_mines (global dict from mines game)
-    game = active_mines.get(target_uid)
-    if not game:
-        await message.answer(
-            f"💣 <b>Мины — активная игра не найдена</b>\n"
-            f"UID: <code>{target_uid}</code>\n\n"
-            f"Игрок не играет в данный момент.",
-            parse_mode="HTML"
-        )
-        return
-
-    grid_size  = 25
-    bombs      = game.get("bomb_set", set())   # set of bomb indices
-    revealed   = set(game.get("revealed", []))
-    bet        = game.get("bet", 0)
-    bomb_count = game.get("bombs", len(bombs))  # integer count
-    side       = 5
-
-    # Build visual grid
-    rows = []
-    for row in range(side):
-        cells = []
-        for col in range(side):
-            idx = row * side + col
-            if idx in revealed:
-                cells.append("💎")        # already revealed (safe)
-            elif idx in bombs:
-                cells.append("💣")        # mine (hidden to player, shown here)
-            else:
-                cells.append("⬜")        # unrevealed safe cell
-        rows.append(" ".join(cells))
-
-    grid_str = "\n".join(rows)
-    mine_positions = ", ".join(str(b) for b in sorted(bombs))
-
-    await message.answer(
-        f"💣 <b>Мины — позиции игрока</b>\n"
-        f"UID: <code>{target_uid}</code> | Ставка: <b>{bet}🪙</b> | Бомб: <b>{bomb_count}</b>\n\n"
-        f"<code>{grid_str}</code>\n\n"
-        f"💣 Индексы бомб: <code>{mine_positions}</code>\n"
-        f"(💎 = открыто, ⬜ = безопасно, 💣 = мина)",
-        parse_mode="HTML"
-    )
 
 # ── Admin commands ──
 
@@ -942,9 +863,10 @@ async def api_spin(req: web.Request):
     if won:
         gain = bet_amt * mult
         profit = gain - bet_amt
-        new_bal = await db.add_to_balance(uid, profit)
-        await db.add_history(uid, "win", profit, f"Европ. рулетка: {rn} {rc}, x{mult}")
-        await db.update_spin_stats(uid, True, profit, 0)
+        new_bal = await db.add_to_balance(uid, gain - bet_amt)
+        await db.add_history(uid, "win", gain, f"Европ. рулетка: {rn} {rc}, x{mult}")
+        await db.update_spin_stats(uid, True, gain, 0)
+        asyncio.create_task(db.add_xp(uid, max(1, (gain - bet_amt) // 10)))
         try:
             ico = "🟢" if rc=="green" else "🔴" if rc=="red" else "⚫"
             await bot.send_message(uid,
@@ -955,6 +877,8 @@ async def api_spin(req: web.Request):
         new_bal = await db.add_to_balance(uid, -bet_amt)
         await db.add_history(uid, "lose", bet_amt, f"Европ. рулетка: {rn} {rc}")
         await db.update_spin_stats(uid, False, 0, bet_amt)
+        asyncio.create_task(_passive_ref_income(uid, bet_amt))
+        asyncio.create_task(db.add_xp(uid, max(1, bet_amt // 100)))
 
     u2 = await db.get_user(uid)
     name = u2.get("first_name","?") if u2 else "?"
@@ -1070,11 +994,9 @@ async def _gta_run(lid):
 
     commission = _comm(pot)
     payout = pot - commission
-    winner_bet = winner_row["amount"]
-    net_win = payout - winner_bet
-    await db.add_to_balance(wid, net_win)
-    await db.add_history(wid,"win",net_win,f"GTA #{lid}: банк {pot}, ставка {winner_bet}")
-    await db.update_spin_stats(wid, True, net_win, 0)
+    await db.add_to_balance(wid, payout)
+    await db.add_history(wid,"win",payout,f"GTA #{lid}: банк {pot}, комиссия {commission}")
+    await db.update_spin_stats(wid, True, payout, 0)
     wu = await db.get_user(wid)
     wname = wu.get("first_name","?") if wu else "?"
     fire_log(log_game(wid, wname, "GTA рулетка", winner_row["amount"], "Выигрыш", payout, wu.get("balance",0) if wu else 0))
@@ -1222,6 +1144,8 @@ async def api_mines_reveal(req: web.Request):
         await db.update_spin_stats(uid, False, 0, game["bet"])
         await db.add_history(uid, "lose", game["bet"],
             f"Мины: взрыв ({game['bombs']} бомб)")
+        asyncio.create_task(_passive_ref_income(uid, game["bet"]))
+        asyncio.create_task(db.add_xp(uid, max(1, game["bet"] // 100)))
         u2 = await db.get_user(uid)
         name = u2.get("first_name","?") if u2 else "?"
         fire_log(log_game(uid, name, "Мины",
@@ -1245,11 +1169,10 @@ async def api_mines_reveal(req: web.Request):
         next_mult    = mines_mult(safe_count + 1, game["bombs"], _mines_max) if safe_left > 0 else None
         # Auto cashout if all safe cells revealed
         if safe_left == 0:
-            net_win = current_win - game["bet"]
-            new_bal = await db.add_to_balance(uid, current_win)   # bet was pre-deducted
-            await db.add_history(uid, "win", net_win,
+            new_bal = await db.add_to_balance(uid, current_win)
+            await db.add_history(uid, "win", current_win,
                 f"Мины: все алмазы! x{current_mult} ({game['bombs']} бомб)")
-            await db.update_spin_stats(uid, True, net_win, 0)
+            await db.update_spin_stats(uid, True, current_win, 0)
             del active_mines[uid]
             u2 = await db.get_user(uid)
             name = u2.get("first_name","?") if u2 else "?"
@@ -1290,10 +1213,10 @@ async def api_mines_cashout(req: web.Request):
     mult         = mines_mult(safe_count, game["bombs"], _mines_max)
     won          = round(game["bet"] * mult)
     profit       = won - game["bet"]
-    new_bal      = await db.add_to_balance(uid, won)   # bet was pre-deducted at start
-    await db.add_history(uid, "win", profit,
+    new_bal      = await db.add_to_balance(uid, won)
+    await db.add_history(uid, "win", won,
         f"Мины: кешаут x{mult} ({safe_count} алмазов, {game['bombs']} бомб)")
-    await db.update_spin_stats(uid, True, profit, 0)
+    await db.update_spin_stats(uid, True, won, 0)
     del active_mines[uid]
     u2   = await db.get_user(uid)
     name = u2.get("first_name","?") if u2 else "?"
@@ -1541,13 +1464,11 @@ async def api_tower_start(req: web.Request):
     }
 
     tower_max_start = await db.get_tower_max_floors()
-    tower_mult_cap  = await db.get_tower_max_mult()
     return web.json_response({
         "ok":          True,
         "new_balance": new_bal,
         "next_mult":   tower_mult(1),
         "tower_max":   tower_max_start,
-        "mult_cap":    tower_mult_cap,
     })
 
 
@@ -1568,7 +1489,6 @@ async def api_tower_step(req: web.Request):
     if floor != game["floor"]:
         return web.json_response({"error": "wrong floor"}, status=400)
     tower_max = await db.get_tower_max_floors()
-    tower_mult_cap = await db.get_tower_max_mult()
     if floor > tower_max:
         return web.json_response({"error": "tower completed"}, status=400)
 
@@ -1601,6 +1521,8 @@ async def api_tower_step(req: web.Request):
         await db.update_spin_stats(uid, False, 0, game["bet"])
         await db.add_history(uid, "lose", game["bet"],
             f"Башня: взрыв на этаже {floor}")
+        asyncio.create_task(_passive_ref_income(uid, game["bet"]))
+        asyncio.create_task(db.add_xp(uid, max(1, game["bet"] // 100)))
         u2 = await db.get_user(uid)
         name = u2.get("first_name", "?") if u2 else "?"
         fire_log(log_game(uid, name, "Башня", game["bet"], "Проигрыш", 0,
@@ -1615,14 +1537,15 @@ async def api_tower_step(req: web.Request):
         game["floor"] = floor + 1
         mult        = tower_mult(floor)
         current_win = round(game["bet"] * mult)
-        reached_top = floor >= tower_max or mult >= tower_mult_cap
+        reached_top = floor >= tower_max
 
         if reached_top:
+            # Auto cashout at top floor
+            new_bal = await db.add_to_balance(uid, current_win)
             profit = current_win - game["bet"]
-            new_bal = await db.add_to_balance(uid, current_win)   # bet pre-deducted
-            await db.add_history(uid, "win", profit,
+            await db.add_history(uid, "win", current_win,
                 f"Башня: кешаут этаж {floor} ×{mult}")
-            await db.update_spin_stats(uid, True, profit, 0)
+            await db.update_spin_stats(uid, True, current_win, 0)
             del active_towers[uid]
             u2   = await db.get_user(uid)
             name = u2.get("first_name", "?") if u2 else "?"
@@ -1674,10 +1597,10 @@ async def api_tower_cashout(req: web.Request):
     mult        = tower_mult(completed_floor)
     won         = round(game["bet"] * mult)
     profit      = won - game["bet"]
-    new_bal     = await db.add_to_balance(uid, won)   # bet pre-deducted at start
-    await db.add_history(uid, "win", profit,
+    new_bal     = await db.add_to_balance(uid, won)
+    await db.add_history(uid, "win", won,
         f"Башня: кешаут этаж {completed_floor} ×{mult}")
-    await db.update_spin_stats(uid, True, profit, 0)
+    await db.update_spin_stats(uid, True, won, 0)
     del active_towers[uid]
     u2   = await db.get_user(uid)
     name = u2.get("first_name", "?") if u2 else "?"
@@ -1751,25 +1674,6 @@ async def api_admin_set_tower_max_floors(req):
         fire_log(log_admin_action(uid, aname, "SET_TOWER_MAX_FLOORS", 0, "Все игроки",
             f"Макс. этажей башни → {val}", incognito=False))
     return web.json_response({"ok":True,"max_floors":val})
-
-async def api_admin_get_tower_max_mult(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    return web.json_response({"max_mult": await db.get_tower_max_mult()})
-
-async def api_admin_set_tower_max_mult(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json(); val = float(data.get("max_mult", 5.0))
-    incognito = bool(data.get("incognito", False))
-    await db.set_tower_max_mult(val)
-    if not incognito:
-        try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
-            u = await db.get_user(uid)
-            aname = u.get("first_name","Admin") if u else "Admin"
-        except: aname = "Admin"; uid = 0
-        fire_log(log_admin_action(uid, aname, "SET_TOWER_MAX_MULT", 0, "Все игроки",
-            f"Макс. коэф. башни → ×{val}", incognito=False))
-    return web.json_response({"ok":True,"max_mult":val})
 
 # ── EURO LUCK ──
 async def api_admin_get_euro_luck(req):
@@ -1926,25 +1830,110 @@ async def api_promo_activate(req):
     return web.json_response({"ok": True, "reward": reward, "new_balance": new_bal})
 
 
-async def api_user_refs(req: web.Request):
-    """Referral bonuses received + list of users invited by this user."""
-    uid = int(req.match_info["uid"])
-    hist = await db.get_history(uid, limit=500)
-    refs = [r for r in hist if r.get("type") == "ref"]
-    # Also get all users where referrer_id == uid (who did this user invite)
-    invited = []
+async def _passive_ref_income(uid: int, loss_amount: int):
+    """Give 10% of a user's loss to their referrer."""
     try:
-        async with db._pool.acquire() as conn:
-            rows = await conn.fetch(
-                "SELECT user_id, first_name, created_at FROM users WHERE referrer_id=? ORDER BY created_at DESC",
-                uid
-            ) if hasattr(db, '_pool') else []
-            invited = [{"user_id": r["user_id"], "first_name": r["first_name"],
-                        "created_at": r["created_at"]} for r in rows]
-    except Exception:
-        pass
-    return web.json_response({"refs": refs, "count": len(refs), "invited": invited})
+        ref_id = await db.get_referrer(uid)
+        if not ref_id or loss_amount < 10:
+            return
+        bonus = max(1, loss_amount // 10)
+        new_bal = await db.add_to_balance(ref_id, bonus)
+        await db.add_history(ref_id, "ref_passive", bonus,
+            f"10% с проигрыша реферала (UID {uid})")
+        await _safe_send(ref_id,
+            f"💸 +{bonus} монет — 10% с проигрыша реферала!\n"
+            f"Баланс: <b>{new_bal}</b>")
+    except Exception as e:
+        logger.debug(f"[passive_ref_income]: {e}")
 
+# ── TASKS API ──
+async def api_tasks(req: web.Request):
+    uid = int(req.query.get("user_id", 0))
+    tasks = await db.get_tasks(active_only=True)
+    done  = set(await db.get_user_tasks(uid)) if uid else set()
+    return web.json_response({
+        "tasks": [{**t, "completed": t["id"] in done} for t in tasks]
+    })
+
+async def api_task_complete(req: web.Request):
+    data    = await req.json()
+    uid     = int(data.get("user_id", 0))
+    task_id = int(data.get("task_id", 0))
+    if not uid or not task_id:
+        return web.json_response({"error": "bad params"}, status=400)
+    task = await db.get_task(task_id)
+    if not task or not task["active"]:
+        return web.json_response({"error": "task not found"}, status=404)
+    newly_done = await db.complete_task(uid, task_id)
+    if not newly_done:
+        return web.json_response({"error": "already completed"}, status=409)
+    reward = task["reward"]
+    new_bal = await db.add_to_balance(uid, reward)
+    await db.add_history(uid, "task", reward, f"Задание: {task['title']}")
+    asyncio.create_task(db.add_xp(uid, reward * 2))
+    return web.json_response({"ok": True, "reward": reward, "new_balance": new_bal})
+
+# ── ADMIN TASKS ──
+async def api_admin_tasks(req: web.Request):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    tasks = await db.get_tasks(active_only=False)
+    return web.json_response({"tasks": tasks})
+
+async def api_admin_task_create(req: web.Request):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    d = await req.json()
+    task_id = await db.create_task(
+        type_=d.get("type","channel"),
+        title=d.get("title",""),
+        description=d.get("description",""),
+        reward=int(d.get("reward",50)),
+        target=d.get("target",""),
+        target_count=int(d.get("target_count",1))
+    )
+    return web.json_response({"ok": True, "id": task_id})
+
+async def api_admin_task_update(req: web.Request):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    d = await req.json()
+    task_id = int(d.pop("id", 0))
+    if not task_id: return web.json_response({"error":"no id"}, status=400)
+    await db.update_task(task_id, **d)
+    return web.json_response({"ok": True})
+
+async def api_admin_task_delete(req: web.Request):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    d = await req.json()
+    await db.delete_task(int(d.get("id",0)))
+    return web.json_response({"ok": True})
+
+# ── LEVEL / XP ADMIN ──
+async def api_admin_set_level(req: web.Request):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    d = await req.json()
+    uid   = int(d.get("user_id",0))
+    level = int(d.get("level",0))
+    await db.set_level(uid, level)
+    return web.json_response({"ok": True})
+
+# ── DEV: login-as user ──
+async def api_dev_user_view(req: web.Request):
+    """Dev-only: get full user state for impersonation."""
+    uid_hdr = int(req.headers.get("X-Admin-Uid","0"))
+    if uid_hdr not in DEV_IDS + ADMIN_IDS:
+        return web.json_response({"error":"forbidden"}, status=403)
+    target = int(req.match_info.get("uid",0))
+    u = await db.get_user(target)
+    if not u: return web.json_response({"error":"user not found"}, status=404)
+    hist = await db.get_history(target, limit=50)
+    tasks_done = await db.get_user_tasks(target)
+    return web.json_response({"user": u, "history": hist, "tasks_done": tasks_done})
+
+# ── USER REFS endpoint (also used in admin panel) ──
+async def api_user_refs(req: web.Request):
+    uid  = int(req.match_info["uid"])
+    hist = await db.get_history(uid, limit=500)
+    refs = [r for r in hist if r.get("type") in ("ref","ref_passive")]
+    return web.json_response({"refs": refs, "count": len([r for r in refs if r["type"]=="ref"])})
 
 # ── NOTIFY NOT-TELEGRAM VISITOR ──
 NOT_TG_NOTIFY_UID = 1840233118  # owner who receives visitor notifications
@@ -1982,7 +1971,6 @@ async def start_web():
     app.router.add_get("/health", health)
     app.router.add_post("/api/ensure_user",        api_ensure_user)
     app.router.add_get ("/api/user/{uid}",         api_user)
-    app.router.add_get ("/api/user/{uid}/refs",    api_user_refs)
     app.router.add_get ("/api/history/{uid}",      api_history)
     app.router.add_get ("/api/invoice",            api_invoice)
     app.router.add_get ("/api/gifts",              api_get_gifts)
@@ -2014,8 +2002,6 @@ async def start_web():
     app.router.add_post("/api/admin/mines_max_mult",   api_admin_set_mines_max_mult)
     app.router.add_get ("/api/admin/tower_max_floors", api_admin_get_tower_max_floors)
     app.router.add_post("/api/admin/tower_max_floors", api_admin_set_tower_max_floors)
-    app.router.add_get ("/api/admin/tower_max_mult",   api_admin_get_tower_max_mult)
-    app.router.add_post("/api/admin/tower_max_mult",   api_admin_set_tower_max_mult)
     # Euro / Mines luck (independent per-game coefficients)
     app.router.add_get ("/api/admin/euro_luck",        api_admin_get_euro_luck)
     app.router.add_post("/api/admin/euro_luck",        api_admin_set_euro_luck)
@@ -2033,6 +2019,23 @@ async def start_web():
     app.router.add_post("/api/promo/activate",                           api_promo_activate)
     # Not-Telegram visitor notification
     app.router.add_post("/api/notify_not_telegram",    api_notify_not_telegram)
+    # Tasks (public)
+    app.router.add_get ("/api/tasks",                  api_tasks)
+    app.router.add_post("/api/tasks/complete",         api_task_complete)
+    # Tasks (admin)
+    app.router.add_get ("/api/admin/tasks",            api_admin_tasks)
+    app.router.add_post("/api/admin/tasks/create",     api_admin_task_create)
+    app.router.add_post("/api/admin/tasks/update",     api_admin_task_update)
+    app.router.add_post("/api/admin/tasks/delete",     api_admin_task_delete)
+    # Level/XP (admin)
+    app.router.add_post("/api/admin/set_level",        api_admin_set_level)
+    # Tower max mult
+    app.router.add_get ("/api/admin/tower_max_mult",   api_admin_get_tower_max_mult)
+    app.router.add_post("/api/admin/tower_max_mult",   api_admin_set_tower_max_mult)
+    # User refs
+    app.router.add_get ("/api/user/{uid}/refs",        api_user_refs)
+    # Dev: view-as-user
+    app.router.add_get ("/api/dev/user/{uid}",         api_dev_user_view)
     app.router.add_get("/{filename:.+}", serve_static)
     runner = web.AppRunner(app)
     await runner.setup()
