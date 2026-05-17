@@ -2030,8 +2030,8 @@ async def start_web():
     # Level/XP (admin)
     app.router.add_post("/api/admin/set_level",        api_admin_set_level)
     # Tower max mult
-    app.router.add_get ("/api/admin/tower_max_mult",   api_admin_get_tower_max_mult)
-    app.router.add_post("/api/admin/tower_max_mult",   api_admin_set_tower_max_mult)
+    #app.router.add_get ("/api/admin/tower_max_mult",   api_admin_get_tower_max_mult)
+    #app.router.add_post("/api/admin/tower_max_mult",   api_admin_set_tower_max_mult)
     # User refs
     app.router.add_get ("/api/user/{uid}/refs",        api_user_refs)
     # Dev: view-as-user
