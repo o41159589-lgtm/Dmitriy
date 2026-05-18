@@ -827,7 +827,7 @@ async function loadTopPlayers(){
   document.getElementById('cmd-result-body').textContent='⏳ Загружаем...';
   try{
     const r = await api('/api/admin/users');
-    const top = (r.users||[]).sort((a,b)=>(b.balance||0)-(a.balance||0)).slice(0,10);
+    const top = _toUsers(r).sort((a,b)=>(b.balance||0)-(a.balance||0)).slice(0,10);
     document.getElementById('cmd-result-body').innerHTML = top.map((u,i)=>
       `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
         <b>${i+1}.</b> ${esc(u.first_name||'?')}
@@ -842,12 +842,12 @@ async function loadServerStats(){
   document.getElementById('cmd-result-title').textContent='📊 СТАТИСТИКА СЕРВЕРА';
   document.getElementById('cmd-result-body').textContent='⏳ Загружаем...';
   try{
-    const r = await api('/api/admin/users');
-    const users = r.users||[];
-    const total = users.length;
-    const active = users.filter(u=>u.spins>0).length;
-    const totalBal = users.reduce((s,u)=>s+(u.balance||0),0);
-    const totalWon = users.reduce((s,u)=>s+(u.total_won||0),0);
+    const r2 = await api('/api/admin/users');
+    const users2 = _toUsers(r2);
+    const total = users2.length;
+    const active = users2.filter(u=>u.spins>0).length;
+    const totalBal = users2.reduce((s,u)=>s+(u.balance||0),0);
+    const totalWon = users2.reduce((s,u)=>s+(u.total_won||0),0);
     document.getElementById('cmd-result-body').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
@@ -877,7 +877,7 @@ async function sendBroadcast(){
   st.textContent='⏳ Отправляем...'; st.style.color='var(--muted)';
   try{
     const r = await api('/api/admin/users');
-    const users = r.users||[];
+    const users = _toUsers(r);
     let sent=0, failed=0;
     for(const u of users){
       try{
@@ -898,7 +898,7 @@ async function giveAll(){
   st.textContent='⏳ Выдаём...'; st.style.color='var(--muted)';
   try{
     const r = await api('/api/admin/users');
-    const users = r.users||[];
+    const users = _toUsers(r);
     let done=0;
     for(const u of users){
       try{
@@ -974,12 +974,14 @@ async function setUserLevel(uid, level){
 // SMOOTH UPDATES — don't re-render if no changes
 // ══════════════════════════════
 let _lastUsersHash = '';
+function _toUsers(r){ return Array.isArray(r) ? r : (r.users||[]); }
+
 async function load(){
   try{
-    const r  = await api('/api/admin/users');
-    const users = (r.users||[]).sort((a,b)=>(a.user_id||0)-(b.user_id||0));
-    const hash = JSON.stringify(users.map(u=>({id:u.user_id,bal:u.balance,banned:u.banned,lvl:u.level})));
-    if(hash === _lastUsersHash) return; // Nothing changed — skip re-render
+    const r     = await api('/api/admin/users');
+    const users = _toUsers(r).sort((a,b)=>(a.user_id||0)-(b.user_id||0));
+    const hash  = JSON.stringify(users.map(u=>({id:u.user_id,bal:u.balance,banned:u.banned,lvl:u.level})));
+    if(hash === _lastUsersHash) return;
     _lastUsersHash = hash;
     renderUsers(users);
   }catch(e){ console.error('load error',e); }

@@ -91,6 +91,9 @@ def bet_luck_factor(bet: int) -> float:
     if bet <= 100: return 1.0
     return max(0.15, 1.0 - 0.17 * math.log10(bet / 100))
 
+_QM = "?"
+_EMPTY = ""
+
 async def log_error(context: str, error: str):
     """Log any error to the admin/errors thread in the log group."""
     await log(LOG_THREAD_ADMIN,
@@ -224,10 +227,10 @@ async def on_withdraw_cb(cb: CallbackQuery):
     name = u.get("first_name","?") if u else "?"
 
     if action == "done":
-        text = f"✅ <b>Выдано!</b> Обработал: {cb.from_user.first_name}"
+        text = f"✅ <b>Выдано!</b> Обработал: {_html.escape(cb.from_user.first_name or _EMPTY)}"
         status = "выдан"
     else:
-        text = f"❌ <b>Отклонено.</b> Отклонил: {cb.from_user.first_name}"
+        text = f"❌ <b>Отклонено.</b> Отклонил: {_html.escape(cb.from_user.first_name or _EMPTY)}"
         status = "отклонён"
         # Refund if rejected (optional — commented out; uncomment if needed)
         # if u: await db.add_to_balance(uid, price)  # requires storing price
@@ -308,9 +311,10 @@ async def on_broadcast_msg(message: Message):
         InlineKeyboardButton(text="✅ Разослать всем", callback_data=f"bc_send_{bid}"),
         InlineKeyboardButton(text="❌ Отменить", callback_data=f"bc_cancel_{bid}"),
     ]])
+    _sname = _html.escape(message.from_user.first_name or _QM)
     await message.reply(
         f"📢 <b>Подтвердите рассылку</b>\n"
-        f"Отправитель: {message.from_user.first_name}\n"
+        f"Отправитель: {_sname}\n"
         f"Получателей: {len(await db.get_all_users())} чел.",
         parse_mode="HTML",
         reply_markup=kb)
@@ -372,15 +376,15 @@ async def cmd_start(message: Message):
 
     # ── 4. All side-effects AFTER greeting, fire-and-forget ──
 
-    # Referral
+    # Referral — only credit for brand-new users (existed=False means new)
     parts = message.text.split(maxsplit=1)
-    if len(parts) > 1 and parts[1].startswith("ref_"):
+    if len(parts) > 1 and parts[1].startswith("ref_") and not existed:
         asyncio.create_task(_handle_referral(user, parts[1]))
 
     if len(parts) > 1 and parts[1].startswith("gift_request"):
         for admin_id in ADMIN_IDS:
             asyncio.create_task(_safe_send(admin_id,
-                f"📦 Пользователь <b>{user.first_name}</b> (ID: <code>{user.id}</code>) "
+                f"📦 Пользователь <b>{_html.escape(user.first_name or _QM)}</b> (ID: <code>{user.id}</code>) "
                 f"написал боту по заявке на подарок."))
 
     # Log new user — background task, NEVER blocks greeting
@@ -404,15 +408,17 @@ async def _handle_referral(user, param: str):
         if not ref_u:
             return
         nb = await db.add_to_balance(ref_id, 10)
-        await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
+        await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name or chr(63)}")
         await db.set_referrer(user.id, ref_id)
+        await db.add_xp(ref_id, 50)  # +50 XP for each referral
         try:
             ref_u2 = await db.get_user(ref_id)
             ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
-            fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
+            fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name or chr(63)})"))
         except Exception: pass
+        _rname = _html.escape(user.first_name or _QM)
         await _safe_send(ref_id,
-            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
+            f"🎉 По вашей ссылке зарегистрировался <b>{_rname}</b>!\n"
             f"💰 +10 монет → баланс: <b>{nb}</b>")
     except Exception as e:
         logger.warning(f"[_handle_referral]: {e}")
@@ -1675,6 +1681,25 @@ async def api_admin_set_tower_max_floors(req):
             f"Макс. этажей башни → {val}", incognito=False))
     return web.json_response({"ok":True,"max_floors":val})
 
+async def api_admin_get_tower_max_mult(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"max_mult": await db.get_tower_max_mult()})
+
+async def api_admin_set_tower_max_mult(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); val = float(data.get("max_mult", 5.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_tower_max_mult(val)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid)
+            aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_TOWER_MAX_MULT", 0, "Все игроки",
+            f"Макс. коэф. башни → ×{val}", incognito=False))
+    return web.json_response({"ok":True,"max_mult":val})
+
 # ── EURO LUCK ──
 async def api_admin_get_euro_luck(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
@@ -2030,8 +2055,8 @@ async def start_web():
     # Level/XP (admin)
     app.router.add_post("/api/admin/set_level",        api_admin_set_level)
     # Tower max mult
-    #app.router.add_get ("/api/admin/tower_max_mult",   api_admin_get_tower_max_mult)
-    #app.router.add_post("/api/admin/tower_max_mult",   api_admin_set_tower_max_mult)
+    app.router.add_get ("/api/admin/tower_max_mult",   api_admin_get_tower_max_mult)
+    app.router.add_post("/api/admin/tower_max_mult",   api_admin_set_tower_max_mult)
     # User refs
     app.router.add_get ("/api/user/{uid}/refs",        api_user_refs)
     # Dev: view-as-user

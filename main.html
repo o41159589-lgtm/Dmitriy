@@ -1036,7 +1036,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 
 <!-- ══════════════ NAV ══════════════ -->
 <nav class="nav">
-  <div class="nav-ind" id="nav-ind" style="width:20%;left:40%"></div>
+  <div class="nav-ind" id="nav-ind" style="width:25%;left:50%"></div>
   <button class="nav-btn" onclick="showPage('home',this,0)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
     Инфо
@@ -1046,14 +1046,10 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
     Профиль
   </button>
   <button class="nav-btn active" onclick="showPage('games',this,2)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 10v4M10 12h4"/><circle cx="17" cy="12" r="1"/><circle cx="19" cy="12" r="0"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 10v4M10 12h4"/><circle cx="17" cy="12" r="1"/></svg>
     Игры
   </button>
-  <button class="nav-btn" onclick="showPage('history',this,3)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-    История
-  </button>
-  <button class="nav-btn" onclick="showPage('shop',this,4)">
+  <button class="nav-btn" onclick="showPage('shop',this,3)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
     Магазин
   </button>
@@ -1156,7 +1152,7 @@ function showPage(n, btn, i){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');
   btn.classList.add('active');
-  document.getElementById('nav-ind').style.left=(i*20)+'%';
+  document.getElementById('nav-ind').style.left=(i*25)+'%';
   if(n==='history') renderHistory();
   if(n==='inventory') loadInventory();
   if(n==='shop' && !shopLoaded) loadShopGifts();
@@ -1667,7 +1663,7 @@ window.addEventListener('load', async ()=>{
   // Default to games tab (or override from URL param)
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam  = urlParams.get('tab') || 'games';
-  const tabIndex  = {home:0, inventory:1, games:2, history:3, shop:4};
+  const tabIndex  = {home:0, inventory:1, games:2, shop:3};
   const idx = tabIndex[tabParam] ?? 2;
   const btn = document.querySelector(`[onclick*="'${tabParam}'"]`);
   if(btn) showPage(tabParam, btn, idx);
