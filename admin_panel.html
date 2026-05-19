@@ -1866,7 +1866,7 @@ function showLoadingError(msg){
     return;
   }
 
-  // Set date pickers (td was previously undefined — fixed here)
+  // Set date pickers
   const todayStr = new Date().toISOString().split('T')[0];
   const weekAgo  = new Date(Date.now() - 7*86400000).toISOString().split('T')[0];
   const dTo   = document.getElementById('d-to');
@@ -1874,20 +1874,17 @@ function showLoadingError(msg){
   if(dTo)   dTo.value   = todayStr;
   if(dFrom) dFrom.value = weekAgo;
 
-  // Check dev incognito block
-  try{
-    const dr = await fetch('/api/admin/is_dev', { headers:{'X-Admin-Uid':ADMIN_UID} });
-    const dd = await dr.json();
-    if(dd.is_dev){
-      const ib = document.getElementById('incognito-block');
-      if(ib) ib.style.display = 'block';
-    }
-  } catch{}
+  // ✅ Сразу запускаем панель — не ждём сервер
+  if(window._clearLoadBar) window._clearLoadBar();
+  hideLoadingOverlay();
+  load();
+  loadGl();
+  setInterval(load, 30000);
 
-  // ── Main auth check with 12s timeout ──
+  // Фоновая проверка: если не админ — тихо редиректим, если дев — показываем блок
   try{
     const ctrl    = new AbortController();
-    const timeout = setTimeout(()=> ctrl.abort(), 12000);
+    const timeout = setTimeout(()=> ctrl.abort(), 5000);
 
     const r = await fetch('/api/admin/users', {
       headers: { 'X-Admin-Uid': ADMIN_UID, 'X-Admin-Key': ADMIN_UID },
@@ -1896,40 +1893,20 @@ function showLoadingError(msg){
     clearTimeout(timeout);
 
     if(r.status === 403){
-      // Not an admin/dev — send to main app silently
       window.location.replace('index.html');
       return;
     }
+  } catch{}
 
-    if(!r.ok){
-      showLoadingError(
-        `⚠️ Ошибка сервера (${r.status})<br>
-        <button onclick="location.reload()" style="margin-top:10px;padding:8px 18px;
-        background:var(--gold);border:none;border-radius:10px;color:#000;
-        font-family:Orbitron,monospace;font-size:11px;font-weight:700;cursor:pointer">
-        ↻ Повторить</button>`
-      );
-      return;
+  // Фоновая проверка dev-режима
+  try{
+    const dr = await fetch('/api/admin/is_dev', { headers:{'X-Admin-Uid':ADMIN_UID} });
+    const dd = await dr.json();
+    if(dd.is_dev){
+      const ib = document.getElementById('incognito-block');
+      if(ib) ib.style.display = 'block';
     }
-
-    // ✅ Access granted
-    if(window._clearLoadBar) window._clearLoadBar();
-    hideLoadingOverlay();
-    load();
-    loadGl();
-    setInterval(load, 30000);
-
-  } catch(e){
-    const isTimeout = e && e.name === 'AbortError';
-    showLoadingError(
-      `${isTimeout ? '⏱ Таймаут соединения' : '❌ Нет связи с сервером'}<br>
-      <div style="font-size:10px;color:#555;margin-top:5px">UID: ${ADMIN_UID}</div>
-      <button onclick="location.reload()" style="margin-top:10px;padding:8px 18px;
-      background:var(--gold);border:none;border-radius:10px;color:#000;
-      font-family:Orbitron,monospace;font-size:11px;font-weight:700;cursor:pointer">
-      ↻ Повторить</button>`
-    );
-  }
+  } catch{}
 })();
 
 </script>
