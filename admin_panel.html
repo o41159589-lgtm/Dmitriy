@@ -1,1903 +1,1715 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>TopLuck Admin</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
-:root{
-  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--card:#1e1e2e;
-  --gold:#f5c542;--gold2:#e8a800;--red:#e63946;--green:#2dc653;
-  --blue:#4cc9f0;--purple:#7b2fff;--text:#e8e8f0;--muted:#7070a0;
-  --border:rgba(245,197,66,0.15);
-  --accent:var(--red);
-  --glass-bg:rgba(255,255,255,0.055);
-  --glass-border:rgba(255,255,255,0.12);
-  --glass-blur:22px;
-}
-.incognito-mode{--accent:#2dc653;--border:rgba(45,198,83,0.2);}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:16px;padding:12px 12px 32px;}
-/* liquid bg orbs */
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
-  background:
-    radial-gradient(ellipse 60% 40% at 15% 20%,rgba(230,57,70,0.07) 0%,transparent 70%),
-    radial-gradient(ellipse 50% 35% at 85% 75%,rgba(123,47,255,0.06) 0%,transparent 70%),
-    radial-gradient(ellipse 40% 50% at 55% 5%,rgba(76,201,240,0.04) 0%,transparent 70%);}
+"""
+TopLuck Casino Bot — aiogram 3.x + aiosqlite
+Полная версия с группой логов, командами и .env
+"""
+import asyncio, time, logging, os, random, io, json, html as _html
+from math import comb
+from pathlib import Path
+from datetime import datetime
+from aiohttp import web
+from aiogram import Bot, Dispatcher, F
+from aiogram.types import (
+    Message, InlineKeyboardMarkup, InlineKeyboardButton,
+    WebAppInfo, LabeledPrice, PreCheckoutQuery,
+    BufferedInputFile, CallbackQuery
+)
+from aiogram.filters import CommandStart, Command
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
+from dotenv import load_dotenv
+import database as db
 
-/* Header */
-.header{
-  background:linear-gradient(135deg,rgba(26,10,10,0.85),rgba(32,10,10,0.75));
-  border:1px solid rgba(230,57,70,.25);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.6);
-  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.6);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 8px 28px rgba(0,0,0,0.4);
-  border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;position:relative;
-}
-.incognito-mode .header{background:linear-gradient(135deg,rgba(10,26,10,0.85),rgba(10,32,10,0.75));border-color:rgba(45,198,83,.25);}
-.header h1{font-family:'Orbitron',monospace;font-size:17px;color:var(--accent);margin-bottom:3px;}
-.header p{color:var(--muted);font-size:11px;}
-.incognito-badge{display:none;position:absolute;top:10px;right:12px;
-  background:rgba(45,198,83,.15);border:1px solid rgba(45,198,83,0.35);border-radius:8px;
-  padding:3px 8px;font-size:10px;color:var(--green);font-weight:700;
-  backdrop-filter:blur(10px);}
-.incognito-mode .incognito-badge{display:block;}
+load_dotenv()
 
-/* Tabs */
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.tab{flex:1;min-width:80px;padding:9px 6px;
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);
-  border-radius:10px;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer;
-  text-align:center;transition:all .2s;}
-.tab.a{background:var(--accent);color:#fff;border-color:var(--accent);
-  box-shadow:0 4px 16px rgba(230,57,70,.3),inset 0 1px 0 rgba(255,255,255,0.2);}
-.incognito-mode .tab.a{box-shadow:0 4px 16px rgba(45,198,83,.3),inset 0 1px 0 rgba(255,255,255,0.2);}
-.tab-pane{display:none;}.tab-pane.a{display:block;}
+# ════════════════════════════════════════
+BOT_TOKEN   = os.getenv("BOT_TOKEN", "")
+WEBAPP_URL  = os.getenv("WEBAPP_URL", "")
+ADMIN_URL   = os.getenv("ADMIN_URL", "")
+PORT        = int(os.getenv("PORT", 8080))
+ADMIN_IDS   = [int(x) for x in os.getenv("ADMIN_IDS","").split(",") if x.strip()]
+DEV_IDS     = [int(x) for x in os.getenv("DEV_IDS","").split(",") if x.strip()]
 
-/* Stats bar */
-.sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
-.sb{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.5);
-  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 14px rgba(0,0,0,0.28);
-  border-radius:10px;padding:10px 6px;text-align:center;position:relative;overflow:hidden;
-}
-.sb::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,transparent 55%);border-radius:inherit;}
-.sb-v{font-family:'Orbitron',monospace;font-size:14px;color:var(--gold);font-weight:700;}
-.sb-l{font-size:10px;color:var(--muted);margin-top:3px;}
+LOG_GROUP_ID       = int(os.getenv("LOG_GROUP_ID", 0))
+LOG_THREAD_USERS   = int(os.getenv("LOG_THREAD_USERS",   1))
+LOG_THREAD_GAMES   = int(os.getenv("LOG_THREAD_GAMES",   2))
+LOG_THREAD_WITHDRAW= int(os.getenv("LOG_THREAD_WITHDRAW",3))
+LOG_THREAD_WITHDRAW_BOT = int(os.getenv("LOG_THREAD_WITHDRAW_BOT", 8))
+LOG_THREAD_DEPOSIT = int(os.getenv("LOG_THREAD_DEPOSIT", 4))
+LOG_THREAD_BROADCAST=int(os.getenv("LOG_THREAD_BROADCAST",5))
+LOG_THREAD_ADMIN   = int(os.getenv("LOG_THREAD_ADMIN",   6))
+LOG_THREAD_BACKUP  = int(os.getenv("LOG_THREAD_BACKUP",  7))
 
-/* Search */
-.search{width:100%;
-  background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:10px;
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);
-  padding:10px 14px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;
-  outline:none;margin-bottom:10px;}
-.search:focus{border-color:var(--gold);}
+GTA_MIN_PLAYERS = int(os.getenv("GTA_MIN_PLAYERS", 2))
+GTA_SPIN_DELAY  = int(os.getenv("GTA_SPIN_DELAY",  15))
+# ════════════════════════════════════════
 
-/* User card */
-.uc{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 4px 14px rgba(0,0,0,0.24);
-  border-radius:14px;margin-bottom:8px;overflow:hidden;}
-.uc.banned{border-color:rgba(230,57,70,.35);background:rgba(230,57,70,.04);}
-.uc-top{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;}
-.uc-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--blue));
-  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:700;
-  box-shadow:0 2px 10px rgba(123,47,255,0.3);}
-.uc-av.banned-av{background:linear-gradient(135deg,#8b0000,#e63946);}
-.uc-info{flex:1;min-width:0;}
-.uc-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.uc-id{font-size:10px;color:var(--muted);}
-.uc-bal{font-family:'Orbitron',monospace;color:var(--gold);font-size:14px;font-weight:700;flex-shrink:0;}
-.uc-body{border-top:1px solid rgba(255,255,255,0.06);padding:12px;display:none;flex-direction:column;gap:8px;}
-.uc.open .uc-body{display:flex;}
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("topluck.log", encoding="utf-8"),
+    ]
+)
+logger = logging.getLogger(__name__)
 
-/* User detail rows */
-.uinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px;}
-.uinfo-item{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  border-radius:8px;padding:8px 10px;
-  backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.uinfo-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
-.uinfo-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;}
-.uinfo-val.gold{color:var(--gold);}.uinfo-val.green{color:var(--green);}
-.uinfo-val.red{color:var(--red);}.uinfo-val.blue{color:var(--blue);}
-.uinfo-val.muted{color:var(--muted);font-family:'Rajdhani',sans-serif;}
+bot = Bot(token=BOT_TOKEN)
+dp  = Dispatcher(storage=MemoryStorage())
+gta_timers: dict[int, asyncio.Task] = {}
+active_mines: dict[int, dict] = {}  # uid -> mine game state
+active_towers: dict[int, dict] = {}  # uid -> tower game state
 
-/* Action groups */
-.ag{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  border-radius:10px;padding:10px;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.ag-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;font-weight:700;}
-.ag-row{display:flex;gap:5px;align-items:center;margin-bottom:5px;}
-.ag-inp{flex:1;
-  background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);border-radius:7px;
-  padding:7px 8px;color:var(--text);font-family:'Orbitron',monospace;font-size:12px;
-  outline:none;text-align:center;width:0;}
-.ag-inp:focus{border-color:var(--gold);}
-.abtn{padding:7px 10px;border:none;border-radius:7px;font-family:'Rajdhani',sans-serif;
-  font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
-  transition:opacity .15s,transform .1s;box-shadow:0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2);}
-.abtn:active{transform:scale(.97);opacity:.85;}
-.abtn.set{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#000;}
-.abtn.add{background:linear-gradient(135deg,#1aa840,var(--green));color:#000;}
-.abtn.sub{background:linear-gradient(135deg,#b02030,var(--red));color:#fff;}
-.abtn.pur{background:linear-gradient(135deg,#5a1fdd,var(--purple));color:#fff;}
-.abtn.ban{background:linear-gradient(135deg,#6b0000,#8b0000);color:#fff;}
-.abtn.unban{background:linear-gradient(135deg,#1aa840,var(--green));color:#000;}
-.abtn.msg{background:linear-gradient(135deg,#2a8fb0,var(--blue));color:#000;}
+TOWER_CELLS    = 3   # cells per floor
+TOWER_HOUSE    = 0.97
+TOWER_MAX_FLOORS = 10  # configurable: change this to adjust tower height
 
-/* Luck buttons */
-.luck-row{display:flex;gap:4px;flex-wrap:wrap;}
-.lbtn{padding:5px 8px;
-  border:1px solid rgba(255,255,255,0.1);border-radius:6px;
-  background:rgba(255,255,255,0.04);color:var(--muted);font-size:11px;font-weight:700;
-  cursor:pointer;transition:all .15s;
-  backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.lbtn.a,.lbtn:active{background:rgba(123,47,255,0.35);color:#fff;border-color:var(--purple);}
-.lbtn.luck100{background:rgba(45,198,83,.15);border-color:rgba(45,198,83,0.35);color:var(--green);}
-.lbtn.luck100.a{background:rgba(45,198,83,.4);color:#fff;}
-.lbtn.luck0{background:rgba(230,57,70,.12);border-color:rgba(230,57,70,.3);color:rgba(230,57,70,.8);}
-.lbtn.luck0.a{background:rgba(230,57,70,.4);color:#fff;}
+def tower_mult(floor: int) -> float:
+    """Multiplier for tower floor. Diminishing returns: big jumps early, small jumps late."""
+    if floor <= 0: return 1.0
+    # Formula gives: floor1=1.24x, floor5=2.13x, floor10=2.81x with decreasing increments
+    raw = 1.0 + floor * 0.28 - floor * (floor - 1) * 0.010
+    return round(TOWER_HOUSE * max(1.0, raw), 4)
 
-/* Revenue */
-.rev-card{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.09),0 6px 22px rgba(0,0,0,0.32);
-  border-radius:14px;padding:14px;margin-bottom:12px;}
-.rev-title{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;}
-.period-btns{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
-.pb{padding:6px 10px;
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;
-  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;
-  backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.pb.a,.pb:active{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#000;border-color:var(--gold);
-  box-shadow:0 3px 12px rgba(245,197,66,0.3),inset 0 1px 0 rgba(255,255,255,0.25);}
-.date-row{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
-.date-lbl{font-size:11px;color:var(--muted);white-space:nowrap;}
-.date-inp{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;
-  padding:6px 8px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;
-  outline:none;flex:1;min-width:110px;backdrop-filter:blur(10px);}
-.rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.ri{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
-  border-radius:10px;padding:12px;text-align:center;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.ri-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
-.ri-v{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;}
-.ri-v.g{color:var(--green);}.ri-v.r{color:var(--red);}.ri-v.gold{color:var(--gold);}
-.rev-total{grid-column:1/-1;
-  background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.18);
-  border-radius:12px;padding:16px;text-align:center;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(245,197,66,0.12);}
-.rt-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-.rt-v{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;}
+def mines_mult(safe_opened: int, bombs: int, house: float = 0.97) -> float:
+    """Multiplier after opening safe cells. Power 0.8 dampens extreme values."""
+    total, safe_total = 25, 25 - bombs
+    if safe_opened == 0: return 1.0
+    if safe_total <= 0 or safe_opened > safe_total: return 0.0
+    raw_ratio = comb(total, safe_opened) / comb(safe_total, safe_opened)
+    return round(house * (raw_ratio ** 0.8), 4)
 
-/* Settings blocks */
-.settings-block{
-  background:var(--glass-bg);border:1px solid var(--glass-border);
-  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.09),0 6px 22px rgba(0,0,0,0.3);
-  border-radius:14px;padding:14px;margin-bottom:12px;position:relative;overflow:hidden;}
-.settings-block::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);pointer-events:none;}
-.settings-title{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:12px;}
-.incognito-toggle{display:flex;align-items:center;justify-content:space-between;
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
-  border-radius:10px;padding:10px 14px;margin-bottom:10px;
-  backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
-.it-label{font-size:14px;font-weight:600;}
-.it-sub{font-size:11px;color:var(--muted);margin-top:2px;}
-.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:rgba(0,0,0,0.4);border-radius:12px;
-  border:1px solid rgba(255,255,255,0.12);cursor:pointer;transition:background .2s;
-  backdrop-filter:blur(8px);}
-.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;
-  border-radius:50%;background:#888;top:2px;left:2px;transition:transform .2s,background .2s;}
-.toggle input:checked+.toggle-slider{background:rgba(45,198,83,.25);border-color:var(--green);}
-.toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--green);}
+def bet_luck_factor(bet: int) -> float:
+    """Higher bets get less luck protection. Bet<=100: full. Bet 1000: ~0.65. Bet 10000: ~0.40."""
+    import math
+    if bet <= 100: return 1.0
+    return max(0.15, 1.0 - 0.17 * math.log10(bet / 100))
 
-/* slider container */
-.slider-box{
-  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
-  border-radius:10px;padding:14px;margin-bottom:10px;
-  backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.07);}
+async def log_error(context: str, error: str):
+    """Log any error to the admin/errors thread in the log group."""
+    await log(LOG_THREAD_ADMIN,
+        f"⚠️ <b>Ошибка</b>\n"
+        f"#error\n"
+        f"Место: <code>{_html.escape(context)}</code>\n"
+        f"Ошибка: <code>{_html.escape(str(error)[:400])}</code>\n"
+        f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
-/* Loading overlay */
-.admin-loading{
-  position:fixed;inset:0;background:#0a0a0f;z-index:9999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
-}
-.al-icon{font-size:48px;margin-bottom:20px;animation:al-spin 1.5s linear infinite;}
-@keyframes al-spin{to{transform:rotate(360deg)}}
-.al-title{font-family:'Orbitron',monospace;font-size:15px;color:#f5c542;
-  letter-spacing:2px;margin-bottom:8px;}
-.al-sub{font-size:12px;color:#7070a0;margin-bottom:24px;letter-spacing:1px;}
-.al-bar-wrap{width:220px;height:3px;background:rgba(255,255,255,0.07);
-  border-radius:2px;overflow:hidden;}
-.al-bar{height:100%;width:0%;
-  background:linear-gradient(90deg,#e8a800,#f5c542,#fff);
-  border-radius:2px;transition:width .08s linear;
-  box-shadow:0 0 10px rgba(245,197,66,0.6);}
+ROULETTE_NUMBERS = [
+    (0,"green"),(32,"red"),(15,"black"),(19,"red"),(4,"black"),(21,"red"),
+    (2,"black"),(25,"red"),(17,"black"),(34,"red"),(6,"black"),(27,"red"),
+    (13,"black"),(36,"red"),(11,"black"),(30,"red"),(8,"black"),(23,"red"),
+    (10,"black"),(5,"red"),(24,"black"),(16,"red"),(33,"black"),(1,"red"),
+    (20,"black"),(14,"red"),(31,"black"),(9,"red"),(22,"black"),(18,"red"),
+    (29,"black"),(7,"red"),(28,"black"),(12,"red"),(35,"black"),(3,"red"),(26,"black")
+]
 
-/* Toast */
-.toast{position:fixed;top:14px;left:12px;right:12px;
-  background:rgba(14,14,26,0.88);border:1px solid var(--glass-border);
-  backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 8px 32px rgba(0,0,0,.5);
-  border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;z-index:999;text-align:center;
-  transform:translateY(-80px);transition:transform .3s;}
-.toast.show{transform:translateY(0);}
-.toast.ok{border-color:rgba(45,198,83,.4);color:var(--green);}
-.toast.err{border-color:rgba(230,57,70,.4);color:var(--red);}
-.loader{text-align:center;padding:40px;color:var(--muted);}
-.loader span{font-size:36px;display:block;margin-bottom:10px;animation:spin 1.5s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
-</head>
-<body>
-<!-- No UID gate: non-Telegram → not_telegram.html, non-admin → index.html silently -->
-<script>
-(function(){
-  const _tg = window.Telegram?.WebApp;
-  if(_tg){ _tg.ready(); _tg.expand(); }
-  if(!_tg?.initDataUnsafe?.user?.id){
-    window.location.replace('not_telegram.html');
-  }
-})();
-</script>
+# ════════════════════════════════════════
+#  LOGGING HELPERS
+# ════════════════════════════════════════
 
-<div class="admin-loading" id="admin-loading">
-  <div class="al-icon">⚙️</div>
-  <div class="al-title">TOPLUCK ADMIN</div>
-  <div class="al-sub" id="al-sub">Проверка доступа...</div>
-  <div class="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
-</div>
-<div class="toast" id="toast"></div>
+async def log(thread_id: int, text: str, reply_markup=None, incognito: bool = False):
+    """Send message to log group thread. incognito=True skips logging."""
+    if incognito or not LOG_GROUP_ID or not thread_id:
+        return
+    try:
+        await bot.send_message(
+            chat_id=LOG_GROUP_ID,
+            message_thread_id=thread_id,
+            text=text,
+            parse_mode="HTML",
+            reply_markup=reply_markup,
+            disable_notification=True,
+        )
+    except Exception as e:
+        logger.warning(f"Log send error (thread {thread_id}): {e}")
 
-<div class="header">
-  <span class="incognito-badge">🥷 ИНКОГНИТО</span>
-  <h1 id="header-title">🛠 TOPLUCK ADMIN</h1>
-  <p id="header-sub">Панель управления казино</p>
-</div>
+def fire_log(coro):
+    """Fire-and-forget: schedule a log coroutine as background task. Never blocks."""
+    asyncio.create_task(coro)
 
-<div class="tabs">
-  <div class="tab a" onclick="switchTab('users',this)">👥 Игроки</div>
-  <div class="tab"   onclick="switchTab('revenue',this)">💰 Доход</div>
-  <div class="tab"   onclick="switchTab('promo',this)">🎟 Промо</div>
-  <div class="tab"   onclick="switchTab('settings',this)">⚙️ Настройки</div>
-  <div class="tab"   onclick="switchTab('tasks',this)">✅ Задания</div>
-  <div class="tab"   onclick="switchTab('commands',this)">🛠 Команды</div>
-  <div class="tab"   onclick="switchTab('devmode',this)">🔬 Dev</div>
-  <div class="tab"   onclick="switchTab('logs',this)">📋 Логи</div>
-</div>
+async def log_new_user(uid: int, first_name: str, username: str, balance: int):
+    safe_name = _html.escape(first_name or "")
+    uname = f"@{_html.escape(username)}" if username else "нет"
+    await log(LOG_THREAD_USERS,
+        f"👤 <b>Новый игрок</b>\n"
+        f"#id{uid}\n"
+        f"Имя: <b>{safe_name}</b> ({uname})\n"
+        f"Стартовый баланс: {balance} 🪙\n"
+        f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
-<!-- USERS -->
-<div class="tab-pane a" id="tab-users">
-  <div id="users-root"><div class="loader"><span>⚙️</span><p>Загрузка...</p></div></div>
-</div>
+async def log_game(uid: int, name: str, game: str, bet: int, result: str, gain: int, balance: int):
+    emoji = "🏆" if "Выигрыш" in result else "💀"
+    safe_name = _html.escape(name or "")
+    await log(LOG_THREAD_GAMES,
+        f"{emoji} <b>{result}</b> — {game}\n"
+        f"#id{uid} #game_{game.lower().replace(' ','_')}\n"
+        f"Игрок: <b>{safe_name}</b>\n"
+        f"Ставка: {bet} 🪙 | Выигрыш: {gain} 🪙\n"
+        f"Баланс: {balance} 🪙")
 
-<!-- PROMO CODES -->
-<div class="tab-pane" id="tab-promo">
+async def log_deposit(uid: int, name: str, amount: int, balance: int, method: str = "Stars"):
+    safe_name = _html.escape(name or ""); safe_method = _html.escape(method or "")
+    await log(LOG_THREAD_DEPOSIT,
+        f"💳 <b>Пополнение баланса</b>\n"
+        f"#id{uid} #deposit\n"
+        f"Игрок: <b>{safe_name}</b>\n"
+        f"Сумма: +{amount} 🪙 (через {safe_method})\n"
+        f"Новый баланс: {balance} 🪙\n"
+        f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
-  <div class="settings-block" style="border-color:rgba(245,197,66,.2);">
-    <div class="settings-title">➕ СОЗДАТЬ ПРОМОКОД</div>
-    <div style="margin-bottom:8px">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Код</div>
-      <input class="ag-inp" id="cp-code" type="text" placeholder="TOPLUCK2024" style="width:100%;text-transform:uppercase;font-family:'Orbitron',monospace"/>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-      <div>
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Начисление 🪙 (может быть −)</div>
-        <input class="ag-inp" id="cp-reward" type="number" placeholder="100" value="100" style="width:100%;min-width:0;font-family:'Orbitron',monospace;font-size:14px;"/>
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Активаций</div>
-        <div style="display:flex;gap:5px">
-          <input class="ag-inp" id="cp-uses" type="number" placeholder="100" value="100" style="flex:1"/>
-          <button class="abtn pur" id="cp-inf-btn" onclick="toggleCpInf('uses')" title="Безлимит" style="padding:6px 9px;font-size:13px">∞</button>
-        </div>
-      </div>
-    </div>
-    <div style="margin-bottom:12px">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Дата окончания</div>
-      <div style="display:flex;gap:5px">
-        <input class="ag-inp" id="cp-expires" type="date" style="flex:1"/>
-        <button class="abtn pur" id="cp-eternal-btn" onclick="toggleCpInf('eternal')" title="Вечный" style="padding:6px 9px;font-size:11px">∞ всегда</button>
-      </div>
-    </div>
-    <button class="abtn set" style="width:100%;padding:12px;font-size:13px" onclick="createPromo()">🎟 Создать промокод</button>
-    <div id="cp-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:8px"></div>
-  </div>
+async def log_admin_action(admin_id: int, admin_name: str, action: str, target_uid: int,
+                           target_name: str, details: str, incognito: bool = False):
+    safe_aname = _html.escape(admin_name or ""); safe_tname = _html.escape(target_name or "")
+    safe_details = _html.escape(details or "")
+    await log(LOG_THREAD_ADMIN,
+        f"🛠 <b>Действие администратора</b>\n"
+        f"#admin #id{target_uid}\n"
+        f"Админ: <b>{safe_aname}</b> (ID: {admin_id})\n"
+        f"Действие: {action}\n"
+        f"Цель: <b>{safe_tname}</b> (ID: {target_uid})\n"
+        f"Детали: {safe_details}\n"
+        f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}",
+        incognito=incognito)
 
-  <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:10px;padding:0 2px">
-    📋 ВСЕ ПРОМОКОДЫ
-  </div>
-  <div id="promo-list" style="min-height:60px">
-    <div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">⏳ Загрузка...</div>
-  </div>
-</div>
+async def log_withdraw_request(uid: int, name: str, gift_name: str, price: int,
+                                recipient_id: int, anonymous: bool, message_text: str,
+                                withdraw_id: str):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="✅ Выдано", callback_data=f"wd_done_{withdraw_id}_{uid}"),
+        InlineKeyboardButton(text="❌ Отклонено", callback_data=f"wd_reject_{withdraw_id}_{uid}"),
+    ]])
+    uname_info = "Аноним 🎭" if anonymous else f"{name} (ID: {uid})"
+    await log(LOG_THREAD_WITHDRAW,
+        f"📦 <b>Запрос на вывод подарка</b>\n"
+        f"#id{uid} #withdraw #gift\n"
+        f"Покупатель: <b>{uname_info}</b>\n"
+        f"Подарок: <b>{gift_name}</b>\n"
+        f"Стоимость: {price} ⭐\n"
+        f"Получатель ID: <code>{recipient_id}</code>\n"
+        + (f"Подпись: <i>{message_text}</i>\n" if message_text and message_text != "auto" else "")
+        + f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}",
+        reply_markup=kb)
 
-<!-- REVENUE -->
-<div class="tab-pane" id="tab-revenue">
-  <div class="rev-card">
-    <div class="rev-title">📅 ПЕРИОД</div>
-    <div class="period-btns">
-      <div class="pb a" onclick="setPeriod(this,'today')">Сегодня</div>
-      <div class="pb"   onclick="setPeriod(this,'week')">7 дней</div>
-      <div class="pb"   onclick="setPeriod(this,'month')">30 дней</div>
-      <div class="pb"   onclick="setPeriod(this,'all')">Всё время</div>
-      <div class="pb"   onclick="setPeriod(this,'custom')">Даты</div>
-    </div>
-    <div id="custom-wrap" style="display:none">
-      <div class="date-row">
-        <span class="date-lbl">С:</span><input class="date-inp" type="date" id="d-from"/>
-        <span class="date-lbl">По:</span><input class="date-inp" type="date" id="d-to"/>
-        <button class="abtn set" onclick="loadRev()">OK</button>
-      </div>
-    </div>
-    <div id="rev-msg" style="text-align:center;color:var(--muted);padding:14px">Загрузка...</div>
-    <div class="rev-grid" id="rev-grid" style="display:none"></div>
-  </div>
-</div>
+async def log_bot_gift(uid: int, name: str, gift_name: str, gift_emoji: str, price: int,
+                       recipient_id: int, anonymous: bool, message_text: str):
+    """Log auto-sent bot gift to the bot-withdraw thread."""
+    uname_info = "Аноним 🎭" if anonymous else f"{name} (ID: {uid})"
+    recip_info = f"себе (ID: {uid})" if recipient_id == uid else f"ID: <code>{recipient_id}</code>"
+    await log(LOG_THREAD_WITHDRAW_BOT,
+        f"🤖 <b>Подарок от бота отправлен</b>\n"
+        f"#id{uid} #bot_gift\n"
+        f"Отправитель: <b>{uname_info}</b>\n"
+        f"Подарок: {gift_emoji} <b>{gift_name}</b>\n"
+        f"Стоимость: {price} ⭐\n"
+        f"Получатель: {recip_info}\n"
+        + (f"Подпись: <i>{message_text}</i>\n" if message_text and message_text != "auto" else "")
+        + f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
 
-<!-- SETTINGS -->
-<div class="tab-pane" id="tab-settings">
+# ════════════════════════════════════════
+#  CALLBACK: Вывод (Выдано / Отклонено)
+# ════════════════════════════════════════
 
-  <!-- Incognito mode -->
-  <div class="settings-block" id="incognito-block" style="display:none">
-    <div class="settings-title">🥷 РЕЖИМ ИНКОГНИТО</div>
-    <div class="incognito-toggle">
-      <div>
-        <div class="it-label">Режим инкогнито</div>
-        <div class="it-sub">Действия не логируются в группу логов</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)"/>
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div id="incognito-status" style="font-size:12px;color:var(--muted);text-align:center"></div>
-  </div>
+@dp.callback_query(F.data.startswith("wd_"))
+async def on_withdraw_cb(cb: CallbackQuery):
+    parts = cb.data.split("_")  # wd_done_<wid>_<uid>
+    action = parts[1]  # done / reject
+    uid = int(parts[3]) if len(parts) > 3 else 0
+    u = await db.get_user(uid) if uid else None
+    name = u.get("first_name","?") if u else "?"
 
-  <!-- Global luck → applies to ALL modes at once -->
-  <div class="settings-block">
-    <div class="settings-title">🌐 ГЛОБАЛЬНЫЙ КОЭФФИЦИЕНТ УДАЧИ</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Применяется ко <b style="color:var(--text)">всем режимам сразу</b> (Рулетка + Мины + Башня).<br/>
-      <b style="color:var(--green)">1.0</b> — честная игра ·
-      <b style="color:var(--red)">0.0</b> — казино всегда выигрывает<br/>
-      <span style="color:rgba(255,255,255,.3);font-size:10px">Личная удача 100% / 0% остаётся абсолютной при любом коэффициенте</span>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="gl-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="gl-slider" min="0" max="100" value="100" oninput="onGlSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setGlCoeff(0)">0.0 — Всегда проигрыш</div>
-        <div class="pb" onclick="setGlCoeff(0.5)">0.5 — Меньше шансов</div>
-        <div class="pb" onclick="setGlCoeff(1.0)">1.0 — Честно</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveGlCoeff()">💾 Применить ко всем режимам</button>
-    </div>
-    <div id="gl-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
+    if action == "done":
+        text = f"✅ <b>Выдано!</b> Обработал: {cb.from_user.first_name}"
+        status = "выдан"
+    else:
+        text = f"❌ <b>Отклонено.</b> Отклонил: {cb.from_user.first_name}"
+        status = "отклонён"
+        # Refund if rejected (optional — commented out; uncomment if needed)
+        # if u: await db.add_to_balance(uid, price)  # requires storing price
 
-  <!-- Euro Roulette luck — INDEPENDENT -->
-  <div class="settings-block">
-    <div class="settings-title">🎰 ЕВРОПЕЙСКАЯ РУЛЕТКА — УДАЧА</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Только для Европейской рулетки. <b style="color:var(--text)">Не влияет на другие режимы.</b>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="euro-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--green);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="euro-slider" min="0" max="100" value="100" oninput="onEuroSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--green);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setEuroCoeff(0)">0.0</div>
-        <div class="pb" onclick="setEuroCoeff(0.5)">0.5</div>
-        <div class="pb" onclick="setEuroCoeff(1.0)">1.0 — Честно</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px;accent-color:var(--green)" onclick="saveEuroCoeff()">💾 Сохранить (только рулетка)</button>
-    </div>
-    <div id="euro-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+        await cb.message.reply(text, parse_mode="HTML")
+    except Exception: pass
 
-  <!-- Mines luck — INDEPENDENT -->
-  <div class="settings-block">
-    <div class="settings-title">💣 МИНЫ — УДАЧА</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Только для Мин. <b style="color:var(--text)">Не влияет на другие режимы.</b>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="mines-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--red);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="mines-slider" min="0" max="100" value="100" oninput="onMinesSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setMinesCoeff(0)">0.0</div>
-        <div class="pb" onclick="setMinesCoeff(0.5)">0.5</div>
-        <div class="pb" onclick="setMinesCoeff(1.0)">1.0 — Честно</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveMinesCoeff()">💾 Сохранить (только мины)</button>
-    </div>
-    <div id="mines-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
+    # Notify user
+    if uid:
+        try:
+            emoji = "✅" if action == "done" else "❌"
+            await bot.send_message(uid,
+                f"{emoji} Ваш запрос на подарок <b>{status}</b>.\n"
+                f"Если есть вопросы — напишите владельцу.",
+                parse_mode="HTML")
+        except Exception: pass
 
-  <!-- Tower luck — INDEPENDENT -->
-  <div class="settings-block">
-    <div class="settings-title">🗼 БАШНЯ — УДАЧА</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Только для Башни. <b style="color:var(--text)">Не влияет на другие режимы.</b>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Коэффициент башни:</span>
-        <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--blue);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="tower-luck-slider" min="0" max="100" value="100" oninput="onTowerLuckSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setTowerLuck(0)">0.0 — Всегда взрыв</div>
-        <div class="pb" onclick="setTowerLuck(0.5)">0.5</div>
-        <div class="pb" onclick="setTowerLuck(1.0)">1.0 — Честно</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerLuck()">💾 Сохранить (только башня)</button>
-    </div>
-    <div id="tower-luck-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
+    await cb.answer()
 
-  <!-- Mines max multiplier -->
-  <div class="settings-block">
-    <div class="settings-title">💎 МИНЫ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Ограничивает максимальный множитель выплаты в игре «Мины».<br/>
-      <b style="color:var(--text)">25x</b> — без ограничений · <b style="color:var(--text)">2x</b> — минимальный выигрыш<br/>
-      <span style="color:var(--muted);font-size:10px">При 3 бомбах максимум теоретически ~24x; при 24 бомбах — ~24x</span>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Максимальный коэф.:</span>
-        <span id="mines-max-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--red);font-weight:700">25.0x</span>
-      </div>
-      <input type="range" id="mines-max-slider" min="1" max="100" value="25" step="0.5"
-        oninput="onMinesMaxSlider(this.value)"
-        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setMinesMax(2)">2x — Строго</div>
-        <div class="pb" onclick="setMinesMax(5)">5x</div>
-        <div class="pb" onclick="setMinesMax(10)">10x</div>
-        <div class="pb" onclick="setMinesMax(25)">25x — По умолчанию</div>
-        <div class="pb" onclick="setMinesMax(100)">100x — Без лимита</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveMinesMax()">💾 Сохранить</button>
-    </div>
-    <div id="mines-max-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
+# ════════════════════════════════════════
+#  BROADCAST via log group
+# ════════════════════════════════════════
 
-  <!-- Tower max floors -->
-  <div class="settings-block">
-    <div class="settings-title">🗼 БАШНЯ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Башня останавливается когда коэффициент достигает этого значения.<br/>
-      <b style="color:var(--text)">×5.0</b> — стандарт · <b style="color:var(--text)">×3.0</b> — мягко · <b style="color:var(--text)">×10.0</b> — хардкор<br/>
-      <span style="color:var(--muted);font-size:10px">⚠️ Вступает в силу для новых игр.</span>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Макс. коэф.:</span>
-        <span id="tower-mult-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">×5.0</span>
-      </div>
-      <input type="range" id="tower-mult-slider" min="1.5" max="20" value="5" step="0.5"
-        oninput="onTowerMultSlider(this.value)"
-        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setTowerMult(3)">×3 — Мягко</div>
-        <div class="pb" onclick="setTowerMult(5)">×5 — Стандарт</div>
-        <div class="pb" onclick="setTowerMult(8)">×8 — Расш.</div>
-        <div class="pb" onclick="setTowerMult(15)">×15 — Хардкор</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerMult()">💾 Сохранить</button>
-    </div>
-    <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
+pending_broadcasts: dict[str, dict] = {}  # bid -> {from_uid, message}
 
-</div>
+@dp.callback_query(F.data.startswith("bc_"))
+async def on_broadcast_cb(cb: CallbackQuery):
+    parts = cb.data.split("_", 2)
+    action = parts[1]
+    bid = parts[2] if len(parts) > 2 else ""
 
-<!-- TASKS -->
-<div class="tab-pane" id="tab-tasks">
-  <div class="rev-card" style="margin-bottom:10px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div class="rev-title" style="margin-bottom:0">✅ УПРАВЛЕНИЕ ЗАДАНИЯМИ</div>
-      <button class="abtn set" onclick="showCreateTask()" style="font-size:11px;padding:6px 12px">+ Создать</button>
-    </div>
-    <div id="tasks-admin-list"><div style="text-align:center;padding:20px;color:var(--muted)">⏳ Загружаем...</div></div>
-  </div>
-  <!-- Create task form -->
-  <div id="task-create-form" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-top:10px">
-    <div class="rev-title" style="margin-bottom:12px">📝 НОВОЕ ЗАДАНИЕ</div>
-    <div style="display:grid;gap:8px">
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Тип</div>
-        <select id="nt-type" style="width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:9px 12px;color:var(--text);font-size:13px">
-          <option value="channel">📢 Вступить в канал</option>
-          <option value="group">👥 Вступить в группу</option>
-          <option value="bot">🤖 Запустить бота</option>
-          <option value="spend">🎰 Потратить монеты</option>
-          <option value="deposit">💳 Пополнить монеты</option>
-        </select>
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Название</div>
-        <input class="ag-inp" id="nt-title" type="text" placeholder="Подпишись на наш канал"/>
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Описание</div>
-        <input class="ag-inp" id="nt-desc" type="text" placeholder="Необязательное описание"/>
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Цель (ссылка или @username)</div>
-        <input class="ag-inp" id="nt-target" type="text" placeholder="@TopLuckBot или https://t.me/..."/>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Награда 🪙</div>
-          <input class="ag-inp" id="nt-reward" type="number" value="50" min="1"/>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Кол-во (для spend/dep)</div>
-          <input class="ag-inp" id="nt-count" type="number" value="1" min="1"/>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="abtn set" style="flex:1" onclick="createTask()">✅ Создать</button>
-        <button class="abtn ban" style="flex:1" onclick="document.getElementById('task-create-form').style.display='none'">✕ Отмена</button>
-      </div>
-      <div id="task-create-status" style="text-align:center;font-size:12px;min-height:16px"></div>
-    </div>
-  </div>
-</div>
+    if action == "send" and bid in pending_broadcasts:
+        bdata = pending_broadcasts.pop(bid)
+        orig_msg: Message = bdata["message"]
+        try:
+            await cb.message.edit_reply_markup(reply_markup=None)
+            await cb.message.reply("📤 Рассылка запущена...", parse_mode="HTML")
+        except Exception: pass
 
-<!-- COMMANDS -->
-<div class="tab-pane" id="tab-commands">
-  <div class="rev-card" style="margin-bottom:10px">
-    <div class="rev-title">🛠 КОМАНДЫ АДМИНИСТРАТОРОВ</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Быстрые действия для управления ботом</p>
-    <div style="display:grid;gap:8px">
-      <button class="abtn set" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('broadcast')">
-        📢 Рассылка всем игрокам
-      </button>
-      <button class="abtn msg" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('give_all')">
-        🪙 Выдать монеты всем
-      </button>
-      <button class="abtn msg" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('top_players')">
-        🏆 Топ игроков по балансу
-      </button>
-      <button class="abtn msg" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('stats')">
-        📊 Общая статистика сервера
-      </button>
-    </div>
-  </div>
-  <!-- Command results -->
-  <div id="cmd-result" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px">
-    <div class="rev-title" id="cmd-result-title" style="margin-bottom:10px"></div>
-    <div id="cmd-result-body" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
-  </div>
-  <!-- Broadcast form -->
-  <div id="cmd-broadcast-form" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-top:10px">
-    <div class="rev-title" style="margin-bottom:10px">📢 РАССЫЛКА</div>
-    <textarea id="bc-text" rows="4" placeholder="Текст сообщения (поддерживается HTML)"
-      style="width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:10px;
-      padding:10px;color:var(--text);font-size:13px;resize:vertical;font-family:'Rajdhani',sans-serif"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="abtn set" onclick="sendBroadcast()" style="flex:1">📢 Отправить</button>
-      <button class="abtn ban" onclick="document.getElementById('cmd-broadcast-form').style.display='none'" style="flex:1">✕</button>
-    </div>
-    <div id="bc-status" style="text-align:center;font-size:12px;margin-top:6px;min-height:16px"></div>
-  </div>
-  <!-- Give all form -->
-  <div id="cmd-give-all-form" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-top:10px">
-    <div class="rev-title" style="margin-bottom:10px">🪙 ВЫДАТЬ МОНЕТЫ ВСЕМ</div>
-    <input class="ag-inp" id="ga-amount" type="number" placeholder="Количество монет" value="10" style="width:100%;margin-bottom:8px"/>
-    <div style="display:flex;gap:8px">
-      <button class="abtn set" onclick="giveAll()" style="flex:1">✅ Выдать</button>
-      <button class="abtn ban" onclick="document.getElementById('cmd-give-all-form').style.display='none'" style="flex:1">✕</button>
-    </div>
-    <div id="ga-status" style="text-align:center;font-size:12px;margin-top:6px;min-height:16px"></div>
-  </div>
-</div>
+        users = await db.get_all_users()
+        sent, fail = 0, 0
+        for u in users:
+            try:
+                await orig_msg.copy_to(u["user_id"])
+                sent += 1
+                await asyncio.sleep(0.05)
+            except Exception:
+                fail += 1
+        try:
+            await cb.message.reply(
+                f"✅ <b>Рассылка завершена</b>\n📤 Отправлено: {sent}\n❌ Ошибок: {fail}",
+                parse_mode="HTML")
+        except Exception: pass
 
-<!-- DEV MODE -->
-<div class="tab-pane" id="tab-devmode">
-  <div class="rev-card" style="margin-bottom:10px">
-    <div class="rev-title">🔬 РЕЖИМ РАЗРАБОТЧИКА</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Только для разработчиков. Просмотр данных любого пользователя.</p>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input class="ag-inp" id="dev-uid" type="number" placeholder="Telegram ID пользователя" style="flex:1"/>
-      <button class="abtn set" onclick="devLoadUser()" style="white-space:nowrap;padding:9px 14px">🔍 Войти</button>
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:8px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-        <input type="checkbox" id="dev-debug-mode" style="accent-color:var(--gold)"/>
-        Режим отладки (история + задания)
-      </label>
-    </div>
-  </div>
-  <div id="dev-user-view" style="display:none">
-    <!-- User profile view -->
-    <div style="background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div id="dev-avatar" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#4361ee);
-          display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#fff">?</div>
-        <div>
-          <div id="dev-name" style="font-weight:700;font-size:16px"></div>
-          <div id="dev-uid-disp" style="font-size:11px;color:var(--muted)"></div>
-        </div>
-        <div style="margin-left:auto;text-align:right">
-          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700" id="dev-balance">—</div>
-          <div style="font-size:11px;color:var(--muted)">Баланс</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--blue)" id="dev-level">0</div><div style="font-size:10px;color:var(--muted)">УРОВЕНЬ</div></div>
-        <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:16px" id="dev-spins">0</div><div style="font-size:10px;color:var(--muted)">ИГР</div></div>
-        <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--green)" id="dev-wins">0</div><div style="font-size:10px;color:var(--muted)">ПОБЕД</div></div>
-      </div>
-    </div>
-    <!-- Debug info (shown only in debug mode) -->
-    <div id="dev-debug-section" style="display:none">
-      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">ИСТОРИЯ (последние 20)</div>
-      <div id="dev-history-list" style="font-size:12px"></div>
-      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;margin:12px 0 8px">ВЫПОЛНЕННЫЕ ЗАДАНИЯ</div>
-      <div id="dev-tasks-list" style="font-size:12px;color:var(--muted)"></div>
-    </div>
-  </div>
-</div>
+    elif action == "cancel" and bid in pending_broadcasts:
+        pending_broadcasts.pop(bid, None)
+        try:
+            await cb.message.edit_reply_markup(reply_markup=None)
+            await cb.message.reply("❌ Рассылка отменена.")
+        except Exception: pass
+
+    await cb.answer()
+
+# Handler: admin sends message to broadcast thread
+@dp.message(F.message_thread_id == LOG_THREAD_BROADCAST)
+async def on_broadcast_msg(message: Message):
+    if message.from_user.id not in ADMIN_IDS + DEV_IDS:
+        return
+    if message.text and message.text.startswith("/"):
+        return  # skip commands
+
+    bid = str(int(time.time()))
+    pending_broadcasts[bid] = {"from_uid": message.from_user.id, "message": message}
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="✅ Разослать всем", callback_data=f"bc_send_{bid}"),
+        InlineKeyboardButton(text="❌ Отменить", callback_data=f"bc_cancel_{bid}"),
+    ]])
+    await message.reply(
+        f"📢 <b>Подтвердите рассылку</b>\n"
+        f"Отправитель: {message.from_user.first_name}\n"
+        f"Получателей: {len(await db.get_all_users())} чел.",
+        parse_mode="HTML",
+        reply_markup=kb)
+
+# ════════════════════════════════════════
+#  BOT HANDLERS
+# ════════════════════════════════════════
+
+@dp.message(CommandStart())
+async def cmd_start(message: Message):
+    user = message.from_user
+
+    # ── 1. DB — wrapped so any DB error returns gracefully ──
+    try:
+        existed = await db.get_user(user.id)
+        u = await db.ensure_user(user.id, user.username or "", user.first_name or "")
+    except Exception as e:
+        logger.error(f"[cmd_start] DB error uid={user.id}: {e}")
+        try:
+            await message.answer("❌ Временная ошибка сервера. Попробуйте ещё раз.")
+        except Exception: pass
+        return
+
+    # ── 2. Ban check — wrapped ──
+    try:
+        if await db.is_banned(user.id):
+            await message.answer(
+                "⛔ <b>Вы заблокированы.</b>\n"
+                "Обратитесь к администратору, если считаете это ошибкой.",
+                parse_mode="HTML")
+            return
+    except Exception as e:
+        logger.warning(f"[cmd_start] is_banned error: {e}")
+
+    # ── 3. SEND GREETING — always, before any logging ──
+    try:
+        safe_name = _html.escape(user.first_name or "Игрок")
+        is_new = not existed
+        greeting = (
+            f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
+            f"👋 Привет, <b>{safe_name}</b>!\n\n"
+            f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
+            f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
+            f"⭐ 10 монет = 1 Telegram Star\n\n"
+            f"Нажми кнопку ниже чтобы начать:"
+        ) if is_new else (
+            f"👋 С возвращением, <b>{safe_name}</b>!\n\n"
+            f"🍀 <b>TopLuck Casino</b> ждёт тебя!\n\n"
+            f"💰 Баланс: <b>{u['balance']}</b> монет\n\n"
+            f"Открывай казино:"
+        )
+        kb_inline = None
+        if WEBAPP_URL and WEBAPP_URL.startswith("https://"):
+            kb_inline = InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="🎰 Открыть TopLuck Casino", web_app=WebAppInfo(url=WEBAPP_URL))]])
+        await message.answer(greeting, reply_markup=kb_inline, parse_mode="HTML")
+    except Exception as e:
+        logger.error(f"[cmd_start] answer error uid={user.id}: {e}")
+
+    # ── 4. All side-effects AFTER greeting, fire-and-forget ──
+
+    # Referral
+    parts = message.text.split(maxsplit=1)
+    if len(parts) > 1 and parts[1].startswith("ref_"):
+        asyncio.create_task(_handle_referral(user, parts[1]))
+
+    if len(parts) > 1 and parts[1].startswith("gift_request"):
+        for admin_id in ADMIN_IDS:
+            asyncio.create_task(_safe_send(admin_id,
+                f"📦 Пользователь <b>{user.first_name}</b> (ID: <code>{user.id}</code>) "
+                f"написал боту по заявке на подарок."))
+
+    # Log new user — background task, NEVER blocks greeting
+    if not existed:
+        fire_log(log_new_user(user.id, user.first_name or "", user.username or "", u.get("balance", 10)))
+
+async def _safe_send(uid: int, text: str, parse_mode: str = "HTML"):
+    """Send a message safely without raising."""
+    try:
+        await bot.send_message(uid, text, parse_mode=parse_mode)
+    except Exception as e:
+        logger.warning(f"[_safe_send] uid={uid}: {e}")
+
+async def _handle_referral(user, param: str):
+    """Handle referral bonus in background."""
+    try:
+        ref_id = int(param.split("_")[1])
+        if ref_id == user.id:
+            return
+        ref_u = await db.get_user(ref_id)
+        if not ref_u:
+            return
+        nb = await db.add_to_balance(ref_id, 10)
+        await db.add_history(ref_id, "ref", 10, f"Реферал: {user.first_name}")
+        try:
+            ref_u2 = await db.get_user(ref_id)
+            ref_name = ref_u2.get("first_name","?") if ref_u2 else "?"
+            fire_log(log_deposit(ref_id, ref_name, 10, nb, f"Реферал (+{user.first_name})"))
+        except Exception: pass
+        await _safe_send(ref_id,
+            f"🎉 По вашей ссылке зарегистрировался <b>{user.first_name}</b>!\n"
+            f"💰 +10 монет → баланс: <b>{nb}</b>")
+    except Exception as e:
+        logger.warning(f"[_handle_referral]: {e}")
+
+@dp.message(Command("help"))
+async def cmd_help(message: Message):
+    uid = message.from_user.id
+    is_admin = uid in ADMIN_IDS
+    is_dev   = uid in DEV_IDS
+
+    user_cmds = (
+        "🎮 <b>Команды пользователя:</b>\n"
+        "/start — открыть казино\n"
+        "/help — список команд\n"
+    )
+    admin_cmds = (
+        "\n🛠 <b>Команды администратора:</b>\n"
+        "/admin — открыть панель управления\n"
+        "/info &lt;id&gt; — информация о пользователе\n"
+        "/ban &lt;id&gt; [причина] — заблокировать пользователя\n"
+        "/unban &lt;id&gt; — разблокировать пользователя\n"
+        "/message &lt;id&gt; &lt;текст&gt; — отправить сообщение пользователю\n"
+    ) if is_admin else ""
+    dev_cmds = (
+        "\n💻 <b>Команды разработчика:</b>\n"
+        "/database — получить копию базы данных\n"
+        "/logs — получить файл логов\n"
+    ) if is_dev else ""
+
+    await message.answer(
+        f"📋 <b>Команды TopLuck Casino</b>\n\n"
+        + user_cmds + admin_cmds + dev_cmds,
+        parse_mode="HTML")
+
+@dp.message(Command("admin"))
+async def cmd_admin(message: Message):
+    if message.from_user.id not in ADMIN_IDS + DEV_IDS: return
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="🛠 Открыть панель", web_app=WebAppInfo(url=ADMIN_URL))]])
+    await message.answer("🛠 <b>Панель управления TopLuck</b>", reply_markup=kb, parse_mode="HTML")
+
+# ── Admin commands ──
+
+@dp.message(Command("info"))
+async def cmd_info(message: Message):
+    if message.from_user.id not in ADMIN_IDS + DEV_IDS: return
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Использование: /info <id>"); return
+    try:
+        uid = int(parts[1].strip())
+    except ValueError:
+        await message.answer("Неверный ID"); return
+
+    u = await db.get_user(uid)
+    if not u:
+        await message.answer(f"❌ Пользователь {uid} не найден."); return
+
+    hist = await db.get_history(uid, limit=5)
+    recent = "\n".join([f"  • {h['type']}: {h['amount']} — {h['detail']}" for h in hist]) or "  нет"
+    reg = datetime.fromtimestamp(u.get("created_at",0)).strftime("%d.%m.%Y %H:%M") if u.get("created_at") else "?"
+    luck = "Авто" if u["luck_pct"] < 0 else (f"ВСЕГДА ВЫИГРЫВАЕТ" if u["luck_pct"]==100 else f"{u['luck_pct']}%")
+    banned = "✅ ДА" if await db.is_banned(uid) else "Нет"
+
+    await message.answer(
+        f"👤 <b>Информация о пользователе</b>\n\n"
+        f"ID: <code>{uid}</code>\n"
+        f"Имя: <b>{u.get('first_name','')}</b>\n"
+        f"Username: {'@'+u['username'] if u.get('username') else 'нет'}\n"
+        f"Зарегистрирован: {reg}\n\n"
+        f"💰 Баланс: <b>{u['balance']}</b> 🪙\n"
+        f"🎲 Игр: {u['spins']} | 🏆 Побед: {u['wins']}\n"
+        f"📈 Выиграно: {u['total_won']} | 📉 Проиграно: {u['total_lost']}\n"
+        f"🍀 Удача: {luck}\n"
+        f"⛔ Заблокирован: {banned}\n\n"
+        f"📋 Последние 5 операций:\n{recent}",
+        parse_mode="HTML")
+
+@dp.message(Command("ban"))
+async def cmd_ban(message: Message):
+    if message.from_user.id not in ADMIN_IDS: return
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 2:
+        await message.answer("Использование: /ban <id> [причина]"); return
+    try:
+        uid = int(parts[1].strip())
+    except ValueError:
+        await message.answer("Неверный ID"); return
+    reason = parts[2].strip() if len(parts) > 2 else "Без причины"
+
+    u = await db.get_user(uid)
+    name = u.get("first_name","?") if u else "?"
+    await db.set_banned(uid, True)
+    await message.answer(f"⛔ Пользователь <b>{name}</b> (ID: {uid}) заблокирован.\nПричина: {reason}", parse_mode="HTML")
+
+    try:
+        await bot.send_message(uid,
+            f"⛔ <b>Вы заблокированы в TopLuck Casino.</b>\nПричина: {reason}", parse_mode="HTML")
+    except Exception: pass
+
+    await log_admin_action(message.from_user.id, message.from_user.first_name,
+        "BAN", uid, name, f"Причина: {reason}")
+
+@dp.message(Command("unban"))
+async def cmd_unban(message: Message):
+    if message.from_user.id not in ADMIN_IDS: return
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Использование: /unban <id>"); return
+    try:
+        uid = int(parts[1].strip())
+    except ValueError:
+        await message.answer("Неверный ID"); return
+
+    u = await db.get_user(uid)
+    name = u.get("first_name","?") if u else "?"
+    await db.set_banned(uid, False)
+    await message.answer(f"✅ Пользователь <b>{name}</b> (ID: {uid}) разблокирован.", parse_mode="HTML")
+    try:
+        await bot.send_message(uid, "✅ Вы разблокированы в TopLuck Casino.", parse_mode="HTML")
+    except Exception: pass
+    await log_admin_action(message.from_user.id, message.from_user.first_name,
+        "UNBAN", uid, name, "—")
+
+@dp.message(Command("message"))
+async def cmd_message(message: Message):
+    if message.from_user.id not in ADMIN_IDS: return
+    # /message <id> <text>
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 3:
+        await message.answer("Использование: /message <id> <текст>"); return
+    try:
+        uid = int(parts[1].strip())
+    except ValueError:
+        await message.answer("Неверный ID"); return
+    text = parts[2]
+
+    try:
+        await bot.send_message(uid,
+            f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{text}", parse_mode="HTML")
+        await message.answer(f"✅ Сообщение отправлено пользователю {uid}.")
+    except TelegramForbiddenError:
+        await message.answer(f"❌ Пользователь {uid} заблокировал бота.")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {e}")
+
+# ── Dev commands ──
+
+@dp.message(Command("database"))
+async def cmd_database(message: Message):
+    if message.from_user.id not in DEV_IDS:
+        await message.answer("⛔ Нет доступа."); return
+    db_path = Path(os.getenv("DB_PATH", "casino.db"))
+    if not db_path.exists():
+        await message.answer("❌ Файл БД не найден."); return
+    await message.answer_document(
+        BufferedInputFile(db_path.read_bytes(), filename=f"casino_{datetime.now().strftime('%Y%m%d_%H%M')}.db"),
+        caption=f"🗄 База данных TopLuck Casino\n{datetime.now().strftime('%d.%m.%Y %H:%M')}")
+
+@dp.message(Command("logs"))
+async def cmd_logs(message: Message):
+    if message.from_user.id not in DEV_IDS:
+        await message.answer("⛔ Нет доступа."); return
+    # Search for log file in multiple locations
+    possible = ["topluck.log", "bot.log", "app.log", "/tmp/topluck.log",
+                str(BASE / "topluck.log"), str(BASE / "bot.log")]
+    log_path = None
+    for p in possible:
+        if Path(p).exists():
+            log_path = Path(p); break
+    if not log_path:
+        # Try Python logging file handler
+        import logging
+        for h in logging.root.handlers:
+            if hasattr(h, 'baseFilename') and Path(h.baseFilename).exists():
+                log_path = Path(h.baseFilename); break
+    if not log_path:
+        await message.answer(
+            "ℹ️ Файл логов не найден.\n"
+            "Логи пишутся в stdout. Для сохранения запустите:\n"
+            "<code>python bot.py 2>&1 | tee topluck.log</code>",
+            parse_mode="HTML")
+        return
+    await message.answer_document(
+        BufferedInputFile(log_path.read_bytes(), filename=f"logs_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"),
+        caption=f"📋 Логи TopLuck Casino\n{datetime.now().strftime('%d.%m.%Y %H:%M')}")
+
+# ── Payments ──
+
+@dp.pre_checkout_query()
+async def pre_checkout(query: PreCheckoutQuery):
+    await query.answer(ok=True)
+
+@dp.message(F.successful_payment)
+async def on_payment(message: Message):
+    pl = message.successful_payment.invoice_payload
+    parts = pl.split("_")
+    if parts[0] == "coins" and len(parts) == 3:
+        uid, amount = int(parts[1]), int(parts[2])
+        coins = amount * 10  # 1 star = 10 coins
+        nb = await db.add_to_balance(uid, coins)
+        await db.add_history(uid, "deposit", coins, f"Пополнение через Stars ({amount} ⭐)")
+        await message.answer(f"✅ Оплата прошла!\n⭐ {amount} Stars → 💰 +{coins} монет\nБаланс: <b>{nb}</b>", parse_mode="HTML")
+        u = await db.get_user(uid)
+        name = u.get("first_name","?") if u else "?"
+        fire_log(log_deposit(uid, name, amount, nb, "Telegram Stars"))
+
+# ════════════════════════════════════════
+#  DAILY BACKUP at 00:00
+# ════════════════════════════════════════
+
+async def daily_backup():
+    while True:
+        now = datetime.now()
+        # Seconds until next 00:00
+        secs = ((24 - now.hour - 1) * 3600 + (60 - now.minute - 1) * 60 + (60 - now.second))
+        await asyncio.sleep(secs)
+        await send_backup()
+
+async def send_backup():
+    db_path = Path(os.getenv("DB_PATH", "casino.db"))
+    log_path = Path("topluck.log")
+    ts = datetime.now().strftime('%d.%m.%Y %H:%M')
+    caption = f"💾 <b>Автобэкап TopLuck Casino</b>\nВремя: {ts}"
+
+    if db_path.exists():
+        try:
+            await bot.send_document(
+                chat_id=LOG_GROUP_ID,
+                message_thread_id=LOG_THREAD_BACKUP,
+                document=BufferedInputFile(db_path.read_bytes(), filename=f"casino_{ts.replace(':','').replace(' ','_')}.db"),
+                caption=caption, parse_mode="HTML")
+        except Exception as e:
+            logger.warning(f"Backup DB error: {e}")
+
+    if log_path.exists():
+        try:
+            await bot.send_document(
+                chat_id=LOG_GROUP_ID,
+                message_thread_id=LOG_THREAD_BACKUP,
+                document=BufferedInputFile(log_path.read_bytes(), filename=f"logs_{ts.replace(':','').replace(' ','_')}.txt"),
+                caption=f"📋 Логи на {ts}")
+        except Exception as e:
+            logger.warning(f"Backup logs error: {e}")
+
+# ════════════════════════════════════════
+#  HTTP API
+# ════════════════════════════════════════
+
+async def api_user(req: web.Request):
+    uid = int(req.match_info["uid"])
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error":"not found"}, status=404)
+    return web.json_response(u)
+
+async def api_ensure_user(req: web.Request):
+    data = await req.json()
+    uid = int(data.get("user_id", 0))
+    if not uid: return web.json_response({"error":"no uid"}, status=400)
+    username   = str(data.get("username",""))
+    first_name = str(data.get("first_name",""))
+    # Check if user exists before ensure (to detect new registrations)
+    existed = await db.get_user(uid)
+    u = await db.ensure_user(uid, username, first_name)
+    # Log new users who register through the mini app (not via /start)
+    if not existed:
+        await log_new_user(uid, first_name, username, u.get("balance", 10))
+    return web.json_response(u)
+
+async def api_history(req: web.Request):
+    uid = int(req.match_info["uid"])
+    return web.json_response(await db.get_history(uid))
+
+async def api_invoice(req: web.Request):
+    uid    = int(req.rel_url.query.get("uid", 0))
+    amount = max(10, min(int(req.rel_url.query.get("amount", 50)), 10000))
+    if not uid: return web.json_response({"error":"no uid"}, status=400)
+    try:
+        await bot.send_invoice(chat_id=uid, title=f"💰 {amount} монет",
+            description=f"Пополнение баланса на {amount} монет",
+            payload=f"coins_{uid}_{amount}", currency="XTR",
+            prices=[LabeledPrice(label=f"{amount} монет", amount=amount)])
+        return web.json_response({"ok": True})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def api_get_gifts(req: web.Request):
+    try:
+        result = await bot.get_available_gifts()
+        gifts_list = []
+        for gift in result.gifts:
+            gifts_list.append({
+                "id": gift.id,
+                "emoji": gift.sticker.emoji if gift.sticker else "🎁",
+                "star_count": gift.star_count,
+                "total_count": gift.total_count,
+                "remaining_count": gift.remaining_count,
+                "is_limited": gift.total_count is not None,
+                "can_be_upgraded": getattr(gift, "can_be_upgraded", False),
+            })
+        return web.json_response({"gifts": gifts_list})
+    except Exception as e:
+        logger.error(f"get_available_gifts: {e}")
+        return web.json_response({"error": str(e), "gifts": []}, status=500)
+
+async def api_gift_buy(req: web.Request):
+    data         = await req.json()
+    uid          = int(data.get("user_id", 0))
+    gift_id      = str(data.get("gift_id", ""))
+    star_count   = int(data.get("star_count", 0))
+    source       = str(data.get("source", "bot"))
+    recipient_id = int(data.get("recipient_id", uid))
+    anonymous    = bool(data.get("anonymous", False))
+    message_text = data.get("message")
+    sender_name  = data.get("sender_name", "Аноним")
+    gift_name    = str(data.get("gift_name", "Подарок"))
+    gift_emoji   = str(data.get("gift_emoji", "🎁"))
+
+    if not uid: return web.json_response({"error":"no uid"}, status=400)
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error":"user not found"}, status=404)
+    if await db.is_banned(uid):
+        return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
+    price = star_count * 10  # 1 star = 10 coins
+    if price <= 0: return web.json_response({"error":"invalid price"}, status=400)
+    if u["balance"] < price:
+        return web.json_response({"error":"Недостаточно монет на балансе!"}, status=400)
+
+    if source == "bot" and gift_id:
+        caption = None
+        if message_text and message_text != "auto":
+            caption = message_text[:255]
+        elif not anonymous and sender_name:
+            caption = f"От {sender_name} 🎁"
+        try:
+            await bot.send_gift(user_id=recipient_id, gift_id=gift_id, text=caption)
+        except TelegramForbiddenError:
+            return web.json_response({"error":"❌ Пользователь заблокировал бота. Монеты не списаны."}, status=400)
+        except TelegramBadRequest as e:
+            s = str(e).lower()
+            fire_log(log_error("api_gift_buy/bot", str(e)))
+            if "not enough stars" in s or "insufficient" in s or "STARGIFT_USAGE_LIMITED" in str(e):
+                return web.json_response({"error":"⚠️ У бота недостаточно звёзд. Монеты не списаны."}, status=400)
+            if "gift_id_invalid" in s or "invalid gift" in s:
+                return web.json_response({"error":"❌ Этот подарок больше недоступен. Монеты не списаны."}, status=400)
+            return web.json_response({"error":f"❌ Ошибка: {str(e)}"}, status=400)
+        except Exception as e:
+            fire_log(log_error("api_gift_buy/bot/unexpected", str(e)))
+            return web.json_response({"error":f"❌ Ошибка: {str(e)}"}, status=500)
+
+        new_bal = await db.add_to_balance(uid, -price)
+        await db.add_history(uid, "gift_sent", price, f"Подарок → {recipient_id}: {gift_emoji} (⭐{price})")
+        # Log to bot-gifts thread
+        u2 = await db.get_user(uid)
+        uname = u2.get("first_name", "?") if u2 else "?"
+        _bg_name = gift_name if gift_name.startswith(gift_emoji) else f"{gift_emoji} {gift_name}"
+        fire_log(log_bot_gift(uid, sender_name or uname, _bg_name, gift_emoji, price,
+                              recipient_id, anonymous, message_text))
+        return web.json_response({"ok":True,"new_balance":new_bal})
+
+    else:
+        # Owner gift
+        if recipient_id != uid:
+            try:
+                await bot.send_chat_action(chat_id=recipient_id, action="typing")
+            except TelegramForbiddenError:
+                return web.json_response({"error":"❌ Получатель заблокировал бота. Монеты не списаны."}, status=400)
+            except Exception: pass
+
+        new_bal = await db.add_to_balance(uid, -price)
+        await db.add_history(uid, "gift_sent", price, f"Заявка владельцу: {gift_emoji} {gift_name} (⭐{price})")
+
+        withdraw_id = str(int(time.time()))
+        # Avoid double emoji: if gift_name starts with gift_emoji, don't prepend again
+        _display_name = gift_name if gift_name.startswith(gift_emoji) else f"{gift_emoji} {gift_name}"
+        fire_log(log_withdraw_request(uid, sender_name or "?", _display_name,
+                                       price, recipient_id, anonymous, message_text, withdraw_id))
+
+        # Notify admins directly too
+        sender_info = "Аноним 🎭" if anonymous else f"{sender_name} (ID: {uid})"
+        for admin_id in ADMIN_IDS:
+            try:
+                await bot.send_message(admin_id,
+                    f"📦 <b>Заявка на подарок</b>\n"
+                    f"Покупатель: {sender_info}\n"
+                    f"Подарок: {gift_emoji} <b>{gift_name}</b> ({price} ⭐)\n"
+                    f"Получатель: <code>{recipient_id}</code>",
+                    parse_mode="HTML")
+            except Exception: pass
+
+        try:
+            await bot.send_message(uid,
+                f"📨 <b>Заявка принята!</b>\n\nВы заказали: {gift_emoji} <b>{gift_name}</b> ({price} ⭐)\n"
+                f"Владелец получил уведомление.",
+                parse_mode="HTML")
+        except Exception: pass
+
+        return web.json_response({"ok":True,"new_balance":new_bal})
+
+async def api_spin(req: web.Request):
+    data = await req.json()
+    uid, bet_amt, bet_type = int(data.get("user_id",0)), int(data.get("bet",0)), data.get("bet_type","")
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error":"user not found"}, status=404)
+    if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
+    if bet_amt <= 0 or bet_amt > u["balance"]: return web.json_response({"error":"invalid bet"}, status=400)
+    luck, global_k = await db.get_luck(uid), await db.get_global_luck_coeff()
+
+    def check(n,c,bt):
+        if bt=="red": return c=="red"
+        if bt=="black": return c=="black"
+        if bt=="green": return c=="green"
+        if bt=="even": return n!=0 and n%2==0
+        if bt=="odd": return n%2==1
+        if bt=="low": return 1<=n<=18
+        if bt=="high": return 19<=n<=36
+        if bt=="dozen1": return 1<=n<=12
+        if bt=="dozen2": return 13<=n<=24
+        return False
+
+    wins  = [(n,co) for n,co in ROULETTE_NUMBERS if check(n,co,bet_type)]
+    loses = [(n,co) for n,co in ROULETTE_NUMBERS if not check(n,co,bet_type)]
+
+    if luck == 100:
+        rn, rc = random.choice(wins) if wins else random.choice(ROULETTE_NUMBERS)
+    elif luck == 0:
+        rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
+    elif luck == -1:
+        if global_k >= 1.0 or random.random() < global_k:
+            rn, rc = random.choice(ROULETTE_NUMBERS)
+        else:
+            rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
+    else:
+        effective = min(100, int(luck * global_k))
+        will_win = random.randint(0, 99) < effective
+        if will_win and wins: rn, rc = random.choice(wins)
+        elif loses:           rn, rc = random.choice(loses)
+        else:                 rn, rc = random.choice(ROULETTE_NUMBERS)
+
+    MULT = {"red":2,"black":2,"green":14,"even":2,"odd":2,"low":2,"high":2,"dozen1":3,"dozen2":3}
+    won  = check(rn, rc, bet_type)
+    mult = MULT.get(bet_type, 2)
+    ridx = next(i for i,(n,c) in enumerate(ROULETTE_NUMBERS) if n==rn and c==rc)
+    gain = 0
+    if won:
+        gain = bet_amt * mult
+        profit = gain - bet_amt
+        new_bal = await db.add_to_balance(uid, gain - bet_amt)
+        await db.add_history(uid, "win", gain, f"Европ. рулетка: {rn} {rc}, x{mult}")
+        await db.update_spin_stats(uid, True, gain, 0)
+        try:
+            ico = "🟢" if rc=="green" else "🔴" if rc=="red" else "⚫"
+            await bot.send_message(uid,
+                f"🎉 <b>Выигрыш в Европейской рулетке!</b>\n{ico} Выпало: <b>{rn}</b> · x{mult}\n"
+                f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>", parse_mode="HTML")
+        except Exception: pass
+    else:
+        new_bal = await db.add_to_balance(uid, -bet_amt)
+        await db.add_history(uid, "lose", bet_amt, f"Европ. рулетка: {rn} {rc}")
+        await db.update_spin_stats(uid, False, 0, bet_amt)
+
+    u2 = await db.get_user(uid)
+    name = u2.get("first_name","?") if u2 else "?"
+    fire_log(log_game(uid, name, "Европейская рулетка", bet_amt,
+                      "Выигрыш" if won else "Проигрыш", gain, new_bal))
+
+    return web.json_response({"result_n":rn,"result_c":rc,"result_index":ridx,"won":won,"gain":gain,"new_balance":new_bal})
+
+async def _enrich_bets(bets):
+    enriched = []
+    for b in bets:
+        u = await db.get_user(b["user_id"])
+        name = (u.get("first_name") or u.get("username") or f"ID{b['user_id']}") if u else f"ID{b['user_id']}"
+        enriched.append({**b, "player_name": name})
+    return enriched
+
+async def api_gta_lobby(req: web.Request):
+    lobby = await db.get_open_lobby()
+    if not lobby:
+        lid = await db.create_lobby(); lobby = await db.get_lobby(lid)
+    bets = await _enrich_bets(await db.get_lobby_bets(lobby["id"]))
+    return web.json_response({"lobby": lobby, "bets": bets})
+
+async def api_gta_bet(req: web.Request):
+    data = await req.json()
+    uid, amount = int(data.get("user_id",0)), int(data.get("amount",0))
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error":"user not found"}, status=404)
+    if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
+    if amount <= 0 or amount > u["balance"]: return web.json_response({"error":"invalid amount"}, status=400)
+    lobby = await db.get_open_lobby()
+    if not lobby:
+        lid = await db.create_lobby(); lobby = await db.get_lobby(lid)
+    if lobby["status"] != "open": return web.json_response({"error":"lobby not open"}, status=400)
+    await db.add_to_balance(uid, -amount)
+    await db.place_gta_bet(lobby["id"], uid, amount)
+    # History recorded after spin result (win or lose), not during betting
+    bets = await db.get_lobby_bets(lobby["id"])
+    unique = len({b["user_id"] for b in bets})
+    lid = lobby["id"]
+    new_deadline = time.time() + GTA_SPIN_DELAY
+    await db.set_lobby_deadline(lid, new_deadline)
+    if unique >= GTA_MIN_PLAYERS:
+        if lid in gta_timers: gta_timers[lid].cancel()
+        gta_timers[lid] = asyncio.create_task(_gta_spin_delayed(lid))
+    nb = (await db.get_user(uid))["balance"]
+    updated_lobby = await db.get_lobby(lid)
+    return web.json_response({"success":True,"new_balance":nb,"lobby_id":lid,"players":unique,
+        "pot":updated_lobby["pot"],"deadline":new_deadline})
+
+async def api_gta_status(req: web.Request):
+    lid = int(req.match_info["lid"])
+    lobby = await db.get_lobby(lid)
+    if not lobby: return web.json_response({"error":"not found"}, status=404)
+    bets = await _enrich_bets(await db.get_lobby_bets(lid))
+    return web.json_response({"lobby":lobby,"bets":bets})
+
+async def _gta_spin_delayed(lid):
+    await asyncio.sleep(GTA_SPIN_DELAY)
+    await _gta_run(lid)
+    gta_timers.pop(lid, None)
+
+async def _gta_run(lid):
+    lobby = await db.get_lobby(lid)
+    if not lobby or lobby["status"] != "open": return
+    bets = await db.get_lobby_bets(lid)
+    if not bets: return
+    await db.set_lobby_spinning(lid)
+    pot, total = lobby["pot"], sum(b["amount"] for b in bets)
+    global_k = await db.get_global_luck_coeff()
+
+    luck_map = {}
+    for b in bets:
+        luck_map[b["user_id"]] = await db.get_luck(b["user_id"])
+
+    player_bets = {}
+    for b in bets:
+        if b["user_id"] not in player_bets:
+            player_bets[b["user_id"]] = b
+        else:
+            player_bets[b["user_id"]] = {**player_bets[b["user_id"]],
+                "amount": player_bets[b["user_id"]]["amount"] + b["amount"]}
+
+    lucky100 = [uid for uid, lk in luck_map.items() if lk == 100]
+    unlucky0 = {uid for uid, lk in luck_map.items() if lk == 0}
+    eligible = [b for b in player_bets.values() if b["user_id"] not in unlucky0]
+    if not eligible:
+        eligible = list(player_bets.values())
+
+    if lucky100:
+        lucky_eligible = [b for b in eligible if b["user_id"] in set(lucky100)]
+        pool = lucky_eligible if lucky_eligible else eligible
+        amounts = [b["amount"] for b in pool]
+        winner_row = random.choices(pool, weights=amounts, k=1)[0]
+    else:
+        weights = []
+        for b in eligible:
+            lk = luck_map[b["user_id"]]
+            base = b["amount"] / total * 100
+            if lk == -1: w = base * (0.3 + global_k * 0.7)
+            else:
+                ep = max(lk * global_k, 0.1)
+                w = base * (ep / 50.0)
+            weights.append(max(0.001, w))
+        winner_row = random.choices(eligible, weights=weights, k=1)[0]
+
+    wid = winner_row["user_id"]
+
+    def _comm(p):
+        if p<=500: return max(1,round(p*3/100))
+        if p<=2000: return max(1,round(p*5/100))
+        return max(1,round(p*8/100))
+
+    commission = _comm(pot)
+    payout = pot - commission
+    await db.add_to_balance(wid, payout)
+    await db.add_history(wid,"win",payout,f"GTA #{lid}: банк {pot}, комиссия {commission}")
+    await db.update_spin_stats(wid, True, payout, 0)
+    wu = await db.get_user(wid)
+    wname = wu.get("first_name","?") if wu else "?"
+    fire_log(log_game(wid, wname, "GTA рулетка", winner_row["amount"], "Выигрыш", payout, wu.get("balance",0) if wu else 0))
+
+    for b in bets:
+        if b["user_id"] != wid:
+            await db.update_spin_stats(b["user_id"], False, 0, b["amount"])
+            await db.add_history(b["user_id"], "lose", b["amount"],
+                f"GTA #{lid}: выиграл {wname or wid}")
+    await db.close_lobby(lid, wid, commission)
 
 
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
-    <div style="display:flex;gap:6px">
-      <div id="log-count"    style="background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--blue);font-family:'Orbitron',monospace">0</div>
-      <div id="log-ok-count" style="background:rgba(45,198,83,.1);border:1px solid rgba(45,198,83,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--green);font-family:'Orbitron',monospace">0 OK</div>
-      <div id="log-err-count"style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--red);font-family:'Orbitron',monospace">0 ERR</div>
-    </div>
-    <div style="display:flex;gap:6px">
-      <button class="abtn msg" onclick="copyLogs()" style="font-size:11px;padding:6px 10px">📋 Copy</button>
-      <button class="abtn ban" onclick="clearLogs()" style="font-size:11px;padding:6px 10px">🗑</button>
-    </div>
-  </div>
-  <!-- Terminal block -->
-  <div id="logs-terminal" style="
-    background:#0d0d0d;
-    border:1px solid #333;
-    border-radius:14px;
-    font-family:'Courier New',Courier,monospace;
-    font-size:12px;
-    line-height:1.6;
-    padding:14px;
-    min-height:300px;
-    max-height:65vh;
-    overflow-y:auto;
-    color:#ccc;
-    word-break:break-word;
-    white-space:pre-wrap;
-  ">
-    <span style="color:#555"># Ожидаем действий администратора...</span>
-  </div>
-</div>
+    try:
+        pct = 3 if pot<=500 else 5 if pot<=2000 else 8
+        await bot.send_message(wid,
+            f"🎉 <b>Вы выиграли в GTA-рулетке!</b>\n💰 Банк: {pot} · Комиссия {pct}%: {commission}\n"
+            f"✅ Выплата: <b>{payout}</b> монет\n📊 Баланс: <b>{wu['balance']}</b>", parse_mode="HTML")
+    except Exception as e: logger.warning(f"GTA notify: {e}")
 
-<script>
-const tg = window.Telegram?.WebApp;
-if(tg){tg.ready();tg.expand();}
-let ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString()||'';
-const IS_DEV = false; // Will be set by API response
 
-let users = [], curPeriod = 'today';
-let incognitoMode = false;
-let _lastUsersHash = '';
+# ════════════════════════════════════════
+#  MINES GAME API
+# ════════════════════════════════════════
 
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async def api_mines_start(req: web.Request):
+    try:
+        data = await req.json()
+        uid     = int(data.get("user_id", 0))
+        bet     = int(data.get("bet", 0))
+        bombs   = int(data.get("bombs", 3))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
+    if bombs < 1 or bombs > 24: return web.json_response({"error": "bombs must be 1–24"}, status=400)
+    if bet < 10: return web.json_response({"error": "minimum bet is 10"}, status=400)
 
-function toast(m,t='ok'){
-  const el=document.getElementById('toast');
-  el.textContent=m; el.className='toast '+t; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2500);
-}
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error": "user not found"}, status=404)
+    if await db.is_banned(uid): return web.json_response({"error": "⛔ Вы заблокированы."}, status=403)
+    if u["balance"] < bet: return web.json_response({"error": "Недостаточно монет"}, status=400)
 
-function switchTab(name,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('a'));
-  document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('a'));
-  btn.classList.add('a');
-  document.getElementById('tab-'+name).classList.add('a');
-  if(name==='revenue') loadRev();
-  if(name==='settings') loadGl();
-  if(name==='promo') loadPromos();
-  if(name==='logs') renderLogs();
-  if(name==='tasks') loadAdminTasks();
-}
+    # Cancel any existing game (forfeit)
+    if uid in active_mines:
+        await db.add_history(uid, "lose", active_mines[uid]["bet"],
+            f"Мины: незавершённая игра (брошена)")
 
-// ══════════════════════════════
-// TASKS MANAGEMENT
-// ══════════════════════════════
-const TASK_ICONS = {channel:'📢',group:'👥',bot:'🤖',spend:'🎰',deposit:'💳'};
-const TASK_LABELS= {channel:'Канал',group:'Группа',bot:'Бот',spend:'Трата монет',deposit:'Пополнение'};
+    # Generate bomb positions
+    positions = list(range(25))
+    random.shuffle(positions)
+    bomb_set = set(positions[:bombs])
 
-async function loadAdminTasks(){
-  const listEl = document.getElementById('tasks-admin-list');
-  if(!listEl) return;
-  try{
-    const r = await api('/api/admin/tasks');
-    const tasks = r.tasks||[];
-    if(!tasks.length){
-      listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">Заданий нет. Создайте первое!</div>';
-      return;
+    new_bal = await db.add_to_balance(uid, -bet)
+    game_id = str(int(time.time() * 1000))
+
+    active_mines[uid] = {
+        "game_id":   game_id,
+        "bet":       bet,
+        "bombs":     bombs,
+        "bomb_set":  bomb_set,
+        "revealed":  [],
+        "created_at": time.time(),
     }
-    listEl.innerHTML = tasks.map(t=>`
-      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
-        border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
-        <div style="font-size:22px">${TASK_ICONS[t.type]||'📋'}</div>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:13px;color:${t.active?'var(--text)':'var(--muted)'}">
-            ${esc(t.title)} <span style="font-size:10px;color:var(--muted)">(${TASK_LABELS[t.type]||t.type})</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted)">${esc(t.description||'')} · ${t.target||''}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--gold)">+${t.reward}🪙</div>
-          <div style="display:flex;gap:5px;margin-top:5px">
-            <button class="abtn msg" style="font-size:10px;padding:4px 8px"
-              onclick="toggleTask(${t.id},${t.active?0:1})">${t.active?'Скрыть':'Показать'}</button>
-            <button class="abtn ban" style="font-size:10px;padding:4px 8px"
-              onclick="deleteTask(${t.id})">✕</button>
-          </div>
-        </div>
-      </div>`).join('');
-  }catch(e){ listEl.innerHTML=`<div style="color:var(--red);padding:12px">Ошибка: ${e.message}</div>`; }
-}
 
-function showCreateTask(){
-  document.getElementById('task-create-form').style.display='block';
-}
+    next_mult = mines_mult(1, bombs)
+    return web.json_response({
+        "ok": True,
+        "game_id": game_id,
+        "new_balance": new_bal,
+        "bombs": bombs,
+        "next_mult": next_mult,
+        "current_win": 0,
+    })
 
-async function createTask(){
-  const st = document.getElementById('task-create-status');
-  const type   = document.getElementById('nt-type').value;
-  const title  = document.getElementById('nt-title').value.trim();
-  const desc   = document.getElementById('nt-desc').value.trim();
-  const target = document.getElementById('nt-target').value.trim();
-  const reward = parseInt(document.getElementById('nt-reward').value)||50;
-  const count  = parseInt(document.getElementById('nt-count').value)||1;
-  if(!title){ st.textContent='❌ Введите название'; st.style.color='var(--red)'; return; }
-  st.textContent='⏳ Создаём...'; st.style.color='var(--muted)';
-  try{
-    await api('/api/admin/tasks/create','POST',{type,title,description:desc,reward,target,target_count:count});
-    st.textContent='✅ Задание создано!'; st.style.color='var(--green)';
-    setTimeout(()=>{ document.getElementById('task-create-form').style.display='none'; loadAdminTasks(); },1000);
-  }catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
-}
+async def api_mines_reveal(req: web.Request):
+    try:
+        data    = await req.json()
+        uid     = int(data.get("user_id", 0))
+        cell    = int(data.get("cell", -1))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0 or cell < 0 or cell > 24:
+        return web.json_response({"error": "invalid uid or cell"}, status=400)
 
-async function toggleTask(id, active){
-  await api('/api/admin/tasks/update','POST',{id,active}).catch(()=>{});
-  loadAdminTasks();
-}
+    game = active_mines.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
 
-async function deleteTask(id){
-  if(!confirm('Удалить задание?')) return;
-  await api('/api/admin/tasks/delete','POST',{id}).catch(()=>{});
-  loadAdminTasks();
-}
+    if cell in game["revealed"] or cell in game["bomb_set"] and False:
+        pass  # allow re-check below
+    if cell in game["revealed"]:
+        return web.json_response({"error": "already revealed"}, status=400)
 
-// ══════════════════════════════
-// COMMANDS
-// ══════════════════════════════
-function adminCmd(type){
-  document.getElementById('cmd-broadcast-form').style.display='none';
-  document.getElementById('cmd-give-all-form').style.display='none';
-  document.getElementById('cmd-result').style.display='none';
-  if(type==='broadcast'){ document.getElementById('cmd-broadcast-form').style.display='block'; return; }
-  if(type==='give_all')  { document.getElementById('cmd-give-all-form').style.display='block'; return; }
-  if(type==='top_players') loadTopPlayers();
-  if(type==='stats') loadServerStats();
-}
+    luck     = await db.get_luck(uid)
+    global_k = await db.get_global_luck_coeff()
+    bet_factor = bet_luck_factor(game["bet"])
+    effective_k = global_k * bet_factor
+    is_bomb  = cell in game["bomb_set"]
 
-async function loadTopPlayers(){
-  const res = document.getElementById('cmd-result');
-  res.style.display='block';
-  document.getElementById('cmd-result-title').textContent='🏆 ТОП ИГРОКОВ';
-  document.getElementById('cmd-result-body').textContent='⏳ Загружаем...';
-  try{
-    const r = await api('/api/admin/users');
-    const top = _toUsers(r).sort((a,b)=>(b.balance||0)-(a.balance||0)).slice(0,10);
-    document.getElementById('cmd-result-body').innerHTML = top.map((u,i)=>
-      `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
-        <b>${i+1}.</b> ${esc(u.first_name||'?')}
-        <span style="float:right;font-family:'Orbitron',monospace;color:var(--gold)">${u.balance||0}🪙</span>
-      </div>`).join('');
-  }catch(e){ document.getElementById('cmd-result-body').textContent='Ошибка: '+e.message; }
-}
+    # ── Apply luck override ──
+    if is_bomb and luck == 100:
+        # Force safe: move this bomb to a random unrevealed safe cell swap
+        safe_cells = [i for i in range(25)
+                      if i not in game["bomb_set"] and i not in game["revealed"] and i != cell]
+        if safe_cells:
+            swap = random.choice(safe_cells)
+            game["bomb_set"].discard(cell)
+            game["bomb_set"].add(swap)
+            is_bomb = False
+    elif not is_bomb and luck == 0:
+        # Force bomb: swap this safe cell with a random unrevealed bomb
+        bomb_unrevealed = [b for b in game["bomb_set"]]
+        if bomb_unrevealed:
+            swap = random.choice(bomb_unrevealed)
+            game["bomb_set"].discard(swap)
+            game["bomb_set"].add(cell)
+            is_bomb = True
+    elif luck == -1 and effective_k < 1.0:
+        # Global luck debuff scaled by bet size
+        if not is_bomb:
+            debuff_chance = (1.0 - effective_k) * (game["bombs"] / 25.0)
+            if random.random() < debuff_chance:
+                bomb_unrevealed = [b for b in game["bomb_set"]]
+                if bomb_unrevealed:
+                    swap = random.choice(bomb_unrevealed)
+                    game["bomb_set"].discard(swap)
+                    game["bomb_set"].add(cell)
+                    is_bomb = True
+    elif luck > 0:
+        # Custom luck%: chance to dodge a bomb, scaled by bet
+        if is_bomb:
+            dodge_chance = (luck / 100.0) * effective_k
+            safe_cells = [i for i in range(25)
+                          if i not in game["bomb_set"] and i not in game["revealed"] and i != cell]
+            if random.random() < dodge_chance and safe_cells:
+                swap = random.choice(safe_cells)
+                game["bomb_set"].discard(cell)
+                game["bomb_set"].add(swap)
+                is_bomb = False
 
-async function loadServerStats(){
-  const res = document.getElementById('cmd-result');
-  res.style.display='block';
-  document.getElementById('cmd-result-title').textContent='📊 СТАТИСТИКА СЕРВЕРА';
-  document.getElementById('cmd-result-body').textContent='⏳ Загружаем...';
-  try{
-    const r2 = await api('/api/admin/users');
-    const users2 = _toUsers(r2);
-    const total = users2.length;
-    const active = users2.filter(u=>u.spins>0).length;
-    const totalBal = users2.reduce((s,u)=>s+(u.balance||0),0);
-    const totalWon = users2.reduce((s,u)=>s+(u.total_won||0),0);
-    document.getElementById('cmd-result-body').innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--blue)">${total}</div>
-          <div style="font-size:11px;color:var(--muted)">Пользователей</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--green)">${active}</div>
-          <div style="font-size:11px;color:var(--muted)">Активных</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--gold)">${totalBal}</div>
-          <div style="font-size:11px;color:var(--muted)">Монет в обороте</div>
-        </div>
-        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--purple)">${totalWon}</div>
-          <div style="font-size:11px;color:var(--muted)">Всего выиграно</div>
-        </div>
-      </div>`;
-  }catch(e){ document.getElementById('cmd-result-body').textContent='Ошибка: '+e.message; }
-}
+    if is_bomb:
+        # Lose — reveal all bombs
+        del active_mines[uid]
+        await db.update_spin_stats(uid, False, 0, game["bet"])
+        await db.add_history(uid, "lose", game["bet"],
+            f"Мины: взрыв ({game['bombs']} бомб)")
+        u2 = await db.get_user(uid)
+        name = u2.get("first_name","?") if u2 else "?"
+        fire_log(log_game(uid, name, "Мины",
+            game["bet"], "Проигрыш", 0, u2.get("balance",0) if u2 else 0))
+        return web.json_response({
+            "is_bomb": True,
+            "cell": cell,
+            "bomb_positions": list(game["bomb_set"]),
+            "revealed": game["revealed"],
+            "lost": game["bet"],
+        })
+    else:
+        game["revealed"].append(cell)
+        safe_count  = len(game["revealed"])
+        current_mult = mines_mult(safe_count, game["bombs"])
+        current_win  = round(game["bet"] * current_mult)
+        # Next multiplier (if one more safe cell opened)
+        safe_left    = 25 - game["bombs"] - safe_count
+        next_mult    = mines_mult(safe_count + 1, game["bombs"]) if safe_left > 0 else None
+        # Auto cashout if all safe cells revealed
+        if safe_left == 0:
+            new_bal = await db.add_to_balance(uid, current_win)
+            await db.add_history(uid, "win", current_win,
+                f"Мины: все алмазы! x{current_mult} ({game['bombs']} бомб)")
+            await db.update_spin_stats(uid, True, current_win, 0)
+            del active_mines[uid]
+            u2 = await db.get_user(uid)
+            name = u2.get("first_name","?") if u2 else "?"
+            fire_log(log_game(uid, name, "Мины", game["bet"], "Выигрыш",
+                current_win, new_bal))
+            return web.json_response({
+                "is_bomb": False, "cell": cell,
+                "revealed": game["revealed"],
+                "current_mult": current_mult, "current_win": current_win,
+                "next_mult": None, "auto_cashout": True, "new_balance": new_bal,
+            })
+        return web.json_response({
+            "is_bomb": False, "cell": cell,
+            "revealed": game["revealed"],
+            "current_mult": current_mult, "current_win": current_win,
+            "next_mult": next_mult, "auto_cashout": False,
+        })
 
-async function sendBroadcast(){
-  const st = document.getElementById('bc-status');
-  const text = document.getElementById('bc-text').value.trim();
-  if(!text){ st.textContent='❌ Введите текст'; st.style.color='var(--red)'; return; }
-  st.textContent='⏳ Отправляем...'; st.style.color='var(--muted)';
-  try{
-    const r = await api('/api/admin/users');
-    const users = _toUsers(r);
-    let sent=0, failed=0;
-    for(const u of users){
-      try{
-        await api('/api/admin/send_message','POST',{user_id:u.user_id,text});
-        sent++;
-      }catch{ failed++; }
+async def api_mines_cashout(req: web.Request):
+    try:
+        data = await req.json()
+        uid  = int(data.get("user_id", 0))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
+
+    game = active_mines.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
+    if not game["revealed"]:
+        # Nothing revealed → can only quit, refund bet
+        new_bal = await db.add_to_balance(uid, game["bet"])
+        del active_mines[uid]
+        return web.json_response({"ok": True, "won": game["bet"], "new_balance": new_bal,
+            "refunded": True, "mult": 1.0})
+
+    safe_count   = len(game["revealed"])
+    mult         = mines_mult(safe_count, game["bombs"])
+    won          = round(game["bet"] * mult)
+    profit       = won - game["bet"]
+    new_bal      = await db.add_to_balance(uid, won)
+    await db.add_history(uid, "win", won,
+        f"Мины: кешаут x{mult} ({safe_count} алмазов, {game['bombs']} бомб)")
+    await db.update_spin_stats(uid, True, won, 0)
+    del active_mines[uid]
+    u2   = await db.get_user(uid)
+    name = u2.get("first_name","?") if u2 else "?"
+    fire_log(log_game(uid, name, "Мины", game["bet"], "Выигрыш", won, new_bal))
+    try:
+        await bot.send_message(uid,
+            f"💎 <b>Кешаут — Мины!</b>\n"
+            f"🏆 {safe_count} алмазов · ×{mult}\n"
+            f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
+            parse_mode="HTML")
+    except Exception: pass
+    return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
+
+async def api_mines_status(req: web.Request):
+    """Return current game state without revealing bomb positions."""
+    try:
+        uid = int(req.rel_url.query.get("uid", 0))
+    except Exception:
+        return web.json_response({"error": "invalid uid"}, status=400)
+    game = active_mines.get(uid)
+    if not game:
+        return web.json_response({"active": False})
+    safe_count   = len(game["revealed"])
+    current_mult = mines_mult(safe_count, game["bombs"])
+    return web.json_response({
+        "active": True,
+        "game_id": game["game_id"],
+        "bet": game["bet"],
+        "bombs": game["bombs"],
+        "revealed": game["revealed"],
+        "current_mult": current_mult,
+        "current_win": round(game["bet"] * current_mult) if safe_count > 0 else 0,
+        "next_mult": mines_mult(safe_count + 1, game["bombs"]),
+    })
+
+def _is_admin(req):
+    try:
+        uid = int(req.headers.get("X-Admin-Uid","0"))
+        key = req.headers.get("X-Admin-Key","")
+        return key == BOT_TOKEN or uid in ADMIN_IDS + DEV_IDS
+    except:
+        return False
+
+async def _is_admin_with_log(req) -> bool:
+    """Проверяет права админа и при отказе шлёт лог всем DEV_IDS."""
+    try:
+        uid_raw = req.headers.get("X-Admin-Uid", "0")
+        key     = req.headers.get("X-Admin-Key", "")
+        uid     = int(uid_raw) if uid_raw.strip() else 0
+    except Exception as e:
+        uid, uid_raw, key = 0, "?", ""
+        await _notify_devs_admin_fail(0, "?", "", f"Ошибка парсинга заголовков: {e}")
+        return False
+
+    # Проверяем
+    by_token = (key == BOT_TOKEN)
+    by_uid   = (uid in ADMIN_IDS + DEV_IDS)
+
+    if by_token or by_uid:
+        return True
+
+    # Не прошёл — шлём подробный лог
+    await _notify_devs_admin_fail(uid, uid_raw, key, None)
+    return False
+
+async def _notify_devs_admin_fail(uid: int, uid_raw: str, key: str, extra: str | None):
+    """Отправляет всем DEV_IDS сообщение о неудачной попытке входа в админку."""
+    if not DEV_IDS:
+        logger.warning(f"[ADMIN_FAIL] UID={uid_raw} — DEV_IDS пуст, некому слать лог!")
+        return
+
+    uid_in_admin = uid in ADMIN_IDS
+    uid_in_dev   = uid in DEV_IDS
+    key_ok       = (key == BOT_TOKEN)
+
+    lines = [
+        "🔐 <b>Попытка входа в AdminPanel — ОТКАЗ</b>",
+        "",
+        f"👤 UID из заголовка: <code>{uid_raw}</code>",
+        f"🔑 X-Admin-Key совпал с токеном: {'✅' if key_ok else '❌'}",
+        f"📋 UID в ADMIN_IDS {ADMIN_IDS}: {'✅' if uid_in_admin else '❌'}",
+        f"🛠 UID в DEV_IDS {DEV_IDS}: {'✅' if uid_in_dev else '❌'}",
+        "",
+        "💡 <b>Как исправить:</b>",
+        f"Добавь <code>{uid}</code> в <code>ADMIN_IDS</code> или <code>DEV_IDS</code> в <code>.env</code>",
+        f"Пример: <code>ADMIN_IDS={','.join(str(x) for x in ADMIN_IDS + ([uid] if uid else []))}</code>",
+    ]
+    if extra:
+        lines += ["", f"⚠️ Доп. ошибка: <code>{_html.escape(str(extra))}</code>"]
+
+    text = "\n".join(lines)
+
+    for dev_id in DEV_IDS:
+        try:
+            await bot.send_message(dev_id, text, parse_mode="HTML")
+        except Exception as e:
+            logger.warning(f"[ADMIN_FAIL] Не смог отправить лог девелоперу {dev_id}: {e}")
+
+def _is_dev(req):
+    try:
+        uid = int(req.headers.get("X-Admin-Uid","0"))
+        return uid in DEV_IDS
+    except: return False
+
+async def api_admin_get_global_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"coeff": await db.get_global_luck_coeff()})
+
+async def api_admin_set_global_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); coeff = float(data.get("coeff",1.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_global_luck_coeff(coeff)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid)
+            aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_GLOBAL_LUCK", 0, "Все игроки",
+            f"Глобальный коэффициент удачи → {coeff}", incognito=False))
+    return web.json_response({"ok":True,"coeff":coeff})
+
+async def api_admin_revenue(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    from_ts = float(req.rel_url.query.get("from",0)); to_ts = float(req.rel_url.query.get("to",9999999999))
+    return web.json_response(await db.get_revenue(from_ts, to_ts))
+
+async def api_admin_users(req):
+    if not await _is_admin_with_log(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response(await db.get_all_users_by_join())
+
+async def api_admin_set_balance(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    try:
+        data = await req.json(); uid = int(data["user_id"]); new_bal = int(data["balance"]); old = int(data.get("old_balance",0))
+    except Exception as e:
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if uid <= 0 or new_bal < 0: return web.json_response({"error":"invalid uid or balance"}, status=400)
+    incognito = bool(data.get("incognito", False))
+    await db.set_balance(uid, new_bal)
+    delta = new_bal - old
+    if delta > 0:
+        await db.add_history(uid, "deposit", delta, "Пополнение администратором")
+        if not incognito:
+            tu2 = await db.get_user(uid); tname2 = tu2.get("first_name","?") if tu2 else "?"
+            fire_log(log_deposit(uid, tname2, delta, new_bal, "Пополнение администратором"))
+    elif delta < 0:
+        await db.add_history(uid, "admin_deduct", abs(delta), f"Списание администратором: {old}→{new_bal}")
+    if not incognito:
+        try:
+            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            au = await db.get_user(admin_uid)
+            aname = au.get("first_name","Admin") if au else "Admin"
+        except: aname = "Admin"; admin_uid = 0
+        tu = await db.get_user(uid)
+        tname = tu.get("first_name","?") if tu else "?"
+        action = f"SET_BALANCE {old}→{new_bal} (delta: {delta:+d})"
+        fire_log(log_admin_action(admin_uid, aname, action, uid, tname, f"Новый баланс: {new_bal} 🪙"))
+    return web.json_response({"success":True,"balance":new_bal})
+
+async def api_admin_set_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    try:
+        data = await req.json(); uid = int(data["user_id"]); luck = int(data["luck"])
+    except Exception as e:
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if uid <= 0 or not (-1 <= luck <= 100): return web.json_response({"error":"invalid uid or luck"}, status=400)
+    incognito = bool(data.get("incognito", False))
+    await db.set_luck(uid, luck)
+    # Only log to admin group, no user-visible history entry
+    if not incognito:
+        try:
+            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            au = await db.get_user(admin_uid)
+            aname = au.get("first_name","Admin") if au else "Admin"
+        except: aname = "Admin"; admin_uid = 0
+        tu = await db.get_user(uid)
+        tname = tu.get("first_name","?") if tu else "?"
+        luck_str = "Авто" if luck < 0 else ("ВСЕГДА ВЫИГ." if luck==100 else f"{luck}%")
+        fire_log(log_admin_action(admin_uid, aname, f"SET_LUCK → {luck_str}", uid, tname, f"Удача: {luck_str}"))
+
+    return web.json_response({"success":True})
+
+async def api_admin_ban(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    try:
+        data = await req.json(); uid = int(data["user_id"])
+    except Exception as e:
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
+    banned = bool(data.get("banned", True)); incognito = bool(data.get("incognito", False))
+    reason = str(data.get("reason","—"))
+    await db.set_banned(uid, banned)
+    try:
+        if banned:
+            await bot.send_message(uid, f"⛔ <b>Вы заблокированы в TopLuck Casino.</b>\nПричина: {_html.escape(reason)}\nОбратитесь к администратору если считаете это ошибкой.", parse_mode="HTML")
+        else:
+            await bot.send_message(uid, "✅ <b>Вы разблокированы в TopLuck Casino.</b>\nДобро пожаловать обратно!", parse_mode="HTML")
+    except Exception as e: logger.warning(f"[api_admin_ban] notify uid={uid}: {e}")
+    if not incognito:
+        try:
+            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            au = await db.get_user(admin_uid); aname = au.get("first_name","Admin") if au else "Admin"
+        except: aname = "Admin"; admin_uid = 0
+        tu = await db.get_user(uid); tname = tu.get("first_name","?") if tu else "?"
+        fire_log(log_admin_action(admin_uid, aname, "BAN" if banned else "UNBAN", uid, tname, reason))
+    return web.json_response({"success":True})
+
+async def api_admin_send_message(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    try:
+        data = await req.json(); uid = int(data.get("user_id",0)); text = str(data.get("text","")).strip()
+    except Exception as e:
+        return web.json_response({"error":f"invalid params:{e}"}, status=400)
+    if not uid or not text: return web.json_response({"error":"no uid or text"}, status=400)
+    try:
+        await bot.send_message(uid, f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}", parse_mode="HTML")
+        try:
+            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            au = await db.get_user(admin_uid); aname = au.get("first_name","Admin") if au else "Admin"
+        except: aname="Admin"; admin_uid=0
+        u_t = await db.get_user(uid); tname = u_t.get("first_name","?") if u_t else "?"
+        fire_log(log_admin_action(admin_uid, aname, "SEND_MESSAGE", uid, tname, f"Текст: {text[:100]}{'…' if len(text)>100 else ''}"))
+        return web.json_response({"ok": True})
+    except TelegramForbiddenError:
+        return web.json_response({"error": f"❌ Пользователь {uid} заблокировал бота."}, status=400)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def api_admin_is_dev(req):
+    try:
+        uid = int(req.headers.get("X-Admin-Uid","0"))
+        return web.json_response({"is_dev": uid in DEV_IDS})
+    except:
+        return web.json_response({"is_dev": False})
+
+# Static
+BASE = Path(__file__).parent
+async def serve_html(f):
+    p = BASE / f
+    if p.exists(): return web.Response(text=p.read_text("utf-8"), content_type="text/html", charset="utf-8")
+    return web.Response(text="Not found", status=404)
+async def serve_app(req):   return await serve_html("index.html")
+async def serve_admin(req): return await serve_html("admin_panel.html")
+async def health(req):      return web.Response(text="OK")
+_STATIC_EXTS = {".css",".png",".jpg",".jpeg",".js",".svg",".html",".ico",".webp"}
+async def serve_static(req):
+    filename = req.match_info.get("filename","")
+    try:
+        target = (BASE / filename).resolve()
+        target.relative_to(BASE.resolve())
+    except Exception:
+        return web.Response(text="Forbidden", status=403)
+    if not target.exists() or not target.is_file():
+        return web.Response(text="Not found", status=404)
+    ext = target.suffix.lower()
+    if ext not in _STATIC_EXTS:
+        return web.Response(text="Forbidden", status=403)
+    ct = {".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",
+          ".js":"application/javascript",".svg":"image/svg+xml",".html":"text/html",
+          ".ico":"image/x-icon",".webp":"image/webp"}.get(ext,"application/octet-stream")
+    if ext in (".html",".css",".js"):
+        return web.Response(text=target.read_text("utf-8"), content_type=ct, charset="utf-8")
+    return web.Response(body=target.read_bytes(), content_type=ct)
+
+# ════════════════════════════════════════
+#  TOWER GAME API
+# ════════════════════════════════════════
+
+async def api_tower_start(req: web.Request):
+    try:
+        data = await req.json()
+        uid  = int(data.get("user_id", 0))
+        bet  = int(data.get("bet", 0))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
+    if bet < 10: return web.json_response({"error": "minimum bet is 10"}, status=400)
+
+    u = await db.get_user(uid)
+    if not u: return web.json_response({"error": "user not found"}, status=404)
+    if await db.is_banned(uid): return web.json_response({"error": "⛔ Вы заблокированы."}, status=403)
+    if u["balance"] < bet: return web.json_response({"error": "Недостаточно монет"}, status=400)
+
+    # Cancel any existing unfinished tower game (forfeit)
+    if uid in active_towers:
+        old = active_towers[uid]
+        if old.get("floor", 1) > 1:
+            await db.add_history(uid, "lose", old["bet"],
+                f"Башня: незавершённая игра (брошена, этаж {old['floor']})")
+
+    # Generate bomb cell fresh on each step (not pre-generated for infinite tower)
+    new_bal = await db.add_to_balance(uid, -bet)
+
+    active_towers[uid] = {
+        "bet":        bet,
+        "floor":      1,
+        "created_at": time.time(),
     }
-    st.textContent=`✅ Отправлено: ${sent}, ошибок: ${failed}`;
-    st.style.color='var(--green)';
-  }catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
-}
 
-async function giveAll(){
-  const st = document.getElementById('ga-status');
-  const amount = parseInt(document.getElementById('ga-amount').value)||0;
-  if(amount<1){ st.textContent='❌ Введите сумму'; st.style.color='var(--red)'; return; }
-  if(!confirm(`Выдать ${amount} монет ВСЕМ игрокам?`)) return;
-  st.textContent='⏳ Выдаём...'; st.style.color='var(--muted)';
-  try{
-    const r = await api('/api/admin/users');
-    const users = _toUsers(r);
-    let done=0;
-    for(const u of users){
-      try{
-        await api('/api/admin/set_balance','POST',{user_id:u.user_id,balance:(u.balance||0)+amount});
-        done++;
-      }catch{}
-    }
-    st.textContent=`✅ Выдано ${done} игрокам`; st.style.color='var(--green)';
-  }catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
-}
-
-// ══════════════════════════════
-// DEV MODE
-// ══════════════════════════════
-async function devLoadUser(){
-  const uid = parseInt(document.getElementById('dev-uid').value)||0;
-  const debug = document.getElementById('dev-debug-mode').checked;
-  if(!uid){ toast('Введите UID','err'); return; }
-  const viewEl = document.getElementById('dev-user-view');
-  viewEl.style.display='none';
-  try{
-    const r = await fetch(`/api/dev/user/${uid}`,{
-      headers:{'X-Admin-Uid':ADMIN_UID,'X-Admin-Key':ADMIN_UID}
-    }).then(r=>r.json());
-    if(r.error){ toast('❌ '+r.error,'err'); return; }
-    const u = r.user;
-    document.getElementById('dev-avatar').textContent=(u.first_name||'?')[0].toUpperCase();
-    document.getElementById('dev-name').textContent = u.first_name||'?';
-    document.getElementById('dev-uid-disp').textContent = `UID: ${u.user_id} · @${u.username||'нет'}`;
-    document.getElementById('dev-balance').textContent = (u.balance||0)+'🪙';
-    document.getElementById('dev-level').textContent = u.level||0;
-    document.getElementById('dev-spins').textContent = u.spins||0;
-    document.getElementById('dev-wins').textContent  = u.wins||0;
-    viewEl.style.display='block';
-    const dbgEl = document.getElementById('dev-debug-section');
-    if(debug){
-      dbgEl.style.display='block';
-      const hist = r.history||[];
-      const HIST_ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',promo:'🎟',task:'✅'};
-      document.getElementById('dev-history-list').innerHTML = hist.slice(0,20).map(h=>{
-        const d = new Date(h.created_at*1000);
-        const dt = d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-        const pos=['win','deposit','ref','task'].includes(h.type)||(h.type==='promo'&&h.amount>0);
-        return `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px">
-          ${HIST_ICONS[h.type]||'•'} ${esc(h.detail||h.type)} · <span style="color:var(--muted)">${dt}</span>
-          <span style="float:right;color:${pos?'var(--green)':'var(--red)'}">
-            ${pos?'+':'-'}${Math.abs(h.amount)}
-          </span></div>`;
-      }).join('') || '<div style="color:var(--muted)">История пуста</div>';
-      const tasks_done = r.tasks_done||[];
-      document.getElementById('dev-tasks-list').textContent =
-        tasks_done.length ? `Выполнено заданий: ${tasks_done.length} (IDs: ${tasks_done.join(', ')})` : 'Нет выполненных заданий';
-    } else {
-      dbgEl.style.display='none';
-    }
-  }catch(e){ toast('Ошибка: '+e.message,'err'); }
-}
-
-// ══════════════════════════════
-// LEVEL editing in user card
-// ══════════════════════════════
-async function setUserLevel(uid, level){
-  try{
-    await api('/api/admin/set_level','POST',{user_id:uid,level:parseInt(level)});
-    toast(`✅ Уровень ${level} установлен`,'ok');
-    // Smooth update: just update the displayed level without re-rendering
-    const lvlEl = document.getElementById(`u-level-${uid}`);
-    if(lvlEl) lvlEl.textContent = level;
-  }catch(e){ toast('Ошибка: '+e.message,'err'); }
-}
-
-// ══════════════════════════════
-// SMOOTH UPDATES — don't re-render if no changes
-// ══════════════════════════════
-let _lastUsersHash = '';
-function _toUsers(r){ return Array.isArray(r) ? r : (r.users||[]); }
-
-async function load(){
-  try{
-    const r     = await api('/api/admin/users');
-    const users = _toUsers(r).sort((a,b)=>(a.user_id||0)-(b.user_id||0));
-    const hash  = JSON.stringify(users.map(u=>({id:u.user_id,bal:u.balance,banned:u.banned,lvl:u.level})));
-    if(hash === _lastUsersHash) return;
-    _lastUsersHash = hash;
-    renderUsers(users);
-  }catch(e){ console.error('load error',e); }
-}
+    return web.json_response({
+        "ok":          True,
+        "new_balance": new_bal,
+        "next_mult":   tower_mult(1),
+    })
 
 
+async def api_tower_step(req: web.Request):
+    """Player picks a cell on the current floor."""
+    try:
+        data    = await req.json()
+        uid     = int(data.get("user_id", 0))
+        floor   = int(data.get("floor", 0))
+        cell    = int(data.get("cell", -1))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0 or cell < 0 or cell >= TOWER_CELLS:
+        return web.json_response({"error": "invalid uid or cell"}, status=400)
 
-// ══════════════════════════════
-// LOGS SYSTEM
-// ══════════════════════════════
-const _adminLogs = [];
+    game = active_towers.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
+    if floor != game["floor"]:
+        return web.json_response({"error": "wrong floor"}, status=400)
+    if floor > TOWER_MAX_FLOORS:
+        return web.json_response({"error": "tower completed"}, status=400)
 
-function _addLog(method, path, ok, body, result, errMsg){
-  // Incognito: skip logging for promo create/update/delete
-  const isPromoWrite = method==='POST' && (path.includes('/promo/create')||path.includes('/promo/update')||path.includes('/promo/delete'));
-  if(incognitoMode && isPromoWrite) return;
+    bomb_idx = random.randint(0, TOWER_CELLS - 1)  # fresh random each floor
 
-  const now = new Date();
-  const ts = now.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const label = _describeAction(method, path, body);
-  _adminLogs.unshift({ts, method, path, ok, label, body: body ? JSON.stringify(body).slice(0,200) : null, result: result ? JSON.stringify(result).slice(0,200) : null, errMsg});
-  if(_adminLogs.length > 500) _adminLogs.length = 500;
-  const total = _adminLogs.length;
-  const okCnt = _adminLogs.filter(l=>l.ok).length;
-  const errCnt = total - okCnt;
-  const cEl = document.getElementById('log-count');
-  const oEl = document.getElementById('log-ok-count');
-  const eEl = document.getElementById('log-err-count');
-  if(cEl) cEl.textContent = total + ' log' + (total===1?'':'s');
-  if(oEl) oEl.textContent = okCnt + ' OK';
-  if(eEl) eEl.textContent = errCnt + ' ERR';
-  // Append to terminal if logs tab is active
-  _appendTerminalLine({ts, ok, label, errMsg, result, method, path});
-}
+    # Apply luck
+    luck      = await db.get_luck(uid)
+    global_k  = await db.get_global_luck_coeff()
+    tower_k   = await db.get_tower_luck_coeff()
+    bet_factor = bet_luck_factor(game["bet"])
+    effective_k = global_k * tower_k * bet_factor  # combined luck multiplier
+    is_bomb   = (cell == bomb_idx)
+    luck_saved = False
 
-function _appendTerminalLine(l){
-  const term = document.getElementById('logs-terminal');
-  if(!term) return;
-  // Clear placeholder on first entry
-  if(_adminLogs.length === 1) term.innerHTML = '';
+    if is_bomb and luck == 100:
+        is_bomb    = False
+        luck_saved = True   # bomb was on the clicked cell — hide indicator
+    elif not is_bomb and luck == 0:
+        is_bomb = True
+    elif luck == -1 and effective_k < 1.0 and not is_bomb:
+        extra_chance = (1.0 - effective_k) * (1.0 / TOWER_CELLS)
+        if random.random() < extra_chance:
+            is_bomb = True
 
-  const line = document.createElement('div');
-  const tsSpan  = `<span style="color:#555">[${l.ts}]</span>`;
-  const okSpan  = l.ok
-    ? `<span style="color:#2dc653">OK </span>`
-    : `<span style="color:#e63946">ERR</span>`;
-  const methodSpan = `<span style="color:#4cc9f0">${l.method.padEnd(4)}</span>`;
-  const pathSpan   = `<span style="color:#888">${esc(l.path)}</span>`;
-  const labelSpan  = l.ok
-    ? `<span style="color:#e8e8f0"> — ${esc(l.label)}</span>`
-    : `<span style="color:#e63946"> — ${esc(l.label)}</span>`;
+    # bomb_cell to send to client (-1 = hidden because luck saved the player)
+    display_bomb_cell = -1 if luck_saved else bomb_idx
 
-  let html = `${tsSpan} ${okSpan} ${methodSpan} ${pathSpan}${labelSpan}`;
-  if(l.errMsg){
-    html += `\n<span style="color:#e63946;padding-left:64px">    ↳ ERROR: ${esc(l.errMsg)}</span>`;
-  } else if(l.result && l.ok){
-    const short = l.result.length > 120 ? l.result.slice(0,120)+'…' : l.result;
-    html += `\n<span style="color:#555;padding-left:64px">    ↳ ${esc(short)}</span>`;
-  }
+    if is_bomb:
+        del active_towers[uid]
+        await db.update_spin_stats(uid, False, 0, game["bet"])
+        await db.add_history(uid, "lose", game["bet"],
+            f"Башня: взрыв на этаже {floor}")
+        u2 = await db.get_user(uid)
+        name = u2.get("first_name", "?") if u2 else "?"
+        fire_log(log_game(uid, name, "Башня", game["bet"], "Проигрыш", 0,
+                          u2.get("balance", 0) if u2 else 0))
+        return web.json_response({
+            "is_bomb":   True,
+            "bomb_cell": display_bomb_cell,
+            "floor":     floor,
+            "lost":      game["bet"],
+        })
+    else:
+        game["floor"] = floor + 1
+        mult        = tower_mult(floor)
+        current_win = round(game["bet"] * mult)
+        reached_top = floor >= TOWER_MAX_FLOORS
 
-  line.innerHTML = html;
-  // Prepend so newest is on top
-  term.insertBefore(line, term.firstChild);
-}
+        if reached_top:
+            # Auto cashout at top floor
+            new_bal = await db.add_to_balance(uid, current_win)
+            profit = current_win - game["bet"]
+            await db.add_history(uid, "win", current_win,
+                f"Башня: кешаут этаж {floor} ×{mult}")
+            await db.update_spin_stats(uid, True, current_win, 0)
+            del active_towers[uid]
+            u2   = await db.get_user(uid)
+            name = u2.get("first_name", "?") if u2 else "?"
+            fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш", current_win, new_bal))
+            try:
+                await bot.send_message(uid,
+                    f"🗼 <b>Башня покорена!</b>\n"
+                    f"🏆 Этаж {floor}/{TOWER_MAX_FLOORS} · ×{mult}\n"
+                    f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
+                    parse_mode="HTML")
+            except Exception: pass
+            return web.json_response({
+                "is_bomb": False, "bomb_cell": display_bomb_cell, "floor": floor,
+                "mult": mult, "current_win": current_win,
+                "reached_top": True, "new_balance": new_bal,
+            })
 
-function renderLogs(){
-  const term = document.getElementById('logs-terminal');
-  if(!term) return;
-  if(!_adminLogs.length){
-    term.innerHTML = '<span style="color:#555"># Ожидаем действий администратора...</span>';
-    return;
-  }
-  term.innerHTML = '';
-  // Render all in reverse-chron order (newest first already)
-  _adminLogs.forEach(l => {
-    const line = document.createElement('div');
-    const tsSpan  = `<span style="color:#555">[${l.ts}]</span>`;
-    const okSpan  = l.ok
-      ? `<span style="color:#2dc653">OK </span>`
-      : `<span style="color:#e63946">ERR</span>`;
-    const methodSpan = `<span style="color:#4cc9f0">${l.method.padEnd(4)}</span>`;
-    const pathSpan   = `<span style="color:#888">${esc(l.path)}</span>`;
-    const labelSpan  = l.ok
-      ? `<span style="color:#e8e8f0"> — ${esc(l.label)}</span>`
-      : `<span style="color:#e63946"> — ${esc(l.label)}</span>`;
-    let html = `${tsSpan} ${okSpan} ${methodSpan} ${pathSpan}${labelSpan}`;
-    if(l.errMsg){
-      html += `\n<span style="color:#e63946">    ↳ ERROR: ${esc(l.errMsg)}</span>`;
-    } else if(l.result && l.ok){
-      const short = l.result.length > 120 ? l.result.slice(0,120)+'…' : l.result;
-      html += `\n<span style="color:#555">    ↳ ${esc(short)}</span>`;
-    }
-    line.innerHTML = html;
-    term.appendChild(line);
-  });
-}
+        return web.json_response({
+            "is_bomb":     False,
+            "bomb_cell":   display_bomb_cell,
+            "floor":       floor,
+            "mult":        mult,
+            "current_win": current_win,
+            "reached_top": False,
+            "next_mult":   tower_mult(floor + 1),
+        })
 
-function copyLogs(){
-  if(!_adminLogs.length){toast('Логи пусты','err');return;}
-  const text = _adminLogs.map(l=>
-    `[${l.ts}] ${l.ok?'OK ':'ERR'} ${l.method.padEnd(4)} ${l.path} — ${l.label}${l.errMsg?' → ERROR: '+l.errMsg:''}${!l.errMsg&&l.result?' → '+l.result:''}`
-  ).join('\n');
-  navigator.clipboard.writeText(text).then(()=>toast('📋 Логи скопированы!')).catch(()=>{
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta); toast('📋 Логи скопированы!');
-  });
-}
 
-function clearLogs(){
-  _adminLogs.length = 0;
-  const term = document.getElementById('logs-terminal');
-  if(term) term.innerHTML = '<span style="color:#555"># Лог очищен. Ожидаем действий...</span>';
-  ['log-count','log-ok-count','log-err-count'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    if(el) el.textContent=['0 logs','0 OK','0 ERR'][i];
-  });
-  toast('🗑 Логи очищены');
-}
+async def api_tower_cashout(req: web.Request):
+    try:
+        data = await req.json()
+        uid  = int(data.get("user_id", 0))
+    except Exception as e:
+        return web.json_response({"error": f"invalid params: {e}"}, status=400)
+    if uid <= 0: return web.json_response({"error": "invalid uid"}, status=400)
 
-function _describeAction(method, path, body){
-  if(path.includes('/api/admin/set_balance')) return `💰 Баланс → ${body?.balance ?? '?'} для UID ${body?.user_id ?? '?'}`;
-  if(path.includes('/api/admin/set_luck')) return `🍀 Удача → ${body?.luck ?? '?'}% для UID ${body?.user_id ?? '?'}`;
-  if(path.includes('/api/admin/ban')) return body?.banned ? `⛔ Бан UID ${body?.user_id}` : `✅ Разбан UID ${body?.user_id}`;
-  if(path.includes('/api/admin/send_message')) return `📨 Сообщение → UID ${body?.user_id}: "${(body?.text||'').slice(0,40)}"`;
-  if(path.includes('/api/admin/promo/create')) return `🎟 Создан промокод ${body?.code}, награда ${body?.reward}`;
-  if(path.includes('/api/admin/promo/update')) return `✏️ Изменён промокод ${body?.code}`;
-  if(path.includes('/api/admin/promo/delete')) return `🗑 Удалён промокод ${body?.code}`;
-  if(path.includes('/api/admin/global_luck') && method==='POST') return `🌐 Глобальная удача → ${body?.coeff}`;
-  if(path.includes('/api/admin/euro_luck') && method==='POST') return `🎰 Удача рулетки → ${body?.coeff}`;
-  if(path.includes('/api/admin/mines_luck') && method==='POST') return `💣 Удача мин → ${body?.coeff}`;
-  if(path.includes('/api/admin/tower_luck') && method==='POST') return `🗼 Удача башни → ${body?.coeff}`;
-  if(path.includes('/api/admin/mines_max_mult') && method==='POST') return `💎 Макс. коэф. мин → ${body?.max_mult}x`;
-  if(path.includes('/api/admin/tower_max_floors') && method==='POST') return `🗼 Этажей башни → ${body?.max_floors}`;
-  if(method==='GET') return `📥 GET ${path}`;
-  return `📤 ${method} ${path}`;
-}
+    game = active_towers.get(uid)
+    if not game: return web.json_response({"error": "no active game"}, status=400)
 
-// ══════════════════════════════
-// PROMO CODES
-// ══════════════════════════════
-let promos = [];
-let _cpUsesInf = false;
-let _cpEternal = false;
+    completed_floor = game["floor"] - 1  # floors passed
+    if completed_floor <= 0:
+        # Nothing cleared yet — refund
+        new_bal = await db.add_to_balance(uid, game["bet"])
+        del active_towers[uid]
+        return web.json_response({"ok": True, "won": game["bet"],
+                                   "new_balance": new_bal, "refunded": True, "mult": 1.0})
 
-function toggleCpInf(field){
-  if(field==='uses'){
-    _cpUsesInf = !_cpUsesInf;
-    const btn = document.getElementById('cp-inf-btn');
-    const inp = document.getElementById('cp-uses');
-    btn.style.background = _cpUsesInf ? 'rgba(76,201,240,.4)' : '';
-    inp.disabled = _cpUsesInf; inp.style.opacity = _cpUsesInf ? '.4' : '1';
-  } else {
-    _cpEternal = !_cpEternal;
-    const btn = document.getElementById('cp-eternal-btn');
-    const inp = document.getElementById('cp-expires');
-    btn.style.background = _cpEternal ? 'rgba(76,201,240,.4)' : '';
-    inp.disabled = _cpEternal; inp.style.opacity = _cpEternal ? '.4' : '1';
-  }
-}
+    mult        = tower_mult(completed_floor)
+    won         = round(game["bet"] * mult)
+    profit      = won - game["bet"]
+    new_bal     = await db.add_to_balance(uid, won)
+    await db.add_history(uid, "win", won,
+        f"Башня: кешаут этаж {completed_floor} ×{mult}")
+    await db.update_spin_stats(uid, True, won, 0)
+    del active_towers[uid]
+    u2   = await db.get_user(uid)
+    name = u2.get("first_name", "?") if u2 else "?"
+    fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш", won, new_bal))
+    try:
+        await bot.send_message(uid,
+            f"🗼 <b>Кешаут — Башня!</b>\n"
+            f"🏆 Этаж {completed_floor} · ×{mult}\n"
+            f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
+            parse_mode="HTML")
+    except Exception: pass
+    return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
 
-function isPromoActive(p){
-  if(p.uses_left !== null && p.uses_left <= 0) return false;
-  if(p.expires_at !== null && p.expires_at < Date.now()/1000) return false;
-  return true;
-}
 
-async function loadPromos(){
-  const list = document.getElementById('promo-list');
-  list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">⏳ Загрузка...</div>';
-  try{
-    promos = await api('/api/admin/promo');
-    renderPromos();
-  } catch(e){
-    list.innerHTML = '<div style="text-align:center;color:var(--red);padding:24px;font-size:13px">❌ Ошибка загрузки (проверьте API)</div>';
-  }
-}
+async def serve_tower(req):  return await serve_html("tower.html")
 
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function renderPromos(){
-  const list = document.getElementById('promo-list');
-  if(!promos.length){
-    list.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Промокодов пока нет</div>';
-    return;
-  }
-  const sorted = [...promos].sort((a,b)=>isPromoActive(b)-isPromoActive(a));
-  list.innerHTML = sorted.map(p => {
-    const active = isPromoActive(p);
-    const eternal = p.expires_at === null, infUses = p.uses_left === null;
-    const expStr = eternal ? '∞ Вечный' : new Date(p.expires_at*1000).toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'});
-    const rColor = p.reward >= 0 ? 'var(--green)' : 'var(--red)';
-    return `<div style="
-      background:${active?'rgba(45,198,83,.04)':'rgba(255,255,255,.02)'};
-      border:1px solid ${active?'rgba(45,198,83,.3)':'rgba(255,255,255,.07)'};
-      border-radius:14px;padding:12px 14px;margin-bottom:10px;
-      opacity:${active?1:.65};">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer" onclick="this.parentElement.querySelector('.promo-detail').style.display=this.parentElement.querySelector('.promo-detail').style.display==='none'?'block':'none'">
-        <span style="font-size:14px">${active?'🟢':'⚫'}</span>
-        <span style="font-family:'Orbitron',monospace;font-size:14px;font-weight:700;flex:1">${esc(p.code)}</span>
-        <span style="padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;font-family:'Orbitron',monospace;
-          background:${active?(eternal?'rgba(76,201,240,.2)':'rgba(45,198,83,.2)'):'rgba(100,100,100,.15)'};
-          color:${active?(eternal?'var(--blue)':'var(--green)'):'#888'};
-          border:1px solid ${active?(eternal?'rgba(76,201,240,.3)':'rgba(45,198,83,.3)'):'rgba(100,100,100,.2)'}">${active?(eternal?'∞ ВЕЧНЫЙ':'АКТИВЕН'):'ИСТЁК'}</span>
-        <span style="color:var(--muted);font-size:16px">›</span>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">💰 <b style="color:${rColor}">${p.reward>=0?'+':''}${p.reward} 🪙</b></span>
-        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">🔢 Осталось: <b>${infUses?'∞':p.uses_left}</b></span>
-        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">📅 ${expStr}</span>
-        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">✅ Активаций: <b>${p.total_activations||0}</b></span>
-      </div>
-      <div class="promo-detail" style="display:none;border-top:1px solid rgba(255,255,255,.06);padding-top:10px;margin-top:4px">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✏️ Изменить</div>
-        <div class="ag-row" style="margin-bottom:6px">
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap">Награда:</span>
-          <input class="ag-inp" id="pe-rew-${esc(p.code)}" type="number" value="${p.reward}" style="max-width:90px;text-align:center"/>
-          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','reward')">SET</button>
-        </div>
-        <div class="ag-row" style="margin-bottom:6px">
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap">Активаций:</span>
-          <input class="ag-inp" id="pe-uses-${esc(p.code)}" type="number" value="${infUses?'':p.uses_left}" placeholder="∞" style="max-width:90px;text-align:center"/>
-          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','uses')">SET</button>
-          <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','uses_inf')" title="Безлимит">∞</button>
-        </div>
-        <div class="ag-row" style="margin-bottom:10px">
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap">До даты:</span>
-          <input class="ag-inp" id="pe-exp-${esc(p.code)}" type="date" value="${eternal?'':new Date(p.expires_at*1000).toISOString().split('T')[0]}" style="max-width:140px"/>
-          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','expires')">SET</button>
-          <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','eternal')" title="Вечный">∞</button>
-        </div>
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">👥 Кто активировал (${p.total_activations||0})</div>
-        <div id="pa-${esc(p.code)}" style="min-height:20px">
-          <div style="font-size:12px;color:var(--muted);text-align:center;padding:4px">Нажмите кнопку для загрузки</div>
-        </div>
-        <div class="ag-row" style="margin-top:8px;gap:8px">
-          <button class="abtn msg" style="flex:1" onclick="loadPromoActs(event,'${esc(p.code)}')">📋 Загрузить активации</button>
-          <button class="abtn ban" onclick="deletePromo(event,'${esc(p.code)}')">🗑 Удалить</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
+async def api_admin_get_tower_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"coeff": await db.get_tower_luck_coeff()})
 
-async function createPromo(){
-  const code = document.getElementById('cp-code').value.trim().toUpperCase();
-  const reward = parseInt(document.getElementById('cp-reward').value)||0;
-  const uses = _cpUsesInf ? null : (parseInt(document.getElementById('cp-uses').value)||100);
-  const expInp = document.getElementById('cp-expires').value;
-  const expires = _cpEternal || !expInp ? null : new Date(expInp).getTime()/1000 + 86399;
-  const st = document.getElementById('cp-status');
-  if(!code||code.length<3){st.textContent='❌ Код должен быть ≥ 3 символа';st.style.color='var(--red)';return;}
-  st.textContent='⏳ Создаём...'; st.style.color='var(--muted)';
-  try{
-    await api('/api/admin/promo/create','POST',{code,reward,uses_left:uses,expires_at:expires});
-    st.textContent=`✅ Промокод ${code} создан!`; st.style.color='var(--green)';
-    document.getElementById('cp-code').value='';
-    setTimeout(()=>st.textContent='',3000);
-    await loadPromos();
-  } catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
-}
+async def api_admin_set_tower_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); coeff = float(data.get("coeff",1.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_tower_luck_coeff(coeff)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid)
+            aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_TOWER_LUCK", 0, "Все игроки",
+            f"Коэффициент удачи башни → {coeff}", incognito=False))
+    return web.json_response({"ok":True,"coeff":coeff})
 
-async function editPromo(e,code,field){
-  e.stopPropagation();
-  let body = {code};
-  if(field==='reward') body.reward = parseInt(document.getElementById('pe-rew-'+code).value)||0;
-  else if(field==='uses'){ const v=parseInt(document.getElementById('pe-uses-'+code).value); body.uses_left=isNaN(v)?null:v; }
-  else if(field==='uses_inf') body.uses_left=null;
-  else if(field==='expires'){ const v=document.getElementById('pe-exp-'+code).value; body.expires_at=v?new Date(v).getTime()/1000+86399:null; }
-  else if(field==='eternal') body.expires_at=null;
-  try{ await api('/api/admin/promo/update','POST',body); toast(`✅ ${code} обновлён`); await loadPromos(); }
-  catch{ toast('Ошибка обновления','err'); }
-}
+async def start_web():
+    app = web.Application()
+    app.router.add_get("/", serve_app)
+    app.router.add_get("/admin", serve_admin)
+    app.router.add_get("/health", health)
+    app.router.add_post("/api/ensure_user",        api_ensure_user)
+    app.router.add_get ("/api/user/{uid}",         api_user)
+    app.router.add_get ("/api/history/{uid}",      api_history)
+    app.router.add_get ("/api/invoice",            api_invoice)
+    app.router.add_get ("/api/gifts",              api_get_gifts)
+    app.router.add_post("/api/spin",               api_spin)
+    app.router.add_get ("/api/gta/lobby",          api_gta_lobby)
+    app.router.add_post("/api/gta/bet",            api_gta_bet)
+    app.router.add_get ("/api/gta/status/{lid}",   api_gta_status)
+    app.router.add_post("/api/gift/buy",           api_gift_buy)
+    app.router.add_post("/api/mines/start",        api_mines_start)
+    app.router.add_post("/api/mines/reveal",       api_mines_reveal)
+    app.router.add_post("/api/mines/cashout",      api_mines_cashout)
+    app.router.add_get ("/api/mines/status",       api_mines_status)
+    app.router.add_get ("/tower",                  serve_tower)
+    app.router.add_post("/api/tower/start",        api_tower_start)
+    app.router.add_post("/api/tower/step",         api_tower_step)
+    app.router.add_post("/api/tower/cashout",      api_tower_cashout)
+    app.router.add_get ("/api/admin/users",        api_admin_users)
+    app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
+    app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)
+    app.router.add_post("/api/admin/ban",              api_admin_ban)
+    app.router.add_post("/api/admin/send_message",     api_admin_send_message)
+    app.router.add_get ("/api/admin/is_dev",           api_admin_is_dev)
+    app.router.add_get ("/api/admin/revenue",      api_admin_revenue)
+    app.router.add_get ("/api/admin/global_luck",  api_admin_get_global_luck)
+    app.router.add_post("/api/admin/global_luck",  api_admin_set_global_luck)
+    app.router.add_get ("/api/admin/tower_luck",   api_admin_get_tower_luck)
+    app.router.add_post("/api/admin/tower_luck",   api_admin_set_tower_luck)
+    app.router.add_get("/{filename:.+}", serve_static)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    await web.TCPSite(runner,"0.0.0.0",PORT).start()
+    logger.info(f"HTTP :{PORT}")
 
-async function deletePromo(e,code){
-  e.stopPropagation();
-  if(!confirm(`Удалить промокод ${code}?`)) return;
-  try{ await api('/api/admin/promo/delete','POST',{code}); toast(`🗑 ${code} удалён`); await loadPromos(); }
-  catch{ toast('Ошибка','err'); }
-}
+async def main():
+    await db.init_db()
+    await start_web()
+    asyncio.create_task(daily_backup())
+    await dp.start_polling(bot, skip_updates=True)
 
-async function loadPromoActs(e,code){
-  e.stopPropagation();
-  const el = document.getElementById('pa-'+code);
-  el.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:4px">⏳ Загрузка...</div>';
-  try{
-    const acts = await api(`/api/admin/promo/${encodeURIComponent(code)}/activations`);
-    if(!acts.length){ el.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:4px">Никто не активировал</div>'; return; }
-    el.innerHTML = acts.map((a,i)=>{
-      const d = new Date(a.activated_at*1000);
-      const dt = d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-      const amt = a.amount_received;
-      return `<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:7px 10px;margin-bottom:5px;font-size:12px">
-        <span style="font-family:'Orbitron',monospace;font-size:10px;color:var(--muted);width:20px">#${i+1}</span>
-        <span style="flex:1;color:var(--text);font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(245,197,66,.3)"
-          onclick="jumpToUser(${a.user_id})">${esc(a.first_name||a.username||'ID:'+a.user_id)}${a.username?'<span style="color:var(--muted);font-size:10px"> @'+esc(a.username)+'</span>':''}</span>
-        <span style="font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:${amt>=0?'var(--green)':'var(--red)'}">${amt>=0?'+':''}${amt}🪙</span>
-        <span style="font-size:10px;color:var(--muted)">${dt}</span>
-      </div>`;
-    }).join('');
-  } catch{ el.innerHTML='<div style="font-size:12px;color:var(--red);text-align:center;padding:4px">Ошибка загрузки</div>'; }
-}
 
-function jumpToUser(uid){
-  const usersTab = document.querySelector('[onclick*="\'users\'"]');
-  if(usersTab) switchTab('users',usersTab);
-  setTimeout(()=>{
-    const el = document.getElementById('uc-'+uid);
-    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('open'); }
-    else toast('Сначала загрузите список игроков','err');
-  },350);
-}
-
-async function api(path, method='GET', body=null){
-  const o = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Admin-Uid': ADMIN_UID,
-      'X-Admin-Key': ADMIN_UID,
-    }
-  };
-  if(body) o.body = JSON.stringify({...body, incognito: incognitoMode});
-  let result = null, errMsg = null, ok = false;
-  try {
-    const r = await fetch(path, o);
-    if(!r.ok){
-      let em = r.status;
-      try{ const j = await r.json(); em = j.error || j.detail || r.status; } catch{}
-      errMsg = String(em);
-      _addLog(method, path, false, body, null, errMsg);
-      throw new Error(errMsg);
-    }
-    result = await r.json();
-    ok = true;
-    _addLog(method, path, true, body, result, null);
-    return result;
-  } catch(e) {
-    if(ok === false && !errMsg){
-      errMsg = e.message;
-      _addLog(method, path, false, body, null, errMsg);
-    }
-    throw e;
-  }
-}
-
-// ── INCOGNITO ──
-function toggleIncognito(on){
-  incognitoMode = on;
-  document.body.classList.toggle('incognito-mode', on);
-  const st = document.getElementById('incognito-status');
-  if(on){
-    st.textContent = '🥷 Режим инкогнито включён — действия не логируются';
-    st.style.color = 'var(--green)';
-    document.getElementById('header-title').textContent = '🥷 ИНКОГНИТО';
-    document.getElementById('header-sub').textContent = 'Действия не логируются';
-  } else {
-    st.textContent = '✅ Стандартный режим — все действия логируются';
-    st.style.color = 'var(--muted)';
-    document.getElementById('header-title').textContent = '🛠 TOPLUCK ADMIN';
-    document.getElementById('header-sub').textContent = 'Панель управления казино';
-  }
-}
-
-// ── USERS ──
-function stats(){
-  const total = users.length;
-  const coins = users.reduce((s,u)=>s+u.balance,0);
-  const banned = users.filter(u=>u.banned).length;
-  const lucky = users.filter(u=>u.luck_pct>=0).length;
-  return {total,coins,banned,lucky};
-}
-
-function renderUsers(list){
-  const s = stats();
-  document.getElementById('users-root').innerHTML = `
-    <div class="sbar">
-      <div class="sb"><div class="sb-v">${s.total}</div><div class="sb-l">Игроков</div></div>
-      <div class="sb"><div class="sb-v">${s.coins}</div><div class="sb-l">Монет</div></div>
-      <div class="sb"><div class="sb-v">${s.lucky}</div><div class="sb-l">Подкручено</div></div>
-      <div class="sb"><div class="sb-v" style="color:var(--red)">${s.banned}</div><div class="sb-l">Заблок.</div></div>
-    </div>
-    <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)"/>
-    <div id="ulist">${list.map(uCard).join('')}</div>`;
-}
-
-function filterU(q){
-  q = q.toLowerCase();
-  document.getElementById('ulist').innerHTML =
-    users.filter(u =>
-      (u.first_name||'').toLowerCase().includes(q) ||
-      (u.username||'').toLowerCase().includes(q) ||
-      String(u.user_id).includes(q)
-    ).map(uCard).join('');
-}
-
-function fmtDate(ts){
-  if(!ts) return '—';
-  const d = new Date(ts*1000);
-  return d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'})
-       + ' ' + d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-
-function winrate(u){
-  if(!u.spins) return '—';
-  return Math.round(u.wins/u.spins*100)+'%';
-}
-
-function uCard(u){
-  const name = esc(u.first_name||u.username||'Аноним');
-  const uname = u.username ? `@${esc(u.username)}` : '';
-  const profit = u.total_lost - u.total_won;
-  const luck = u.luck_pct < 0 ? '<span style="color:var(--green)">●Авто</span>'
-    : u.luck_pct === 100 ? '<span style="color:var(--green)">●100% ВЫИГР.</span>'
-    : u.luck_pct === 0   ? '<span style="color:var(--red)">●0% ПРОГР.</span>'
-    : `<span style="color:var(--purple)">●${u.luck_pct}%</span>`;
-  const isBanned = u.banned;
-  const lvl = u.level||0;
-  const avBg = isBanned ? 'var(--red)' : 'linear-gradient(135deg,var(--purple),#4361ee)';
-  return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}">
-    <div class="uc-top" onclick="tog(${u.user_id})">
-      <div class="uc-av${isBanned?' banned-av':''}" style="background:${avBg};position:relative">
-        ${(name[0]||'?').toUpperCase()}
-        <span style="position:absolute;bottom:-3px;right:-3px;background:var(--gold);color:#000;
-          font-family:'Orbitron',monospace;font-size:8px;font-weight:900;border-radius:6px;padding:1px 4px">
-          ${lvl}
-        </span>
-      </div>
-      <div class="uc-info">
-        <div class="uc-name">${name}${isBanned?' ⛔':''}</div>
-        <div class="uc-id">ID: ${u.user_id}${uname?' · '+uname:''}</div>
-      </div>
-      <div class="uc-bal">${u.balance}🪙</div>
-    </div>
-    <div class="uc-body">
-      <div class="uinfo-grid">
-        <div class="uinfo-item"><div class="uinfo-label">🎲 Игр</div><div class="uinfo-val blue">${u.spins}</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">🏆 Побед</div><div class="uinfo-val green">${u.wins}</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">📈 Выиграно</div><div class="uinfo-val green">+${u.total_won}🪙</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">📉 Проиграно</div><div class="uinfo-val red">-${u.total_lost}🪙</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">💼 Доход казино</div><div class="uinfo-val ${profit>=0?'green':'red'}">${profit>=0?'+':''}${profit}🪙</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">🎯 Винрейт</div><div class="uinfo-val gold">${winrate(u)}</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">📅 Регистрация</div><div class="uinfo-val muted">${fmtDate(u.created_at)}</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">🍀 Удача</div><div class="uinfo-val">${luck}</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">🔗 Рефералы</div><div class="uinfo-val blue" id="ref-cnt-${u.user_id}">—</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">⭐ XP</div><div class="uinfo-val gold">${u.xp||0}</div></div>
-      </div>
-      <!-- Level edit -->
-      <div class="ag" style="margin-bottom:8px">
-        <div class="ag-l">🏅 Уровень (текущий: <span id="u-level-${u.user_id}" style="color:var(--gold);font-weight:700">${lvl}</span>)</div>
-        <div class="ag-row">
-          <input class="ag-inp" id="lvl-${u.user_id}" type="number" value="${lvl}" min="0" max="100"/>
-          <button class="abtn set" onclick="setUserLevel(${u.user_id},document.getElementById('lvl-${u.user_id}').value)">SET</button>
-        </div>
-      </div>
-      <!-- Refs list (lazy-loaded) -->
-      <div id="refs-panel-${u.user_id}" style="display:none;margin:8px 0">
-        <button class="abtn msg" style="width:100%;margin-bottom:6px" onclick="loadUserRefs(${u.user_id})">👥 Показать рефералов</button>
-        <div id="refs-list-${u.user_id}" style="font-size:12px;color:var(--muted)"></div>
-      </div>
-      <!-- Balance -->
-      <div class="ag">
-        <div class="ag-l">💰 Управление балансом</div>
-        <div class="ag-row">
-          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0"/>
-          <button class="abtn set" onclick="sbal(event,${u.user_id})">SET</button>
-        </div>
-        <div class="ag-row">
-          <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1"/>
-          <button class="abtn add" onclick="dbal(event,${u.user_id},1)">+Начислить</button>
-          <button class="abtn sub" onclick="dbal(event,${u.user_id},-1)">−Снять</button>
-        </div>
-      </div>
-      <!-- Luck -->
-      <div class="ag">
-        <div class="ag-l">🍀 Удача игрока</div>
-        <div class="luck-row">
-          <div class="lbtn luck0 ${u.luck_pct===0?'a':''}" onclick="sluck(event,${u.user_id},0)">0%</div>
-          <div class="lbtn ${u.luck_pct===-1?'a':''}" onclick="sluck(event,${u.user_id},-1)">Авто</div>
-          <div class="lbtn ${u.luck_pct===25?'a':''}" onclick="sluck(event,${u.user_id},25)">25%</div>
-          <div class="lbtn ${u.luck_pct===50?'a':''}" onclick="sluck(event,${u.user_id},50)">50%</div>
-          <div class="lbtn ${u.luck_pct===75?'a':''}" onclick="sluck(event,${u.user_id},75)">75%</div>
-          <div class="lbtn luck100 ${u.luck_pct===100?'a':''}" onclick="sluck(event,${u.user_id},100)">100%★</div>
-        </div>
-        <div class="ag-row" style="margin-top:6px">
-          <input class="ag-inp" id="li-${u.user_id}" type="number" min="0" max="100" placeholder="0–100"/>
-          <button class="abtn pur" onclick="sluck_c(event,${u.user_id})">Задать</button>
-        </div>
-      </div>
-      <!-- Message & Ban -->
-      <div class="ag">
-        <div class="ag-l">📩 Сообщение / ⛔ Бан</div>
-        <div class="ag-row">
-          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..." style="font-family:'Rajdhani',sans-serif;font-size:13px;"/>
-          <button class="abtn msg" onclick="sendMsg(event,${u.user_id})">📨</button>
-        </div>
-        <div class="ag-row">
-          ${isBanned
-            ? `<button class="abtn unban" style="flex:1" onclick="banUser(event,${u.user_id},false)">✅ Разблокировать</button>`
-            : `<button class="abtn ban" style="flex:1" onclick="banUser(event,${u.user_id},true)">⛔ Заблокировать</button>`
-          }
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function tog(uid){
-  const card = document.getElementById('uc-'+uid);
-  card.classList.toggle('open');
-  if(card.classList.contains('open')){
-    // Show refs panel and load count
-    const rp = document.getElementById('refs-panel-'+uid);
-    if(rp) rp.style.display='block';
-    loadUserRefsCount(uid);
-  }
-}
-async function loadUserRefsCount(uid){
-  try{
-    const r = await api(`/api/user/${uid}/refs`);
-    const el = document.getElementById('ref-cnt-'+uid);
-    if(el) el.textContent = r.count||0;
-  }catch(e){}
-}
-async function loadUserRefs(uid){
-  const listEl = document.getElementById('refs-list-'+uid);
-  if(!listEl) return;
-  listEl.innerHTML = '⏳ Загружаем...';
-  try{
-    const r = await api(`/api/user/${uid}/refs`);
-    const refs = r.refs||[];
-    if(!refs.length){ listEl.innerHTML='<i>Рефералов нет</i>'; return; }
-    listEl.innerHTML = refs.map(ref=>{
-      const who = (ref.detail||'').replace('Реферал:','').trim()||'?';
-      const dt  = fmtDate(ref.created_at);
-      return `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">🤝 <b>${esc(who)}</b> · ${dt} · +${ref.amount}🪙</div>`;
-    }).join('');
-  }catch(e){ listEl.innerHTML='<i style="color:var(--red)">Ошибка</i>'; }
-}
-
-async function sbal(e,uid){
-  e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
-  const nb = parseInt(document.getElementById('bi-'+uid).value);
-  if(isNaN(nb)||nb<0){toast('Неверное значение','err');return;}
-  try{
-    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(uid,u);
-    toast(`✅ Баланс → ${nb}🪙`);
-  } catch{ toast('Ошибка','err'); }
-}
-
-async function dbal(e,uid,sign){
-  e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
-  const d = parseInt(document.getElementById('di-'+uid).value)||0;
-  if(!d){toast('Введите сумму','err');return;}
-  const nb = Math.max(0,(u?.balance||0)+sign*d);
-  try{
-    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(uid,u);
-    toast(`${sign>0?'+':'-'}${d}🪙`);
-  } catch{ toast('Ошибка','err'); }
-}
-
-async function sluck(e,uid,pct){
-  e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
-  try{
-    await api('/api/admin/set_luck','POST',{user_id:uid,luck:pct});
-    if(u) u.luck_pct=pct; updateCard(uid,u);
-    const label = pct<0?'Авто':pct===100?'100% (всегда выигрывает)':pct===0?'0% (всегда проигрывает)':`${pct}%`;
-    toast(`🍀 Удача: ${label}`);
-  } catch{ toast('Ошибка','err'); }
-}
-
-async function sluck_c(e,uid){
-  e.stopPropagation();
-  const v = parseInt(document.getElementById('li-'+uid).value);
-  if(isNaN(v)||v<0||v>100){toast('0–100','err');return;}
-  await sluck(e,uid,v);
-}
-
-async function sendMsg(e,uid){
-  e.stopPropagation();
-  const text = document.getElementById('msg-'+uid).value.trim();
-  if(!text){toast('Введите текст','err');return;}
-  try{
-    const r = await fetch(`/api/admin/send_message`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Admin-Uid':ADMIN_UID},
-      body: JSON.stringify({user_id:uid, text})
-    });
-    const d = await r.json();
-    if(d.ok) toast('📨 Сообщение отправлено');
-    else toast(d.error||'Ошибка','err');
-  } catch{ toast('Ошибка','err'); }
-}
-
-async function banUser(e,uid,banned){
-  e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
-  const reason = banned ? (prompt('Причина бана (необязательно):') || '—') : '—';
-  try{
-    await api('/api/admin/ban','POST',{user_id:uid,banned,reason});
-    if(u) u.banned=banned; updateCard(uid,u);
-    toast(banned?`⛔ Заблокирован`:`✅ Разблокирован`);
-  } catch{ toast('Ошибка','err'); }
-}
-
-function updateCard(uid, u){
-  const el = document.getElementById('uc-'+uid);
-  if(el && u){
-    const wasOpen = el.classList.contains('open');
-    el.outerHTML = uCard(u);
-    if(wasOpen) document.getElementById('uc-'+uid)?.classList.add('open');
-  }
-}
-
-// ── REVENUE ──
-function setPeriod(btn,p){
-  document.querySelectorAll('.pb').forEach(b=>b.classList.remove('a'));
-  btn.classList.add('a'); curPeriod=p;
-  document.getElementById('custom-wrap').style.display=p==='custom'?'block':'none';
-  if(p!=='custom') loadRev();
-}
-function getTsRange(){
-  const now=Date.now()/1000;
-  if(curPeriod==='today'){const d=new Date();d.setHours(0,0,0,0);return{f:d.getTime()/1000,t:now};}
-  if(curPeriod==='week') return{f:now-7*86400,t:now};
-  if(curPeriod==='month')return{f:now-30*86400,t:now};
-  if(curPeriod==='all')  return{f:0,t:now};
-  const fv=document.getElementById('d-from').value;
-  const tv=document.getElementById('d-to').value;
-  return{f:fv?new Date(fv).getTime()/1000:0,t:tv?new Date(tv).getTime()/1000+86399:now};
-}
-async function loadRev(){
-  const msg=document.getElementById('rev-msg');
-  const grid=document.getElementById('rev-grid');
-  msg.style.display='block';msg.textContent='Загрузка...';grid.style.display='none';
-  const{f,t}=getTsRange();
-  try{
-    const d=await api(`/api/admin/revenue?from=${f}&to=${t}`);
-    msg.style.display='none';grid.style.display='grid';
-    const ep=d.euro_losses-d.euro_wins;
-    const mp=d.mines_losses-d.mines_wins;
-    const tp=d.tower_losses-d.tower_wins;
-    grid.innerHTML=`
-      <div class="ri"><div class="ri-l">🏙 GTA комиссии</div><div class="ri-v g">+${d.gta_commission}</div></div>
-      <div class="ri"><div class="ri-l">🎰 Европ. профит</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
-      <div class="ri"><div class="ri-l">💣 Мины профит</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
-      <div class="ri"><div class="ri-l">🗼 Башня профит</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
-      <div class="ri"><div class="ri-l">📉 Проиграно игр.</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
-      <div class="ri"><div class="ri-l">📈 Выплачено игр.</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
-      <div class="ri"><div class="ri-l">💳 Пополнения</div><div class="ri-v gold">${d.deposits}</div></div>
-      <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${users.length}</div></div>
-      <div class="rev-total">
-        <div class="rt-l">Итого доход казино</div>
-        <div class="rt-v" style="color:${d.total_revenue>=0?'var(--gold)':'var(--red)'}">
-          ${d.total_revenue>=0?'+':''}${d.total_revenue} 🪙
-        </div>
-      </div>`;
-  } catch{ msg.style.display='block';msg.textContent='Ошибка загрузки'; }
-}
-
-// ── LUCK SETTINGS (independent per mode) ──
-let glCoeff = 1.0;
-let euroCoeff = 1.0;
-let minesCoeff = 1.0;
-let towerLuckCoeff = 1.0;
-let minesMaxMult = 25.0;
-let towerMaxFloors = 10;
-
-function _colorCoeff(v){ return v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--green)'; }
-
-// Global (applies to ALL when saved)
-function onGlSlider(v){
-  glCoeff = parseInt(v)/100;
-  const el = document.getElementById('gl-val');
-  el.textContent = glCoeff.toFixed(2); el.style.color = _colorCoeff(glCoeff);
-}
-function setGlCoeff(v){
-  glCoeff = v;
-  document.getElementById('gl-val').textContent = v.toFixed(2);
-  document.getElementById('gl-slider').value = Math.round(v*100);
-  document.getElementById('gl-val').style.color = _colorCoeff(v);
-}
-async function saveGlCoeff(){
-  const st = document.getElementById('gl-status');
-  st.textContent='⏳ Сохраняем...'; st.style.color='var(--muted)';
-  try{
-    await Promise.all([
-      api('/api/admin/global_luck','POST',{coeff:glCoeff}),
-      api('/api/admin/euro_luck','POST',{coeff:glCoeff}),
-      api('/api/admin/mines_luck','POST',{coeff:glCoeff}),
-      api('/api/admin/tower_luck','POST',{coeff:glCoeff}),
-    ]);
-    euroCoeff = glCoeff; minesCoeff = glCoeff; towerLuckCoeff = glCoeff;
-    ['euro-slider','mines-slider','tower-luck-slider'].forEach(id=>{
-      const el=document.getElementById(id); if(el) el.value=Math.round(glCoeff*100);
-    });
-    ['euro-val','mines-val','tower-luck-val'].forEach(id=>{
-      const el=document.getElementById(id); if(el){el.textContent=glCoeff.toFixed(2);el.style.color=_colorCoeff(glCoeff);}
-    });
-    st.textContent=`✅ Применено ко всем: ${glCoeff.toFixed(2)}`; st.style.color='var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
-}
-
-// Euro — independent
-function onEuroSlider(v){
-  euroCoeff = parseInt(v)/100;
-  const el = document.getElementById('euro-val');
-  el.textContent = euroCoeff.toFixed(2); el.style.color = _colorCoeff(euroCoeff);
-}
-function setEuroCoeff(v){
-  euroCoeff = v;
-  document.getElementById('euro-val').textContent = v.toFixed(2);
-  document.getElementById('euro-slider').value = Math.round(v*100);
-  document.getElementById('euro-val').style.color = _colorCoeff(v);
-}
-async function saveEuroCoeff(){
-  const st = document.getElementById('euro-status');
-  try{
-    await api('/api/admin/euro_luck','POST',{coeff:euroCoeff});
-    st.textContent = `✅ Рулетка сохранена: ${euroCoeff.toFixed(2)}`; st.style.color='var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка','err'); }
-}
-
-// Mines — independent
-function onMinesSlider(v){
-  minesCoeff = parseInt(v)/100;
-  const el = document.getElementById('mines-val');
-  el.textContent = minesCoeff.toFixed(2); el.style.color = _colorCoeff(minesCoeff);
-}
-function setMinesCoeff(v){
-  minesCoeff = v;
-  document.getElementById('mines-val').textContent = v.toFixed(2);
-  document.getElementById('mines-slider').value = Math.round(v*100);
-  document.getElementById('mines-val').style.color = _colorCoeff(v);
-}
-async function saveMinesCoeff(){
-  const st = document.getElementById('mines-status');
-  try{
-    await api('/api/admin/mines_luck','POST',{coeff:minesCoeff});
-    st.textContent = `✅ Мины сохранены: ${minesCoeff.toFixed(2)}`; st.style.color='var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка','err'); }
-}
-
-// Tower — independent
-function onTowerLuckSlider(v){
-  towerLuckCoeff = parseInt(v)/100;
-  const el = document.getElementById('tower-luck-val');
-  el.textContent = towerLuckCoeff.toFixed(2); el.style.color = _colorCoeff(towerLuckCoeff);
-}
-function setTowerLuck(v){
-  towerLuckCoeff = v;
-  document.getElementById('tower-luck-val').textContent = v.toFixed(2);
-  document.getElementById('tower-luck-slider').value = Math.round(v*100);
-  document.getElementById('tower-luck-val').style.color = _colorCoeff(v);
-}
-async function saveTowerLuck(){
-  const st = document.getElementById('tower-luck-status');
-  try{
-    await api('/api/admin/tower_luck','POST',{coeff:towerLuckCoeff});
-    st.textContent = `✅ Башня сохранена: ${towerLuckCoeff.toFixed(2)}`; st.style.color='var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка сохранения','err'); }
-}
-
-async function loadGl(){
-  const load = async(url, key, slEl, valEl, color) => {
-    try{
-      const d = await api(url);
-      const v = d.coeff ?? 1.0;
-      if(slEl) slEl.value = Math.round(v*100);
-      if(valEl){ valEl.textContent = v.toFixed(2); valEl.style.color = _colorCoeff(v); }
-      return v;
-    } catch{ return 1.0; }
-  };
-  glCoeff         = await load('/api/admin/global_luck', 'coeff', document.getElementById('gl-slider'), document.getElementById('gl-val'));
-  euroCoeff       = await load('/api/admin/euro_luck', 'coeff', document.getElementById('euro-slider'), document.getElementById('euro-val'));
-  minesCoeff      = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
-  towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
-  try{
-    const d = await api('/api/admin/mines_max_mult');
-    minesMaxMult = d.max_mult ?? d.value ?? 25;
-    document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1)+'x';
-    document.getElementById('mines-max-slider').value = Math.min(100, minesMaxMult);
-  } catch{}
-  try{
-    const d = await api('/api/admin/tower_max_mult');
-    towerMaxFloors = d.max_mult ?? 5.0;
-    document.getElementById('tower-mult-val').textContent = '×'+parseFloat(towerMaxFloors).toFixed(1);
-    document.getElementById('tower-mult-slider').value = towerMaxFloors;
-  } catch{}
-}  // ← закрытие loadGl()
-
-// ── MINES MAX MULTIPLIER ──
-function onMinesMaxSlider(v){
-  minesMaxMult = parseFloat(v);
-  const el = document.getElementById('mines-max-val');
-  el.textContent = minesMaxMult.toFixed(1)+'x';
-  el.style.color = minesMaxMult <= 5 ? 'var(--green)' : minesMaxMult <= 15 ? 'var(--gold)' : 'var(--red)';
-}
-function setMinesMax(v){
-  minesMaxMult = v;
-  document.getElementById('mines-max-val').textContent = v.toFixed(1)+'x';
-  document.getElementById('mines-max-slider').value = Math.min(100, v);
-  const el = document.getElementById('mines-max-val');
-  el.style.color = v <= 5 ? 'var(--green)' : v <= 15 ? 'var(--gold)' : 'var(--red)';
-}
-async function saveMinesMax(){
-  try{
-    await api('/api/admin/mines_max_mult','POST',{max_mult: minesMaxMult});
-    const st = document.getElementById('mines-max-status');
-    st.textContent = '✅ Сохранено: макс. '+minesMaxMult.toFixed(1)+'x';
-    st.style.color = 'var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка сохранения','err'); }
-}
-
-// ── TOWER MAX MULTIPLIER ──
-function onTowerMultSlider(v){
-  towerMaxFloors = parseFloat(v);
-  const el = document.getElementById('tower-mult-val');
-  el.textContent = '×'+parseFloat(v).toFixed(1);
-  el.style.color = v <= 3 ? 'var(--green)' : v <= 7 ? 'var(--blue)' : 'var(--red)';
-}
-function setTowerMult(v){
-  towerMaxFloors = v;
-  document.getElementById('tower-mult-val').textContent = '×'+parseFloat(v).toFixed(1);
-  document.getElementById('tower-mult-slider').value = v;
-  const el = document.getElementById('tower-mult-val');
-  el.style.color = v <= 3 ? 'var(--green)' : v <= 7 ? 'var(--blue)' : 'var(--red)';
-}
-async function saveTowerMult(){
-  try{
-    await api('/api/admin/tower_max_mult','POST',{max_mult: towerMaxFloors});
-    const st = document.getElementById('tower-mult-status');
-    st.textContent = '✅ Сохранено: ×'+parseFloat(towerMaxFloors).toFixed(1);
-    st.style.color = 'var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ toast('Ошибка сохранения','err'); }
-}
-
-// ── LOADING OVERLAY — bulletproof version ──
-function hideLoadingOverlay(){
-  const el = document.getElementById('admin-loading');
-  if(!el) return;
-  el.style.opacity = '0';
-  el.style.transition = 'opacity 0.35s ease';
-  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 400);
-}
-
-function showLoadingError(msg){
-  const sub = document.getElementById('al-sub');
-  const bar = document.querySelector('.al-bar-wrap');
-  if(sub) sub.innerHTML = msg;
-  if(bar) bar.style.display = 'none';
-}
-
-// Animate the loading bar
-(function(){
-  const bar = document.getElementById('al-bar');
-  if(!bar) return;
-  let pct = 0;
-  const iv = setInterval(()=>{
-    pct = Math.min(pct + Math.random()*10 + 3, 88);
-    bar.style.width = pct + '%';
-  }, 130);
-  window._clearLoadBar = ()=>{ clearInterval(iv); if(bar) bar.style.width='100%'; };
-})();
-
-// ── ADMIN GUARD ──
-(async function checkAdminAccess(){
-  if(!ADMIN_UID){
-    window.location.replace('not_telegram.html');
-    return;
-  }
-  try{
-    const r = await fetch('/api/admin/users',{
-      headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
-    });
-    if(r.status === 403){
-      window.location.replace('index.html');
-      return;
-    }
-  } catch(e){
-    // Network error – allow panel to load anyway
-  }
-  if(window._clearLoadBar) window._clearLoadBar();
-  hideLoadingOverlay();
-  load();
-  loadGl();
-  setInterval(load, 30000);
-})();
-
-const td = new Date().toISOString().split('T')[0];
-document.getElementById('d-to').value   = td;
-document.getElementById('d-from').value = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
-
-// Dev incognito block
-setTimeout(async()=>{
-  try{
-    const r = await fetch('/api/admin/is_dev', { headers:{'X-Admin-Uid':ADMIN_UID} });
-    const d = await r.json();
-    if(d.is_dev){
-      const ib = document.getElementById('incognito-block');
-      if(ib) ib.style.display = 'block';
-    }
-  } catch{}
-}, 500);
-
-</script>
-</body>
-</html>
+if __name__ == "__main__":
+    asyncio.run(main())
