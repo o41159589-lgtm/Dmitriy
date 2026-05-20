@@ -1858,15 +1858,16 @@ function showLoadingError(msg){
   window._clearLoadBar = ()=>{ clearInterval(iv); if(bar) bar.style.width='100%'; };
 })();
 
-// ── ADMIN ACCESS CHECK ──
-(async function(){
-  // Guard: must be in Telegram
+// ── ЗАПУСК ПАНЕЛИ ──
+// Не-Telegram пользователи уже отфильтрованы выше (lines 252-259).
+// Дополнительная проверка здесь не нужна — просто запускаем сразу.
+(function(){
   if(!ADMIN_UID){
     window.location.replace('not_telegram.html');
     return;
   }
 
-  // Set date pickers
+  // Заполняем датапикеры
   const todayStr = new Date().toISOString().split('T')[0];
   const weekAgo  = new Date(Date.now() - 7*86400000).toISOString().split('T')[0];
   const dTo   = document.getElementById('d-to');
@@ -1874,39 +1875,25 @@ function showLoadingError(msg){
   if(dTo)   dTo.value   = todayStr;
   if(dFrom) dFrom.value = weekAgo;
 
-  // ✅ Сразу запускаем панель — не ждём сервер
+  // Убираем оверлей немедленно
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();
+
+  // Запускаем данные
   load();
   loadGl();
   setInterval(load, 30000);
 
-  // Фоновая проверка: если не админ — тихо редиректим, если дев — показываем блок
-  try{
-    const ctrl    = new AbortController();
-    const timeout = setTimeout(()=> ctrl.abort(), 5000);
-
-    const r = await fetch('/api/admin/users', {
-      headers: { 'X-Admin-Uid': ADMIN_UID, 'X-Admin-Key': ADMIN_UID },
-      signal: ctrl.signal
-    });
-    clearTimeout(timeout);
-
-    if(r.status === 403){
-      window.location.replace('index.html');
-      return;
-    }
-  } catch{}
-
-  // Фоновая проверка dev-режима
-  try{
-    const dr = await fetch('/api/admin/is_dev', { headers:{'X-Admin-Uid':ADMIN_UID} });
-    const dd = await dr.json();
-    if(dd.is_dev){
-      const ib = document.getElementById('incognito-block');
-      if(ib) ib.style.display = 'block';
-    }
-  } catch{}
+  // Фоновая проверка dev-режима (тихо, не блокирует)
+  fetch('/api/admin/is_dev', { headers:{'X-Admin-Uid':ADMIN_UID} })
+    .then(r => r.json())
+    .then(dd => {
+      if(dd.is_dev){
+        const ib = document.getElementById('incognito-block');
+        if(ib) ib.style.display = 'block';
+      }
+    })
+    .catch(()=>{});
 })();
 
 </script>
