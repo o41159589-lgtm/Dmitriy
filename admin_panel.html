@@ -262,8 +262,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 <div class="admin-loading" id="admin-loading">
   <div class="al-icon">⚙️</div>
   <div class="al-title">TOPLUCK ADMIN</div>
-  <div class="al-sub">Проверка доступа...</div>
+  <div class="al-sub" id="al-sub">Проверка доступа...</div>
   <div class="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
+  <!-- DEBUG BLOCK: убери этот div когда починим -->
+  <div id="dbg" style="margin-top:18px;width:92vw;max-width:420px;background:rgba(0,0,0,0.7);border:1px solid #444;border-radius:10px;padding:10px 12px;font-family:monospace;font-size:11px;color:#0f0;text-align:left;max-height:260px;overflow-y:auto;word-break:break-all;line-height:1.6;"></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -1858,26 +1860,57 @@ function showLoadingError(msg){
   window._clearLoadBar = ()=>{ clearInterval(iv); if(bar) bar.style.width='100%'; };
 })();
 
-// ── ADMIN GUARD ──
+// ── ADMIN GUARD (DEBUG MODE) ──
+// Чтобы отключить дебаг: удали весь блок до "END DEBUG" и вставь вместо него чистую версию ниже
+const _DBG = true; // → поменяй на false или удали весь блок для отключения
+function dbg(msg, color){
+  if(!_DBG) return;
+  const el = document.getElementById('dbg');
+  if(!el) return;
+  const line = document.createElement('div');
+  line.style.color = color||'#0f0';
+  line.textContent = '[' + new Date().toLocaleTimeString('ru') + '] ' + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+  console.log('[ADMIN DBG]', msg);
+}
+
 (async function checkAdminAccess(){
+  dbg('▶ старт checkAdminAccess');
+  dbg('tg = ' + (window.Telegram?.WebApp ? 'есть' : 'НЕТ'), window.Telegram?.WebApp ? '#0f0' : '#f00');
+  dbg('ADMIN_UID = "' + ADMIN_UID + '"', ADMIN_UID ? '#0f0' : '#f00');
+
+  if(!ADMIN_UID){
+    dbg('✗ нет UID → not_telegram.html', '#f00');
+    window.location.replace('not_telegram.html');
+    return;
+  }
+
+  dbg('→ fetch /api/admin/users ...');
   try{
     const r = await fetch('/api/admin/users',{
       headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
     });
+    dbg('← статус ответа: ' + r.status, r.ok ? '#0f0' : '#fa0');
     if(r.status === 403){
-      // Not an admin — silently redirect to the normal app
+      dbg('✗ 403 Forbidden → index.html', '#f00');
       window.location.replace('index.html');
       return;
     }
   } catch(e){
-    // Network error – allow panel to load anyway (server may be starting)
+    dbg('✗ catch: ' + e.name + ': ' + e.message, '#fa0');
+    dbg('  (продолжаем несмотря на ошибку)', '#fa0');
+    // Network error – allow panel to load anyway
   }
+
+  dbg('✓ открываем панель', '#0f0');
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();
   load();
   loadGl();
   setInterval(load, 30000);
 })();
+// END DEBUG
 
 const td = new Date().toISOString().split('T')[0];
 document.getElementById('d-to').value   = td;
