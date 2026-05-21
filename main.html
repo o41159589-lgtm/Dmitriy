@@ -5,6 +5,26 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>TopLuck Casino</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+// ── DEV IMPERSONATION — не удалять ──
+// Когда администратор заходит «от имени» игрока через admin_panel,
+// его UID подменяется здесь ДО того как любой код его прочитает.
+(function(){
+  try{
+    const _devUid = localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid) return;
+    const _uid = parseInt(_devUid);
+    if(!_uid) return;
+    const tg = window.Telegram?.WebApp;
+    if(!tg) return;
+    if(!tg.initDataUnsafe)      tg.initDataUnsafe = {};
+    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user = {};
+    tg.initDataUnsafe.user.id = _uid;
+    console.log('[DEV] Impersonating UID:', _uid);
+  } catch(e){ console.warn('[DEV] impersonation error:', e); }
+})();
+// ── конец DEV IMPERSONATION ──
+</script>
 <link rel="stylesheet" href="shared.css">
 <style>
 /* ═══════════════════════════════════════
@@ -1035,7 +1055,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 </div>
 
 <!-- ══════════════ NAV ══════════════ -->
-<nav class="nav">
+<nav class="nav" id="main-nav">
   <div class="nav-ind" id="nav-ind" style="width:25%;left:50%"></div>
   <button class="nav-btn" onclick="showPage('home',this,0)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -1052,6 +1072,11 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   <button class="nav-btn" onclick="showPage('shop',this,3)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
     Магазин
+  </button>
+  <!-- Кнопка истории: видна ТОЛЬКО в Dev Debug режиме (когда открыто из admin_panel с флагом отладки) -->
+  <button class="nav-btn" id="nav-btn-history" style="display:none" onclick="showPage('history',this,4)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.51"/></svg>
+    История
   </button>
 </nav>
 
@@ -1147,17 +1172,48 @@ function updateUI(){
 }
 
 // ── NAV ──
+// Количество видимых кнопок нава (4 — обычный режим, 5 — dev debug)
+let _navCount = 4;
+
 function showPage(n, btn, i){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');
   btn.classList.add('active');
-  document.getElementById('nav-ind').style.left=(i*25)+'%';
+  const pct = 100 / _navCount;
+  document.getElementById('nav-ind').style.width = pct+'%';
+  document.getElementById('nav-ind').style.left  = (i * pct)+'%';
   if(n==='history') renderHistory();
   if(n==='inventory') loadInventory();
   if(n==='shop' && !shopLoaded) loadShopGifts();
   if(n==='games') loadUser();
 }
+
+// ── DEV DEBUG MODE — показываем вкладку История только в режиме отладки ──
+// Флаг __tl_dev_debug__ ставит admin_panel при входе «с отладкой»
+(function initDevDebug(){
+  try{
+    const isDebug = localStorage.getItem('__tl_dev_debug__') === '1';
+    if(!isDebug) return;
+    const histBtn = document.getElementById('nav-btn-history');
+    if(histBtn) histBtn.style.display = '';
+    _navCount = 5;
+    // Сдвигаем индикатор: активная кнопка — Игры (индекс 2 из 5)
+    const pct = 100 / 5;
+    const indEl = document.getElementById('nav-ind');
+    if(indEl){ indEl.style.width = pct+'%'; indEl.style.left = (2*pct)+'%'; }
+    // Добавляем debug-бейдж
+    const badge = document.createElement('div');
+    badge.id = 'dev-debug-badge';
+    badge.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);'
+      +'background:rgba(230,57,70,0.18);border:1px solid rgba(230,57,70,0.45);'
+      +'border-radius:8px;padding:3px 10px;font-size:10px;color:#e63946;'
+      +'font-family:Orbitron,monospace;letter-spacing:1px;z-index:200;'
+      +'pointer-events:none;backdrop-filter:blur(10px);';
+    badge.textContent = '🔬 DEV DEBUG';
+    document.body.appendChild(badge);
+  } catch(e){}
+})();
 
 function copyRef(){
   navigator.clipboard?.writeText(REF)

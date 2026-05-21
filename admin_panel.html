@@ -650,8 +650,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
         style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);
         border-radius:10px;padding:11px 14px;color:#fff;font-size:15px;
         font-family:'Rajdhani',sans-serif;outline:none;"/>
-      <button class="abtn set" onclick="devEnter()" style="white-space:nowrap;padding:10px 20px;font-size:14px">
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="abtn set" onclick="devEnter(false)" style="flex:1;padding:11px;font-size:13px">
         🚀 Войти
+      </button>
+      <button class="abtn pur" onclick="devEnter(true)" style="flex:1;padding:11px;font-size:13px"
+        title="Войти от имени пользователя + показать скрытую вкладку История">
+        🔬 Войти с отладкой
       </button>
     </div>
     <div id="dev-enter-status" style="font-size:12px;color:var(--muted);min-height:16px;text-align:center"></div>
@@ -939,15 +945,22 @@ async function giveAll(){
 // ══════════════════════════════
 const DEV_LS_KEY = '__tl_dev_uid__';
 
-function devEnter(){
+function devEnter(debug){
   const uid = parseInt(document.getElementById('dev-uid').value)||0;
   const st  = document.getElementById('dev-enter-status');
   if(!uid){ st.textContent='⚠️ Введите Telegram ID'; st.style.color='var(--red)'; return; }
 
   st.textContent = '⏳ Загружаем...'; st.style.color = 'var(--muted)';
 
-  // Save to localStorage — all pages on same origin will read it
+  // Сохраняем UID для всех страниц — они читают этот ключ и подменяют tg.initDataUnsafe.user.id
   localStorage.setItem(DEV_LS_KEY, String(uid));
+
+  // Флаг отладки: включает скрытую вкладку «История» в main.html
+  if(debug){
+    localStorage.setItem('__tl_dev_debug__', '1');
+  } else {
+    localStorage.removeItem('__tl_dev_debug__');
+  }
 
   // Update "recent" list
   let recent = JSON.parse(localStorage.getItem('__tl_dev_recent__')||'[]');
@@ -955,18 +968,29 @@ function devEnter(){
   localStorage.setItem('__tl_dev_recent__', JSON.stringify(recent));
   renderDevRecent();
 
-  // Open iframe
+  // Обновляем overlay-бар
   const overlay = document.getElementById('dev-overlay');
   const iframe  = document.getElementById('dev-iframe');
-  document.getElementById('dev-bar-info').textContent = `UID: ${uid}`;
+  const bar     = document.getElementById('dev-bar');
+
+  document.getElementById('dev-bar-info').textContent = `UID: ${uid}${debug?' · 🔬 debug':''}`;
+
+  // Красим бар: обычный — красный, debug — фиолетовый
+  bar.style.borderBottomColor = debug ? 'var(--purple)' : 'var(--red)';
+  bar.style.background = debug
+    ? 'rgba(20,5,25,0.97)'
+    : 'rgba(20,5,5,0.97)';
+
   iframe.src = 'main.html';
   overlay.style.display = 'block';
-  st.textContent = `✅ Вошли как UID ${uid}`; st.style.color = 'var(--green)';
+  st.textContent = `✅ Вошли как UID ${uid}${debug?' (режим отладки)':''}`;
+  st.style.color = 'var(--green)';
 }
 
 function devClose(){
-  // Clean up — remove impersonation key
+  // Удаляем оба ключа — и UID и debug-флаг
   localStorage.removeItem(DEV_LS_KEY);
+  localStorage.removeItem('__tl_dev_debug__');
   const iframe = document.getElementById('dev-iframe');
   iframe.src = '';
   document.getElementById('dev-overlay').style.display = 'none';
@@ -979,7 +1003,7 @@ function renderDevRecent(){
   if(!recent.length){ wrap.style.display='none'; return; }
   wrap.style.display = 'block';
   list.innerHTML = recent.map(uid => `
-    <button onclick="document.getElementById('dev-uid').value=${uid};devEnter()"
+    <button onclick="document.getElementById('dev-uid').value=${uid};devEnter(false)"
       style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
       border-radius:8px;padding:6px 12px;color:var(--text);font-size:12px;
       font-family:'Orbitron',monospace;cursor:pointer;">
