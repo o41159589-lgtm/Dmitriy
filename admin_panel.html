@@ -549,24 +549,34 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
       </div>
       <div>
         <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Название</div>
-        <input class="ag-inp" id="nt-title" type="text" placeholder="Подпишись на наш канал"/>
+        <input id="nt-title" type="text" placeholder="Подпишись на наш канал"
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+          padding:11px 14px;color:#fff;font-size:14px;font-family:'Rajdhani',sans-serif;outline:none;"/>
       </div>
       <div>
         <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Описание</div>
-        <input class="ag-inp" id="nt-desc" type="text" placeholder="Необязательное описание"/>
+        <input id="nt-desc" type="text" placeholder="Необязательное описание"
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+          padding:11px 14px;color:#fff;font-size:14px;font-family:'Rajdhani',sans-serif;outline:none;"/>
       </div>
       <div>
         <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Цель (ссылка или @username)</div>
-        <input class="ag-inp" id="nt-target" type="text" placeholder="@TopLuckBot или https://t.me/..."/>
+        <input id="nt-target" type="text" placeholder="@TopLuckBot или https://t.me/..."
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+          padding:11px 14px;color:#fff;font-size:14px;font-family:'Rajdhani',sans-serif;outline:none;"/>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div>
           <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Награда 🪙</div>
-          <input class="ag-inp" id="nt-reward" type="number" value="50" min="1"/>
+          <input id="nt-reward" type="number" value="50" min="1"
+            style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+            padding:11px 14px;color:#fff;font-size:14px;font-family:'Orbitron',monospace;outline:none;"/>
         </div>
         <div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Кол-во (для spend/dep)</div>
-          <input class="ag-inp" id="nt-count" type="number" value="1" min="1"/>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Кол-во (spend/dep)</div>
+          <input id="nt-count" type="number" value="1" min="1"
+            style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+            padding:11px 14px;color:#fff;font-size:14px;font-family:'Orbitron',monospace;outline:none;"/>
         </div>
       </div>
       <div style="display:flex;gap:8px">
@@ -631,45 +641,168 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 <div class="tab-pane" id="tab-devmode">
   <div class="rev-card" style="margin-bottom:10px">
     <div class="rev-title">🔬 РЕЖИМ РАЗРАБОТЧИКА</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Только для разработчиков. Просмотр данных любого пользователя.</p>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Войди за любого пользователя — увидишь его интерфейс от его лица.</p>
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input class="ag-inp" id="dev-uid" type="number" placeholder="Telegram ID пользователя" style="flex:1"/>
-      <button class="abtn set" onclick="devLoadUser()" style="white-space:nowrap;padding:9px 14px">🔍 Войти</button>
+      <input id="dev-uid" type="number" placeholder="Telegram ID пользователя"
+        style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+        padding:11px 14px;color:#fff;font-size:14px;font-family:'Rajdhani',sans-serif;outline:none;"/>
+      <button class="abtn set" onclick="devLoadUser()" style="white-space:nowrap;padding:10px 18px;font-size:13px">🔍 Войти</button>
     </div>
-    <div style="display:flex;gap:6px;margin-bottom:8px">
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-        <input type="checkbox" id="dev-debug-mode" style="accent-color:var(--gold)"/>
-        Режим отладки (история + задания)
-      </label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;
+      background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 14px;">
+      <input type="checkbox" id="dev-debug-mode" style="accent-color:var(--gold);width:16px;height:16px;"/>
+      <div>
+        <div style="font-weight:700">Режим отладки</div>
+        <div style="font-size:11px;color:var(--muted)">Показывает кнопки История, Задания и доп. данные</div>
+      </div>
+    </label>
+  </div>
+</div>
+
+<!-- DEV USER OVERLAY — fullscreen impersonation view -->
+<div id="dev-overlay" style="display:none;position:fixed;inset:0;z-index:200;background:var(--bg);overflow-y:auto;padding-bottom:80px;">
+
+  <!-- Topbar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+    background:rgba(8,8,15,0.85);border-bottom:1px solid rgba(255,255,255,0.1);
+    backdrop-filter:blur(20px);position:sticky;top:0;z-index:10;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="devClose()" style="width:34px;height:34px;border-radius:10px;
+        background:rgba(230,57,70,0.15);border:1px solid rgba(230,57,70,0.3);
+        color:var(--red);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <div>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--red);letter-spacing:1px;">DEV MODE</div>
+        <div id="dev-overlay-name" style="font-weight:700;font-size:13px;color:var(--text);">—</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div id="dev-overlay-bal" style="background:linear-gradient(135deg,var(--gold2),var(--gold));
+        border-radius:10px;padding:7px 12px;color:#000;
+        font-family:'Orbitron',monospace;font-size:13px;font-weight:700;">— 🪙</div>
     </div>
   </div>
-  <div id="dev-user-view" style="display:none">
-    <!-- User profile view -->
-    <div style="background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-bottom:10px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div id="dev-avatar" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#4361ee);
-          display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#fff">?</div>
-        <div>
-          <div id="dev-name" style="font-weight:700;font-size:16px"></div>
-          <div id="dev-uid-disp" style="font-size:11px;color:var(--muted)"></div>
+
+  <!-- User profile card -->
+  <div style="padding:16px 16px 0;">
+    <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+      border-radius:20px;padding:18px;margin-bottom:14px;
+      backdrop-filter:blur(24px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12),0 8px 28px rgba(0,0,0,0.32);">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div id="dev-ov-avatar" style="width:56px;height:56px;border-radius:50%;
+          background:linear-gradient(135deg,var(--purple),#4361ee);
+          display:flex;align-items:center;justify-content:center;
+          font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:#fff;
+          box-shadow:0 4px 16px rgba(123,47,255,0.35);">?</div>
+        <div style="flex:1;">
+          <div id="dev-ov-name" style="font-weight:700;font-size:17px;margin-bottom:2px;">—</div>
+          <div id="dev-ov-uid" style="font-size:11px;color:var(--muted);">UID: —</div>
+          <div id="dev-ov-username" style="font-size:11px;color:var(--blue);">—</div>
         </div>
-        <div style="margin-left:auto;text-align:right">
-          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700" id="dev-balance">—</div>
-          <div style="font-size:11px;color:var(--muted)">Баланс</div>
+        <div style="text-align:right;">
+          <div id="dev-ov-level-badge" style="background:linear-gradient(135deg,var(--gold2),var(--gold));
+            border-radius:8px;padding:4px 10px;color:#000;
+            font-family:'Orbitron',monospace;font-size:12px;font-weight:900;">LVL —</div>
+          <div id="dev-ov-luck" style="font-size:11px;color:var(--muted);margin-top:4px;">🍀 —</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--blue)" id="dev-level">0</div><div style="font-size:10px;color:var(--muted)">УРОВЕНЬ</div></div>
-        <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:16px" id="dev-spins">0</div><div style="font-size:10px;color:var(--muted)">ИГР</div></div>
-        <div style="text-align:center"><div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--green)" id="dev-wins">0</div><div style="font-size:10px;color:var(--muted)">ПОБЕД</div></div>
+      <!-- Stats grid -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+          border-radius:12px;padding:10px 6px;text-align:center;">
+          <div id="dev-ov-bal2" style="font-family:'Orbitron',monospace;font-size:15px;color:var(--gold);font-weight:700;">—</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">МОНЕТ</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+          border-radius:12px;padding:10px 6px;text-align:center;">
+          <div id="dev-ov-spins" style="font-family:'Orbitron',monospace;font-size:15px;color:var(--blue);font-weight:700;">—</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">ИГР</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+          border-radius:12px;padding:10px 6px;text-align:center;">
+          <div id="dev-ov-wins" style="font-family:'Orbitron',monospace;font-size:15px;color:var(--green);font-weight:700;">—</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">ПОБЕД</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+          border-radius:12px;padding:10px 6px;text-align:center;">
+          <div id="dev-ov-wr" style="font-family:'Orbitron',monospace;font-size:15px;color:var(--purple);font-weight:700;">—</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;">ВИНРЕЙТ</div>
+        </div>
       </div>
     </div>
-    <!-- Debug info (shown only in debug mode) -->
-    <div id="dev-debug-section" style="display:none">
-      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:8px">ИСТОРИЯ (последние 20)</div>
-      <div id="dev-history-list" style="font-size:12px"></div>
-      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;margin:12px 0 8px">ВЫПОЛНЕННЫЕ ЗАДАНИЯ</div>
-      <div id="dev-tasks-list" style="font-size:12px;color:var(--muted)"></div>
+
+    <!-- Games grid (как у пользователя) -->
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);
+      letter-spacing:1px;margin-bottom:10px;">🎮 ИГРЫ</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px;padding:16px;text-align:center;cursor:default;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 16px rgba(0,0,0,0.25);">
+        <div style="font-size:32px;margin-bottom:6px;">🎰</div>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;">РУЛЕТКА</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Европейская</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px;padding:16px;text-align:center;cursor:default;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 16px rgba(0,0,0,0.25);">
+        <div style="font-size:32px;margin-bottom:6px;">🏙</div>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;">GTA</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Лоббирование</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px;padding:16px;text-align:center;cursor:default;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 16px rgba(0,0,0,0.25);">
+        <div style="font-size:32px;margin-bottom:6px;">💣</div>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;">МИНЫ</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Сапёр</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px;padding:16px;text-align:center;cursor:default;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 4px 16px rgba(0,0,0,0.25);">
+        <div style="font-size:32px;margin-bottom:6px;">🗼</div>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;">БАШНЯ</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Риск</div>
+      </div>
+    </div>
+
+    <!-- DEBUG SECTION — только если включён режим отладки -->
+    <div id="dev-ov-debug" style="display:none;">
+
+      <!-- History -->
+      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);
+        letter-spacing:1px;margin-bottom:10px;">📋 ИСТОРИЯ ТРАНЗАКЦИЙ</div>
+      <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px;overflow:hidden;margin-bottom:14px;">
+        <div id="dev-ov-history" style="max-height:300px;overflow-y:auto;padding:4px 0;"></div>
+      </div>
+
+      <!-- Completed tasks -->
+      <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);
+        letter-spacing:1px;margin-bottom:10px;">✅ ВЫПОЛНЕННЫЕ ЗАДАНИЯ</div>
+      <div id="dev-ov-tasks" style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.12);
+        border-radius:16px;padding:14px;margin-bottom:14px;font-size:13px;color:var(--muted);"></div>
+
+    </div>
+  </div>
+
+  <!-- Bottom nav (как у пользователя, но не кликабельная) -->
+  <div style="position:fixed;bottom:0;left:0;right:0;height:64px;
+    background:rgba(8,8,15,0.85);border-top:1px solid rgba(255,255,255,0.1);
+    backdrop-filter:blur(28px);display:flex;z-index:10;">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--gold);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span style="font-size:10px;font-weight:600;">ГЛАВНАЯ</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#6060a0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      <span style="font-size:10px;font-weight:600;">ИГРЫ</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#6060a0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      <span style="font-size:10px;font-weight:600;">МАГАЗИН</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#6060a0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+      <span style="font-size:10px;font-weight:600;">ПРОФИЛЬ</span>
     </div>
   </div>
 </div>
@@ -914,48 +1047,105 @@ async function giveAll(){
 // ══════════════════════════════
 // DEV MODE
 // ══════════════════════════════
+function devClose(){
+  document.getElementById('dev-overlay').style.display = 'none';
+}
+
 async function devLoadUser(){
-  const uid = parseInt(document.getElementById('dev-uid').value)||0;
+  const uid   = parseInt(document.getElementById('dev-uid').value)||0;
   const debug = document.getElementById('dev-debug-mode').checked;
   if(!uid){ toast('Введите UID','err'); return; }
-  const viewEl = document.getElementById('dev-user-view');
-  viewEl.style.display='none';
+
+  const btn = document.querySelector('[onclick="devLoadUser()"]');
+  if(btn){ btn.textContent = '⏳'; btn.disabled = true; }
+
   try{
     const r = await fetch(`/api/dev/user/${uid}`,{
       headers:{'X-Admin-Uid':ADMIN_UID,'X-Admin-Key':ADMIN_UID}
     }).then(r=>r.json());
+
     if(r.error){ toast('❌ '+r.error,'err'); return; }
     const u = r.user;
-    document.getElementById('dev-avatar').textContent=(u.first_name||'?')[0].toUpperCase();
-    document.getElementById('dev-name').textContent = u.first_name||'?';
-    document.getElementById('dev-uid-disp').textContent = `UID: ${u.user_id} · @${u.username||'нет'}`;
-    document.getElementById('dev-balance').textContent = (u.balance||0)+'🪙';
-    document.getElementById('dev-level').textContent = u.level||0;
-    document.getElementById('dev-spins').textContent = u.spins||0;
-    document.getElementById('dev-wins').textContent  = u.wins||0;
-    viewEl.style.display='block';
-    const dbgEl = document.getElementById('dev-debug-section');
+
+    // Topbar
+    const name = u.first_name||u.username||'Пользователь';
+    document.getElementById('dev-overlay-name').textContent = name + (u.username ? ` (@${u.username})` : '');
+    document.getElementById('dev-overlay-bal').textContent  = (u.balance||0) + ' 🪙';
+
+    // Profile card
+    document.getElementById('dev-ov-avatar').textContent   = (name[0]||'?').toUpperCase();
+    document.getElementById('dev-ov-name').textContent     = name;
+    document.getElementById('dev-ov-uid').textContent      = `UID: ${u.user_id}`;
+    document.getElementById('dev-ov-username').textContent = u.username ? `@${u.username}` : 'username не задан';
+    document.getElementById('dev-ov-level-badge').textContent = `LVL ${u.level||0}`;
+    document.getElementById('dev-ov-bal2').textContent     = u.balance||0;
+    document.getElementById('dev-ov-spins').textContent    = u.spins||0;
+    document.getElementById('dev-ov-wins').textContent     = u.wins||0;
+
+    const wr = u.spins ? Math.round((u.wins||0)/u.spins*100)+'%' : '—';
+    document.getElementById('dev-ov-wr').textContent = wr;
+
+    const luck = u.luck_pct < 0 ? 'Авто' : u.luck_pct === 100 ? '100% 🟢' : u.luck_pct === 0 ? '0% 🔴' : `${u.luck_pct}%`;
+    document.getElementById('dev-ov-luck').textContent = '🍀 ' + luck;
+
+    // Debug section
+    const dbgEl = document.getElementById('dev-ov-debug');
     if(debug){
-      dbgEl.style.display='block';
+      dbgEl.style.display = 'block';
+
+      // History
       const hist = r.history||[];
       const HIST_ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',promo:'🎟',task:'✅'};
-      document.getElementById('dev-history-list').innerHTML = hist.slice(0,20).map(h=>{
-        const d = new Date(h.created_at*1000);
-        const dt = d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-        const pos=['win','deposit','ref','task'].includes(h.type)||(h.type==='promo'&&h.amount>0);
-        return `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px">
-          ${HIST_ICONS[h.type]||'•'} ${esc(h.detail||h.type)} · <span style="color:var(--muted)">${dt}</span>
-          <span style="float:right;color:${pos?'var(--green)':'var(--red)'}">
-            ${pos?'+':'-'}${Math.abs(h.amount)}
-          </span></div>`;
-      }).join('') || '<div style="color:var(--muted)">История пуста</div>';
+      const histEl = document.getElementById('dev-ov-history');
+      if(!hist.length){
+        histEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">История пуста</div>';
+      } else {
+        histEl.innerHTML = hist.slice(0,50).map(h => {
+          const d   = new Date(h.created_at*1000);
+          const dt  = d.toLocaleDateString('ru',{day:'numeric',month:'short'}) + ' ' +
+                      d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+          const pos = ['win','deposit','ref','task'].includes(h.type)||(h.type==='promo'&&h.amount>0);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;
+            border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+              justify-content:center;font-size:14px;flex-shrink:0;
+              background:${pos?'rgba(45,198,83,0.12)':'rgba(230,57,70,0.12)'};">
+              ${HIST_ICONS[h.type]||'•'}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${esc(h.detail||h.type)}
+              </div>
+              <div style="font-size:10px;color:var(--muted);">${dt}</div>
+            </div>
+            <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+              color:${pos?'var(--green)':'var(--red)'};white-space:nowrap;">
+              ${pos?'+':'-'}${Math.abs(h.amount)}🪙
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // Tasks
       const tasks_done = r.tasks_done||[];
-      document.getElementById('dev-tasks-list').textContent =
-        tasks_done.length ? `Выполнено заданий: ${tasks_done.length} (IDs: ${tasks_done.join(', ')})` : 'Нет выполненных заданий';
+      document.getElementById('dev-ov-tasks').innerHTML = tasks_done.length
+        ? `<div style="color:var(--green);font-weight:700;margin-bottom:6px;">✅ Выполнено: ${tasks_done.length}</div>
+           <div style="font-size:11px;color:var(--muted);">ID заданий: ${tasks_done.join(', ')}</div>`
+        : '<div style="color:var(--muted);">Нет выполненных заданий</div>';
+
     } else {
-      dbgEl.style.display='none';
+      dbgEl.style.display = 'none';
     }
-  }catch(e){ toast('Ошибка: '+e.message,'err'); }
+
+    // Show overlay
+    document.getElementById('dev-overlay').style.display = 'block';
+    document.getElementById('dev-overlay').scrollTop = 0;
+
+  } catch(e){
+    toast('Ошибка: '+e.message,'err');
+  } finally {
+    if(btn){ btn.textContent = '🔍 Войти'; btn.disabled = false; }
+  }
 }
 
 // ══════════════════════════════
