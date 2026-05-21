@@ -99,6 +99,23 @@ body{
 </div>
 
 <script>
+// ── DEV IMPERSONATION (от admin panel) ──
+// Если программист вошёл через Dev Mode — подменяем UID до того как
+// любой код его прочтёт. На обычных пользователей не влияет.
+(function(){
+  try{
+    const _devUid = localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid) return;
+    const _uid = parseInt(_devUid);
+    if(!_uid) return;
+    const tg = window.Telegram?.WebApp;
+    if(!tg) return;
+    if(!tg.initDataUnsafe)      tg.initDataUnsafe = {};
+    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user = {};
+    tg.initDataUnsafe.user.id = _uid;
+  } catch(_){}
+})();
+
 // Tell Telegram to expand immediately and hide its own loading indicator
 // so our splash IS the loading screen, not a second screen after it
 const tgApp = window.Telegram?.WebApp;
@@ -108,11 +125,20 @@ if(tgApp){
 }
 
 // ── AUTH GUARD: redirect if not opened via Telegram ──
+// В dev mode __tl_dev_uid__ уже подменил user.id, поэтому guard работает корректно
 const _tgUser = tgApp?.initDataUnsafe?.user;
 if(!_tgUser || !_tgUser.id){
-  // Not opened from Telegram — show login page
+  // Не через Telegram и не dev mode — показываем страницу входа
   window.location.replace('not_telegram.html');
 }
+
+// ── Сохраняем текущий UID для всех остальных страниц ──
+// Обычные страницы (main.html, mines.html и т.д.) читают tg.initDataUnsafe напрямую,
+// но на случай если Telegram SDK не доступен — кладём UID в sessionStorage как фоллбэк
+try{
+  const _activeUid = _tgUser?.id;
+  if(_activeUid) sessionStorage.setItem('__tl_uid__', String(_activeUid));
+} catch(_){}
 
 // Particles
 const pc = document.getElementById('particles');
