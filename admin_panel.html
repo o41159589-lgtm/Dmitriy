@@ -131,6 +131,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
 .abtn.set{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#000;}
 .abtn.add{background:linear-gradient(135deg,#1aa840,var(--green));color:#000;}
 .abtn.sub{background:linear-gradient(135deg,#b02030,var(--red));color:#fff;}
+/* режимы баланса: неактивная кнопка режима — приглушена */
+.abtn.set:not(.a),.abtn.add:not(.a),.abtn.sub:not(.a){opacity:0.35;}
+.abtn.a{opacity:1 !important;box-shadow:0 0 10px rgba(255,255,255,0.25),inset 0 1px 0 rgba(255,255,255,0.3);}
 .abtn.pur{background:linear-gradient(135deg,#5a1fdd,var(--purple));color:#fff;}
 .abtn.ban{background:linear-gradient(135deg,#6b0000,#8b0000);color:#fff;}
 .abtn.unban{background:linear-gradient(135deg,#1aa840,var(--green));color:#000;}
@@ -1501,14 +1504,25 @@ function uCard(u){
       <!-- Balance -->
       <div class="ag">
         <div class="ag-l">💰 Управление балансом</div>
-        <div class="ag-row">
-          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0"/>
-          <button class="abtn set" onclick="sbal(event,${u.user_id})">SET</button>
+        <!-- Режим: переключаем между SET / + / - -->
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button id="bm-set-${u.user_id}"  class="abtn set a" style="flex:1;font-size:11px;padding:7px 4px"
+            onclick="setBMode(${u.user_id},'set')">📍 Задать</button>
+          <button id="bm-add-${u.user_id}"  class="abtn add"  style="flex:1;font-size:11px;padding:7px 4px"
+            onclick="setBMode(${u.user_id},'add')">➕ Начислить</button>
+          <button id="bm-sub-${u.user_id}"  class="abtn sub"  style="flex:1;font-size:11px;padding:7px 4px"
+            onclick="setBMode(${u.user_id},'sub')">➖ Снять</button>
         </div>
         <div class="ag-row">
-          <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1"/>
-          <button class="abtn add" onclick="dbal(event,${u.user_id},1)">+Начислить</button>
-          <button class="abtn sub" onclick="dbal(event,${u.user_id},-1)">−Снять</button>
+          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0"
+            placeholder="Сумма..."/>
+          <button class="abtn set" id="bapply-${u.user_id}" onclick="applyBal(event,${u.user_id})">
+            ✓ Применить
+          </button>
+        </div>
+        <div id="bmode-hint-${u.user_id}"
+          style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center">
+          Режим: установить баланс точно равным введённому значению
         </div>
       </div>
       <!-- Luck -->
@@ -1578,28 +1592,56 @@ async function loadUserRefs(uid){
   }catch(e){ listEl.innerHTML='<i style="color:var(--red)">Ошибка</i>'; }
 }
 
-async function sbal(e,uid){
-  e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
-  const nb = parseInt(document.getElementById('bi-'+uid).value);
-  if(isNaN(nb)||nb<0){toast('Неверное значение','err');return;}
-  try{
-    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(uid,u);
-    toast(`✅ Баланс → ${nb}🪙`);
-  } catch{ toast('Ошибка','err'); }
+// ── Balance mode state (per-user) ──
+const _bModes = {}; // uid → 'set'|'add'|'sub'
+
+function setBMode(uid, mode){
+  _bModes[uid] = mode;
+  const hints = {
+    set: 'Режим: установить баланс точно равным введённому значению',
+    add: 'Режим: начислить введённую сумму к текущему балансу',
+    sub: 'Режим: снять введённую сумму с текущего баланса'
+  };
+  const hintEl = document.getElementById('bmode-hint-'+uid);
+  if(hintEl) hintEl.textContent = hints[mode];
+
+  // Обновляем подсветку кнопок режима
+  ['set','add','sub'].forEach(m => {
+    const btn = document.getElementById('bm-'+m+'-'+uid);
+    if(btn) btn.classList.toggle('a', m === mode);
+  });
+
+  // Подсказка в поле: для SET — текущий баланс, для +/- — 0
+  const inp = document.getElementById('bi-'+uid);
+  if(inp){
+    const u = users.find(x=>x.user_id===uid);
+    if(mode === 'set') inp.value = u?.balance ?? 0;
+    else inp.value = '';
+    inp.focus();
+  }
 }
 
-async function dbal(e,uid,sign){
+async function applyBal(e, uid){
   e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
-  const d = parseInt(document.getElementById('di-'+uid).value)||0;
-  if(!d){toast('Введите сумму','err');return;}
-  const nb = Math.max(0,(u?.balance||0)+sign*d);
+  const mode = _bModes[uid] || 'set';
+  const u    = users.find(x=>x.user_id===uid);
+  const val  = parseInt(document.getElementById('bi-'+uid).value);
+  if(isNaN(val) || val < 0){ toast('Введите корректную сумму','err'); return; }
+
+  let nb;
+  if(mode === 'set') nb = val;
+  else if(mode === 'add') nb = (u?.balance||0) + val;
+  else /* sub */          nb = Math.max(0, (u?.balance||0) - val);
+
   try{
-    await api('/api/admin/set_balance','POST',{user_id:uid,balance:nb,old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(uid,u);
-    toast(`${sign>0?'+':'-'}${d}🪙`);
+    await api('/api/admin/set_balance','POST',{user_id:uid, balance:nb, old_balance:u?.balance||0});
+    if(u) u.balance = nb;
+    updateCard(uid, u);
+    const labels = {set:`→ ${nb}🪙`, add:`+${val}🪙 (теперь ${nb})`, sub:`-${val}🪙 (теперь ${nb})`};
+    toast(`✅ Баланс ${labels[mode]}`);
+    // После применения — обновляем поле на новый баланс
+    const inp = document.getElementById('bi-'+uid);
+    if(inp && mode==='set') inp.value = nb;
   } catch{ toast('Ошибка','err'); }
 }
 
@@ -1953,6 +1995,14 @@ setTimeout(async()=>{
     }
   } catch{}
 }, 500);
+// ── Страховка: чистим dev-ключи когда администратор покидает панель ──
+// (на случай если он не нажал кнопку «Выйти» перед закрытием)
+window.addEventListener('beforeunload', () => {
+  try{
+    localStorage.removeItem('__tl_dev_uid__');
+    localStorage.removeItem('__tl_dev_debug__');
+  } catch(_){}
+});
 
 </script>
 </body>

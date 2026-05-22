@@ -125,10 +125,20 @@ if(tgApp){
 }
 
 // ── AUTH GUARD: redirect if not opened via Telegram ──
-// В dev mode __tl_dev_uid__ уже подменил user.id, поэтому guard работает корректно
 const _tgUser = tgApp?.initDataUnsafe?.user;
+
+// Если реальный Telegram-пользователь (а не dev-подмена) зашёл через обычный вход —
+// сбрасываем все dev-ключи, чтобы следующий вход не открывал последнего тестового юзера.
+// Признак «обычного входа»: tgApp.initData непустой (есть подпись Telegram).
+const _hasRealInitData = tgApp?.initData && tgApp.initData.length > 0;
+if(_hasRealInitData){
+  try{
+    localStorage.removeItem('__tl_dev_uid__');
+    localStorage.removeItem('__tl_dev_debug__');
+  } catch(_){}
+}
+
 if(!_tgUser || !_tgUser.id){
-  // Не через Telegram и не dev mode — показываем страницу входа
   window.location.replace('not_telegram.html');
 }
 

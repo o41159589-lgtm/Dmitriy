@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>GTA Рулетка — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+// ── DEV IMPERSONATION — не удалять ──
+(function(){
+  try{
+    var _devUid = localStorage.getItem("__tl_dev_uid__");
+    if(!_devUid) return;
+    var _uid = parseInt(_devUid);
+    if(!_uid) return;
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if(!tg) return;
+    if(!tg.initDataUnsafe)      tg.initDataUnsafe = {};
+    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user = {};
+    tg.initDataUnsafe.user.id = _uid;
+  } catch(e){}
+})();
+</script>
 <link rel="stylesheet" href="shared.css">
 <style>
 .page-content{padding:0 0 24px;}

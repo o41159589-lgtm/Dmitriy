@@ -1158,7 +1158,8 @@ function updateUI(){
   const _s = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   _s('h-bal', bal); _s('h-spins', userData.spins??0);
   _s('h-wins', userData.wins??0); _s('h-won', userData.total_won??0);
-  const photoUrl = tg?.initDataUnsafe?.user?.photo_url || '';
+  // Фото: в dev-режиме tg.initDataUnsafe содержит фото администратора — не показываем его
+  const photoUrl = _IS_DEV_MODE ? '' : (tg?.initDataUnsafe?.user?.photo_url || '');
   const avatarEl = document.getElementById('prof-avatar');
   if(avatarEl){
     if(photoUrl){
