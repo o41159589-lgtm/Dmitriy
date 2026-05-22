@@ -944,6 +944,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <div class="hf a" onclick="setF(this,'all')">Все</div>
       <div class="hf" onclick="setF(this,'additions')">➕ Добавления</div>
       <div class="hf" onclick="setF(this,'subtractions')">➖ Списания</div>
+      <div class="hf" onclick="setF(this,'tasks')">📋 Задания</div>
       <div class="hf" onclick="setF(this,'ref')">🤝 Рефералы</div>
       <div class="hf" onclick="setF(this,'win')">🏆 Победы</div>
       <div class="hf" onclick="setF(this,'lose')">💀 Проигрыши</div>
@@ -1236,33 +1237,53 @@ function copyRef(){
 // refreshBalance removed
 
 // ── HISTORY ──
+// task — запись с типом 'task': может быть позитивной (prize > 0) или негативной (prize < 0)
+// Позитивные задания попадают в "Добавления" + "Задания"
+// Негативные задания попадают в "Списания" + "Задания"
 const HIST_POS_TYPES = ['win','deposit','ref','gift_received','admin_credit'];
 const HIST_NEG_TYPES = ['lose','gift_sent','admin_deduct'];
+const HIST_TASK_TYPE = 'task'; // тип для заданий
 
 async function renderHistory(){
   histData = await get(`/api/history/${UID}`).catch(()=>[]);
   let items;
-  if(curF === 'all')          items = histData;
-  else if(curF === 'additions')   items = histData.filter(i => HIST_POS_TYPES.includes(i.type) || (i.type==='promo' && i.amount>0));
-  else if(curF === 'subtractions')items = histData.filter(i => HIST_NEG_TYPES.includes(i.type) || (i.type==='promo' && i.amount<0));
-  else                            items = histData.filter(i => i.type === curF);
+  if(curF === 'all')
+    items = histData;
+  else if(curF === 'additions')
+    // Добавления: все позитивные типы + промо с плюсом + позитивные задания
+    items = histData.filter(i =>
+      HIST_POS_TYPES.includes(i.type) ||
+      (i.type === 'promo' && i.amount > 0) ||
+      (i.type === HIST_TASK_TYPE && i.amount > 0)
+    );
+  else if(curF === 'subtractions')
+    // Списания: все негативные типы + промо с минусом + негативные задания
+    items = histData.filter(i =>
+      HIST_NEG_TYPES.includes(i.type) ||
+      (i.type === 'promo' && i.amount < 0) ||
+      (i.type === HIST_TASK_TYPE && i.amount < 0)
+    );
+  else if(curF === 'tasks')
+    items = histData.filter(i => i.type === HIST_TASK_TYPE);
+  else
+    items = histData.filter(i => i.type === curF);
 
   let won=0, lost=0;
   histData.forEach(i=>{
-    if(HIST_POS_TYPES.includes(i.type) || (i.type==='promo'&&i.amount>0)) won  += Math.abs(i.amount);
-    if(HIST_NEG_TYPES.includes(i.type) || (i.type==='promo'&&i.amount<0)) lost += Math.abs(i.amount);
+    if(HIST_POS_TYPES.includes(i.type) || (i.type==='promo'&&i.amount>0) || (i.type===HIST_TASK_TYPE&&i.amount>0)) won  += Math.abs(i.amount);
+    if(HIST_NEG_TYPES.includes(i.type) || (i.type==='promo'&&i.amount<0) || (i.type===HIST_TASK_TYPE&&i.amount<0)) lost += Math.abs(i.amount);
   });
   document.getElementById('s-won').textContent  = won;
   document.getElementById('s-lost').textContent = lost;
 
-  const ICONS ={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод'};
+  const ICONS ={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟',task:'📋'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод',task:'Задание'};
   const list = document.getElementById('hist-list');
   if(!items.length){list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;}
   list.innerHTML=items.slice(0,80).map(i=>{
     const d   = new Date(i.created_at*1000);
     const dt  = d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-    const pos = i.type==='promo' ? i.amount>=0 : HIST_POS_TYPES.includes(i.type);
+    const pos = (i.type==='promo'||i.type===HIST_TASK_TYPE) ? i.amount>=0 : HIST_POS_TYPES.includes(i.type);
     const amt = Math.abs(i.amount);
     return `<div class="hi">
       <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>

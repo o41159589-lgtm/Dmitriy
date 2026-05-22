@@ -221,11 +221,17 @@ async function loadUser(){
 
 async function initUser(){
   if(!UID)return;
-  const tgObj = window.Telegram?.WebApp;
-  const username   = tgObj?.initDataUnsafe?.user?.username || '';
-  const first_name = tgObj?.initDataUnsafe?.user?.first_name || '';
+  const _isDevMode = !!localStorage.getItem('__tl_dev_uid__');
   try {
-    userData = await post('/api/ensure_user',{user_id:UID,username,first_name});
+    if(_isDevMode){
+      // Dev-режим: только читаем, не перезаписываем имя/username администратора
+      userData = await get(`/api/user/${UID}`).catch(()=>null);
+    } else {
+      const tgObj = window.Telegram?.WebApp;
+      const username   = tgObj?.initDataUnsafe?.user?.username || '';
+      const first_name = tgObj?.initDataUnsafe?.user?.first_name || '';
+      userData = await post('/api/ensure_user',{user_id:UID,username,first_name});
+    }
   } catch(e) {
     userData = await get(`/api/user/${UID}`).catch(()=>null);
   }
