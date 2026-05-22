@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Башня — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── TOWER SPECIFIC ── */
+.page-wrap{padding:12px 14px 24px;}
+
+/* Setup panel */
+.setup-panel{transition:opacity .2s;}
+.setup-panel.hidden{display:none;}
+.setup-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600;}
+
+.bet-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
+.bet-input{flex:1;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);border-radius:12px;backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);
+  padding:11px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:17px;
+  outline:none;text-align:center;}
+.bet-input:focus{border-color:var(--gold);}
+.qb-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+.qb{flex:1;min-width:48px;padding:8px 4px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:9px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
+  text-align:center;transition:all .15s;}
+.qb:active{background:var(--gold);color:#000;border-color:var(--gold);}
+
+.start-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--blue),#4361ee);
+  border:none;border-radius:14px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:14px;font-weight:900;letter-spacing:1px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(76,201,240,.3);}
+.start-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Live stats */
+.live-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.ls{background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 4px 16px rgba(0,0,0,0.28);border-radius:12px;
+  padding:10px 8px;text-align:center;backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);}
+.ls-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.ls-v{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;}
+
+/* Tower container */
+.tower-container{
+  position:relative;
+  display:flex;flex-direction:column;gap:6px;
+  margin-bottom:14px;
+  max-height:380px;
+  overflow-y:auto;
+  padding:2px 0 4px;
+  scroll-behavior:smooth;
+}
+.tower-container::-webkit-scrollbar{width:3px;}
+.tower-container::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* Tower roof (top of tower visual cap) */
+.tower-roof{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:linear-gradient(135deg,rgba(245,197,66,.12),rgba(255,215,0,.06));
+  border:1px solid rgba(245,197,66,.3);border-radius:12px;
+  padding:8px 14px;margin-bottom:6px;flex-shrink:0;
+}
+.tower-roof-label{
+  font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);
+  font-weight:700;letter-spacing:1px;
+}
+.tower-roof-mult{
+  font-family:'Orbitron',monospace;font-size:13px;color:var(--gold);
+  font-weight:900;
+}
+
+/* Single floor row */
+.floor-row{
+  display:flex;gap:6px;
+  transition:opacity .3s, filter .3s;
+  position:relative;
+}
+.floor-row.past{opacity:.35;filter:grayscale(.5);}
+.floor-row.current{opacity:1;}
+.floor-row.future{opacity:.5;}
+
+/* Floor label */
+.floor-label{
+  width:28px;display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:10px;color:var(--muted);flex-shrink:0;
+}
+.floor-row.current .floor-label{color:var(--blue);font-weight:700;}
+
+/* Cell */
+.tower-cell{
+  flex:1;height:52px;border-radius:12px;
+  background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 4px 16px rgba(0,0,0,0.28);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;cursor:pointer;
+  transition:background .15s,border-color .15s,transform .15s;
+  position:relative;overflow:hidden;
+  backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
+}
+.tower-cell::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+}
+.floor-row.current .tower-cell{
+  border-color:rgba(76,201,240,.35);
+  background:rgba(76,201,240,.06);
+  box-shadow:0 0 16px rgba(76,201,240,.08);
+}
+.floor-row.current .tower-cell:active{transform:scale(.95);}
+.tower-cell.disabled{cursor:default;pointer-events:none;}
+.tower-cell.safe{
+  background:rgba(45,198,83,.15);border-color:rgba(45,198,83,.5);
+  animation:cellSafe .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes cellSafe{
+  0%{transform:scale(.9);opacity:.5;}
+  100%{transform:scale(1);opacity:1;}
+}
+.tower-cell.bomb{
+  background:rgba(230,57,70,.2);border-color:rgba(230,57,70,.6);
+  animation:cellBomb .4s ease both;
+}
+@keyframes cellBomb{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-5px);}
+  40%{transform:translateX(5px);}
+  60%{transform:translateX(-4px);}
+  80%{transform:translateX(4px);}
+}
+.tower-cell.hidden-bomb{
+  background:rgba(230,57,70,.08);border-color:rgba(230,57,70,.25);
+  opacity:.6;
+}
+.floor-row.future .tower-cell{cursor:default;pointer-events:none;}
+.floor-row.past .tower-cell{cursor:default;pointer-events:none;}
+
+/* Multiplier badge on current floor */
+.floor-mult{
+  position:absolute;right:-2px;top:50%;transform:translateY(-50%);
+  font-family:'Orbitron',monospace;font-size:9px;color:var(--gold);
+  background:rgba(0,0,0,.5);border-radius:4px;padding:2px 4px;
+  white-space:nowrap;pointer-events:none;
+}
+
+/* Cashout btn */
+.cashout-btn{
+  width:100%;padding:15px;
+  background:linear-gradient(135deg,var(--green),#1db954);
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:14px;font-weight:900;letter-spacing:1px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(45,198,83,.3);
+  margin-bottom:10px;
+  animation:pulse-green 2s ease-in-out infinite;
+}
+@keyframes pulse-green{
+  0%,100%{box-shadow:0 4px 20px rgba(45,198,83,.3);}
+  50%{box-shadow:0 4px 28px rgba(45,198,83,.6);}
+}
+.cashout-btn:disabled{opacity:.4;cursor:not-allowed;animation:none;}
+
+.action-row{display:flex;gap:8px;}
+.action-btn{flex:1;padding:11px;border:none;border-radius:12px;
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;}
+.btn-newgame{background:linear-gradient(135deg,var(--blue),#4361ee);color:#fff;}
+
+/* Game area hidden initially */
+.game-area{display:none;}
+.game-area.visible{display:block;}
+
+/* Result overlay */
+.result-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);
+  display:none;align-items:center;justify-content:center;flex-direction:column;
+  padding:24px;text-align:center;
+}
+.result-overlay.show{display:flex;}
+.res-icon{font-size:72px;margin-bottom:16px;animation:resBounce .6s cubic-bezier(.34,1.56,.64,1);}
+@keyframes resBounce{from{transform:scale(0) rotate(-20deg);}to{transform:scale(1) rotate(0)}}
+.res-title{font-family:'Orbitron',monospace;font-size:24px;font-weight:900;margin-bottom:8px;}
+.res-title.win{background:linear-gradient(135deg,var(--green),#1db954);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.res-title.lose{background:linear-gradient(135deg,var(--red),#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.res-sub{color:var(--muted);font-size:14px;margin-bottom:6px;}
+.res-amount{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;margin-bottom:20px;}
+.res-amount.win{color:var(--green);}
+.res-amount.lose{color:var(--red);}
+.res-btn{padding:14px 32px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:13px;font-weight:900;cursor:pointer;}
+
+/* How to play hint */
+.hint-box{background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.15);
+  border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;
+  color:rgba(200,230,255,.7);line-height:1.6;}
+
+/* Floor indicator strip */
+.floor-indicator{
+  display:flex;align-items:center;gap:6px;margin-bottom:10px;
+  background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.18);
+  border-radius:10px;padding:8px 12px;
+}
+.fi-label{font-size:12px;color:var(--muted);}
+.fi-val{font-family:'Orbitron',monospace;font-size:13px;color:var(--blue);font-weight:700;margin-left:auto;}
+</style>
+<script>
+// Redirect if not opened via Telegram
+(function(){
+  const tg = window.Telegram?.WebApp;
+  if(!tg?.initDataUnsafe?.user?.id){
+    window.location.replace('not_telegram.html');
+  }
+})();
+</script>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="liquid-bg"></div>
+
+<!-- Topbar -->
+<div class="topbar">
+  <button class="fp-back" onclick="goBack()">‹</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:20px">🗼</span>
+    <span class="fp-title">БАШНЯ</span>
+  </div>
+  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- SETUP -->
+  <div class="setup-panel" id="setup-panel">
+    <div class="hint-box">
+      🗼 <b>Поднимайся вверх!</b> На каждом этаже 3 клетки — 1 из них мина 💣.<br>
+      Открой безопасную клетку — переходишь выше и множитель растёт.<br>
+      Наступи на мину — теряешь всё. Кешаутись в любой момент!
+    </div>
+
+    <div class="setup-label">Ставка</div>
+    <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.045);border:1px solid rgba(255,255,255,0.1);border-radius:12px;backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);padding:8px 12px;margin-bottom:8px;">
+      <span style="color:var(--gold);font-size:18px">🪙</span>
+      <input class="bet-input" id="bet-input" type="number" min="10" max="10000" value="50" placeholder="Ставка" style="background:none;border:none;flex:1;padding:4px 0;font-size:17px;">
+      <span style="color:var(--muted);font-size:12px" id="bal">—</span>
+    </div>
+    <div class="qb-row">
+      <div class="qb" onclick="sb(10)">10</div>
+      <div class="qb" onclick="sb(25)">25</div>
+      <div class="qb" onclick="sb(50)">50</div>
+      <div class="qb" onclick="sb(100)">100</div>
+      <div class="qb" onclick="sbAll()">MAX</div>
+      <div class="qb" onclick="sbHalf()">½</div>
+    </div>
+
+    <div class="setup-label" style="margin-bottom:8px">Множители по этажам</div>
+    <div id="mult-preview" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:16px;"></div>
+
+    <button class="start-btn" id="start-btn" onclick="startGame()">🗼 НАЧАТЬ ИГРУ</button>
+  </div>
+
+  <!-- GAME AREA -->
+  <div class="game-area" id="game-area">
+
+    <div class="live-stats">
+      <div class="ls"><div class="ls-l">Ставка</div><div class="ls-v" id="live-bet" style="color:var(--muted)">—</div></div>
+      <div class="ls"><div class="ls-l">Этаж</div><div class="ls-v" id="live-floor" style="color:var(--blue)">1/10</div></div>
+      <div class="ls"><div class="ls-l">Выиграть</div><div class="ls-v" id="live-win" style="color:var(--green)">0</div></div>
+    </div>
+
+    <div class="floor-indicator">
+      <span class="fi-label">🏆 Множитель:</span>
+      <span class="fi-val" id="fi-mult">×1.00</span>
+    </div>
+
+    <div class="tower-container" id="tower"></div>
+
+    <button class="cashout-btn" id="cashout-btn" onclick="cashout()" disabled>
+      💰 КЕШАУТ — <span id="cashout-label">0</span> 🪙
+    </button>
+
+
+  </div>
+</div>
+
+<!-- RESULT OVERLAY -->
+<div class="result-overlay" id="result-overlay">
+  <div class="res-icon" id="res-icon">🏆</div>
+  <div class="res-title" id="res-title">ПОБЕДА!</div>
+  <div class="res-sub" id="res-sub">Этаж 5 · ×2.49</div>
+  <div class="res-amount" id="res-amount">+124</div>
+  <button class="res-btn" onclick="closeResult()">🔄 Играть снова</button>
+  <a href="main.html?tab=games" style="display:block;margin-top:8px;text-align:center;color:rgba(255,255,255,.4);font-size:13px;text-decoration:none;">← Выйти в меню игр</a>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID = tg?.initDataUnsafe?.user?.id || 0;
+
+const CELLS_PER_FLOOR = 3;
+const TOWER_HOUSE    = 0.97;
+const TOWER_MAX_FLOORS = 10; // must match TOWER_MAX_FLOORS in bot.py
+const PREVIEW_FLOORS = TOWER_MAX_FLOORS;
+
+function floorMult(floor){ // new formula matching server
+  if(floor<=0) return 1.0;
+  const raw = 1.0 + floor * 0.28 - floor * (floor - 1) * 0.010;
+  return parseFloat((TOWER_HOUSE * Math.max(1.0, raw)).toFixed(2));
+}
+
+let userData = null;
+let currentBet = 0;
+let currentFloor = 0;
+let gameActive = false;
+let pendingReveal = false;
+let builtFloors = 0;
+
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+async function loadUser(){
+  if(!UID) return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  if(!userData) return;
+  document.getElementById('r-bal').textContent = userData.balance ?? 0;
+  document.getElementById('bal').textContent   = userData.balance ?? 0;
+}
+
+// Bet helpers
+function sb(v){document.getElementById('bet-input').value=v;}
+function sbAll(){if(userData)sb(userData.balance);}
+function sbHalf(){if(userData)sb(Math.floor((userData.balance||0)/2));}
+
+// Build mult preview (show first 8 floors)
+function buildMultPreview(){
+  const grid=document.getElementById('mult-preview');
+  grid.innerHTML='';
+  for(let f=1;f<=PREVIEW_FLOORS;f++){
+    const d=document.createElement('div');
+    d.style.cssText=`background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.13);box-shadow:inset 0 1px 0 rgba(255,255,255,0.11),0 4px 16px rgba(0,0,0,0.28);border-radius:8px;padding:5px 4px;text-align:center;backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);`;
+    d.innerHTML=`<div style="font-size:9px;color:var(--muted)">Этаж ${f}</div><div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);font-weight:700">×${floorMult(f).toFixed(2)}</div>`;
+    grid.appendChild(d);
+  }
+}
+
+// How many floors visible above current
+const FLOORS_AHEAD = 3;
+// builtFloors already declared above
+
+// Build or extend tower DOM up to targetFloor+FLOORS_AHEAD
+function ensureFloors(upToFloor){
+  const container=document.getElementById('tower');
+  const FLOORS_AHEAD = 3;
+  const needed = Math.min(upToFloor + FLOORS_AHEAD, TOWER_MAX_FLOORS);
+  if(builtFloors === 0){
+    // First build: just clear container, no roof banner
+    container.innerHTML='';
+  }
+  // Add floors bottom-up: new floors go just after roof
+  // Floors are rendered top→bottom so highest floor is first after roof
+  // We need to insert lower floors AFTER higher ones already in the list
+  // Strategy: append lower floors to bottom of container
+  for(let f=builtFloors+1;f<=needed;f++){
+    const row=document.createElement('div');
+    row.className='floor-row future';
+    row.id=`floor-row-${f}`;
+
+    const lbl=document.createElement('div');
+    lbl.className='floor-label';
+    lbl.textContent=f;
+    row.appendChild(lbl);
+
+    for(let c=0;c<CELLS_PER_FLOOR;c++){
+      const cell=document.createElement('div');
+      cell.className='tower-cell disabled';
+      cell.id=`cell-${f}-${c}`;
+      cell.innerHTML='<span style="opacity:.2;font-size:18px">?</span>';
+      cell.onclick=()=>pickCell(f,c);
+      row.appendChild(cell);
+    }
+
+    const badge=document.createElement('div');
+    badge.className='floor-mult';
+    badge.textContent=`×${floorMult(f).toFixed(2)}`;
+    row.appendChild(badge);
+
+    container.appendChild(row);
+  }
+  builtFloors = Math.max(builtFloors, needed);
+
+  // Re-sort visually: highest floors first (after roof)
+  // Collect all floor-rows and re-insert sorted desc
+  const roof=document.getElementById('tower-roof');
+  const rows=[...container.querySelectorAll('.floor-row')];
+  rows.sort((a,b)=>parseInt(b.id.split('-')[2])-parseInt(a.id.split('-')[2]));
+  // Clear and re-add sorted
+  container.innerHTML='';
+  rows.forEach(r=>container.appendChild(r));
+}
+
+function activateFloor(floor){
+  ensureFloors(floor);
+  for(let f=1;f<=builtFloors;f++){
+    const row=document.getElementById(`floor-row-${f}`);
+    if(!row)continue;
+    if(f<floor) row.className='floor-row past';
+    else if(f===floor) row.className='floor-row current';
+    else row.className='floor-row future';
+    for(let c=0;c<CELLS_PER_FLOOR;c++){
+      const cell=document.getElementById(`cell-${f}-${c}`);
+      if(!cell)continue;
+      if(f===floor){
+        cell.classList.remove('disabled');
+        cell.style.pointerEvents='';
+      } else {
+        cell.classList.add('disabled');
+        cell.style.pointerEvents='none';
+      }
+    }
+  }
+  const row=document.getElementById(`floor-row-${floor}`);
+  if(row) setTimeout(()=>row.scrollIntoView({behavior:'smooth',block:'center'}),100);
+  document.getElementById('live-floor').textContent=`Этаж ${floor}/${TOWER_MAX_FLOORS}`;
+  document.getElementById('cashout-btn').disabled = floor <= 1;
+}
+
+async function startGame(){
+  const bet=parseInt(document.getElementById('bet-input').value)||0;
+  if(bet<10){toast('Минимальная ставка 10 🪙','err');return;}
+  if(!userData||bet>userData.balance){toast('Недостаточно монет','err');return;}
+
+  document.getElementById('start-btn').disabled=true;
+  const res=await post('/api/tower/start',{user_id:UID,bet}).catch(()=>null);
+  document.getElementById('start-btn').disabled=false;
+
+  if(!res||res.error){toast(res?.error||'Ошибка соединения','err');return;}
+
+  currentBet=bet; currentFloor=1; gameActive=true;
+  builtFloors=0;
+
+  if(userData) userData.balance=res.new_balance;
+  document.getElementById('r-bal').textContent=res.new_balance;
+  document.getElementById('bal').textContent=res.new_balance;
+  document.getElementById('live-bet').textContent=bet;
+  document.getElementById('live-win').textContent='0';
+  document.getElementById('fi-mult').textContent='×1.00';
+  document.getElementById('cashout-label').textContent='0';
+  document.getElementById('cashout-btn').disabled=true;
+
+  document.getElementById('setup-panel').classList.add('hidden');
+  document.getElementById('game-area').classList.add('visible');
+  activateFloor(1);
+}
+
+async function pickCell(floor, cellIdx){
+  if(!gameActive||pendingReveal)return;
+  if(floor!==currentFloor)return;
+  pendingReveal=true;
+
+  for(let c=0;c<CELLS_PER_FLOOR;c++){
+    const el=document.getElementById(`cell-${floor}-${c}`);
+    if(el) el.style.pointerEvents='none';
+  }
+
+  const res=await post('/api/tower/step',{user_id:UID,floor,cell:cellIdx}).catch(()=>null);
+  pendingReveal=false;
+
+  if(!res||res.error){
+    toast(res?.error||'Ошибка','err');
+    for(let c=0;c<CELLS_PER_FLOOR;c++){
+      const el=document.getElementById(`cell-${floor}-${c}`);
+      if(el) el.style.pointerEvents='';
+    }
+    return;
+  }
+
+  const chosenCell=document.getElementById(`cell-${floor}-${cellIdx}`);
+  // bombIdx: -1 means luck hid the bomb on the clicked cell — place indicator on another cell
+  let bombIdx=res.bomb_cell;
+  if(bombIdx===-1 && !res.is_bomb){
+    // Pick a random non-chosen cell to show the "phantom" bomb
+    const others=[...Array(CELLS_PER_FLOOR).keys()].filter(c=>c!==cellIdx);
+    bombIdx=others[Math.floor(Math.random()*others.length)];
+  }
+
+  if(res.is_bomb){
+    chosenCell.className='tower-cell bomb disabled';
+    chosenCell.innerHTML='💣';
+    // Always show bomb position — and mark safe cells
+    for(let c=0;c<CELLS_PER_FLOOR;c++){
+      if(c===cellIdx) continue;
+      const el=document.getElementById(`cell-${floor}-${c}`);
+      if(!el) continue;
+      if(c===bombIdx){
+        el.className='tower-cell bomb disabled';
+        el.innerHTML='💣';
+        el.style.opacity='0.7';
+      } else {
+        el.className='tower-cell safe disabled';
+        el.innerHTML='💎';
+      }
+    }
+    gameActive=false;
+    setTimeout(()=>showResult(false,currentBet,floorMult(floor-1)||1,0,floor),600);
+  } else {
+    chosenCell.className='tower-cell safe disabled';
+    chosenCell.innerHTML='💎';
+    // Always show where bomb was (real or phantom)
+    for(let c=0;c<CELLS_PER_FLOOR;c++){
+      if(c===cellIdx) continue;
+      const el=document.getElementById(`cell-${floor}-${c}`);
+      if(!el) continue;
+      if(c===bombIdx){
+        el.className='tower-cell hidden-bomb disabled';
+        el.innerHTML='💣';
+        el.style.opacity='.4';
+      } else {
+        el.className='tower-cell disabled';
+        el.style.opacity='.35';
+        el.innerHTML='<span style="font-size:16px;opacity:.3">—</span>';
+      }
+    }
+
+    const mult=res.mult;
+    const win=res.current_win;
+    document.getElementById('live-win').textContent=win;
+    document.getElementById('fi-mult').textContent=`×${parseFloat(mult).toFixed(2)}`;
+    document.getElementById('cashout-label').textContent=win;
+
+    if(res.reached_top){
+      // Server says top reached (shouldn't happen with infinite, but handle gracefully)
+      gameActive=false;
+      if(userData) userData.balance=res.new_balance;
+      document.getElementById('r-bal').textContent=res.new_balance;
+      setTimeout(()=>showResult(true,currentBet,mult,win,floor,true),600);
+    } else {
+      currentFloor=floor+1;
+      setTimeout(()=>activateFloor(currentFloor),350);
+      document.getElementById('cashout-btn').disabled=false;
+    }
+  }
+}
+
+async function cashout(){
+  if(!gameActive||pendingReveal)return;
+  document.getElementById('cashout-btn').disabled=true;
+  const res=await post('/api/tower/cashout',{user_id:UID}).catch(()=>null);
+  if(!res||res.error){toast(res?.error||'Ошибка','err');document.getElementById('cashout-btn').disabled=false;return;}
+  gameActive=false;
+  if(userData) userData.balance=res.new_balance;
+  document.getElementById('r-bal').textContent=res.new_balance;
+  showResult(true,currentBet,res.mult,res.won,currentFloor-1);
+}
+
+function showResult(won,bet,mult,amount,floor,topReached=false){
+  const ov=document.getElementById('result-overlay');
+  document.getElementById('res-icon').textContent=won?'🏆':'💥';
+  document.getElementById('res-title').className='res-title '+(won?'win':'lose');
+  document.getElementById('res-title').textContent=won?(topReached?'БАШНЯ ПОКОРЕНА!':'КЕШАУТ!'):'ВЗРЫВ!';
+  document.getElementById('res-sub').textContent=`Этаж ${floor} · ×${parseFloat(mult).toFixed(2)}`;
+  const amtEl=document.getElementById('res-amount');
+  amtEl.className='res-amount '+(won?'win':'lose');
+  amtEl.textContent=won?`+${amount} 🪙`:`-${bet} 🪙`;
+  ov.classList.add('show'); SND.play(won?'win':'lose');
+}
+
+function closeResult(){
+  document.getElementById('result-overlay').classList.remove('show');
+  newGame();
+}
+
+function newGame(){
+  gameActive=false; currentFloor=1; builtFloors=0;
+  document.getElementById('game-area').classList.remove('visible');
+  document.getElementById('setup-panel').classList.remove('hidden');
+  loadUser();
+}
+
+function goBack(){
+  if(gameActive){
+    // Auto cashout if possible
+    if(currentFloor>1) cashout().then(()=>window.location.href='main.html?tab=games');
+    else window.location.href='main.html?tab=games';
+  } else {
+    window.location.href='main.html?tab=games';
+  }
+}
+
+buildMultPreview();
+loadUser();
+</script>
+<script>
+// ── SOUND ENGINE (shared, reads localStorage topluck_sounds) ──
+(function(){
+  let _ctx=null;
+  function _c(){ if(!_ctx) _ctx=new (window.AudioContext||window.webkitAudioContext)(); return _ctx; }
+  function _on(){ try{return localStorage.getItem("topluck_sounds")==="1";}catch(e){return false;} }
+  window.SND={
+    play:function(type){
+      if(!_on()) return;
+      try{
+        const ctx=_c(),g=ctx.createGain(),o=ctx.createOscillator();
+        g.connect(ctx.destination); o.connect(g);
+        const t=ctx.currentTime;
+        if(type==="win"){
+          o.type="sine";
+          [523,659,784,1047].forEach((f,i)=>o.frequency.setValueAtTime(f,t+i*.1));
+          g.gain.setValueAtTime(.22,t); g.gain.exponentialRampToValueAtTime(.001,t+.75);
+          o.start(t); o.stop(t+.75);
+        } else if(type==="lose"){
+          o.type="sawtooth";
+          o.frequency.setValueAtTime(280,t); o.frequency.exponentialRampToValueAtTime(70,t+.45);
+          g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.001,t+.5);
+          o.start(t); o.stop(t+.5);
+        } else if(type==="tick"){
+          o.type="sine"; o.frequency.setValueAtTime(660,t);
+          g.gain.setValueAtTime(.08,t); g.gain.exponentialRampToValueAtTime(.001,t+.07);
+          o.start(t); o.stop(t+.07);
+        } else if(type==="coin"){
+          o.type="sine";
+          o.frequency.setValueAtTime(900,t); o.frequency.setValueAtTime(1200,t+.06);
+          g.gain.setValueAtTime(.14,t); g.gain.exponentialRampToValueAtTime(.001,t+.22);
+          o.start(t); o.stop(t+.22);
+        } else if(type==="step"){
+          o.type="sine"; o.frequency.setValueAtTime(440+200*(Math.random()),t);
+          g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.001,t+.18);
+          o.start(t); o.stop(t+.18);
+        } else if(type==="bomb"){
+          o.type="sawtooth";
+          o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(20,t+.6);
+          g.gain.setValueAtTime(.3,t); g.gain.exponentialRampToValueAtTime(.001,t+.7);
+          // Add noise-like crackle via second oscillator
+          const o2=ctx.createOscillator(),g2=ctx.createGain();
+          o2.connect(g2); g2.connect(ctx.destination);
+          o2.type="square"; o2.frequency.setValueAtTime(60,t);
+          g2.gain.setValueAtTime(.2,t); g2.gain.exponentialRampToValueAtTime(.001,t+.5);
+          o2.start(t); o2.stop(t+.5);
+          o.start(t); o.stop(t+.7);
+        } else if(type==="spin"){
+          // Spinning wheel sound - rising frequency
+          o.type="sine";
+          o.frequency.setValueAtTime(200,t); o.frequency.linearRampToValueAtTime(600,t+1.5);
+          g.gain.setValueAtTime(.1,t); g.gain.linearRampToValueAtTime(.05,t+1.4);
+          g.gain.exponentialRampToValueAtTime(.001,t+2);
+          o.start(t); o.stop(t+2);
+        } else if(type==="bet"){
+          o.type="sine"; o.frequency.setValueAtTime(523,t);
+          g.gain.setValueAtTime(.1,t); g.gain.exponentialRampToValueAtTime(.001,t+.15);
+          o.start(t); o.stop(t+.15);
+        }
+      }catch(e){}
+    }
+  };
+})();
+
+</script>
+</body>
+</html>

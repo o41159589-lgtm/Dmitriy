@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck</title>
+<!-- Load TG script but DON'T call ready() yet — keeps native loader visible until WE dismiss it -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+:root{
+  --c:#f5c542;
+  --d:4s;
+  --delay:0s;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  background:#08080f;width:100%;height:100%;overflow:hidden;
+  font-family:'Rajdhani',sans-serif;
+}
+body{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;
+}
+.bg-glow{
+  position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 40%, rgba(245,197,66,0.08) 0%, transparent 60%),
+             radial-gradient(ellipse at 20% 80%, rgba(123,47,255,0.06) 0%, transparent 50%),
+             radial-gradient(ellipse at 80% 20%, rgba(230,57,70,0.05) 0%, transparent 50%);
+}
+.splash{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  animation:fadeIn .4s ease both;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}}
+
+.logo-wrap{
+  width:130px;height:130px;border-radius:32px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.10);
+  backdrop-filter:blur(18px);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:24px;
+  box-shadow:0 0 60px rgba(245,197,66,0.15),0 0 0 1px rgba(245,197,66,0.08);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 60px rgba(245,197,66,0.15),0 0 0 1px rgba(245,197,66,0.08);}
+  50%{box-shadow:0 0 80px rgba(245,197,66,0.28),0 0 0 1px rgba(245,197,66,0.15);}
+}
+.logo-wrap img{width:90px;height:90px;object-fit:contain;}
+
+.brand{
+  font-family:'Orbitron',monospace;
+  font-size:36px;font-weight:900;letter-spacing:3px;
+  background:linear-gradient(135deg,#e8a800,#f5c542 40%,#fff 60%,#f5c542 80%,#e8a800);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:10px;
+}
+.tagline{
+  color:rgba(255,255,255,0.35);
+  font-size:14px;letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:56px;
+}
+.loader{width:200px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:16px;}
+.loader-bar{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,#e8a800,#f5c542,#fff);
+  border-radius:2px;transition:width .08s linear;
+  box-shadow:0 0 10px rgba(245,197,66,0.6);
+}
+.loader-text{color:rgba(255,255,255,0.25);font-size:12px;letter-spacing:1px;}
+
+.particles{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
+.particle{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:var(--c,#f5c542);opacity:0;
+  animation:float var(--d,4s) var(--delay,0s) ease-in-out infinite;
+}
+@keyframes float{
+  0%{opacity:0;transform:translateY(100vh) scale(0);}
+  10%{opacity:.6;}90%{opacity:.3;}
+  100%{opacity:0;transform:translateY(-20px) scale(1);}
+}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="particles" id="particles"></div>
+
+<div class="splash">
+  <div class="logo-wrap">
+    <img src="logo.png" alt="TopLuck" onerror="this.style.display='none';this.parentNode.innerHTML='🍀'">
+  </div>
+  <div class="brand">TOPLUCK</div>
+  <div class="tagline">Испытай удачу</div>
+  <div class="loader"><div class="loader-bar" id="lbar"></div></div>
+  <div class="loader-text" id="ltxt">Загрузка...</div>
+</div>
+
+<script>
+// ── DEV IMPERSONATION (от admin panel) ──
+// Если программист вошёл через Dev Mode — подменяем UID до того как
+// любой код его прочтёт. На обычных пользователей не влияет.
+(function(){
+  try{
+    const _devUid = localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid) return;
+    const _uid = parseInt(_devUid);
+    if(!_uid) return;
+    const tg = window.Telegram?.WebApp;
+    if(!tg) return;
+    if(!tg.initDataUnsafe)      tg.initDataUnsafe = {};
+    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user = {};
+    tg.initDataUnsafe.user.id = _uid;
+  } catch(_){}
+})();
+
+// Tell Telegram to expand immediately and hide its own loading indicator
+// so our splash IS the loading screen, not a second screen after it
+const tgApp = window.Telegram?.WebApp;
+if(tgApp){
+  tgApp.expand();
+  tgApp.ready();
+}
+
+// ── AUTH GUARD: redirect if not opened via Telegram ──
+// В dev mode __tl_dev_uid__ уже подменил user.id, поэтому guard работает корректно
+const _tgUser = tgApp?.initDataUnsafe?.user;
+if(!_tgUser || !_tgUser.id){
+  // Не через Telegram и не dev mode — показываем страницу входа
+  window.location.replace('not_telegram.html');
+}
+
+// ── Сохраняем текущий UID для всех остальных страниц ──
+// Обычные страницы (main.html, mines.html и т.д.) читают tg.initDataUnsafe напрямую,
+// но на случай если Telegram SDK не доступен — кладём UID в sessionStorage как фоллбэк
+try{
+  const _activeUid = _tgUser?.id;
+  if(_activeUid) sessionStorage.setItem('__tl_uid__', String(_activeUid));
+} catch(_){}
+
+// Particles
+const pc = document.getElementById('particles');
+const colors = ['#f5c542','#e8a800','#7b2fff','#e63946','#2dc653'];
+for(let i=0;i<30;i++){
+  const p=document.createElement('div');
+  p.className='particle';
+  p.style.cssText=`left:${Math.random()*100}%;--c:${colors[i%colors.length]};--d:${3+Math.random()*5}s;--delay:${Math.random()*5}s;width:${1+Math.random()*3}px;height:${1+Math.random()*3}px`;
+  pc.appendChild(p);
+}
+
+// Loading bar
+const bar=document.getElementById('lbar');
+const txt=document.getElementById('ltxt');
+const msgs=['Перемешиваем колоду...','Раскручиваем рулетку...','Проверяем удачу...','Добро пожаловать!'];
+let pct=0,msgI=0;
+const iv=setInterval(()=>{
+  pct+=Math.random()*14+6;
+  if(pct>=100){pct=100;clearInterval(iv);}
+  bar.style.width=pct+'%';
+  if(pct>msgI*30&&msgI<msgs.length) txt.textContent=msgs[msgI++];
+  if(pct>=100) setTimeout(()=>{ window.location.href='main.html'; },350);
+},160);
+</script>
+</body>
+</html>

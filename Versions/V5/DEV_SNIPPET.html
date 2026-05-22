@@ -1,0 +1,62 @@
+<!--
+  ════════════════════════════════════════════════════════
+  DEV IMPERSONATION SNIPPET
+  Вставь этот <script> блок в КАЖДУЮ игровую страницу:
+  main.html, mines.html, tower.html, european_roulette.html,
+  gta_roulette.html, shop.html, inventory.html
+
+  Место вставки: СРАЗУ ПОСЛЕ тега <script src="telegram-web-app.js">
+  и ДО любого кода который читает tg.initDataUnsafe.user.id
+  ════════════════════════════════════════════════════════
+-->
+<script>
+// ── DEV IMPERSONATION — не удалять ──
+(function(){
+  try{
+    const _devUid = localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid) return;
+    const _uid = parseInt(_devUid);
+    if(!_uid) return;
+    // Ждём пока Telegram SDK инициализируется (он синхронный, но на всякий случай)
+    const tg = window.Telegram?.WebApp;
+    if(tg){
+      if(!tg.initDataUnsafe)       tg.initDataUnsafe = {};
+      if(!tg.initDataUnsafe.user)  tg.initDataUnsafe.user = {};
+      tg.initDataUnsafe.user.id = _uid;
+      // Также патчим первый_name если нужно (опционально)
+    }
+    console.log('[DEV] Impersonating UID:', _uid);
+  } catch(e){ console.warn('[DEV] impersonation error:', e); }
+})();
+// ── конец DEV IMPERSONATION ──
+</script>
+
+<!--
+  ПРИМЕР как должно выглядеть в файле:
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <script>
+  // ── DEV IMPERSONATION — не удалять ──
+  (function(){
+    try{
+      const _devUid = localStorage.getItem('__tl_dev_uid__');
+      if(!_devUid) return;
+      const _uid = parseInt(_devUid);
+      if(!_uid) return;
+      const tg = window.Telegram?.WebApp;
+      if(tg){
+        if(!tg.initDataUnsafe)       tg.initDataUnsafe = {};
+        if(!tg.initDataUnsafe.user)  tg.initDataUnsafe.user = {};
+        tg.initDataUnsafe.user.id = _uid;
+      }
+    } catch(e){}
+  })();
+  </script>
+
+  <script>
+    // ... твой основной код страницы ...
+    const tg = window.Telegram?.WebApp;
+    const UID = tg?.initDataUnsafe?.user?.id;  // ← уже вернёт подменённый UID
+  </script>
+-->
