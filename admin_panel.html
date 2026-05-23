@@ -1580,42 +1580,45 @@ async function loadUserRefs(uid){
 
 // ── Balance management ──
 async function sbal(e, uid){
-  // Задать: установить баланс точно равным введённому значению
   e.stopPropagation();
-  const u  = users.find(x=>x.user_id===uid);
+  const u  = users.find(x=>+x.user_id===+uid);
   const nb = parseInt(document.getElementById('bi-'+uid).value);
   if(isNaN(nb)||nb<0){ toast('Неверное значение','err'); return; }
   try{
-    await api('/api/admin/set_balance','POST',{user_id:uid, balance:nb, old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(uid,u);
+    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:u?.balance||0});
+    if(u) u.balance=nb; updateCard(+uid,u);
+    document.getElementById('bi-'+uid).value = nb;
     toast(`✅ Баланс → ${nb}🪙`);
   } catch{ toast('Ошибка','err'); }
 }
 
 async function addBal(e, uid){
-  // Начислить: прибавить сумму к текущему балансу
   e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
+  const u = users.find(x=>+x.user_id===+uid);
   const d = parseInt(document.getElementById('di-'+uid).value)||0;
   if(!d){ toast('Введите сумму','err'); return; }
-  const nb = (u?.balance||0) + d;
+  const cur = u ? u.balance : 0;
+  const nb  = cur + d;
   try{
-    await api('/api/admin/set_balance','POST',{user_id:uid, balance:nb, old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(uid,u);
+    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:cur});
+    if(u) u.balance=nb; updateCard(+uid,u);
+    document.getElementById('bi-'+uid).value = nb;
     toast(`✅ +${d}🪙 (теперь ${nb})`);
   } catch{ toast('Ошибка','err'); }
 }
 
 async function subBal(e, uid){
-  // Снять: вычесть сумму из текущего баланса (минимум 0)
   e.stopPropagation();
-  const u = users.find(x=>x.user_id===uid);
+  const u = users.find(x=>+x.user_id===+uid);
   const d = parseInt(document.getElementById('di-'+uid).value)||0;
   if(!d){ toast('Введите сумму','err'); return; }
-  const nb = Math.max(0, (u?.balance||0) - d);
+  const cur = u ? u.balance : 0;
+  if(d > cur){ toast(`❌ Нельзя снять ${d} — на балансе ${cur}`, 'err'); return; }
+  const nb  = cur - d;
   try{
-    await api('/api/admin/set_balance','POST',{user_id:uid, balance:nb, old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(uid,u);
+    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:cur});
+    if(u) u.balance=nb; updateCard(+uid,u);
+    document.getElementById('bi-'+uid).value = nb;
     toast(`✅ -${d}🪙 (теперь ${nb})`);
   } catch{ toast('Ошибка','err'); }
 }

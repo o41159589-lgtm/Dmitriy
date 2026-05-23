@@ -503,8 +503,11 @@
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
-const UID        = tg?.initDataUnsafe?.user?.id || 0;
-const FIRST_NAME = tg?.initDataUnsafe?.user?.first_name || 'Игрок';
+const UID = tg?.initDataUnsafe?.user?.id || 0;
+// В dev-режиме tg.initDataUnsafe содержит данные администратора, не пользователя.
+// FIRST_NAME будет переопределён после загрузки userData из базы.
+const _IS_DEV_MODE_SHOP = !!localStorage.getItem('__tl_dev_uid__');
+let FIRST_NAME = _IS_DEV_MODE_SHOP ? '' : (tg?.initDataUnsafe?.user?.first_name || 'Игрок');
 
 let userData    = null;
 let pendingGift = null;
@@ -541,6 +544,11 @@ async function loadUser(){
     const b = userData.balance??0;
     document.getElementById('r-bal').textContent = b;
     document.getElementById('bal-display').textContent = b;
+    // Имя покупателя: источник истины — база данных, затем TG-объект (может быть адм в dev-режиме)
+    FIRST_NAME = userData.first_name
+      || userData.username
+      || (!_IS_DEV_MODE_SHOP ? tg?.initDataUnsafe?.user?.first_name : '')
+      || 'Игрок';
   }
 }
 
