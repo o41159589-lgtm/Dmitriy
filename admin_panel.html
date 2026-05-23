@@ -1457,7 +1457,7 @@ function uCard(u){
   const isBanned = u.banned;
   const lvl = u.level||0;
   const avBg = isBanned ? 'var(--red)' : 'linear-gradient(135deg,var(--purple),#4361ee)';
-  return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}">
+  return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}" data-balance="${u.balance}">
     <div class="uc-top" onclick="tog(${u.user_id})">
       <div class="uc-av${isBanned?' banned-av':''}" style="background:${avBg};position:relative">
         ${(name[0]||'?').toUpperCase()}
@@ -1470,7 +1470,7 @@ function uCard(u){
         <div class="uc-name">${name}${isBanned?' ⛔':''}</div>
         <div class="uc-id">ID: ${u.user_id}${uname?' · '+uname:''}</div>
       </div>
-      <div class="uc-bal">${u.balance}🪙</div>
+      <div class="uc-bal" id="uc-bal-${u.user_id}">${u.balance}🪙</div>
     </div>
     <div class="uc-body">
       <div class="uinfo-grid">
@@ -1579,48 +1579,64 @@ async function loadUserRefs(uid){
 }
 
 // ── Balance management ──
+// Читаем текущий баланс из data-balance на карточке — надёжнее чем users.find
+// и не требует полной перерисовки карточки при каждом изменении
+
+function patchBalance(uid, nb){
+  // 1. data-balance — источник истины для следующей операции
+  const card = document.getElementById('uc-'+uid);
+  if(card) card.dataset.balance = String(nb);
+  // 2. Чип баланса в шапке карточки — обновляем только его, без скачков
+  const balEl = document.getElementById('uc-bal-'+uid);
+  if(balEl) balEl.textContent = nb + '🪙';
+  // 3. Поле «Задать» — устанавливаем новое значение
+  const bi = document.getElementById('bi-'+uid);
+  if(bi) bi.value = String(nb);
+  // 4. Синхронизируем массив users (для других операций на странице)
+  const u = users.find(x=>+x.user_id===+uid);
+  if(u) u.balance = nb;
+}
+
 async function sbal(e, uid){
   e.stopPropagation();
-  const u  = users.find(x=>+x.user_id===+uid);
-  const nb = parseInt(document.getElementById('bi-'+uid).value);
+  const nb = parseInt(document.getElementById('bi-'+uid)?.value);
   if(isNaN(nb)||nb<0){ toast('Неверное значение','err'); return; }
+  const card = document.getElementById('uc-'+uid);
+  const old  = parseInt(card?.dataset?.balance||'0');
   try{
-    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:u?.balance||0});
-    if(u) u.balance=nb; updateCard(+uid,u);
-    document.getElementById('bi-'+uid).value = nb;
+    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:old});
+    patchBalance(uid, nb);
     toast(`✅ Баланс → ${nb}🪙`);
-  } catch{ toast('Ошибка','err'); }
+  } catch(err){ toast('Ошибка сервера','err'); }
 }
 
 async function addBal(e, uid){
   e.stopPropagation();
-  const u = users.find(x=>+x.user_id===+uid);
-  const d = parseInt(document.getElementById('di-'+uid).value)||0;
+  const d    = parseInt(document.getElementById('di-'+uid)?.value)||0;
   if(!d){ toast('Введите сумму','err'); return; }
-  const cur = u ? u.balance : 0;
-  const nb  = cur + d;
+  const card = document.getElementById('uc-'+uid);
+  const cur  = parseInt(card?.dataset?.balance||'0');
+  const nb   = cur + d;
   try{
     await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:cur});
-    if(u) u.balance=nb; updateCard(+uid,u);
-    document.getElementById('bi-'+uid).value = nb;
-    toast(`✅ +${d}🪙 (теперь ${nb})`);
-  } catch{ toast('Ошибка','err'); }
+    patchBalance(uid, nb);
+    toast(`✅ +${d}🪙 → теперь ${nb}🪙`);
+  } catch(err){ toast('Ошибка сервера','err'); }
 }
 
 async function subBal(e, uid){
   e.stopPropagation();
-  const u = users.find(x=>+x.user_id===+uid);
-  const d = parseInt(document.getElementById('di-'+uid).value)||0;
+  const d    = parseInt(document.getElementById('di-'+uid)?.value)||0;
   if(!d){ toast('Введите сумму','err'); return; }
-  const cur = u ? u.balance : 0;
-  if(d > cur){ toast(`❌ Нельзя снять ${d} — на балансе ${cur}`, 'err'); return; }
-  const nb  = cur - d;
+  const card = document.getElementById('uc-'+uid);
+  const cur  = parseInt(card?.dataset?.balance||'0');
+  if(d > cur){ toast(`❌ На балансе ${cur}🪙 — нельзя снять ${d}`, 'err'); return; }
+  const nb   = cur - d;
   try{
     await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:cur});
-    if(u) u.balance=nb; updateCard(+uid,u);
-    document.getElementById('bi-'+uid).value = nb;
-    toast(`✅ -${d}🪙 (теперь ${nb})`);
-  } catch{ toast('Ошибка','err'); }
+    patchBalance(uid, nb);
+    toast(`✅ -${d}🪙 → теперь ${nb}🪙`);
+  } catch(err){ toast('Ошибка сервера','err'); }
 }
 
 async function sluck(e,uid,pct){
