@@ -4,88 +4,176 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>TopLuck</title>
-<!-- Load TG script but DON'T call ready() yet — keeps native loader visible until WE dismiss it -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
 :root{
-  --c:#f5c542;
-  --d:4s;
-  --delay:0s;
+  --bg: #06060F;
+  --lime: #C8FF00;
+  --lime2: #9FCC00;
+  --purple: #9B5DFF;
+  --cyan: #00E5FF;
+  --muted: #52527A;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{
-  background:#08080f;width:100%;height:100%;overflow:hidden;
-  font-family:'Rajdhani',sans-serif;
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  background: var(--bg);
+  width:100%; height:100%; overflow:hidden;
+  font-family: 'Exo 2', sans-serif;
 }
-body{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:100vh;
+body {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:100vh; position:relative;
 }
-.bg-glow{
-  position:fixed;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 40%, rgba(245,197,66,0.08) 0%, transparent 60%),
-             radial-gradient(ellipse at 20% 80%, rgba(123,47,255,0.06) 0%, transparent 50%),
-             radial-gradient(ellipse at 80% 20%, rgba(230,57,70,0.05) 0%, transparent 50%);
-}
-.splash{
-  display:flex;flex-direction:column;align-items:center;gap:0;
-  animation:fadeIn .4s ease both;
-}
-@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}}
 
-.logo-wrap{
-  width:130px;height:130px;border-radius:32px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.10);
-  backdrop-filter:blur(18px);
-  display:flex;align-items:center;justify-content:center;
-  margin-bottom:24px;
-  box-shadow:0 0 60px rgba(245,197,66,0.15),0 0 0 1px rgba(245,197,66,0.08);
-  animation:pulse 2s ease-in-out infinite;
+/* noise */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px;
 }
-@keyframes pulse{
-  0%,100%{box-shadow:0 0 60px rgba(245,197,66,0.15),0 0 0 1px rgba(245,197,66,0.08);}
-  50%{box-shadow:0 0 80px rgba(245,197,66,0.28),0 0 0 1px rgba(245,197,66,0.15);}
-}
-.logo-wrap img{width:90px;height:90px;object-fit:contain;}
 
-.brand{
-  font-family:'Orbitron',monospace;
-  font-size:36px;font-weight:900;letter-spacing:3px;
-  background:linear-gradient(135deg,#e8a800,#f5c542 40%,#fff 60%,#f5c542 80%,#e8a800);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  margin-bottom:10px;
+/* ambient glow orbs */
+.bg-orbs {
+  position:fixed; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 50% 35% at 15% 10%,  rgba(155,93,255,0.1)  0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 85% 85%, rgba(0,229,255,0.07)  0%, transparent 65%),
+    radial-gradient(ellipse 60% 25% at 50% 50%, rgba(200,255,0,0.04)  0%, transparent 70%);
+  animation: orb-shift 8s ease-in-out infinite alternate;
 }
-.tagline{
-  color:rgba(255,255,255,0.35);
-  font-size:14px;letter-spacing:2px;text-transform:uppercase;
-  margin-bottom:56px;
+@keyframes orb-shift {
+  from { opacity:1; }
+  to   { opacity:.7; }
 }
-.loader{width:200px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:16px;}
-.loader-bar{
-  height:100%;width:0%;
-  background:linear-gradient(90deg,#e8a800,#f5c542,#fff);
-  border-radius:2px;transition:width .08s linear;
-  box-shadow:0 0 10px rgba(245,197,66,0.6);
-}
-.loader-text{color:rgba(255,255,255,0.25);font-size:12px;letter-spacing:1px;}
 
-.particles{position:fixed;inset:0;pointer-events:none;overflow:hidden;}
-.particle{
-  position:absolute;width:2px;height:2px;border-radius:50%;
-  background:var(--c,#f5c542);opacity:0;
-  animation:float var(--d,4s) var(--delay,0s) ease-in-out infinite;
+/* scanlines */
+.scanlines {
+  position:fixed; inset:0; pointer-events:none; z-index:1;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+  );
 }
-@keyframes float{
-  0%{opacity:0;transform:translateY(100vh) scale(0);}
-  10%{opacity:.6;}90%{opacity:.3;}
-  100%{opacity:0;transform:translateY(-20px) scale(1);}
+
+/* MAIN CONTENT */
+.splash {
+  display:flex; flex-direction:column; align-items:center; gap:0;
+  position:relative; z-index:2;
+  animation: splash-in .5s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes splash-in {
+  from { opacity:0; transform:translateY(20px); }
+}
+
+/* Logo container */
+.logo-wrap {
+  width:120px; height:120px; border-radius:28px;
+  background: rgba(200,255,0,0.06);
+  border: 1px solid rgba(200,255,0,0.2);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:28px;
+  position:relative;
+  animation: logo-pulse 2.5s ease-in-out infinite;
+}
+@keyframes logo-pulse {
+  0%,100% { box-shadow: 0 0 40px rgba(200,255,0,0.15), 0 0 0 0 rgba(200,255,0,0.1); }
+  50%      { box-shadow: 0 0 70px rgba(200,255,0,0.25), 0 0 0 8px rgba(200,255,0,0); }
+}
+.logo-wrap img { width:84px; height:84px; object-fit:contain; }
+.logo-wrap::after {
+  content:'';
+  position:absolute; inset:-2px; border-radius:30px;
+  background: conic-gradient(from var(--angle,0deg), transparent 50%, rgba(200,255,0,0.3) 100%);
+  animation: spin-border 3s linear infinite;
+  z-index:-1;
+}
+@property --angle { syntax:'<angle>'; initial-value:0deg; inherits:false; }
+@keyframes spin-border { to { --angle: 360deg; } }
+
+/* Brand name */
+.brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 58px;
+  letter-spacing: 8px;
+  color: var(--lime);
+  text-shadow: 0 0 40px rgba(200,255,0,0.4), 0 0 80px rgba(200,255,0,0.15);
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+/* Tagline */
+.tagline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 52px;
+}
+.tagline span { color: rgba(200,255,0,0.4); }
+
+/* Loader */
+.loader-wrap { width:220px; margin-bottom:14px; }
+.loader-track {
+  width:100%; height:3px;
+  background: rgba(255,255,255,0.05);
+  border-radius:2px; overflow:hidden;
+  position:relative;
+}
+.loader-bar {
+  height:100%; width:0%;
+  background: linear-gradient(90deg, var(--lime2), var(--lime), rgba(255,255,255,0.9));
+  border-radius:2px;
+  transition: width .08s linear;
+  box-shadow: 0 0 12px rgba(200,255,0,0.7), 0 0 4px var(--lime);
+}
+.loader-shimmer {
+  position:absolute; top:0; left:-40%; width:40%; height:100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+@keyframes shimmer { to { left:140%; } }
+
+.loader-text {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  font-size: 11px;
+  text-align:center;
+  margin-top:10px;
+  letter-spacing: 1px;
+}
+.loader-text::before { content: '> '; color: var(--lime); }
+
+/* Particles */
+.particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+.p {
+  position:absolute; border-radius:50%;
+  opacity:0;
+  animation: p-float var(--d,5s) var(--dl,0s) ease-in-out infinite;
+}
+@keyframes p-float {
+  0%   { opacity:0; transform:translateY(100vh) scale(0); }
+  10%  { opacity:.8; }
+  90%  { opacity:.2; }
+  100% { opacity:0; transform:translateY(-30px) scale(1); }
+}
+
+/* Version badge */
+.version-badge {
+  position:fixed; bottom:20px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  color:rgba(82,82,122,0.6); letter-spacing:2px;
+  z-index:2;
 }
 </style>
 </head>
 <body>
-<div class="bg-glow"></div>
+<div class="bg-orbs"></div>
+<div class="scanlines"></div>
 <div class="particles" id="particles"></div>
 
 <div class="splash">
@@ -93,85 +181,69 @@ body{
     <img src="logo.png" alt="TopLuck" onerror="this.style.display='none';this.parentNode.innerHTML='🍀'">
   </div>
   <div class="brand">TOPLUCK</div>
-  <div class="tagline">Испытай удачу</div>
-  <div class="loader"><div class="loader-bar" id="lbar"></div></div>
-  <div class="loader-text" id="ltxt">Загрузка...</div>
+  <div class="tagline"><span>//</span> испытай удачу <span>//</span></div>
+  <div class="loader-wrap">
+    <div class="loader-track">
+      <div class="loader-bar" id="lbar"></div>
+      <div class="loader-shimmer"></div>
+    </div>
+    <div class="loader-text" id="ltxt">init</div>
+  </div>
 </div>
 
+<div class="version-badge">TOPLUCK v3.0</div>
+
 <script>
-// ── DEV IMPERSONATION (от admin panel) ──
-// Если программист вошёл через Dev Mode — подменяем UID до того как
-// любой код его прочтёт. На обычных пользователей не влияет.
+// ── DEV IMPERSONATION ──
 (function(){
   try{
-    const _devUid = localStorage.getItem('__tl_dev_uid__');
+    const _devUid=localStorage.getItem('__tl_dev_uid__');
     if(!_devUid) return;
-    const _uid = parseInt(_devUid);
+    const _uid=parseInt(_devUid);
     if(!_uid) return;
-    const tg = window.Telegram?.WebApp;
+    const tg=window.Telegram?.WebApp;
     if(!tg) return;
-    if(!tg.initDataUnsafe)      tg.initDataUnsafe = {};
-    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user = {};
-    tg.initDataUnsafe.user.id = _uid;
-  } catch(_){}
+    if(!tg.initDataUnsafe)      tg.initDataUnsafe={};
+    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user={};
+    tg.initDataUnsafe.user.id=_uid;
+  }catch(_){}
 })();
 
-// Tell Telegram to expand immediately and hide its own loading indicator
-// so our splash IS the loading screen, not a second screen after it
-const tgApp = window.Telegram?.WebApp;
-if(tgApp){
-  tgApp.expand();
-  tgApp.ready();
-}
+const tgApp=window.Telegram?.WebApp;
+if(tgApp){tgApp.expand();tgApp.ready();}
 
-// ── AUTH GUARD: redirect if not opened via Telegram ──
-const _tgUser = tgApp?.initDataUnsafe?.user;
-
-// Если реальный Telegram-пользователь (а не dev-подмена) зашёл через обычный вход —
-// сбрасываем все dev-ключи, чтобы следующий вход не открывал последнего тестового юзера.
-// Признак «обычного входа»: tgApp.initData непустой (есть подпись Telegram).
-const _hasRealInitData = tgApp?.initData && tgApp.initData.length > 0;
+const _tgUser=tgApp?.initDataUnsafe?.user;
+const _hasRealInitData=tgApp?.initData&&tgApp.initData.length>0;
 if(_hasRealInitData){
-  try{
-    localStorage.removeItem('__tl_dev_uid__');
-    localStorage.removeItem('__tl_dev_debug__');
-  } catch(_){}
+  try{localStorage.removeItem('__tl_dev_uid__');localStorage.removeItem('__tl_dev_debug__');}catch(_){}
 }
-
-if(!_tgUser || !_tgUser.id){
-  window.location.replace('not_telegram.html');
-}
-
-// ── Сохраняем текущий UID для всех остальных страниц ──
-// Обычные страницы (main.html, mines.html и т.д.) читают tg.initDataUnsafe напрямую,
-// но на случай если Telegram SDK не доступен — кладём UID в sessionStorage как фоллбэк
-try{
-  const _activeUid = _tgUser?.id;
-  if(_activeUid) sessionStorage.setItem('__tl_uid__', String(_activeUid));
-} catch(_){}
+if(!_tgUser||!_tgUser.id) window.location.replace('not_telegram.html');
+try{const _activeUid=_tgUser?.id;if(_activeUid)sessionStorage.setItem('__tl_uid__',String(_activeUid));}catch(_){}
 
 // Particles
-const pc = document.getElementById('particles');
-const colors = ['#f5c542','#e8a800','#7b2fff','#e63946','#2dc653'];
-for(let i=0;i<30;i++){
+const pc=document.getElementById('particles');
+const cols=['#C8FF00','#9FCC00','#9B5DFF','#00E5FF','#FF2D6B'];
+for(let i=0;i<35;i++){
   const p=document.createElement('div');
-  p.className='particle';
-  p.style.cssText=`left:${Math.random()*100}%;--c:${colors[i%colors.length]};--d:${3+Math.random()*5}s;--delay:${Math.random()*5}s;width:${1+Math.random()*3}px;height:${1+Math.random()*3}px`;
+  p.className='p';
+  const s=1+Math.random()*3;
+  p.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;background:${cols[i%cols.length]};--d:${3+Math.random()*5}s;--dl:${Math.random()*6}s`;
   pc.appendChild(p);
 }
 
-// Loading bar
+// Loader sequence
 const bar=document.getElementById('lbar');
 const txt=document.getElementById('ltxt');
-const msgs=['Перемешиваем колоду...','Раскручиваем рулетку...','Проверяем удачу...','Добро пожаловать!'];
+const msgs=['connecting','loading assets','shuffling deck','checking luck','welcome!'];
 let pct=0,msgI=0;
 const iv=setInterval(()=>{
-  pct+=Math.random()*14+6;
+  pct+=Math.random()*14+5;
   if(pct>=100){pct=100;clearInterval(iv);}
   bar.style.width=pct+'%';
-  if(pct>msgI*30&&msgI<msgs.length) txt.textContent=msgs[msgI++];
-  if(pct>=100) setTimeout(()=>{ window.location.href='main.html'; },350);
-},160);
+  const mIdx=Math.floor(pct/22);
+  if(mIdx<msgs.length&&mIdx>msgI){msgI=mIdx;txt.textContent=msgs[mIdx];}
+  if(pct>=100) setTimeout(()=>{window.location.href='main.html';},400);
+},150);
 </script>
 </body>
 </html>
