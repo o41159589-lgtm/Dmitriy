@@ -618,13 +618,7 @@
         <div class="prof-menu-label">Промокод</div>
         <span class="prof-menu-arr">›</span>
       </div>
-      <div class="prof-menu-row" style="cursor:default">
-        <div class="prof-menu-label" style="padding-left:2px">Звуки игр</div>
-        <label class="toggle" style="flex-shrink:0">
-          <input type="checkbox" id="prof-sounds" onchange="saveSounds(this.checked)"/>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
+
     </div>
 
     <button class="prof-invite-btn" onclick="copyRef()">🔗 ПРИГЛАСИТЬ ДРУЗЕЙ</button>
@@ -693,36 +687,21 @@
 
     <a class="game-card banner-card" href="european_roulette.html" style="background-image:url('banner_roulette.png')">
       <div class="gc-overlay"></div>
-      <div class="gc-text">
-        <div class="gc-badge badge-red">×36</div>
-        <div class="gc-name">РУЛЕТКА</div>
-        <div class="gc-desc">Крути колесо, ставь на красное/чёрное</div>
-      </div>
     </a>
 
     <a class="game-card banner-card" href="mines.html" style="background-image:url('banner_mines.png')">
       <div class="gc-overlay"></div>
-      <div class="gc-text">
-        <div class="gc-badge badge-purple">РИСК</div>
-        <div class="gc-name">МИНЫ</div>
-        <div class="gc-desc">Открывай клетки, избегай мин, кешаутись вовремя</div>
-      </div>
     </a>
 
     <a class="game-card banner-card" href="tower.html" style="background-image:url('banner_tower.png')">
       <div class="gc-overlay"></div>
-      <div class="gc-text">
-        <div class="gc-badge badge-brown">СТРАТЕГИЯ</div>
-        <div class="gc-name">БАШНЯ</div>
-        <div class="gc-desc">Поднимайся по этажам — каждый шаг умножает выигрыш</div>
-      </div>
     </a>
 
     <a class="game-card gta-card" href="gta_roulette.html">
       <div class="gc-text">
         <div class="gc-badge badge-cyan">ХАЙСТАВКИ</div>
         <div class="gc-name">ГТА РУЛЕТКА</div>
-        <div class="gc-desc">Общий банк! Чем больше ставка — тем выше шанс</div>
+        <div class="gc-desc">Общий банк — чем больше ставка, тем выше шанс сорвать куш</div>
       </div>
       <div class="gc-art"><span class="gc-art-emoji">🏎️</span></div>
     </a>
@@ -1076,7 +1055,7 @@ async function doTask(taskId,type,target){
 async function claimTask(taskId){
   try{
     const r=await fetch('/api/tasks/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:UID,task_id:taskId})}).then(r=>r.json());
-    if(r.ok){toast(`✅ +${r.reward} монет за задание!`,'ok');playSound('coin');if(userData){userData.balance=r.new_balance;updateUI();}await loadTasks();}
+    if(r.ok){toast(`✅ +${r.reward} монет за задание!`,'ok');if(userData){userData.balance=r.new_balance;updateUI();}await loadTasks();}
     else toast(r.error||'Ошибка','err');
   }catch(e){toast('Ошибка','err');}
 }
@@ -1176,7 +1155,7 @@ async function confirmPurchase(){
   if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
   if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
   document.getElementById('buy-modal').classList.remove('open');
-  if(pendingSource==='bot'){toast('🎁 Подарок отправлен!','ok');playSound('win');}
+  if(pendingSource==='bot'){toast('🎁 Подарок отправлен!','ok');}
   else{toast('📨 Заявка отправлена владельцу!','ok');setTimeout(()=>{if(tg?.openTelegramLink)tg.openTelegramLink(`https://t.me/${BOT}?start=gift_request`);},1500);}
   if(userData)userData.balance=res.new_balance??(userData.balance-pendingGift.star_count*10);
   updateUI();
@@ -1208,7 +1187,7 @@ function togglePerson(id){
 
 async function loadInventory(){
   if(!UID) return;
-  updateUI(); loadSounds();
+  updateUI();
   try{
     const r=await get(`/api/user/${UID}/refs`).catch(()=>({count:0}));
     const cnt=r.count||0;
@@ -1242,29 +1221,14 @@ async function activatePromo(){
     res_el.style.color=amt>=0?'var(--green)':'var(--red)';
     document.getElementById('promo-inp').value='';
     toast(`🎟 ${amt>=0?'+':''}${amt} 🪙 — промокод применён!`,amt>=0?'ok':'err');
-    playSound(amt>=0?'coin':'lose');
+
     if(userData){userData.balance=r.new_balance;updateUI();}
   }catch(e){res_el.textContent='❌ Ошибка соединения';res_el.style.color='var(--red)';}
 }
 
-/* Sound engine */
-let __audioCtx=null;
-function _getCtx(){if(!__audioCtx)__audioCtx=new(window.AudioContext||window.webkitAudioContext)();return __audioCtx;}
-function _soundEnabled(){try{return localStorage.getItem('topluck_sounds')==='1';}catch(e){return false;}}
-function playSound(type){
-  if(!_soundEnabled()) return;
-  try{
-    const ctx=_getCtx(),g=ctx.createGain(),o=ctx.createOscillator();
-    g.connect(ctx.destination);o.connect(g);const t=ctx.currentTime;
-    if(type==='win'){o.type='sine';[523,659,784,1047].forEach((f,i)=>o.frequency.setValueAtTime(f,t+i*.1));g.gain.setValueAtTime(.22,t);g.gain.exponentialRampToValueAtTime(.001,t+.75);o.start(t);o.stop(t+.75);}
-    else if(type==='lose'){o.type='sawtooth';o.frequency.setValueAtTime(280,t);o.frequency.exponentialRampToValueAtTime(70,t+.45);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.5);o.start(t);o.stop(t+.5);}
-    else if(type==='coin'){o.type='sine';o.frequency.setValueAtTime(900,t);o.frequency.setValueAtTime(1200,t+.06);g.gain.setValueAtTime(.14,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);o.start(t);o.stop(t+.22);}
-    else if(type==='click'){o.type='sine';o.frequency.setValueAtTime(440,t);g.gain.setValueAtTime(.07,t);g.gain.exponentialRampToValueAtTime(.001,t+.09);o.start(t);o.stop(t+.09);}
-  }catch(e){}
-}
+/* sounds disabled */
+function playSound(){}
 window.playSound=playSound;
-function saveSounds(on){try{localStorage.setItem('topluck_sounds',on?'1':'0');}catch(e){}if(on)playSound('coin');}
-function loadSounds(){try{const v=localStorage.getItem('topluck_sounds');const el=document.getElementById('prof-sounds');if(el&&v!==null)el.checked=v==='1';}catch(e){}}
 
 function copyTon(){
   const addr='UQCcal5WbcnbOM5jj0rIzb9tqmC7qrXGk5A29Eur140AludN';
