@@ -221,6 +221,59 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .load-spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--white);border-radius:50%;animation:al-spin .7s linear infinite;vertical-align:middle;}
 .loading-text{text-align:center;padding:30px 20px;color:var(--muted2);font-family:var(--font-mono);}
 .divider{height:1px;background:var(--border);margin:12px 0;}
+
+/* ── COMPACT USER ROW ── */
+.uc{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:7px;transition:border-color .15s;}
+.uc:hover{border-color:var(--border2);}
+.uc.banned{border-color:rgba(239,68,68,.2);}
+.uc-row{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer;transition:background .12s;user-select:none;}
+.uc-row:active{background:rgba(255,255,255,.03);}
+.uc-num{font-family:var(--font-mono);font-size:11px;color:var(--gray3);min-width:24px;flex-shrink:0;text-align:right;}
+.uc-av{width:36px;height:36px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;color:var(--gray1);flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;position:relative;}
+.uc-av.banned-av{border-color:rgba(239,68,68,.5);filter:grayscale(.6);}
+.uc-lvl-badge{position:absolute;bottom:-3px;right:-3px;background:var(--gold);color:#000;font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:5px;padding:1px 3px;line-height:1;pointer-events:none;}
+.uc-row-info{flex:1;min-width:0;}
+.uc-row-name{font-weight:700;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.uc-row-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.uc-row-bal{font-family:var(--font-mono);font-size:13px;color:var(--gold);font-weight:700;white-space:nowrap;flex-shrink:0;}
+.uc-arr{font-size:18px;color:var(--gray3);transition:transform .22s;flex-shrink:0;}
+
+/* Body — hidden by default, shown when .open */
+.uc-body{display:none;padding:12px 14px 14px;border-top:1px solid var(--border);}
+.uc.open .uc-body{display:block;}
+
+/* uinfo grid */
+.uinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;}
+.uinfo-item{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:10px;padding:9px 10px;}
+.uinfo-label{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-family:var(--font-mono);}
+.uinfo-val{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gray1);}
+.uinfo-val.blue{color:var(--blue);}
+.uinfo-val.green{color:var(--green);}
+.uinfo-val.red{color:var(--red);}
+.uinfo-val.gold{color:var(--gold);}
+.uinfo-val.muted{color:var(--muted2);}
+
+/* ag sections */
+.ag{margin-bottom:10px;}
+.ag-l{font-size:11px;color:var(--muted2);margin-bottom:6px;font-family:var(--font-mono);letter-spacing:.5px;}
+.ag-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.ag-inp{flex:1;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:9px;padding:8px 11px;color:var(--text);font-family:var(--font-ui);font-size:13px;outline:none;min-width:0;}
+.ag-inp:focus{border-color:var(--border2);}
+.ag-g{font-family:var(--font-mono);font-size:12px;color:var(--muted2);}
+
+/* luck buttons */
+.luck-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.lbtn{padding:6px 11px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted2);font-family:var(--font-mono);transition:all .15s;}
+.lbtn:active{opacity:.7;}
+.lbtn.a{background:rgba(255,255,255,.14);border-color:var(--border2);color:var(--white);}
+.lbtn.luck0{border-color:rgba(239,68,68,.25);color:var(--red);}
+.lbtn.luck0.a{background:rgba(239,68,68,.15);}
+.lbtn.luck100{border-color:rgba(34,197,94,.25);color:var(--green);}
+.lbtn.luck100.a{background:rgba(34,197,94,.15);}
+
+.abtn.sub{border-color:rgba(239,68,68,.3);color:var(--red);}
+.abtn.sub:hover{background:rgba(239,68,68,.1);}
+.abtn.msg{border-color:var(--border2);color:var(--gray2);}
 </style>
 </head>
 <body>
@@ -360,7 +413,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="gl-val" style="font-family:var(--font-mono);font-size:20px;color:var(--gold);font-weight:700">1.0</span>
+        <span id="gl-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
       </div>
       <input type="range" id="gl-slider" min="0" max="100" value="100" oninput="onGlSlider(this.value)"
         style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
@@ -383,7 +436,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="euro-val" style="font-family:var(--font-mono);font-size:20px;color:var(--green);font-weight:700">1.0</span>
+        <span id="euro-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--green);font-weight:700">1.0</span>
       </div>
       <input type="range" id="euro-slider" min="0" max="100" value="100" oninput="onEuroSlider(this.value)"
         style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--green);margin-bottom:10px"/>
@@ -406,7 +459,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="mines-val" style="font-family:var(--font-mono);font-size:20px;color:var(--red);font-weight:700">1.0</span>
+        <span id="mines-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--red);font-weight:700">1.0</span>
       </div>
       <input type="range" id="mines-slider" min="0" max="100" value="100" oninput="onMinesSlider(this.value)"
         style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px"/>
@@ -429,7 +482,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Коэффициент башни:</span>
-        <span id="tower-luck-val" style="font-family:var(--font-mono);font-size:20px;color:var(--blue);font-weight:700">1.0</span>
+        <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--blue);font-weight:700">1.0</span>
       </div>
       <input type="range" id="tower-luck-slider" min="0" max="100" value="100" oninput="onTowerLuckSlider(this.value)"
         style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px"/>
@@ -454,7 +507,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Максимальный коэф.:</span>
-        <span id="mines-max-val" style="font-family:var(--font-mono);font-size:18px;color:var(--red);font-weight:700">25.0x</span>
+        <span id="mines-max-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--red);font-weight:700">25.0x</span>
       </div>
       <input type="range" id="mines-max-slider" min="1" max="100" value="25" step="0.5"
         oninput="onMinesMaxSlider(this.value)"
@@ -482,7 +535,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="slider-box" style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;color:var(--muted)">Макс. коэф.:</span>
-        <span id="tower-mult-val" style="font-family:var(--font-mono);font-size:18px;color:var(--blue);font-weight:700">×5.0</span>
+        <span id="tower-mult-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">×5.0</span>
       </div>
       <input type="range" id="tower-mult-slider" min="1.5" max="20" value="5" step="0.5"
         oninput="onTowerMultSlider(this.value)"
@@ -1397,7 +1450,7 @@ function renderUsers(list){
       <div class="sb"><div class="sb-v" style="color:var(--red)">${s.banned}</div><div class="sb-l">Заблок.</div></div>
     </div>
     <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)"/>
-    <div id="ulist">${list.map(uCard).join('')}</div>`;
+    <div id="ulist">${list.map((u,i)=>uCard(u,i)).join('')}</div>`;
 }
 
 function filterU(q){
@@ -1407,7 +1460,7 @@ function filterU(q){
       (u.first_name||'').toLowerCase().includes(q) ||
       (u.username||'').toLowerCase().includes(q) ||
       String(u.user_id).includes(q)
-    ).map(uCard).join('');
+    ).map((u,i)=>uCard(u,i)).join('');
 }
 
 function fmtDate(ts){
@@ -1422,46 +1475,59 @@ function winrate(u){
   return Math.round(u.wins/u.spins*100)+'%';
 }
 
-function uCard(u){
+function uCard(u, idx){
   const name = esc(u.first_name||u.username||'Аноним');
-  const uname = u.username ? `@${esc(u.username)}` : '';
+  const uname = u.username ? '@'+esc(u.username) : '';
   const profit = u.total_lost - u.total_won;
-  const luck = u.luck_pct < 0 ? '<span style="color:var(--green)">●Авто</span>'
-    : u.luck_pct === 100 ? '<span style="color:var(--green)">●100% ВЫИГР.</span>'
-    : u.luck_pct === 0   ? '<span style="color:var(--red)">●0% ПРОГР.</span>'
-    : `<span style="color:var(--purple)">●${u.luck_pct}%</span>`;
   const isBanned = u.banned;
   const lvl = u.level||0;
-  const avBg = isBanned ? 'var(--red)' : 'linear-gradient(135deg,var(--purple),#4361ee)';
+  const xp  = u.xp||0;
+  const num = (idx!=null ? idx+1 : '?');
+
+  const luck = u.luck_pct < 0 ? '<span style="color:var(--green)">Авто</span>'
+    : u.luck_pct === 100 ? '<span style="color:var(--green)">100%★</span>'
+    : u.luck_pct === 0   ? '<span style="color:var(--red)">0%</span>'
+    : `<span style="color:var(--purple)">${u.luck_pct}%</span>`;
+
+  // Avatar: initials or photo
+  const initials = (name[0]||'?').toUpperCase();
+  const avatarEl = `<div class="uc-av${isBanned?' banned-av':''}"
+    style="background:linear-gradient(135deg,#2A2A2A,#1A1A1A);font-family:var(--font-display);font-size:16px;position:relative">
+    ${initials}
+    <span class="uc-lvl-badge">${lvl}</span>
+  </div>`;
+
   return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}" data-balance="${u.balance}">
-    <div class="uc-top" onclick="tog(${u.user_id})">
-      <div class="uc-av${isBanned?' banned-av':''}" style="background:${avBg};position:relative">
-        ${(name[0]||'?').toUpperCase()}
-        <span style="position:absolute;bottom:-3px;right:-3px;background:var(--gold);color:#000;
-          font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:6px;padding:1px 4px">
-          ${lvl}
-        </span>
+
+    <!-- ── COMPACT ROW (always visible) ── -->
+    <div class="uc-row" onclick="tog(${u.user_id})">
+      <div class="uc-num">#${num}</div>
+      ${avatarEl}
+      <div class="uc-row-info">
+        <div class="uc-row-name">${name}${isBanned?' ⛔':''}</div>
+        <div class="uc-row-sub">ID:${u.user_id}${uname?' · '+uname:''}</div>
       </div>
-      <div class="uc-info">
-        <div class="uc-name">${name}${isBanned?' ⛔':''}</div>
-        <div class="uc-id">ID: ${u.user_id}${uname?' · '+uname:''}</div>
-      </div>
-      <div class="uc-bal" id="uc-bal-${u.user_id}">${u.balance}🪙</div>
+      <div class="uc-row-bal">🪙${u.balance}</div>
+      <div class="uc-arr" id="uc-arr-${u.user_id}">›</div>
     </div>
+
+    <!-- ── EXPANDED BODY ── -->
     <div class="uc-body">
+      <!-- Stats grid -->
       <div class="uinfo-grid">
         <div class="uinfo-item"><div class="uinfo-label">🎲 Игр</div><div class="uinfo-val blue">${u.spins}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🏆 Побед</div><div class="uinfo-val green">${u.wins}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">📈 Выиграно</div><div class="uinfo-val green">+${u.total_won}🪙</div></div>
         <div class="uinfo-item"><div class="uinfo-label">📉 Проиграно</div><div class="uinfo-val red">-${u.total_lost}🪙</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">💼 Доход казино</div><div class="uinfo-val ${profit>=0?'green':'red'}">${profit>=0?'+':''}${profit}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">💼 Доход</div><div class="uinfo-val ${profit>=0?'green':'red'}">${profit>=0?'+':''}${profit}🪙</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🎯 Винрейт</div><div class="uinfo-val gold">${winrate(u)}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">📅 Регистрация</div><div class="uinfo-val muted">${fmtDate(u.created_at)}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🍀 Удача</div><div class="uinfo-val">${luck}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🔗 Рефералы</div><div class="uinfo-val blue" id="ref-cnt-${u.user_id}">—</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">⭐ XP</div><div class="uinfo-val gold">${u.xp||0}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">⭐ XP / Ур.</div><div class="uinfo-val gold">${xp} / ${lvl}ур</div></div>
       </div>
-      <!-- Level edit -->
+
+      <!-- Level -->
       <div class="ag" style="margin-bottom:8px">
         <div class="ag-l">🏅 Уровень (текущий: <span id="u-level-${u.user_id}" style="color:var(--gold);font-weight:700">${lvl}</span>)</div>
         <div class="ag-row">
@@ -1469,24 +1535,27 @@ function uCard(u){
           <button class="abtn set" onclick="setUserLevel(${u.user_id},document.getElementById('lvl-${u.user_id}').value)">SET</button>
         </div>
       </div>
-      <!-- Refs list (lazy-loaded) -->
-      <div id="refs-panel-${u.user_id}" style="display:none;margin:8px 0">
-        <button class="abtn msg" style="width:100%;margin-bottom:6px" onclick="loadUserRefs(${u.user_id})">👥 Показать рефералов</button>
+
+      <!-- Refs -->
+      <div id="refs-panel-${u.user_id}" style="margin:8px 0">
+        <button class="abtn set" style="width:100%;margin-bottom:6px" onclick="loadUserRefs(${u.user_id})">👥 Показать рефералов</button>
         <div id="refs-list-${u.user_id}" style="font-size:12px;color:var(--muted)"></div>
       </div>
+
       <!-- Balance -->
       <div class="ag">
         <div class="ag-l">💰 Управление балансом</div>
         <div class="ag-row" style="margin-bottom:6px">
           <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0" placeholder="Новый баланс..."/>
-          <button class="abtn set" onclick="sbal(event,${u.user_id})" title="Установить баланс равным введённому значению">📍 Задать</button>
+          <button class="abtn set" onclick="sbal(event,${u.user_id})" title="Установить">📍 Задать</button>
         </div>
         <div class="ag-row">
           <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1" placeholder="Сумма..."/>
-          <button class="abtn add" onclick="addBal(event,${u.user_id})" title="Начислить сумму к текущему балансу">➕ Начислить</button>
-          <button class="abtn sub" onclick="subBal(event,${u.user_id})" title="Снять сумму с текущего баланса">➖ Снять</button>
+          <button class="abtn add" onclick="addBal(event,${u.user_id})">➕</button>
+          <button class="abtn sub" onclick="subBal(event,${u.user_id})">➖</button>
         </div>
       </div>
+
       <!-- Luck -->
       <div class="ag">
         <div class="ag-l">🍀 Удача игрока</div>
@@ -1503,12 +1572,13 @@ function uCard(u){
           <button class="abtn pur" onclick="sluck_c(event,${u.user_id})">Задать</button>
         </div>
       </div>
+
       <!-- Message & Ban -->
       <div class="ag">
         <div class="ag-l">📩 Сообщение / ⛔ Бан</div>
         <div class="ag-row">
-          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..." style="font-family:var(--font-ui);font-size:13px;"/>
-          <button class="abtn msg" onclick="sendMsg(event,${u.user_id})">📨</button>
+          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..."/>
+          <button class="abtn set" onclick="sendMsg(event,${u.user_id})">📨</button>
         </div>
         <div class="ag-row">
           ${isBanned
@@ -1520,14 +1590,12 @@ function uCard(u){
     </div>
   </div>`;
 }
-
 function tog(uid){
   const card = document.getElementById('uc-'+uid);
   card.classList.toggle('open');
+  const arr = document.getElementById('uc-arr-'+uid);
+  if(arr) arr.style.transform = card.classList.contains('open') ? 'rotate(90deg)' : '';
   if(card.classList.contains('open')){
-    // Show refs panel and load count
-    const rp = document.getElementById('refs-panel-'+uid);
-    if(rp) rp.style.display='block';
     loadUserRefsCount(uid);
   }
 }
