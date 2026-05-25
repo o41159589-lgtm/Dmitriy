@@ -10,8 +10,8 @@
 
 :root{
   --bg: #06060F;
-  --lime: #C8FF00;
-  --lime2: #9FCC00;
+  --lime: #FFFFFF;
+  --lime2: #E0E0E0;
   --purple: #9B5DFF;
   --cyan: #00E5FF;
   --muted: #52527A;
@@ -42,7 +42,7 @@ body::before {
   background:
     radial-gradient(ellipse 50% 35% at 15% 10%,  rgba(155,93,255,0.1)  0%, transparent 65%),
     radial-gradient(ellipse 40% 40% at 85% 85%, rgba(0,229,255,0.07)  0%, transparent 65%),
-    radial-gradient(ellipse 60% 25% at 50% 50%, rgba(200,255,0,0.04)  0%, transparent 70%);
+    radial-gradient(ellipse 60% 25% at 50% 50%, rgba(255,255,255,0.04)  0%, transparent 70%);
   animation: orb-shift 8s ease-in-out infinite alternate;
 }
 @keyframes orb-shift {
@@ -72,22 +72,22 @@ body::before {
 /* Logo container */
 .logo-wrap {
   width:120px; height:120px; border-radius:28px;
-  background: rgba(200,255,0,0.06);
-  border: 1px solid rgba(200,255,0,0.2);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.2);
   display:flex; align-items:center; justify-content:center;
   margin-bottom:28px;
   position:relative;
   animation: logo-pulse 2.5s ease-in-out infinite;
 }
 @keyframes logo-pulse {
-  0%,100% { box-shadow: 0 0 40px rgba(200,255,0,0.15), 0 0 0 0 rgba(200,255,0,0.1); }
-  50%      { box-shadow: 0 0 70px rgba(200,255,0,0.25), 0 0 0 8px rgba(200,255,0,0); }
+  0%,100% { box-shadow: 0 0 40px rgba(255,255,255,0.15), 0 0 0 0 rgba(255,255,255,0.1); }
+  50%      { box-shadow: 0 0 70px rgba(255,255,255,0.25), 0 0 0 8px rgba(255,255,255,0); }
 }
 .logo-wrap img { width:84px; height:84px; object-fit:contain; }
 .logo-wrap::after {
   content:'';
   position:absolute; inset:-2px; border-radius:30px;
-  background: conic-gradient(from var(--angle,0deg), transparent 50%, rgba(200,255,0,0.3) 100%);
+  background: conic-gradient(from var(--angle,0deg), transparent 50%, rgba(255,255,255,0.3) 100%);
   animation: spin-border 3s linear infinite;
   z-index:-1;
 }
@@ -99,8 +99,8 @@ body::before {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 58px;
   letter-spacing: 8px;
-  color: var(--lime);
-  text-shadow: 0 0 40px rgba(200,255,0,0.4), 0 0 80px rgba(200,255,0,0.15);
+  color: var(--white);
+  text-shadow: 0 0 40px rgba(255,255,255,0.4), 0 0 80px rgba(255,255,255,0.15);
   margin-bottom: 6px;
   line-height: 1;
 }
@@ -114,7 +114,7 @@ body::before {
   text-transform: uppercase;
   margin-bottom: 52px;
 }
-.tagline span { color: rgba(200,255,0,0.4); }
+.tagline span { color: rgba(255,255,255,0.4); }
 
 /* Loader */
 .loader-wrap { width:220px; margin-bottom:14px; }
@@ -126,10 +126,10 @@ body::before {
 }
 .loader-bar {
   height:100%; width:0%;
-  background: linear-gradient(90deg, var(--lime2), var(--lime), rgba(255,255,255,0.9));
+  background: linear-gradient(90deg, var(--gray1), var(--white), rgba(255,255,255,0.9));
   border-radius:2px;
   transition: width .08s linear;
-  box-shadow: 0 0 12px rgba(200,255,0,0.7), 0 0 4px var(--lime);
+  box-shadow: 0 0 12px rgba(255,255,255,0.7), 0 0 4px var(--white);
 }
 .loader-shimmer {
   position:absolute; top:0; left:-40%; width:40%; height:100%;
@@ -146,7 +146,7 @@ body::before {
   margin-top:10px;
   letter-spacing: 1px;
 }
-.loader-text::before { content: '> '; color: var(--lime); }
+.loader-text::before { content: '> '; color: var(--white); }
 
 /* Particles */
 .particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
@@ -166,7 +166,7 @@ body::before {
 .version-badge {
   position:fixed; bottom:20px;
   font-family:'JetBrains Mono',monospace; font-size:10px;
-  color:rgba(82,82,122,0.6); letter-spacing:2px;
+  color:rgba(120,120,120,0.5); letter-spacing:2px;
   z-index:2;
 }
 </style>
@@ -222,7 +222,7 @@ try{const _activeUid=_tgUser?.id;if(_activeUid)sessionStorage.setItem('__tl_uid_
 
 // Particles
 const pc=document.getElementById('particles');
-const cols=['#C8FF00','#9FCC00','#9B5DFF','#00E5FF','#FF2D6B'];
+const cols=['#FFFFFF','#E0E0E0','#9B5DFF','#00E5FF','#FF2D6B'];
 for(let i=0;i<35;i++){
   const p=document.createElement('div');
   p.className='p';
