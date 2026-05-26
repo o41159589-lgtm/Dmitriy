@@ -31,6 +31,30 @@
 .page { display:none; min-height:calc(100vh - var(--nav-h)); animation:fadeIn .2s ease both; }
 .page.active { display:block; }
 
+
+/* new game cards */
+.bj-card {
+  background: linear-gradient(135deg, #0D0D0D, #181818);
+  border: 1px solid rgba(255,255,255,.1);
+  align-items: center;
+}
+.rocket-card {
+  background: linear-gradient(135deg, #060818, #0A1028);
+  border: 1px solid rgba(59,130,246,.2);
+  align-items: center;
+}
+.plinko-card {
+  background: linear-gradient(135deg, #0D0010, #180020);
+  border: 1px solid rgba(139,92,246,.2);
+  align-items: center;
+}
+.badge-white  { background:rgba(255,255,255,.1);  color:#fff;    border:1px solid rgba(255,255,255,.2); }
+.badge-blue   { background:rgba(59,130,246,.2);   color:#93C5FD; border:1px solid rgba(59,130,246,.3); }
+.badge-purple { background:rgba(139,92,246,.2);   color:#C4B5FD; border:1px solid rgba(139,92,246,.3); }
+
+/* Remove bottom padding from last game card */
+.games-content .game-card:last-child { margin-bottom: 0; }
+
 /* ══ HOME ══ */
 .home-content { padding: 0 14px 24px; }
 
@@ -276,7 +300,7 @@
 }
 
 /* ══ GAMES ══ */
-.games-content { padding: 14px 14px 20px; }
+.games-content { padding: 14px 14px 14px; }
 .games-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .games-title { font-family: var(--font-display); font-size: 24px; color: var(--text); letter-spacing: 1px; }
 .coin-pill {
@@ -704,6 +728,33 @@
         <div class="gc-desc">Общий банк — чем больше ставка, тем выше шанс сорвать куш</div>
       </div>
       <div class="gc-art"><span class="gc-art-emoji">🏎️</span></div>
+    </a>
+
+    <a class="game-card bj-card" href="blackjack.html">
+      <div class="gc-text">
+        <div class="gc-badge badge-white">КАРТЫ</div>
+        <div class="gc-name">БЛЭКДЖЕК</div>
+        <div class="gc-desc">Побей дилера не перебрав 21 — классика казино</div>
+      </div>
+      <div class="gc-art"><span class="gc-art-emoji">🃏</span></div>
+    </a>
+
+    <a class="game-card rocket-card" href="rocket.html">
+      <div class="gc-text">
+        <div class="gc-badge badge-blue">КРАШ</div>
+        <div class="gc-name">РАКЕТА</div>
+        <div class="gc-desc">Кешаутись до того как ракета взорвётся!</div>
+      </div>
+      <div class="gc-art"><span class="gc-art-emoji">🚀</span></div>
+    </a>
+
+    <a class="game-card plinko-card" href="plinko.html">
+      <div class="gc-text">
+        <div class="gc-badge badge-purple">ФИЗИКА</div>
+        <div class="gc-name">PLINKO</div>
+        <div class="gc-desc">Брось шар — он сам найдёт путь к множителю</div>
+      </div>
+      <div class="gc-art"><span class="gc-art-emoji">🟣</span></div>
     </a>
   </div>
 </div>

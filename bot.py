@@ -873,12 +873,7 @@ async def api_spin(req: web.Request):
         await db.add_history(uid, "win", gain, f"Европ. рулетка: {rn} {rc}, x{mult}")
         await db.update_spin_stats(uid, True, gain, 0)
         asyncio.create_task(db.add_xp(uid, max(1, (gain - bet_amt) // 10)))
-        try:
-            ico = "🟢" if rc=="green" else "🔴" if rc=="red" else "⚫"
-            await bot.send_message(uid,
-                f"🎉 <b>Выигрыш в Европейской рулетке!</b>\n{ico} Выпало: <b>{rn}</b> · x{mult}\n"
-                f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>", parse_mode="HTML")
-        except Exception: pass
+        # win notification disabled
     else:
         new_bal = await db.add_to_balance(uid, -bet_amt)
         await db.add_history(uid, "lose", bet_amt, f"Европ. рулетка: {rn} {rc}")
@@ -1015,12 +1010,7 @@ async def _gta_run(lid):
     await db.close_lobby(lid, wid, commission)
 
 
-    try:
-        pct = 3 if pot<=500 else 5 if pot<=2000 else 8
-        await bot.send_message(wid,
-            f"🎉 <b>Вы выиграли в GTA-рулетке!</b>\n💰 Банк: {pot} · Комиссия {pct}%: {commission}\n"
-            f"✅ Выплата: <b>{payout}</b> монет\n📊 Баланс: <b>{wu['balance']}</b>", parse_mode="HTML")
-    except Exception as e: logger.warning(f"GTA notify: {e}")
+    # win notification disabled
 
 
 # ════════════════════════════════════════
@@ -1227,13 +1217,7 @@ async def api_mines_cashout(req: web.Request):
     u2   = await db.get_user(uid)
     name = u2.get("first_name","?") if u2 else "?"
     fire_log(log_game(uid, name, "Мины", game["bet"], "Выигрыш", won, new_bal))
-    try:
-        await bot.send_message(uid,
-            f"💎 <b>Кешаут — Мины!</b>\n"
-            f"🏆 {safe_count} алмазов · ×{mult}\n"
-            f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
-            parse_mode="HTML")
-    except Exception: pass
+    # win notification disabled
     return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
 
 async def api_mines_status(req: web.Request):
@@ -1556,13 +1540,7 @@ async def api_tower_step(req: web.Request):
             u2   = await db.get_user(uid)
             name = u2.get("first_name", "?") if u2 else "?"
             fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш", current_win, new_bal))
-            try:
-                await bot.send_message(uid,
-                    f"🗼 <b>Башня покорена!</b>\n"
-                    f"🏆 Этаж {floor}/{tower_max} · ×{mult}\n"
-                    f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
-                    parse_mode="HTML")
-            except Exception: pass
+            # win notification disabled
             return web.json_response({
                 "is_bomb": False, "bomb_cell": display_bomb_cell, "floor": floor,
                 "mult": mult, "current_win": current_win,
@@ -1989,6 +1967,49 @@ async def api_notify_not_telegram(req: web.Request):
         return web.json_response({"ok": False, "error": str(e)})
 
 
+# ════════════════════════════════════════
+#  GENERIC GAME API (Blackjack, Rocket, Plinko)
+# ════════════════════════════════════════
+async def api_game_play(req: web.Request):
+    try:
+        data   = await req.json()
+        uid    = int(data.get("user_id", 0))
+        game   = str(data.get("game", ""))
+        bet    = int(data.get("bet", 0))
+        won    = bool(data.get("won", False))
+        mult   = float(data.get("multiplier", 2.0))
+        detail = str(data.get("detail", ""))
+    except Exception:
+        return web.json_response({"error": "bad request"}, status=400)
+    if not uid or bet < 1 or not game:
+        return web.json_response({"error": "invalid params"}, status=400)
+    u = await db.get_user(uid)
+    if not u:
+        return web.json_response({"error": "user not found"}, status=404)
+    if u.get("banned"):
+        return web.json_response({"error": "banned"}, status=403)
+    if u["balance"] < bet:
+        return web.json_response({"error": "insufficient balance"}, status=400)
+    if not won:
+        new_bal = await db.add_to_balance(uid, -bet)
+        await db.add_history(uid, "lose", bet, detail or f"{game}: проигрыш")
+        await db.update_spin_stats(uid, False, 0, bet)
+        asyncio.create_task(_passive_ref_income(uid, bet))
+        asyncio.create_task(db.add_xp(uid, max(1, bet // 100)))
+    else:
+        gain    = round(bet * mult)
+        profit  = gain - bet
+        new_bal = await db.add_to_balance(uid, profit)
+        await db.add_history(uid, "win", gain, detail or f"{game}: x{mult:.2f}")
+        await db.update_spin_stats(uid, True, gain, 0)
+        asyncio.create_task(db.add_xp(uid, max(1, profit // 10)))
+    u2   = await db.get_user(uid)
+    name = (u2 or {}).get("first_name", "?")
+    fire_log(log_game(uid, name, game, bet, "Выигрыш" if won else "Проигрыш",
+                      round(bet * mult) if won else 0, new_bal))
+    return web.json_response({"ok": True, "won": won, "new_balance": new_bal})
+
+
 async def start_web():
     app = web.Application()
     app.router.add_get("/", serve_app)
@@ -2044,6 +2065,7 @@ async def start_web():
     app.router.add_post("/api/promo/activate",                           api_promo_activate)
     # Not-Telegram visitor notification
     app.router.add_post("/api/notify_not_telegram",    api_notify_not_telegram)
+    app.router.add_post("/api/game/play",              api_game_play)
     # Tasks (public)
     app.router.add_get ("/api/tasks",                  api_tasks)
     app.router.add_post("/api/tasks/complete",         api_task_complete)

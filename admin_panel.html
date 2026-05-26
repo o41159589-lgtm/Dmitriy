@@ -229,9 +229,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .uc-row{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer;transition:background .12s;user-select:none;}
 .uc-row:active{background:rgba(255,255,255,.03);}
 .uc-num{font-family:var(--font-mono);font-size:11px;color:var(--gray3);min-width:24px;flex-shrink:0;text-align:right;}
-.uc-av{width:36px;height:36px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;color:var(--gray1);flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;position:relative;}
+.uc-av-wrap{position:relative;flex-shrink:0;width:36px;}
+.uc-av{width:36px;height:36px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;color:var(--gray1);overflow:hidden;background-size:cover;background-position:center;}
 .uc-av.banned-av{border-color:rgba(239,68,68,.5);filter:grayscale(.6);}
-.uc-lvl-badge{position:absolute;bottom:-3px;right:-3px;background:var(--gold);color:#000;font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:5px;padding:1px 3px;line-height:1;pointer-events:none;}
+.uc-lvl-badge{position:absolute;bottom:-2px;right:-4px;background:var(--gold);color:#000;font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:4px;padding:1px 3px;line-height:1.2;white-space:nowrap;pointer-events:none;z-index:2;}
 .uc-row-info{flex:1;min-width:0;}
 .uc-row-name{font-weight:700;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .uc-row-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1491,9 +1492,11 @@ function uCard(u, idx){
 
   // Avatar: initials or photo
   const initials = (name[0]||'?').toUpperCase();
-  const avatarEl = `<div class="uc-av${isBanned?' banned-av':''}"
-    style="background:linear-gradient(135deg,#2A2A2A,#1A1A1A);font-family:var(--font-display);font-size:16px;position:relative">
-    ${initials}
+  const avatarEl = `<div class="uc-av-wrap">
+    <div class="uc-av${isBanned?' banned-av':''}"
+      style="background:linear-gradient(135deg,#2A2A2A,#1A1A1A)">
+      ${initials}
+    </div>
     <span class="uc-lvl-badge">${lvl}</span>
   </div>`;
 
