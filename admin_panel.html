@@ -699,6 +699,33 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       letter-spacing:1px;margin-bottom:8px;">ПОСЛЕДНИЕ</div>
     <div id="dev-recent-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
   </div>
+
+  <!-- Luck for new games -->
+  <div class="settings-block">
+    <div class="settings-title">&#x1F3B2; НОВЫЕ ИГРЫ — УДАЧА</div>
+    <p style="color:var(--muted2);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Коэффициент применяется к Блэкджеку, Самолётику, Ракете, Plinko через единый endpoint.<br>
+      <b style="color:var(--green)">1.0</b> — честная игра &middot; <b style="color:var(--red)">0.0</b> — казино всегда в плюсе
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted2)">Коэффициент:</span>
+        <span id="ng-val" style="font-family:var(--font-mono);font-size:20px;color:var(--gold);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="ng-slider" min="0" max="200" value="100"
+        oninput="onNgSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setNgCoeff(0)">0.0 &mdash; Всегда проиг.</div>
+        <div class="pb" onclick="setNgCoeff(0.7)">0.7 &mdash; Казино в плюсе</div>
+        <div class="pb" onclick="setNgCoeff(1.0)">1.0 &mdash; Честно</div>
+        <div class="pb" onclick="setNgCoeff(1.3)">1.3 &mdash; Игрок в плюсе</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveNgCoeff()">&#x1F4BE; Применить к новым играм</button>
+    </div>
+    <div id="ng-status" style="text-align:center;font-size:12px;color:var(--muted2);min-height:18px"></div>
+  </div>
+
 </div>
 
 <!-- ══════════════════════════════════════
@@ -1451,7 +1478,7 @@ function renderUsers(list){
       <div class="sb"><div class="sb-v" style="color:var(--red)">${s.banned}</div><div class="sb-l">Заблок.</div></div>
     </div>
     <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)"/>
-    <div id="ulist">${list.map((u,i)=>uCard(u,i)).join('')}</div>`;
+    <div id="ulist">${list.map(uCard).join('')}</div>`;
 }
 
 function filterU(q){
@@ -1461,7 +1488,7 @@ function filterU(q){
       (u.first_name||'').toLowerCase().includes(q) ||
       (u.username||'').toLowerCase().includes(q) ||
       String(u.user_id).includes(q)
-    ).map((u,i)=>uCard(u,i)).join('');
+    ).map(uCard).join('');
 }
 
 function fmtDate(ts){
@@ -1476,61 +1503,46 @@ function winrate(u){
   return Math.round(u.wins/u.spins*100)+'%';
 }
 
-function uCard(u, idx){
+function uCard(u){
   const name = esc(u.first_name||u.username||'Аноним');
-  const uname = u.username ? '@'+esc(u.username) : '';
+  const uname = u.username ? `@${esc(u.username)}` : '';
   const profit = u.total_lost - u.total_won;
+  const luck = u.luck_pct < 0 ? '<span style="color:var(--green)">●Авто</span>'
+    : u.luck_pct === 100 ? '<span style="color:var(--green)">●100% ВЫИГР.</span>'
+    : u.luck_pct === 0   ? '<span style="color:var(--red)">●0% ПРОГР.</span>'
+    : `<span style="color:var(--purple)">●${u.luck_pct}%</span>`;
   const isBanned = u.banned;
   const lvl = u.level||0;
-  const xp  = u.xp||0;
-  const num = (idx!=null ? idx+1 : '?');
-
-  const luck = u.luck_pct < 0 ? '<span style="color:var(--green)">Авто</span>'
-    : u.luck_pct === 100 ? '<span style="color:var(--green)">100%★</span>'
-    : u.luck_pct === 0   ? '<span style="color:var(--red)">0%</span>'
-    : `<span style="color:var(--purple)">${u.luck_pct}%</span>`;
-
-  // Avatar: initials or photo
-  const initials = (name[0]||'?').toUpperCase();
-  const avatarEl = `<div class="uc-av-wrap">
-    <div class="uc-av${isBanned?' banned-av':''}"
-      style="background:linear-gradient(135deg,#2A2A2A,#1A1A1A)">
-      ${initials}
-    </div>
-    <span class="uc-lvl-badge">${lvl}</span>
-  </div>`;
-
+  const avBg = isBanned ? 'var(--red)' : 'linear-gradient(135deg,var(--purple),#4361ee)';
   return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}" data-balance="${u.balance}">
-
-    <!-- ── COMPACT ROW (always visible) ── -->
-    <div class="uc-row" onclick="tog(${u.user_id})">
-      <div class="uc-num">#${num}</div>
-      ${avatarEl}
-      <div class="uc-row-info">
-        <div class="uc-row-name">${name}${isBanned?' ⛔':''}</div>
-        <div class="uc-row-sub">ID:${u.user_id}${uname?' · '+uname:''}</div>
+    <div class="uc-top" onclick="tog(${u.user_id})">
+      <div class="uc-av${isBanned?' banned-av':''}" style="background:${avBg};position:relative">
+        ${(name[0]||'?').toUpperCase()}
+        <span style="position:absolute;bottom:-3px;right:-3px;background:var(--gold);color:#000;
+          font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:6px;padding:1px 4px">
+          ${lvl}
+        </span>
       </div>
-      <div class="uc-row-bal">🪙${u.balance}</div>
-      <div class="uc-arr" id="uc-arr-${u.user_id}">›</div>
+      <div class="uc-info">
+        <div class="uc-name">${name}${isBanned?' ⛔':''}</div>
+        <div class="uc-id">ID: ${u.user_id}${uname?' · '+uname:''}</div>
+      </div>
+      <div class="uc-bal" id="uc-bal-${u.user_id}">${u.balance}🪙</div>
     </div>
-
-    <!-- ── EXPANDED BODY ── -->
     <div class="uc-body">
-      <!-- Stats grid -->
       <div class="uinfo-grid">
         <div class="uinfo-item"><div class="uinfo-label">🎲 Игр</div><div class="uinfo-val blue">${u.spins}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🏆 Побед</div><div class="uinfo-val green">${u.wins}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">📈 Выиграно</div><div class="uinfo-val green">+${u.total_won}🪙</div></div>
         <div class="uinfo-item"><div class="uinfo-label">📉 Проиграно</div><div class="uinfo-val red">-${u.total_lost}🪙</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">💼 Доход</div><div class="uinfo-val ${profit>=0?'green':'red'}">${profit>=0?'+':''}${profit}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">💼 Доход казино</div><div class="uinfo-val ${profit>=0?'green':'red'}">${profit>=0?'+':''}${profit}🪙</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🎯 Винрейт</div><div class="uinfo-val gold">${winrate(u)}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">📅 Регистрация</div><div class="uinfo-val muted">${fmtDate(u.created_at)}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🍀 Удача</div><div class="uinfo-val">${luck}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🔗 Рефералы</div><div class="uinfo-val blue" id="ref-cnt-${u.user_id}">—</div></div>
-        <div class="uinfo-item"><div class="uinfo-label">⭐ XP / Ур.</div><div class="uinfo-val gold">${xp} / ${lvl}ур</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">⭐ XP</div><div class="uinfo-val gold">${u.xp||0}</div></div>
       </div>
-
-      <!-- Level -->
+      <!-- Level edit -->
       <div class="ag" style="margin-bottom:8px">
         <div class="ag-l">🏅 Уровень (текущий: <span id="u-level-${u.user_id}" style="color:var(--gold);font-weight:700">${lvl}</span>)</div>
         <div class="ag-row">
@@ -1538,27 +1550,24 @@ function uCard(u, idx){
           <button class="abtn set" onclick="setUserLevel(${u.user_id},document.getElementById('lvl-${u.user_id}').value)">SET</button>
         </div>
       </div>
-
-      <!-- Refs -->
-      <div id="refs-panel-${u.user_id}" style="margin:8px 0">
-        <button class="abtn set" style="width:100%;margin-bottom:6px" onclick="loadUserRefs(${u.user_id})">👥 Показать рефералов</button>
+      <!-- Refs list (lazy-loaded) -->
+      <div id="refs-panel-${u.user_id}" style="display:none;margin:8px 0">
+        <button class="abtn msg" style="width:100%;margin-bottom:6px" onclick="loadUserRefs(${u.user_id})">👥 Показать рефералов</button>
         <div id="refs-list-${u.user_id}" style="font-size:12px;color:var(--muted)"></div>
       </div>
-
       <!-- Balance -->
       <div class="ag">
         <div class="ag-l">💰 Управление балансом</div>
         <div class="ag-row" style="margin-bottom:6px">
           <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0" placeholder="Новый баланс..."/>
-          <button class="abtn set" onclick="sbal(event,${u.user_id})" title="Установить">📍 Задать</button>
+          <button class="abtn set" onclick="sbal(event,${u.user_id})" title="Установить баланс равным введённому значению">📍 Задать</button>
         </div>
         <div class="ag-row">
           <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1" placeholder="Сумма..."/>
-          <button class="abtn add" onclick="addBal(event,${u.user_id})">➕</button>
-          <button class="abtn sub" onclick="subBal(event,${u.user_id})">➖</button>
+          <button class="abtn add" onclick="addBal(event,${u.user_id})" title="Начислить сумму к текущему балансу">➕ Начислить</button>
+          <button class="abtn sub" onclick="subBal(event,${u.user_id})" title="Снять сумму с текущего баланса">➖ Снять</button>
         </div>
       </div>
-
       <!-- Luck -->
       <div class="ag">
         <div class="ag-l">🍀 Удача игрока</div>
@@ -1575,13 +1584,12 @@ function uCard(u, idx){
           <button class="abtn pur" onclick="sluck_c(event,${u.user_id})">Задать</button>
         </div>
       </div>
-
       <!-- Message & Ban -->
       <div class="ag">
         <div class="ag-l">📩 Сообщение / ⛔ Бан</div>
         <div class="ag-row">
-          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..."/>
-          <button class="abtn set" onclick="sendMsg(event,${u.user_id})">📨</button>
+          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..." style="font-family:var(--font-ui);font-size:13px;"/>
+          <button class="abtn msg" onclick="sendMsg(event,${u.user_id})">📨</button>
         </div>
         <div class="ag-row">
           ${isBanned
@@ -1593,12 +1601,14 @@ function uCard(u, idx){
     </div>
   </div>`;
 }
+
 function tog(uid){
   const card = document.getElementById('uc-'+uid);
   card.classList.toggle('open');
-  const arr = document.getElementById('uc-arr-'+uid);
-  if(arr) arr.style.transform = card.classList.contains('open') ? 'rotate(90deg)' : '';
   if(card.classList.contains('open')){
+    // Show refs panel and load count
+    const rp = document.getElementById('refs-panel-'+uid);
+    if(rp) rp.style.display='block';
     loadUserRefsCount(uid);
   }
 }
@@ -2044,6 +2054,37 @@ window.addEventListener('beforeunload', () => {
     localStorage.removeItem('__tl_dev_debug__');
   } catch(_){}
 });
+
+
+// ── New Games luck ──
+let _ngCoeff = 1.0;
+async function loadNgCoeff(){
+  try{
+    const r = await api('GET','/api/admin/game_luck');
+    _ngCoeff = r.coeff ?? 1.0;
+    document.getElementById('ng-val').textContent = _ngCoeff.toFixed(2);
+    document.getElementById('ng-slider').value = Math.round(_ngCoeff * 100);
+  }catch(e){}
+}
+function onNgSlider(v){
+  _ngCoeff = parseInt(v)/100;
+  document.getElementById('ng-val').textContent = _ngCoeff.toFixed(2);
+}
+function setNgCoeff(v){
+  _ngCoeff = v;
+  document.getElementById('ng-val').textContent = v.toFixed(2);
+  document.getElementById('ng-slider').value = Math.round(v*100);
+}
+async function saveNgCoeff(){
+  const s = document.getElementById('ng-status');
+  s.textContent = '&#x23F3; Сохранение...';
+  try{
+    const r = await api('POST','/api/admin/game_luck',{coeff:_ngCoeff,incognito:incognitoMode});
+    s.style.color = r.ok ? 'var(--green)' : 'var(--red)';
+    s.textContent = r.ok ? '&#x2705; Применено: '+_ngCoeff.toFixed(2) : '&#x274C; '+r.error;
+    setTimeout(()=>s.textContent='',3000);
+  }catch(e){s.style.color='var(--red)';s.textContent='&#x274C; Ошибка';}
+}
 
 </script>
 </body>

@@ -1967,6 +1967,31 @@ async def api_notify_not_telegram(req: web.Request):
         return web.json_response({"ok": False, "error": str(e)})
 
 
+
+# ── New-games luck coefficient (Blackjack, Aviator, Rocket, Plinko) ──
+_new_games_luck_coeff: float = 1.0
+
+async def api_admin_get_game_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"coeff": _new_games_luck_coeff})
+
+async def api_admin_set_game_luck(req):
+    global _new_games_luck_coeff
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json()
+    coeff = max(0.0, min(3.0, float(data.get("coeff", 1.0))))
+    _new_games_luck_coeff = coeff
+    incognito = bool(data.get("incognito", False))
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid)
+            aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname="Admin"; uid=0
+        fire_log(log_admin_action(uid, aname, "SET_GAME_LUCK", 0, "Новые игры",
+            f"Коэффициент удачи новых игр → {coeff}", incognito=False))
+    return web.json_response({"ok": True, "coeff": coeff})
+
 # ════════════════════════════════════════
 #  GENERIC GAME API (Blackjack, Rocket, Plinko)
 # ════════════════════════════════════════
@@ -1990,6 +2015,24 @@ async def api_game_play(req: web.Request):
         return web.json_response({"error": "banned"}, status=403)
     if u["balance"] < bet:
         return web.json_response({"error": "insufficient balance"}, status=400)
+    # Apply luck (same system as other games)
+    try:
+        luck     = await db.get_luck(uid)
+        global_k = await db.get_global_luck_coeff() * _new_games_luck_coeff
+        if luck == 100:
+            won = True   # Always win
+        elif luck == 0:
+            won = False  # Always lose
+        elif luck > 0:
+            import random as _rnd
+            effective = min(100, int(luck * global_k))
+            if not won and effective > 50 and _rnd.random() < (effective - 50) / 100:
+                won = True   # Luck saves the player
+            elif won and effective < 50 and _rnd.random() < (50 - effective) / 100:
+                won = False  # Bad luck overrides win
+    except Exception:
+        pass
+
     if not won:
         new_bal = await db.add_to_balance(uid, -bet)
         await db.add_history(uid, "lose", bet, detail or f"{game}: проигрыш")
@@ -2066,6 +2109,8 @@ async def start_web():
     # Not-Telegram visitor notification
     app.router.add_post("/api/notify_not_telegram",    api_notify_not_telegram)
     app.router.add_post("/api/game/play",              api_game_play)
+    app.router.add_get ("/api/admin/game_luck",         api_admin_get_game_luck)
+    app.router.add_post("/api/admin/game_luck",         api_admin_set_game_luck)
     # Tasks (public)
     app.router.add_get ("/api/tasks",                  api_tasks)
     app.router.add_post("/api/tasks/complete",         api_task_complete)

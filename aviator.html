@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Самолётик — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+:root{--bg:#0A0A0A;--bg2:#111;--bg3:#1A1A1A;--white:#FFF;--gray1:#E0E0E0;--gray2:#AAA;--gray3:#555;--green:#22C55E;--red:#EF4444;--gold:#F59E0B;--blue:#3B82F6;--purple:#8B5CF6;--cyan:#06B6D4;--text:#F0F0F0;--muted:#777;--muted2:#999;--card:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.12);--font-display:'Bebas Neue',sans-serif;--font-ui:'Exo 2',sans-serif;--font-mono:'JetBrains Mono',monospace;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;}
+.lbg{position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse 55% 35% at 50% 0%,rgba(255,255,255,.02) 0%,transparent 60%);}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;position:sticky;top:0;z-index:50;background:rgba(10,10,10,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
+.fp-back{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:22px;cursor:pointer;font-weight:700;}
+.fp-title{font-family:var(--font-display);font-size:20px;color:var(--white);letter-spacing:1px;}
+.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:7px 12px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);}
+.toast{position:fixed;top:14px;left:14px;right:14px;z-index:500;background:rgba(20,20,20,.97);border:1px solid var(--border2);backdrop-filter:blur(20px);border-radius:16px;padding:13px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.toast.show{transform:translateY(0);}
+.toast.ok{color:var(--green);border-color:rgba(34,197,94,.3);}
+.toast.err{color:var(--red);border-color:rgba(239,68,68,.3);}
+.toast.info{color:var(--gray1);border-color:var(--border2);}
+.page-wrap{padding:12px 14px 32px;}
+.setup-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:12px;}
+.sc-lbl{font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.bet-inp{background:rgba(0,0,0,.45);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;color:var(--white);font-family:var(--font-mono);font-size:18px;flex:1;outline:none;text-align:center;width:100%;}
+.bet-inp:focus{border-color:rgba(255,255,255,.3);}
+.bet-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.qb-row{display:flex;gap:6px;flex-wrap:wrap;}
+.qb{padding:7px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:11px;color:var(--gray2);font-weight:700;cursor:pointer;font-family:var(--font-mono);transition:all .12s;}
+.qb:active{background:rgba(255,255,255,.12);color:var(--white);}
+.main-btn{width:100%;padding:15px;background:var(--white);border:none;border-radius:14px;color:#000;font-family:var(--font-display);font-size:20px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 20px rgba(255,255,255,.12);transition:opacity .15s,transform .1s;}
+.main-btn:active{transform:scale(.98);opacity:.9;}
+.main-btn:disabled{opacity:.3;cursor:not-allowed;}
+.cashout-btn{background:var(--green);color:#000;box-shadow:0 4px 20px rgba(34,197,94,.3);animation:cashPulse 1.4s ease-in-out infinite;}
+@keyframes cashPulse{0%,100%{box-shadow:0 4px 20px rgba(34,197,94,.3);}50%{box-shadow:0 4px 28px rgba(34,197,94,.6),0 0 0 3px rgba(34,197,94,.1);}}
+.live-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.ls{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 8px;text-align:center;}
+.ls-l{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-family:var(--font-mono);}
+.ls-v{font-family:var(--font-mono);font-size:15px;font-weight:700;}
+.result-ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);backdrop-filter:blur(24px);display:none;align-items:center;justify-content:center;}
+.result-ov.show{display:flex;}
+.result-card{background:rgba(15,15,15,.98);border:1px solid var(--border2);border-radius:28px;padding:28px 24px;text-align:center;max-width:300px;width:90%;animation:rPop .4s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes rPop{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+.r-emoji{font-size:64px;margin-bottom:12px;display:block;}
+.r-title{font-family:var(--font-display);font-size:24px;margin-bottom:6px;letter-spacing:1px;}
+.r-title.win{color:var(--green);}
+.r-title.lose{color:var(--red);}
+.r-title.push{color:var(--gold);}
+.r-sub{color:var(--muted2);font-size:13px;margin-bottom:6px;}
+.r-amount{font-family:var(--font-mono);font-size:28px;font-weight:700;margin-bottom:18px;}
+.r-amount.win{color:var(--green);}
+.r-amount.lose{color:var(--red);}
+.r-amount.push{color:var(--gold);}
+.r-close{width:100%;padding:13px;background:var(--white);border:none;border-radius:14px;color:#000;font-family:var(--font-display);font-size:17px;cursor:pointer;}
+
+.lbg{background:radial-gradient(ellipse 50% 40% at 50% 0%,rgba(59,130,246,.05) 0%,transparent 60%);}
+
+/* SKY STAGE */
+.sky{position:relative;height:240px;border-radius:20px;overflow:hidden;margin-bottom:12px;
+  background:linear-gradient(180deg,#020814,#040D1E,#061228);
+  border:1px solid rgba(59,130,246,.15);}
+
+/* stars */
+.star{position:absolute;border-radius:50%;background:#fff;
+  animation-name:twinkle;animation-timing-function:ease-in-out;animation-iteration-count:infinite;
+  --d:2s;--dl:0s;animation-duration:var(--d);animation-delay:var(--dl);}
+@keyframes twinkle{0%,100%{opacity:.7;}50%{opacity:.1;}}
+
+/* graph canvas */
+#graph-canvas{position:absolute;inset:0;width:100%;height:100%;}
+
+/* mult overlay */
+.mult-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10;}
+.mult-num{font-family:var(--font-mono);font-size:58px;font-weight:700;color:#fff;line-height:1;
+  text-shadow:0 0 30px rgba(255,255,255,.3);transition:color .2s;}
+.mult-num.fly{color:#fff;}
+.mult-num.cashed{color:var(--green);text-shadow:0 0 30px rgba(34,197,94,.5);}
+.mult-num.crashed{color:var(--red);text-shadow:0 0 30px rgba(239,68,68,.5);}
+.mult-status{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-top:4px;}
+
+/* plane */
+#plane{position:absolute;z-index:20;font-size:28px;transition:bottom .04s linear,left .04s linear;
+  filter:drop-shadow(0 0 8px rgba(59,130,246,.8));transform-origin:center;}
+
+/* history chips */
+.hist-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.hc{padding:4px 10px;border-radius:8px;font-family:var(--font-mono);font-size:11px;font-weight:700;}
+.hc.w{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.hc.c{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+
+/* autocashout */
+.ac-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ac-lbl{font-size:12px;color:var(--muted2);font-family:var(--font-mono);white-space:nowrap;}
+.ac-inp{background:rgba(0,0,0,.45);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;
+  color:var(--white);font-family:var(--font-mono);font-size:14px;width:90px;outline:none;text-align:center;}
+.ac-inp:focus{border-color:rgba(255,255,255,.3);}
+.ac-hint{font-size:11px;color:var(--muted);font-family:var(--font-mono);}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="lbg"></div>
+<div class="topbar">
+  <button class="fp-back" onclick="history.back()">&#8249;</button>
+  <div class="fp-title">&#9992; САМОЛЁТИК</div>
+  <div class="bal-chip">&#x1FA99; <span id="r-bal">&#8212;</span></div>
+</div>
+<div class="page-wrap">
+
+  <div class="sky" id="sky">
+    <canvas id="graph-canvas"></canvas>
+    <div class="mult-box">
+      <div class="mult-num fly" id="mult-num">1.00&#xD7;</div>
+      <div class="mult-status" id="mult-status">ОЖИДАНИЕ</div>
+    </div>
+    <div id="plane">&#9992;</div>
+  </div>
+
+  <div class="hist-chips" id="hist-chips"></div>
+
+  <div class="setup-card">
+    <div class="sc-lbl">// Ставка</div>
+    <div class="bet-row"><input class="bet-inp" id="bet-inp" type="number" value="50" min="1" inputmode="numeric"/></div>
+    <div class="qb-row" style="margin-bottom:10px;">
+      <div class="qb" onclick="sb(10)">10</div><div class="qb" onclick="sb(25)">25</div>
+      <div class="qb" onclick="sb(50)">50</div><div class="qb" onclick="sb(100)">100</div>
+      <div class="qb" onclick="sb(250)">250</div><div class="qb" onclick="hb()">&#xBD;</div>
+      <div class="qb" onclick="db2()">x2</div>
+    </div>
+    <div class="ac-row">
+      <span class="ac-lbl">Авто-кешаут:</span>
+      <input class="ac-inp" id="ac-inp" type="number" placeholder="&#8212;" min="1.1" step="0.1"/>
+      <span class="ac-hint">x (пусто = выкл)</span>
+    </div>
+  </div>
+
+  <div class="live-stats">
+    <div class="ls"><div class="ls-l">Ставка</div><div class="ls-v" id="st-bet">&#8212;</div></div>
+    <div class="ls"><div class="ls-l">Текущий</div><div class="ls-v" style="color:var(--green)" id="st-cur">&#8212;</div></div>
+    <div class="ls"><div class="ls-l">Кешаут</div><div class="ls-v" style="color:var(--gold)" id="st-co">&#8212;</div></div>
+  </div>
+
+  <button class="main-btn" id="main-btn" onclick="mainAct()">&#x1F6EB; ЛЕТЕТЬ</button>
+</div>
+
+<script>
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+if(!tg?.initDataUnsafe?.user?.id)window.location.replace('not_telegram.html');
+const UID=tg?.initDataUnsafe?.user?.id||0;
+
+let bal=0,phase='idle',curBet=0,crashAt=1,curMult=1,startTs=null,raf=null,cashed=false,trailPts=[];
+const hist=[];
+
+const canvas=document.getElementById('graph-canvas');
+const ctx=canvas.getContext('2d');
+
+function toast(m,t){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'info')+' show';setTimeout(()=>el.classList.remove('show'),2800);}
+async function load(){const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);if(!u)return;bal=u.balance??0;document.getElementById('r-bal').textContent=bal;}
+function sb(v){document.getElementById('bet-inp').value=v;}
+function hb(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2));}
+function db2(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=v*2;}
+
+function genCrash(){
+  const r=Math.random();
+  if(r<0.04)return 1.0;
+  return Math.min(99,Math.pow(1/(1-r*0.96),1.4));
+}
+
+function resizeCanvas(){
+  const sky=document.getElementById('sky');
+  canvas.width=sky.offsetWidth;canvas.height=sky.offsetHeight;
+}
+
+function drawGraph(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(trailPts.length<2)return;
+  const clr=phase==='crashed'?'rgba(239,68,68,.55)':'rgba(59,130,246,.55)';
+  const glw=phase==='crashed'?'rgba(239,68,68,.15)':'rgba(59,130,246,.15)';
+  ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(trailPts[0].x,trailPts[0].y);
+  for(let i=1;i<trailPts.length;i++)ctx.lineTo(trailPts[i].x,trailPts[i].y);
+  ctx.strokeStyle=glw;ctx.lineWidth=8;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(trailPts[0].x,trailPts[0].y);
+  for(let i=1;i<trailPts.length;i++)ctx.lineTo(trailPts[i].x,trailPts[i].y);
+  ctx.strokeStyle=clr;ctx.lineWidth=2.5;ctx.stroke();
+}
+
+function multToPos(m){
+  const W=canvas.width||350,H=canvas.height||240;
+  const pct=Math.min((m-1)/(Math.max(crashAt,3)-1),1);
+  return{x:30+pct*(W-60),y:H-30-pct*(H-60)};
+}
+
+function anim(ts){
+  if(!startTs)startTs=ts;
+  const t=(ts-startTs)/1000;
+  curMult=Math.max(1,Math.pow(Math.E,t*0.07*crashAt));
+  curMult=Math.round(curMult*100)/100;
+  const mEl=document.getElementById('mult-num');
+  mEl.textContent=curMult.toFixed(2)+'x';
+  mEl.className='mult-num fly';
+  document.getElementById('st-cur').textContent=curMult.toFixed(2)+'x';
+  const pos=multToPos(curMult);
+  const plane=document.getElementById('plane');
+  const skyH=canvas.height||240;
+  plane.style.bottom=(skyH-pos.y-14)+'px';
+  plane.style.left=(pos.x-14)+'px';
+  trailPts.push({x:pos.x,y:pos.y});
+  if(trailPts.length>300)trailPts.shift();
+  drawGraph();
+  const ac=parseFloat(document.getElementById('ac-inp').value);
+  if(ac>=1.01&&curMult>=ac&&!cashed){doCashout();return;}
+  if(curMult>=crashAt){doCrash();return;}
+  raf=requestAnimationFrame(anim);
+}
+
+async function mainAct(){
+  if(phase==='idle')launch();
+  else if(phase==='fly')doCashout();
+}
+
+async function launch(){
+  const bet=+document.getElementById('bet-inp').value||0;
+  if(bet<1){toast('Введите ставку','err');return;}
+  if(bet>bal){toast('Недостаточно монет','err');return;}
+  curBet=bet;cashed=false;crashAt=genCrash();trailPts=[];startTs=null;phase='fly';
+  resizeCanvas();
+  document.getElementById('plane').style.bottom='30px';
+  document.getElementById('plane').style.left='30px';
+  document.getElementById('mult-status').textContent='ПОЛЁТ...';
+  document.getElementById('st-bet').textContent=bet+'&#x1FA99;';
+  document.getElementById('st-cur').textContent='1.00x';
+  document.getElementById('st-co').textContent='&#8212;';
+  const btn=document.getElementById('main-btn');
+  btn.textContent='&#x1F4B0; КЕШАУТ';btn.className='main-btn cashout-btn';
+  raf=requestAnimationFrame(anim);
+}
+
+function doCrash(){
+  if(raf)cancelAnimationFrame(raf);phase='crashed';
+  document.getElementById('mult-num').textContent=crashAt.toFixed(2)+'x';
+  document.getElementById('mult-num').className='mult-num crashed';
+  document.getElementById('mult-status').textContent='УПАЛ!';
+  document.getElementById('plane').style.display='none';
+  if(!cashed){
+    hist.unshift({m:crashAt.toFixed(2),w:false});renderHist();
+    fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:UID,game:'Самолётик',bet:curBet,won:false,detail:'Самолётик: упал '+crashAt.toFixed(2)+'x'})
+    }).then(r=>r.json()).then(res=>{if(res?.new_balance!=null){bal=res.new_balance;document.getElementById('r-bal').textContent=bal;}});
+    toast('Упал на '+crashAt.toFixed(2)+'x — потеря '+curBet+'&#x1FA99;','err');
+  }
+  const btn=document.getElementById('main-btn');
+  btn.textContent='&#x1F6EB; ЛЕТЕТЬ СНОВА';btn.className='main-btn';
+  setTimeout(()=>{phase='idle';document.getElementById('plane').style.display='';document.getElementById('mult-status').textContent='ОЖИДАНИЕ';},1500);
+}
+
+async function doCashout(){
+  if(phase!=='fly'||cashed)return;
+  cashed=true;
+  const m=curMult;
+  const profit=Math.round(curBet*m)-curBet;
+  document.getElementById('st-co').textContent=m.toFixed(2)+'x';
+  document.getElementById('mult-num').className='mult-num cashed';
+  hist.unshift({m:m.toFixed(2),w:true});renderHist();
+  const res=await fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({user_id:UID,game:'Самолётик',bet:curBet,won:true,multiplier:m,detail:'Самолётик: кешаут '+m.toFixed(2)+'x (+'+profit+'&#x1FA99;)'})
+  }).then(r=>r.json()).catch(()=>null);
+  if(res?.new_balance!=null){bal=res.new_balance;document.getElementById('r-bal').textContent=bal;}
+  toast('Кешаут '+m.toFixed(2)+'x — +'+profit+'&#x1FA99;','ok');
+}
+
+function renderHist(){
+  document.getElementById('hist-chips').innerHTML=hist.slice(0,14)
+    .map(h=>'<div class="hc '+(h.w?'w':'c')+'">'+h.m+'x</div>').join('');
+}
+
+// Stars
+(function(){
+  const sky=document.getElementById('sky');
+  for(let i=0;i<35;i++){
+    const s=document.createElement('div');s.className='star';
+    const sz=Math.random()*2+0.5;
+    s.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;--d:'+(2+Math.random()*3)+'s;--dl:'+Math.random()*4+'s';
+    sky.appendChild(s);
+  }
+})();
+
+window.addEventListener('load',()=>{resizeCanvas();load();});
+window.addEventListener('resize',()=>resizeCanvas());
+</script>
+</body>
+</html>

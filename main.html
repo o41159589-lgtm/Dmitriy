@@ -43,6 +43,12 @@
   border: 1px solid rgba(59,130,246,.2);
   align-items: center;
 }
+.av-card {
+  background: linear-gradient(135deg, #020814, #040D20);
+  border: 1px solid rgba(59,130,246,.2);
+  align-items: center;
+}
+.badge-sky { background:rgba(59,130,246,.2); color:#93C5FD; border:1px solid rgba(59,130,246,.3); }
 .plinko-card {
   background: linear-gradient(135deg, #0D0010, #180020);
   border: 1px solid rgba(139,92,246,.2);
@@ -300,7 +306,7 @@
 }
 
 /* ══ GAMES ══ */
-.games-content { padding: 14px 14px 14px; }
+.games-content { padding: 14px 14px 0; }
 .games-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .games-title { font-family: var(--font-display); font-size: 24px; color: var(--text); letter-spacing: 1px; }
 .coin-pill {
@@ -574,6 +580,87 @@
         <p style="color:var(--muted2);font-size:12px">Благодаря его поддержке TopLuck продолжает развиваться!</p>
       </div>
     </div>
+
+    <!-- GAME RULES -->
+    <div class="about-card" style="margin-bottom:0">
+      <div class="about-card-head">// ПРАВИЛА ИГР</div>
+
+      <div class="about-person" onclick="togglePerson('r-roulette')">
+        <div class="ap-head"><span class="ap-icon">🎡</span><div class="ap-title">Европейская рулетка</div><span class="ap-arr" id="arr-r-roulette">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-roulette" style="display:none">
+        <p>Поставь монеты на цвет, чётность или число. Крутится колесо 0–36.</p>
+        <p>&#x1F534; Красное/Чёрное — <b>x2</b> | &#x26AB; Зеро — <b>x36</b></p>
+        <p>Чётное/Нечётное — <b>x2</b> | Конкретное число — <b>x36</b></p>
+        <p>Дюжина (1-12/13-24/25-36) — <b>x3</b></p>
+      </div>
+
+      <div class="about-person" onclick="togglePerson('r-gta')">
+        <div class="ap-head"><span class="ap-icon">&#x1F3CE;&#xFE0F;</span><div class="ap-title">ГТА Рулетка</div><span class="ap-arr" id="arr-r-gta">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-gta" style="display:none">
+        <p>Общий банк — все игроки ставят монеты, победитель выбирается случайно.</p>
+        <p>Чем больше твоя ставка относительно банка, тем выше шанс победить.</p>
+        <p>С выигрыша берётся комиссия <b>3–8%</b> в зависимости от размера банка.</p>
+      </div>
+
+      <div class="about-person" onclick="togglePerson('r-mines')">
+        <div class="ap-head"><span class="ap-icon">&#x1F4A3;</span><div class="ap-title">Мины</div><span class="ap-arr" id="arr-r-mines">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-mines" style="display:none">
+        <p>Поле 5×5. Открывай клетки с алмазами, избегай мин.</p>
+        <p>Каждый открытый алмаз умножает ставку. Кешаутись в любой момент!</p>
+        <p>Чем больше мин — тем выше множитель за каждый алмаз.</p>
+        <p>Попал на мину — теряешь всю ставку.</p>
+      </div>
+
+      <div class="about-person" onclick="togglePerson('r-tower')">
+        <div class="ap-head"><span class="ap-icon">&#x1F5FC;</span><div class="ap-title">Башня</div><span class="ap-arr" id="arr-r-tower">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-tower" style="display:none">
+        <p>Поднимайся по этажам башни, нажимая на безопасные клетки.</p>
+        <p>На каждом этаже одна клетка — бомба. Угадай правильно!</p>
+        <p>Чем выше поднялся — тем больше выигрыш. Кешаут в любой момент.</p>
+      </div>
+
+      <div class="about-person" onclick="togglePerson('r-bj')">
+        <div class="ap-head"><span class="ap-icon">&#x1F0CF;</span><div class="ap-title">Блэкджек</div><span class="ap-arr" id="arr-r-bj">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-bj" style="display:none">
+        <p>Набери 21 очко или больше чем у дилера, не перебрав.</p>
+        <p>&#x1F0CF; <b>Блэкджек</b> (туз + картинка с первых двух карт) — <b>x2.5</b></p>
+        <p>Победа — <b>x2</b> | Ничья — ставка возвращается | Проигрыш — ставка сгорает.</p>
+        <p><b>×2</b> — удвоить ставку и взять одну карту (даблдаун).</p>
+        <p>Дилер обязан брать карты до 17+ очков.</p>
+      </div>
+
+      <div class="about-person" onclick="togglePerson('r-av')">
+        <div class="ap-head"><span class="ap-icon">&#9992;</span><div class="ap-title">Самолётик</div><span class="ap-arr" id="arr-r-av">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-av" style="display:none">
+        <p>Самолёт взлетает, множитель растёт от <b>1x</b> и выше.</p>
+        <p>Нажми КЕШАУТ до того как самолёт улетит — получишь ставку × текущий множитель.</p>
+        <p>Если не успел — теряешь ставку. Авто-кешаут: задай нужный множитель заранее.</p>
+      </div>
+
+      <div class="about-person" onclick="togglePerson('r-rocket')">
+        <div class="ap-head"><span class="ap-icon">&#x1F680;</span><div class="ap-title">Ракета</div><span class="ap-arr" id="arr-r-rocket">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-rocket" style="display:none">
+        <p>Аналог Самолётика — ракета летит вверх, множитель растёт.</p>
+        <p>Кешаутись в любой момент. Если ракета взорвётся — ставка сгорает.</p>
+      </div>
+
+      <div class="about-person" onclick="togglePerson('r-plinko')" style="border-bottom:none">
+        <div class="ap-head"><span class="ap-icon">&#x1F7E3;</span><div class="ap-title">Plinko</div><span class="ap-arr" id="arr-r-plinko">&#8250;</span></div>
+      </div>
+      <div class="ap-content" id="cnt-r-plinko" style="display:none;border-bottom:none">
+        <p>Брось шар сверху — он падает через колышки и попадает в один из слотов внизу.</p>
+        <p>Слоты по краям дают высокий множитель, по центру — низкий.</p>
+        <p>3 уровня риска: Низкий (стабильно), Средний, Высокий (экстрим).</p>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -728,6 +815,15 @@
         <div class="gc-desc">Общий банк — чем больше ставка, тем выше шанс сорвать куш</div>
       </div>
       <div class="gc-art"><span class="gc-art-emoji">🏎️</span></div>
+    </a>
+
+    <a class="game-card av-card" href="aviator.html">
+      <div class="gc-text">
+        <div class="gc-badge badge-sky">КРАШ</div>
+        <div class="gc-name">САМОЛЁТИК</div>
+        <div class="gc-desc">Кешаутись пока самолёт не улетел!</div>
+      </div>
+      <div class="gc-art"><span class="gc-art-emoji" style="font-size:52px">&#9992;</span></div>
     </a>
 
     <a class="game-card bj-card" href="blackjack.html">
