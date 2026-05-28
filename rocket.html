@@ -121,7 +121,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 <div class="lbg"></div>
 
 <div class="topbar">
-  <button class="fp-back" onclick="history.back()">‹</button>
+  <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
   <div class="fp-title">РАКЕТА</div>
   <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
 </div>
@@ -327,6 +327,7 @@ async function launchRocket(){
 }
 
 function doCrash(){
+  if(window._rocketTimeout){clearTimeout(window._rocketTimeout);window._rocketTimeout=null;}
   if(animFrame) cancelAnimationFrame(animFrame);
   gamePhase = 'crashed';
   document.getElementById('exhaust').style.display = 'none';

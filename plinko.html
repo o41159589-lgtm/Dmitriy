@@ -254,34 +254,36 @@ class Ball{
     this.slot=-1;
   }
   update(){
-    this.vy += 0.35; // gravity
+    this.vy = Math.min(this.vy + 0.4, 12); // gravity with speed cap
     this.x += this.vx;
     this.y += this.vy;
-    this.vx *= 0.98; // friction
+    this.vx *= 0.97;
     this.trail.push({x:this.x,y:this.y});
-    if(this.trail.length>20) this.trail.shift();
+    if(this.trail.length>14) this.trail.shift();
+    // Hard wall bounds - ALWAYS enforce
+    if(this.x < this.radius+2){ this.x=this.radius+2; this.vx=Math.abs(this.vx)*0.6+0.5; }
+    if(this.x > cW-this.radius-2){ this.x=cW-this.radius-2; this.vx=-Math.abs(this.vx)*0.6-0.5; }
     // Peg collision
     for(let row=0;row<ROWS;row++){
       for(let col=0;col<=row+1;col++){
         const p = getPegPos(row,col);
         const dx = this.x-p.x, dy = this.y-p.y;
         const dist = Math.sqrt(dx*dx+dy*dy);
-        if(dist < this.radius+pegRadius+1){
-          // Bounce off peg
+        const minDist = this.radius+pegRadius+1;
+        if(dist < minDist && dist > 0){
           const angle = Math.atan2(dy,dx);
           const speed = Math.sqrt(this.vx*this.vx+this.vy*this.vy);
-          this.vx = Math.cos(angle)*(speed*0.6) + (Math.random()-0.5)*1.5;
-          this.vy = Math.abs(Math.sin(angle)*(speed*0.6)) * (Math.random()*0.4+0.6);
-          // Push out
-          const overlap = this.radius+pegRadius+1-dist;
-          this.x += Math.cos(angle)*overlap;
-          this.y += Math.sin(angle)*overlap;
+          this.vx = Math.cos(angle)*(speed*0.5) + (Math.random()-0.5)*2;
+          this.vy = Math.abs(Math.sin(angle)*(speed*0.5)+0.5)*(Math.random()*0.4+0.8);
+          const overlap = minDist-dist;
+          this.x += Math.cos(angle)*(overlap+1);
+          this.y += Math.sin(angle)*(overlap+1);
+          // Re-enforce wall bounds after collision
+          if(this.x < this.radius+2){ this.x=this.radius+2; this.vx=Math.abs(this.vx); }
+          if(this.x > cW-this.radius-2){ this.x=cW-this.radius-2; this.vx=-Math.abs(this.vx); }
         }
       }
     }
-    // Wall bounce
-    if(this.x < this.radius){ this.x=this.radius; this.vx=Math.abs(this.vx)*0.7; }
-    if(this.x > cW-this.radius){ this.x=cW-this.radius; this.vx=-Math.abs(this.vx)*0.7; }
   }
   draw(){
     // Trail
@@ -315,6 +317,8 @@ let animFrame = null;
 let hlSlot = -1;
 
 function animLoop(){
+  // Safety: force landing if ball stuck
+  if(!window._plinkTimeout) window._plinkTimeout = setTimeout(()=>{if(activeBall&&ballActive){activeBall.y=cH-slotH-ballRadius;activeBall.vy=0;activeBall.vx=0;}}, 8000);
   if(!activeBall){ return; }
   activeBall.update();
   drawBoard(hlSlot);
@@ -327,6 +331,7 @@ function animLoop(){
     drawBoard(hlSlot);
     activeBall.draw();
     ballActive = false;
+    if(window._plinkTimeout){clearTimeout(window._plinkTimeout);window._plinkTimeout=null;}
     document.getElementById('drop-btn').disabled = false;
     handleResult(hlSlot);
     setTimeout(()=>{ hlSlot=-1; drawBoard(); activeBall=null; },1500);
@@ -372,6 +377,7 @@ async function dropBall(){
 
   // Start ball from top center with small random offset
   const startX = cW/2 + (Math.random()-0.5)*20;
+  if(window._plinkTimeout){clearTimeout(window._plinkTimeout);window._plinkTimeout=null;}
   activeBall = new Ball(startX, 10);
   activeBall.vy = 1;
   animFrame = requestAnimationFrame(animLoop);
