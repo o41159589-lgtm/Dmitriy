@@ -85,19 +85,19 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .btypes{display:grid;gap:6px;}
 .cols3{grid-template-columns:repeat(3,1fr);}
 .cols2{grid-template-columns:repeat(2,1fr);}
-.bt{border-radius:12px;padding:11px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text);transition:all .15s;user-select:none;}
+.bt{border-radius:12px;padding:11px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text);transition:all .15s;user-select:none;-webkit-user-select:none;}
 .bt-s{font-size:10px;color:var(--muted2);margin-top:3px;font-family:var(--font-mono);}
 .bt.sel{transform:scale(1.03);}
 .bt.r{border-color:rgba(255,59,85,.3);}
-.bt.r.sel{background:rgba(255,59,85,.2);border-color:rgba(255,59,85,.6);color:var(--red);}
+.bt.r.sel{background:rgba(255,59,85,.2);border-color:rgba(255,59,85,.6);color:#ff8080;}
 .bt.bl{border-color:rgba(200,200,220,.15);}
-.bt.bl.sel{background:rgba(200,200,220,.1);border-color:rgba(200,200,220,.4);color:#ccc;}
+.bt.bl.sel{background:rgba(200,200,220,.1);border-color:rgba(200,200,220,.4);color:#E0E0E0;}
 .bt.g{border-color:rgba(0,255,136,.2);}
-.bt.g.sel{background:rgba(0,255,136,.12);border-color:rgba(0,255,136,.5);color:var(--green);}
+.bt.g.sel{background:rgba(0,255,136,.12);border-color:rgba(0,255,136,.5);color:#22C55E;}
 .bt.o{border-color:rgba(255,255,255,.15);}
-.bt.o.sel{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.4);color:var(--white);}
-.spin-btn{width:100%;padding:16px;background:var(--white);border:none;border-radius:14px;color:#000;font-family:var(--font-display);font-size:22px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 24px rgba(255,255,255,.3);}
-.spin-btn:disabled{opacity:.4;cursor:not-allowed;}
+.bt.o.sel{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3);color:var(--white);}
+.spin-btn{width:100%;padding:16px;background:var(--white);border:none;border-radius:14px;color:#000;font-family:var(--font-display);font-size:22px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 20px rgba(255,255,255,.12);}
+.spin-btn:disabled{opacity:.35;cursor:not-allowed;}
 .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .pay-item{background:var(--glass-bg);border-radius:10px;padding:10px;border:1px solid var(--glass-border);}
 .pay-name{font-size:12px;color:var(--muted2);margin-bottom:3px;}

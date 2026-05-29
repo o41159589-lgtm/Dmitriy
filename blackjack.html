@@ -72,7 +72,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
   display:flex;flex-direction:column;justify-content:space-between;padding:5px;
   box-shadow:0 4px 16px rgba(0,0,0,.6);flex-shrink:0;position:relative;overflow:hidden;
   animation-name:cardDeal;animation-duration:.3s;
-  animation-timing-function:cubic-bezier(.34,1.56,.64,1);animation-fill-mode:both;}
+  animation-timing-function:cubic-bezier(.34,1.56,.64,1);animation-fill-mode:both;
+  animation-delay:var(--cd,0s);}
 .card-face.red{color:#DC2626;}
 .cv{font-size:14px;font-weight:900;line-height:1;}
 .cs{font-size:17px;line-height:1;}
@@ -179,9 +180,10 @@ function score(h){let s=0,a=0;for(const c of h){s+=cv(c.v);if(c.v==='A')a++;}whi
 function isBJ(h){return h.length===2&&score(h)===21;}
 
 function cHTML(c,hidden,delay){
-  if(hidden)return '<div class="card-face card-back" style="animation-delay:'+delay+'s"><div class="cv"></div><div class="cs"></div></div>';
-  const r=RED_S.has(c.s);
-  return '<div class="card-face'+(r?' red':'')+'" style="animation-delay:'+delay+'s"><div><div class="cv">'+c.v+'</div><div class="cs">'+c.s+'</div></div><div class="cb">'+c.v+'</div><div class="cbs">'+c.s+'</div></div>';
+  var ds='style="--cd:'+delay+'s"';
+  if(hidden)return '<div class="card-face card-back" '+ds+'></div>';
+  var r=RED_S.has(c.s);
+  return '<div class="card-face'+(r?' red':'')+'" '+ds+'><div><div class="cv">'+c.v+'</div><div class="cs">'+c.s+'</div></div><div class="cb">'+c.v+'</div><div class="cbs">'+c.s+'</div></div>';
 }
 
 function render(hd){

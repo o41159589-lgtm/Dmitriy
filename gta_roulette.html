@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ГТА Рулетка — TopLuck</title>
+<title>GTA Рулетка — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
 <style>
@@ -59,53 +59,67 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .lbg{background:radial-gradient(ellipse 55% 40% at 50% 0%,rgba(139,92,246,.06) 0%,transparent 60%);}
 
 /* HERO */
-.gta-hero{
-  background:linear-gradient(180deg,#0A0010,#120020,#0A0010);
-  border:1px solid rgba(139,92,246,.2);border-radius:22px;
-  padding:20px 16px;margin-bottom:12px;
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-  position:relative;overflow:hidden;
-}
-.gta-hero::before{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(139,92,246,.08) 0%,transparent 65%);pointer-events:none;}
+.gta-hero{background:linear-gradient(180deg,#0A0010,#120018,#0A0010);
+  border:1px solid rgba(139,92,246,.18);border-radius:22px;
+  padding:18px 16px 16px;margin-bottom:12px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;overflow:hidden;}
+.gta-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(139,92,246,.07) 0%,transparent 65%);}
 
-/* POT */
-.pot-card{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);
-  border-radius:14px;padding:10px 22px;text-align:center;}
-.pot-lbl{font-family:var(--font-mono);font-size:10px;color:rgba(139,92,246,.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;}
-.pot-val{font-family:var(--font-mono);font-size:28px;font-weight:700;color:var(--purple);}
-.pot-sub{font-size:11px;color:var(--muted2);margin-top:1px;}
+/* WINNER SPOTLIGHT — above wheel shows current pointed player */
+.winner-spot{
+  width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(139,92,246,.2);
+  border-radius:14px;padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:52px;
+}
+.ws-label{font-family:var(--font-mono);font-size:9px;color:rgba(139,92,246,.6);
+  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+.ws-name{font-size:16px;font-weight:700;color:var(--text);transition:color .15s;}
+.ws-pct{font-family:var(--font-mono);font-size:22px;font-weight:700;
+  color:var(--purple);transition:color .15s;}
+.ws-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-right:8px;
+  box-shadow:0 0 8px currentColor;transition:background .15s;}
 
 /* WHEEL */
 .gta-wheel-wrap{position:relative;}
 .gta-canvas{display:block;border-radius:50%;
-  box-shadow:0 0 40px rgba(139,92,246,.3),0 0 0 1px rgba(139,92,246,.15);}
+  box-shadow:0 0 40px rgba(139,92,246,.25),0 0 0 1px rgba(139,92,246,.12);}
 
-/* STATUS + TIMER */
-.gta-status{font-family:var(--font-mono);font-size:12px;color:var(--muted2);
-  letter-spacing:1px;text-align:center;}
-.timer-wrap{width:100%;max-width:260px;height:4px;background:rgba(255,255,255,.07);
-  border-radius:2px;overflow:hidden;}
+/* TIMER + STATUS */
+.timer-wrap{width:100%;max-width:260px;height:3px;
+  background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
 .timer-bar{height:100%;background:linear-gradient(90deg,var(--purple),#C084FC);
-  border-radius:2px;transition:width .5s linear;
-  box-shadow:0 0 8px rgba(139,92,246,.6);}
+  border-radius:2px;transition:width .5s linear;box-shadow:0 0 8px rgba(139,92,246,.5);}
+.gta-status{font-family:var(--font-mono);font-size:11px;color:var(--muted2);
+  letter-spacing:1px;text-align:center;}
 
-/* SECTION */
-.gta-section{background:var(--card);border:1px solid var(--border);
-  border-radius:18px;padding:14px;margin-bottom:12px;}
+/* BETS SECTION */
+.bets-section{background:var(--card);border:1px solid var(--border);
+  border-radius:20px;padding:14px;margin-bottom:12px;position:relative;}
+.bets-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.bets-title{font-family:var(--font-mono);font-size:11px;color:var(--gray2);
+  letter-spacing:1.5px;text-transform:uppercase;}
+.pot-inline{display:inline-flex;align-items:center;gap:5px;
+  background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);
+  border-radius:10px;padding:5px 12px;
+  font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--purple);}
 
-/* PLAYERS */
-.gp-row{display:flex;align-items:center;gap:10px;padding:9px 12px;
-  background:rgba(0,0,0,.2);border:1px solid var(--border);
-  border-radius:12px;margin-bottom:4px;transition:border-color .15s;}
-.gp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+/* PLAYERS LIST */
+.gp-row{display:flex;align-items:center;gap:9px;padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);}
+.gp-row:last-child{border-bottom:none;}
+.gp-color{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor;}
 .gp-name{flex:1;font-size:13px;font-weight:600;color:var(--text);min-width:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .gp-right{text-align:right;flex-shrink:0;}
 .gp-bet{font-family:var(--font-mono);font-size:13px;color:var(--gold);font-weight:700;}
-.gp-pct{font-size:11px;color:var(--muted2);margin-top:1px;font-family:var(--font-mono);}
+.gp-pct{font-size:10px;color:var(--muted2);margin-top:1px;font-family:var(--font-mono);}
+.gp-bar-wrap{width:100%;height:2px;background:rgba(255,255,255,.05);
+  border-radius:1px;margin-top:5px;}
+.gp-bar{height:100%;border-radius:1px;transition:width .4s ease;}
 
-/* BET ROW */
+/* BET CONTROLS */
 .bet-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
 .bet-lbl{color:var(--muted2);font-size:13px;white-space:nowrap;font-weight:600;
   font-family:var(--font-mono);}
@@ -113,41 +127,30 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
   border-radius:12px;padding:10px 12px;color:var(--white);
   font-family:var(--font-mono);font-size:16px;outline:none;text-align:center;width:0;}
 .bet-inp:focus{border-color:rgba(255,255,255,.3);}
-.qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.qb{flex:1;min-width:44px;padding:8px 4px;background:var(--card);
-  border:1px solid var(--border);border-radius:9px;font-size:11px;
-  color:var(--gray2);font-weight:700;cursor:pointer;text-align:center;
-  font-family:var(--font-mono);transition:all .15s;}
-.qb:active{background:rgba(255,255,255,.1);color:var(--white);}
 .gta-bet-btn{width:100%;padding:15px;background:var(--purple);border:none;
   border-radius:14px;color:#fff;font-family:var(--font-display);
   font-size:20px;letter-spacing:1px;cursor:pointer;
-  box-shadow:0 4px 20px rgba(139,92,246,.35);transition:opacity .15s,transform .1s;}
-.gta-bet-btn:active{transform:scale(.98);opacity:.9;}
+  box-shadow:0 4px 20px rgba(139,92,246,.3);transition:opacity .15s,transform .1s;}
+.gta-bet-btn:active{transform:scale(.98);}
 .gta-bet-btn:disabled{opacity:.3;cursor:not-allowed;}
+.your-chance-badge{display:inline-flex;align-items:center;gap:5px;
+  background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.18);
+  border-radius:8px;padding:4px 10px;margin-top:10px;
+  font-family:var(--font-mono);font-size:11px;color:rgba(200,170,255,.8);}
 
-/* RULES CARD */
+/* RULES */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.card-head{padding:12px 16px;font-family:var(--font-mono);font-size:11px;
+  color:var(--gray2);letter-spacing:1.5px;text-transform:uppercase;
+  border-bottom:1px solid var(--border);}
+.card-body{padding:14px 16px;}
 .info-row{display:flex;align-items:center;justify-content:space-between;
   padding:8px 0;border-bottom:1px solid var(--border);}
 .info-row:last-child{border-bottom:none;}
 .info-l{font-size:13px;color:var(--muted2);}
 .info-r{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text);}
-.card-head{padding:12px 16px;font-family:var(--font-mono);font-size:11px;
-  color:var(--gray2);letter-spacing:1.5px;text-transform:uppercase;
-  border-bottom:1px solid var(--border);}
-.card-body{padding:14px 16px;}
-.card{background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r);overflow:hidden;margin-bottom:12px;position:relative;}
 
 </style>
-<script>
-(function(){
-  const tg = window.Telegram?.WebApp;
-  if(!tg?.initDataUnsafe?.user?.id){
-    window.location.replace('not_telegram.html');
-  }
-})();
-</script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -155,56 +158,82 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 
 <div class="topbar">
   <button class="fp-back" onclick="location.href='main.html?tab=games'">&#8249;</button>
-  <div class="fp-title">&#x1F3CE;&#xFE0F; ГТА РУЛЕТКА</div>
+  <div class="fp-title">&#x1F3CE;&#xFE0F; GTA РУЛЕТКА</div>
   <div class="bal-chip">&#x1FA99; <span id="r-bal">&#8212;</span></div>
 </div>
 
 <div style="padding:12px 14px 32px">
 
+  <!-- WHEEL HERO -->
   <div class="gta-hero">
-    <div class="pot-card">
-      <div class="pot-lbl">Банк раунда</div>
-      <div class="pot-val">&#x1FA99; <span id="gta-pot">0</span></div>
-      <div class="pot-sub">монет в банке</div>
+
+    <!-- Current player pointed at -->
+    <div class="winner-spot" id="winner-spot">
+      <div style="display:flex;align-items:center;gap:0">
+        <div class="ws-dot" id="ws-dot" style="background:var(--purple)"></div>
+        <div>
+          <div class="ws-label">Стрелка указывает на</div>
+          <div class="ws-name" id="ws-name">Ожидаем ставок...</div>
+        </div>
+      </div>
+      <div class="ws-pct" id="ws-pct">—</div>
     </div>
 
+    <!-- Wheel -->
     <div class="gta-wheel-wrap">
-      <canvas class="gta-canvas" id="gta-canvas" width="240" height="240"></canvas>
+      <canvas class="gta-canvas" id="gta-canvas" width="220" height="220"></canvas>
     </div>
 
+    <!-- Timer -->
     <div class="timer-wrap" id="t-wrap" style="display:none">
       <div class="timer-bar" id="t-bar" style="width:100%"></div>
     </div>
     <div class="gta-status" id="gta-status">Ожидаем игроков...</div>
   </div>
 
-  <div class="gta-section">
-    <div id="gta-players"></div>
+  <!-- BETS SECTION -->
+  <div class="bets-section">
+    <div class="bets-header">
+      <span class="bets-title">&#x1F3B2; Ставки</span>
+      <div class="pot-inline">&#x1FA99; <span id="gta-pot">0</span> в банке</div>
+    </div>
 
+    <!-- Players list -->
+    <div id="gta-players" style="margin-bottom:12px"></div>
+
+    <!-- Your chance -->
+    <div class="your-chance-badge">
+      Твой шанс победы: <span id="your-chance" style="color:var(--purple);font-weight:700">—</span>
+    </div>
+
+    <!-- Bet input -->
+    <div style="height:1px;background:rgba(255,255,255,.06);margin:12px 0"></div>
     <div class="bet-row">
       <span class="bet-lbl">Ставка:</span>
       <input class="bet-inp" id="gta-inp" type="number" min="1" value="10" inputmode="numeric">
     </div>
-    <div class="qb-row">
+    <div class="qb-row" style="margin-bottom:10px">
       <div class="qb" onclick="sgb(10)">10</div>
       <div class="qb" onclick="sgb(50)">50</div>
       <div class="qb" onclick="sgb(100)">100</div>
       <div class="qb" onclick="sgb(250)">250</div>
+      <div class="qb" onclick="sgb(500)">500</div>
       <div class="qb" onclick="sgbAll()">ВСЁ</div>
     </div>
     <button class="gta-bet-btn" id="gta-btn" onclick="placeGtaBet()">&#x1F3B2; ПОСТАВИТЬ</button>
   </div>
 
+  <!-- RULES -->
   <div class="card">
     <div class="card-head">&#x1F4CB; Правила</div>
     <div class="card-body">
       <div class="info-row"><span class="info-l">Мин. игроков</span><span class="info-r">2</span></div>
-      <div class="info-row"><span class="info-l">Комиссия казино</span><span class="info-r">3&#8211;8%</span></div>
-      <div class="info-row"><span class="info-l">Твой шанс</span><span class="info-r" id="your-chance">&#8212;</span></div>
+      <div class="info-row"><span class="info-l">Комиссия</span><span class="info-r">3&#8211;8%</span></div>
       <div class="info-row"><span class="info-l">Обратный отсчёт</span><span class="info-r">15 сек</span></div>
       <div class="info-row"><span class="info-l">Победитель</span><span class="info-r">1 игрок</span></div>
     </div>
   </div>
+
 </div>
 
 <script>
@@ -453,6 +482,7 @@ function spinAndStop(players, total, finalAngle, onDone){
     gtaAngleOffset=START+(TARGET-START)*ease(t);
     if(t<1){
       drawGtaWheel(players,total,null,gtaAngleOffset);
+      updateWinnerSpot(players,total,gtaAngleOffset);
       gtaSpinAnim=requestAnimationFrame(frame);
     } else {
       gtaAngleOffset=TARGET%(Math.PI*2);
@@ -464,7 +494,41 @@ function spinAndStop(players, total, finalAngle, onDone){
   gtaSpinAnim=requestAnimationFrame(frame);
 }
 
+function updateWinnerSpot(players, total, angleOffset){
+  const nameEl = document.getElementById('ws-name');
+  const pctEl  = document.getElementById('ws-pct');
+  const dotEl  = document.getElementById('ws-dot');
+  if(!players || !players.length){
+    if(nameEl) nameEl.textContent = 'Ожидаем ставок...';
+    if(pctEl)  pctEl.textContent  = '—';
+    return;
+  }
+  // Pointer is at top = -PI/2 in canvas coords
+  // Current angle offset = gtaAngleOffset (or angleOffset param)
+  // Walk through sectors to find which player the pointer points at
+  const ao = (typeof angleOffset !== 'undefined') ? angleOffset : gtaAngleOffset;
+  const ptrAngle = (-Math.PI/2 - ao + Math.PI*4) % (Math.PI*2); // normalised pointer in wheel space
+  let a = 0;
+  let found = null;
+  const sorted = [...players];
+  for(const p of sorted){
+    const sl = p.amount/total * Math.PI*2;
+    const ea = a + sl;
+    // Normalise ptrAngle into [0, 2PI)
+    const norm = ((ptrAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+    if(norm >= a && norm < ea){ found = p; break; }
+    a = ea;
+  }
+  if(!found) found = sorted[0];
+  const pct = Math.round(found.amount/total*100);
+  if(nameEl) nameEl.textContent = found.name || 'Игрок';
+  if(pctEl)  pctEl.textContent  = pct + '%';
+  if(dotEl)  { dotEl.style.background = found.color || 'var(--purple)'; dotEl.style.boxShadow = '0 0 8px '+(found.color||'var(--purple)'); }
+}
+
+
 function renderPlayers(players, total, winnerId){
+  updateWinnerSpot(players, total, gtaAngleOffset);
   const pl=document.getElementById('gta-players');
   if(!players.length){
     pl.innerHTML='<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">Ждём ставок...</div>';
