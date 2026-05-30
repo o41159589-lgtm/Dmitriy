@@ -162,6 +162,7 @@ body::before {
   transition:transform .3s cubic-bezier(.4,0,.2,1);
 }
 .toast.show { transform:translateY(0); }
+.toast { transform:translateY(100px); }
 .toast.ok   { color:var(--green); border-color:rgba(34,197,94,.3); }
 .toast.err  { color:var(--red);   border-color:rgba(239,68,68,.3); }
 .toast.info { color:var(--gray1); border-color:var(--border2); }

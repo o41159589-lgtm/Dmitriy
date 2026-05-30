@@ -17,7 +17,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .fp-back{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:22px;cursor:pointer;font-weight:700;}
 .fp-title{font-family:var(--font-display);font-size:20px;color:var(--white);letter-spacing:1px;}
 .bal-chip{display:flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:7px 12px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);}
-.toast{position:fixed;top:14px;left:14px;right:14px;z-index:500;background:rgba(20,20,20,.97);border:1px solid var(--border2);backdrop-filter:blur(20px);border-radius:16px;padding:13px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.toast{position:fixed;bottom:80px;left:14px;right:14px;z-index:500;background:rgba(20,20,20,.97);border:1px solid var(--border2);backdrop-filter:blur(20px);border-radius:16px;padding:13px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.toast{transform:translateY(100px);}
 .toast.show{transform:translateY(0);}
 .toast.ok{color:var(--green);border-color:rgba(34,197,94,.3);}
 .toast.err{color:var(--red);border-color:rgba(239,68,68,.3);}
@@ -239,6 +240,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
+if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');}
+
 const UID = tg?.initDataUnsafe?.user?.id || 0;
 const GTA_COLORS = [
   '#FF2D55', // vivid red/pink
@@ -495,35 +498,30 @@ function spinAndStop(players, total, finalAngle, onDone){
 }
 
 function updateWinnerSpot(players, total, angleOffset){
-  const nameEl = document.getElementById('ws-name');
-  const pctEl  = document.getElementById('ws-pct');
-  const dotEl  = document.getElementById('ws-dot');
-  if(!players || !players.length){
-    if(nameEl) nameEl.textContent = 'Ожидаем ставок...';
-    if(pctEl)  pctEl.textContent  = '—';
+  const nameEl=document.getElementById('ws-name');
+  const pctEl=document.getElementById('ws-pct');
+  const dotEl=document.getElementById('ws-dot');
+  if(!players||!players.length){
+    if(nameEl)nameEl.textContent='Ожидаем ставок...';
+    if(pctEl)pctEl.textContent='—';
     return;
   }
-  // Pointer is at top = -PI/2 in canvas coords
-  // Current angle offset = gtaAngleOffset (or angleOffset param)
-  // Walk through sectors to find which player the pointer points at
-  const ao = (typeof angleOffset !== 'undefined') ? angleOffset : gtaAngleOffset;
-  const ptrAngle = (-Math.PI/2 - ao + Math.PI*4) % (Math.PI*2); // normalised pointer in wheel space
-  let a = 0;
-  let found = null;
-  const sorted = [...players];
-  for(const p of sorted){
-    const sl = p.amount/total * Math.PI*2;
-    const ea = a + sl;
-    // Normalise ptrAngle into [0, 2PI)
-    const norm = ((ptrAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-    if(norm >= a && norm < ea){ found = p; break; }
-    a = ea;
+  const ao=(typeof angleOffset!=='undefined')?angleOffset:gtaAngleOffset;
+  // Pointer at top = -Math.PI/2 in canvas.
+  // Sector starting at angle 'a' (0=right, clockwise) is drawn at canvas angle (a+ao).
+  // We want: a + ao ≡ -PI/2 (mod 2PI)  =>  a ≡ -PI/2 - ao
+  const ptrInWheel=((-Math.PI/2 - ao) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  let a=0, found=null;
+  for(const p of players){
+    const sl=p.amount/total*Math.PI*2;
+    if(ptrInWheel>=a && ptrInWheel<a+sl){found=p;break;}
+    a+=sl;
   }
-  if(!found) found = sorted[0];
-  const pct = Math.round(found.amount/total*100);
-  if(nameEl) nameEl.textContent = found.name || 'Игрок';
-  if(pctEl)  pctEl.textContent  = pct + '%';
-  if(dotEl)  { dotEl.style.background = found.color || 'var(--purple)'; dotEl.style.boxShadow = '0 0 8px '+(found.color||'var(--purple)'); }
+  if(!found)found=players[players.length-1];
+  const pct=Math.round(found.amount/total*100);
+  if(nameEl)nameEl.textContent=found.name||'Игрок';
+  if(pctEl)pctEl.textContent=pct+'%';
+  if(dotEl){dotEl.style.background=found.color||'var(--purple)';dotEl.style.boxShadow='0 0 8px '+(found.color||'var(--purple)');}
 }
 
 
