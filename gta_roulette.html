@@ -277,13 +277,20 @@ function startFree(players,total){
 }
 
 function calcFinalAngle(players,total,winId){
+  // Find where winner sector sits in wheel-local coords
+  // Wheel draws sector i starting at: drawAngle + i_start_angle - PI/2
+  // Pointer is at top = -PI/2 in world coords
+  // For sector center to be at pointer: drawAngle + sector_mid - PI/2 = -PI/2 (mod 2PI)
+  // => drawAngle = -sector_mid (mod 2PI)
   let a=0;
   for(const p of players){
     const sl=p.amount/total*Math.PI*2;
     if(String(p.uid)===String(winId)){
       const seed=(parseInt(String(winId).slice(-4))||1234)%1000;
       const frac=(seed/1000)*.7+.15;
-      return((-(a+sl*frac))%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+      const sectorMid=a+sl*frac;
+      // We need: angleOff + sectorMid - PI/2 = -PI/2  => angleOff = -sectorMid
+      return((-sectorMid)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
     }
     a+=sl;
   }

@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Блэкджек — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
@@ -13,7 +13,7 @@
 html,body{background:var(--bg);color:var(--text);font-family:var(--font-ui);min-height:100vh;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.02;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;}
 .lbg{position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse 55% 35% at 50% 0%,rgba(255,255,255,.02) 0%,transparent 60%);}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;position:sticky;top:0;z-index:50;background:rgba(10,10,10,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top,0px));position:sticky;top:0;z-index:50;background:rgba(10,10,10,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
 .fp-back{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:22px;cursor:pointer;font-weight:700;}
 .fp-title{font-family:var(--font-display);font-size:20px;color:var(--white);letter-spacing:1px;}
 .bal-chip{display:flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:7px 12px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);}
@@ -195,7 +195,7 @@ function render(hd){
   pEl.textContent=ps;
   pEl.className='bj-score '+(ps>21?'bust':ps===21?'bj':'good');
   document.getElementById('d-score').textContent=hd?'?':score(dh);
-  document.getElementById('st-win').textContent=Math.round(bet*(isBJ(ph)?2.5:2))+'&#x1FA99;';
+  document.getElementById('st-win').textContent=Math.round(bet*(isBJ(ph)?2.5:2))+' 🪙';
 }
 
 function deal(){
@@ -207,7 +207,7 @@ function deal(){
   active=true;
   document.getElementById('setup').style.display='none';
   document.getElementById('game').classList.add('on');
-  document.getElementById('st-bet').textContent=bet+'&#x1FA99;';
+  document.getElementById('st-bet').textContent=bet+' 🪙';
   document.getElementById('st-turn').textContent='Твой';
   document.getElementById('b-dbl').disabled=false;
   render(true);
@@ -227,7 +227,7 @@ function dbl(){
   const extra=Math.min(bet,bal-bet);
   if(extra<=0){toast('Недостаточно монет','err');return;}
   bet+=extra;doubled=true;
-  document.getElementById('st-bet').textContent=bet+'&#x1FA99;';
+  document.getElementById('st-bet').textContent=bet+' 🪙';
   ph.push(deck.pop());render(true);stand();
 }
 
@@ -252,10 +252,10 @@ async function stand(){
   tEl.textContent=title;tEl.className='r-title '+(won?'win':push?'push':'lose');
   rEl.querySelector('.r-sub').textContent=sub;
   const aEl=rEl.querySelector('.r-amount');
-  if(push){aEl.innerHTML='= '+bet+'&#x1FA99;';aEl.className='r-amount push';}
+  if(push){aEl.innerHTML='= '+bet+' 🪙';aEl.className='r-amount push';}
   else{
     const profit=won?Math.round(bet*(mult-1)):-bet;
-    aEl.innerHTML=(profit>=0?'+':'')+profit+'&#x1FA99;';
+    aEl.innerHTML=(profit>=0?'+':'')+profit+' 🪙';
     aEl.className='r-amount '+(won?'win':'lose');
     const res=await fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({user_id:UID,game:'Блэкджек',bet,won,multiplier:mult,detail:'Блэкджек: '+title+' ('+ps+' vs '+ds+')'})

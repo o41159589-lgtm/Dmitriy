@@ -185,7 +185,9 @@ function drawBoard(){
   }
 }
 
-function createBall(){return{x:cW/2+(Math.random()-.5)*20,y:ballR+2,vx:(Math.random()-.5)*.4,vy:1.2,trail:[],done:false,slot:-1};}
+let userLuck=50;
+async function fetchLuck(){try{const u=await fetch('/api/user/'+UID).then(r=>r.json());userLuck=u?.luck??50;}catch(e){}}
+function createBall(){return{x:cW/2+(Math.random()-.5)*20,y:ballR+2,vx:(Math.random()-.5)*.4,vy:1.2,trail:[],done:false,slot:-1,_luck:userLuck};}
 
 function stepBall(b){
   if(b.done)return;
@@ -210,7 +212,20 @@ function stepBall(b){
   }
   if(b.y>=cH-slotH-ballR){
     b.y=cH-slotH-ballR;b.vx=0;b.vy=0;b.done=true;
-    b.slot=Math.max(0,Math.min(NSLOTS-1,Math.floor(b.x/(cW/NSLOTS))));
+    let rawSlot=Math.max(0,Math.min(NSLOTS-1,Math.floor(b.x/(cW/NSLOTS))));
+    // Apply luck bias: luck=0 → drift toward center (x0), luck=100 → drift away from center
+    const luck=parseInt(b._luck||50);
+    const center=Math.floor(NSLOTS/2); // slot 6 = x0
+    if(luck<50){
+      // Low luck: push toward center
+      const pull=(50-luck)/100; // 0..0.5
+      if(Math.random()<pull){rawSlot=Math.round(rawSlot+(center-rawSlot)*(.4+pull*.6));}
+    }else if(luck>50){
+      // High luck: push away from center (toward edges)
+      const push=(luck-50)/100;
+      if(Math.random()<push){rawSlot=Math.round(rawSlot+(rawSlot-center)*(.5+push*.5));}
+    }
+    b.slot=Math.max(0,Math.min(NSLOTS-1,rawSlot));
     slotFlash[b.slot]=1;
   }
 }
@@ -222,6 +237,7 @@ function loop(){
   drawBoard();
   if(!balls.every(b=>b.done)){animId=requestAnimationFrame(loop);return;}
   if(!isFinishing){isFinishing=true;finishRound();}
+  // No need to disable button — user can drop at any time
 }
 
 async function finishRound(){
@@ -244,27 +260,41 @@ async function finishRound(){
   else toast(avgMult.toFixed(2)+'× — '+profit+' 🪙','err');
   await new Promise(r=>setTimeout(r,400));
   balls=[];slotFlash.fill(0);drawBoard();
-  document.getElementById('drop-btn').disabled=false;
+  animId=null;
   isFinishing=false;
+  // Process next queued batch
+  if(betQueue.length)processQueue();
 }
+
+// Queue of pending bets so user can queue multiple launches
+let betQueue=[];
+let sessionTotalBet=0,sessionTotalWin=0,sessionBalls=0;
 
 async function dropBalls(){
-  if(animId||balls.length>0||isFinishing)return;
   const bet=+document.getElementById('bet-inp').value||0;
   if(bet<1){toast('Введите ставку','err');return;}
-  const total=bet*nBalls;
-  if(total>bal){toast('Недостаточно монет (нужно '+total+')','err');return;}
-  pendingBet=bet;
-  document.getElementById('s-bet').textContent=total;
-  document.getElementById('s-win').textContent='…';document.getElementById('s-win').style.color='var(--muted2)';
-  document.getElementById('s-mult').textContent='…';
-  document.getElementById('drop-btn').disabled=true;
-  balls=[];slotFlash.fill(0);
-  for(let i=0;i<nBalls;i++)balls.push(createBall());
-  animId=requestAnimationFrame(loop);
+  const cost=bet*nBalls;
+  if(cost>bal){toast('Недостаточно монет (нужно '+cost+')','err');return;}
+  // Deduct from local balance immediately so user can't overspend
+  bal-=cost;
+  document.getElementById('r-bal').textContent=bal;
+  betQueue.push({bet,n:nBalls,cost});
+  document.getElementById('s-bet').textContent=(betQueue.reduce((s,b)=>s+b.cost,0))+'  (в очереди: '+betQueue.length+')';
+  if(!animId&&!isFinishing)processQueue();
 }
 
-window.addEventListener('load',()=>{resizeCanvas();drawBoard();loadUser();});
+async function processQueue(){
+  if(!betQueue.length||isFinishing)return;
+  const item=betQueue.shift();
+  pendingBet=item.bet;
+  document.getElementById('s-win').textContent='…';document.getElementById('s-win').style.color='var(--muted2)';
+  document.getElementById('s-mult').textContent='…';
+  // Add new balls alongside any still falling
+  for(let i=0;i<item.n;i++)balls.push(createBall());
+  if(!animId)animId=requestAnimationFrame(loop);
+}
+
+window.addEventListener('load',()=>{resizeCanvas();drawBoard();loadUser();fetchLuck();});
 window.addEventListener('resize',()=>{if(!animId){resizeCanvas();drawBoard();}});
 </script>
 </body>
