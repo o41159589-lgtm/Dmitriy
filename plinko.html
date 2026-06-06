@@ -67,22 +67,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
       <div class="qb" onclick="sb(50)">50</div><div class="qb" onclick="sb(100)">100</div>
       <div class="qb" onclick="hb()">½</div><div class="qb" onclick="db()">×2</div>
     </div>
-    <div class="multi-row">
-      <span class="multi-lbl">Шаров:</span>
-      <div style="display:flex;gap:5px">
-        <div class="mb sel" onclick="setN(1,this)">1</div>
-        <div class="mb" onclick="setN(3,this)">3</div>
-        <div class="mb" onclick="setN(5,this)">5</div>
-        <div class="mb" onclick="setN(10,this)">10</div>
-      </div>
-    </div>
+
   </div>
   <div class="live-stats">
     <div class="ls"><div class="ls-l">Ставка</div><div class="ls-v" id="s-bet">—</div></div>
     <div class="ls"><div class="ls-l">Итог</div><div class="ls-v" id="s-win">—</div></div>
     <div class="ls"><div class="ls-l">Множитель</div><div class="ls-v" id="s-mult">—</div></div>
   </div>
-  <button class="drop-btn" id="drop-btn" onclick="dropBalls()">БРОСИТЬ ШАР</button>
+  <button class="drop-btn" id="drop-btn" onclick="dropBalls()">🎯 БРОСИТЬ ШАР</button>
 </div>
 <script>
 const tg=window.Telegram?.WebApp;
@@ -105,18 +97,18 @@ function multColor(m){
   return'#FF3B55';
 }
 
-let bal=0,nBalls=1,animId=null,balls=[],isFinishing=false,pendingBet=0;
+let bal=0,animId=null,balls=[],isFinishing=false,pendingBet=0;
 let slotFlash=new Array(NSLOTS).fill(0);
 const canvas=document.getElementById('pc');
 const ctx=canvas.getContext('2d');
 let cW=0,cH=0,slotH=34,pegR=4,ballR=6;
 
 function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),2800);}
-async function loadUser(){const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);if(!u)return;bal=u.balance??0;document.getElementById('r-bal').textContent=bal;}
 function sb(v){document.getElementById('bet-inp').value=v;}
 function hb(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2));}
 function db(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=v*2;}
-function setN(n,el){nBalls=n;document.querySelectorAll('.mb').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');}
+async function loadUser(){const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);if(!u)return;bal=u.balance??0;document.getElementById('r-bal').textContent=bal;}
+
 
 function resizeCanvas(){
   cW=canvas.parentElement.offsetWidth;
@@ -213,17 +205,22 @@ function stepBall(b){
   if(b.y>=cH-slotH-ballR){
     b.y=cH-slotH-ballR;b.vx=0;b.vy=0;b.done=true;
     let rawSlot=Math.max(0,Math.min(NSLOTS-1,Math.floor(b.x/(cW/NSLOTS))));
-    // Apply luck bias: luck=0 → drift toward center (x0), luck=100 → drift away from center
     const luck=parseInt(b._luck||50);
-    const center=Math.floor(NSLOTS/2); // slot 6 = x0
-    if(luck<50){
-      // Low luck: push toward center
-      const pull=(50-luck)/100; // 0..0.5
-      if(Math.random()<pull){rawSlot=Math.round(rawSlot+(center-rawSlot)*(.4+pull*.6));}
+    const center=Math.floor(NSLOTS/2);
+    const zeroSlot=6; // MULTS[6]=0 — the x0 slot
+    if(luck>=100){
+      // 100% luck: never land on x0, always push to high multiplier (edges)
+      if(rawSlot===zeroSlot){rawSlot=Math.random()<0.5?0:NSLOTS-1;}
+      else{const push=0.9;if(Math.random()<push){rawSlot=rawSlot<center?Math.max(0,rawSlot-Math.floor(Math.random()*3)):Math.min(NSLOTS-1,rawSlot+Math.floor(Math.random()*3));}}
     }else if(luck>50){
-      // High luck: push away from center (toward edges)
+      // High luck: avoid x0 slot and push toward edges
       const push=(luck-50)/100;
-      if(Math.random()<push){rawSlot=Math.round(rawSlot+(rawSlot-center)*(.5+push*.5));}
+      if(rawSlot===zeroSlot&&Math.random()<push*1.8){rawSlot=Math.random()<0.5?5:7;}
+      else if(Math.random()<push){rawSlot=Math.round(rawSlot+(rawSlot-center)*(.5+push*.5));}
+    }else if(luck<50){
+      // Low luck: push toward center (x0)
+      const pull=(50-luck)/100;
+      if(Math.random()<pull){rawSlot=Math.round(rawSlot+(center-rawSlot)*(.4+pull*.6));}
     }
     b.slot=Math.max(0,Math.min(NSLOTS-1,rawSlot));
     slotFlash[b.slot]=1;
@@ -273,13 +270,11 @@ let sessionTotalBet=0,sessionTotalWin=0,sessionBalls=0;
 async function dropBalls(){
   const bet=+document.getElementById('bet-inp').value||0;
   if(bet<1){toast('Введите ставку','err');return;}
-  const cost=bet*nBalls;
-  if(cost>bal){toast('Недостаточно монет (нужно '+cost+')','err');return;}
-  // Deduct from local balance immediately so user can't overspend
-  bal-=cost;
+  if(bet>bal){toast('Недостаточно монет (нужно '+bet+')','err');return;}
+  bal-=bet;
   document.getElementById('r-bal').textContent=bal;
-  betQueue.push({bet,n:nBalls,cost});
-  document.getElementById('s-bet').textContent=(betQueue.reduce((s,b)=>s+b.cost,0))+'  (в очереди: '+betQueue.length+')';
+  betQueue.push({bet,n:1,cost:bet});
+  document.getElementById('s-bet').textContent=bet+(betQueue.length>1?'  (в очереди: '+betQueue.length+')':'');
   if(!animId&&!isFinishing)processQueue();
 }
 
