@@ -203,7 +203,7 @@ function deal(){
   if(bet<1){toast('Введите ставку','err');return;}
   if(bet>bal){toast('Недостаточно монет','err');return;}
   doubled=false;deck=buildDeck();
-  ph=[deck.pop(),deck.pop()];dh=[deck.pop(),deck.pop()];
+  ph=[deck.pop(),deck.pop()];dh=[luckDraw(deck,true),luckDraw(deck,true)];
   active=true;
   document.getElementById('setup').style.display='none';
   document.getElementById('game').classList.add('on');
@@ -233,7 +233,7 @@ function dbl(){
 
 // Luck-biased card draw: high luck = dealer gets worse cards, low luck = dealer gets better cards
 function luckDraw(fromDeck, forDealer){
-  if(!forDealer||userLuck===50)return fromDeck.pop();
+  if(!forDealer||userLuck==50)return fromDeck.pop();
   // Build sorted candidates by face value
   const candidates=[...fromDeck];
   if(userLuck>50&&forDealer){

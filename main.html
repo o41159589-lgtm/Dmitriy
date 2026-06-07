@@ -21,6 +21,12 @@
 <link rel="stylesheet" href="shared.css">
 <style>
 :root{--safe-top:env(safe-area-inset-top,0px);}
+/* Hide toast when not active */
+.toast:not(.show){opacity:0!important;pointer-events:none!important;border-color:transparent!important;background:transparent!important;}
+.toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s!important;}
+/* Hide toast strip when not active */
+.toast:not(.show){opacity:0;pointer-events:none;}
+.toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s;}
 .page{display:none;min-height:calc(100vh - var(--nav-h));animation:fadeIn .2s ease both;}
 .page.active{display:block;}
 /* Fix black bar — safe area padding for sticky topbar in shared.css */
