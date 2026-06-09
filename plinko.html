@@ -28,7 +28,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .toast.err{color:var(--red);border-color:rgba(255,59,85,.3);}
 .toast.info{color:var(--cyan);border-color:rgba(0,229,255,.3);}
 .page{padding:12px 14px 40px;}
-#board-wrap{width:100%;border-radius:18px;overflow:hidden;border:1px solid var(--border2);margin-bottom:14px;background:#080812;position:relative;}
+#board-wrap{width:100%;min-height:200px;border-radius:18px;overflow:hidden;border:1px solid var(--border2);margin-bottom:14px;background:#080812;position:relative;}
 #pc{display:block;width:100%;}
 .setup-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:12px;}
 .stag{font-family:var(--fm);font-size:10px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
@@ -82,7 +82,6 @@ if(tg){tg.ready();tg.expand();}
 if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');}
 const UID=tg?.initDataUnsafe?.user?.id||0;
 
-// Fixed multipliers as specified — 14 slots
 const MULTS=[20,10,2.5,2,1.5,1.2,0,1.2,1.5,2,2.5,5,10,20];
 const NSLOTS=MULTS.length;
 const ROWS=13;
@@ -91,27 +90,39 @@ function multColor(m){
   if(m===0)return'#FF3B55';
   if(m>=20)return'#FFD600';
   if(m>=10)return'#FF9500';
+  if(m>=5)return'#FF6B00';
   if(m>=2.5)return'#00E5FF';
   if(m>=1.5)return'#AAAAFF';
-  if(m>=1)return'#8888CC';
-  return'#FF3B55';
+  return'#8888CC';
 }
 
-let bal=0,userLuck=50,animId=null,balls=[],pendingBet=0;
+let bal=0,userLuck=50,animId=null,balls=[];
 let slotFlash=new Array(NSLOTS).fill(0);
 const canvas=document.getElementById('pc');
 const ctx=canvas.getContext('2d');
 let cW=0,cH=0,slotH=34,pegR=4,ballR=6;
 
-function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),2800);}
-async function loadUser(){const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);if(!u)return;bal=u.balance??0;userLuck=u.luck??50;document.getElementById('r-bal').textContent=bal;}
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t+' show';
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+async function loadUser(){
+  if(!UID)return;
+  const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);
+  if(!u)return;
+  bal=u.balance??0;
+  userLuck=u.luck??50;
+  document.getElementById('r-bal').textContent=bal;
+}
+
 function sb(v){document.getElementById('bet-inp').value=v;}
 function hb(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2));}
 function db(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=v*2;}
 
-
 function resizeCanvas(){
-  cW=canvas.parentElement.offsetWidth;
+  cW=canvas.parentElement.offsetWidth||320;
   cH=Math.min(Math.round(cW*.85),400);
   canvas.width=cW;canvas.height=cH;
   const sp=(cW-24)/(ROWS+1);
@@ -127,25 +138,21 @@ function pegPos(row,col){
 }
 
 function drawBoard(){
+  if(!cW||!cH)return;
   ctx.clearRect(0,0,cW,cH);
   ctx.fillStyle='#080812';ctx.fillRect(0,0,cW,cH);
-
-  // Pegs
   for(let r=0;r<ROWS;r++){
-    for(let c=0;c<=r+1;c++){
-      const p=pegPos(r,c);
+    for(let col=0;col<=r+1;col++){
+      const p=pegPos(r,col);
       ctx.save();ctx.shadowColor='rgba(200,200,255,.3)';ctx.shadowBlur=5;
       ctx.beginPath();ctx.arc(p.x,p.y,pegR,0,Math.PI*2);
       ctx.fillStyle='#2A2845';ctx.fill();ctx.restore();
-      // Bright core
       ctx.beginPath();ctx.arc(p.x,p.y,pegR*.6,0,Math.PI*2);
       const pg=ctx.createRadialGradient(p.x-1,p.y-1,0,p.x,p.y,pegR*.6);
       pg.addColorStop(0,'#BBAAEE');pg.addColorStop(1,'#5548AA');
       ctx.fillStyle=pg;ctx.fill();
     }
   }
-
-  // Slots
   const sy=cH-slotH,sw=cW/NSLOTS;
   for(let i=0;i<NSLOTS;i++){
     const sx=i*sw,m=MULTS[i],col=multColor(m),fl=slotFlash[i]||0;
@@ -160,16 +167,12 @@ function drawBoard(){
     ctx.fillText(m===0?'0':m+'x',sx+sw/2,sy+slotH/2);
   }
   ctx.textAlign='start';
-
-  // Balls
   for(const b of balls){
-    // Trail
     for(let i=0;i<b.trail.length;i++){
       const a=(i/b.trail.length)*.25,sz=ballR*(i/b.trail.length)*.55;
       ctx.beginPath();ctx.arc(b.trail[i].x,b.trail[i].y,Math.max(.5,sz),0,Math.PI*2);
       ctx.fillStyle=`rgba(170,140,255,${a})`;ctx.fill();
     }
-    // Ball
     ctx.save();ctx.shadowColor='rgba(200,180,255,.6)';ctx.shadowBlur=8;
     const bg=ctx.createRadialGradient(b.x-1.5,b.y-1.5,1,b.x,b.y,ballR);
     bg.addColorStop(0,'#DDD0FF');bg.addColorStop(1,'#6030C0');
@@ -177,27 +180,34 @@ function drawBoard(){
   }
 }
 
-let userLuck=50;
-async function fetchLuck(){try{const u=await fetch('/api/user/'+UID).then(r=>r.json());userLuck=u?.luck??50;}catch(e){}}
-function createBall(){return{x:cW/2+(Math.random()-.5)*20,y:ballR+2,vx:(Math.random()-.5)*.4,vy:1.2,trail:[],done:false,slot:-1,_luck:userLuck};}
+function createBall(){
+  return{x:cW/2+(Math.random()-.5)*20,y:ballR+2,vx:(Math.random()-.5)*.4,vy:1.2,
+    trail:[],done:false,slot:-1,_luck:userLuck,_bet:0,_landTime:0};
+}
 
 function stepBall(b){
   if(b.done)return;
-  b.vy=Math.min(b.vy+.38,14);b.x+=b.vx;b.y+=b.vy;b.vx*=.978;
-  b.trail.push({x:b.x,y:b.y});if(b.trail.length>9)b.trail.shift();
+  b.vy=Math.min(b.vy+.38,14);
+  b.x+=b.vx;b.y+=b.vy;b.vx*=.978;
+  b.trail.push({x:b.x,y:b.y});
+  if(b.trail.length>9)b.trail.shift();
   if(b.x<ballR+2){b.x=ballR+2;b.vx=Math.abs(b.vx)+.2;}
   if(b.x>cW-ballR-2){b.x=cW-ballR-2;b.vx=-Math.abs(b.vx)-.2;}
   for(let r=0;r<ROWS;r++){
-    for(let c=0;c<=r+1;c++){
-      const p=pegPos(r,c);
+    for(let col=0;col<=r+1;col++){
+      const p=pegPos(r,col);
       const dx=b.x-p.x,dy=b.y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
       const minD=ballR+pegR+.5;
       if(dist<minD&&dist>.01){
-        const a=Math.atan2(dy,dx),spd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);
-        const lb=(b._luck-50)/50*0.4;
-        b.vx=Math.cos(a)*(spd*.45)+(Math.random()-.5+lb)*1.8;
-        b.vy=Math.abs(Math.sin(a)*(spd*.45)+.4)*(Math.random()*.35+.88);
-        const ov=minD-dist;b.x+=Math.cos(a)*(ov+.8);b.y+=Math.sin(a)*(ov+.8);
+        const ang=Math.atan2(dy,dx),spd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);
+        const luckBias=(b._luck-50)/50;
+        const centerX=cW/2;
+        const dirFromCenter=b.x>=centerX?1:-1;
+        const lb=luckBias*dirFromCenter*0.7;
+        b.vx=Math.cos(ang)*(spd*.45)+(Math.random()-.5+lb)*1.8;
+        b.vy=Math.abs(Math.sin(ang)*(spd*.45)+.4)*(Math.random()*.35+.88);
+        const ov=minD-dist;
+        b.x+=Math.cos(ang)*(ov+.8);b.y+=Math.sin(ang)*(ov+.8);
         if(b.x<ballR+2){b.x=ballR+2;b.vx=Math.abs(b.vx);}
         if(b.x>cW-ballR-2){b.x=cW-ballR-2;b.vx=-Math.abs(b.vx);}
       }
@@ -206,18 +216,25 @@ function stepBall(b){
   if(b.y>=cH-slotH-ballR){
     b.y=cH-slotH-ballR;b.vx=0;b.vy=0;b.done=true;
     let rawSlot=Math.max(0,Math.min(NSLOTS-1,Math.floor(b.x/(cW/NSLOTS))));
-    // Apply luck bias: luck=0 → drift toward center (x0), luck=100 → drift away from center
-    const luck=b._luck||50;
+    const luck=b._luck;
     const center=Math.floor(NSLOTS/2);
     if(luck>=100){
-      if(rawSlot>=5&&rawSlot<=7){rawSlot=Math.random()<0.5?Math.floor(Math.random()*3):NSLOTS-1-Math.floor(Math.random()*3);}
+      if(rawSlot>=4&&rawSlot<=8){
+        rawSlot=Math.random()<0.5
+          ?Math.floor(Math.random()*3)
+          :NSLOTS-1-Math.floor(Math.random()*3);
+      }
     }else if(luck>50){
       const push=(luck-50)/50;
-      if(rawSlot===6&&Math.random()<push){rawSlot=Math.random()<0.5?4:8;}
-      else if(Math.random()<push*.6){rawSlot=rawSlot<center?Math.max(0,rawSlot-1):Math.min(NSLOTS-1,rawSlot+1);}
+      if(rawSlot===6&&Math.random()<push) rawSlot=Math.random()<0.5?4:8;
+      if(Math.random()<push*.7){
+        rawSlot=rawSlot<center
+          ?Math.max(0,rawSlot-Math.ceil(push*2))
+          :Math.min(NSLOTS-1,rawSlot+Math.ceil(push*2));
+      }
     }else if(luck<50){
       const pull=(50-luck)/50;
-      if(Math.random()<pull*.5){rawSlot=Math.round(rawSlot+(center-rawSlot)*.4);}
+      if(Math.random()<pull*.6) rawSlot=Math.round(rawSlot+(center-rawSlot)*.5);
     }
     b.slot=Math.max(0,Math.min(NSLOTS-1,rawSlot));
     b._landTime=Date.now();
@@ -242,21 +259,21 @@ async function resolveBall(b){
   document.getElementById('s-mult').textContent=mult.toFixed(2)+'x';
   document.getElementById('s-win').textContent=(profit>=0?'+':'')+profit;
   document.getElementById('s-win').style.color=profit>=0?'var(--green)':'var(--red)';
-  const res=await fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
+  const res=await fetch('/api/game/play',{
+    method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({user_id:UID,game:'Plinko',bet:b._bet,won:mult>=1.0,multiplier:mult,
       detail:'Plinko x'+mult.toFixed(2)+' ('+(profit>=0?'+':'')+profit+')'})
   }).then(r=>r.json()).catch(()=>null);
   if(res?.new_balance!=null){bal=res.new_balance;document.getElementById('r-bal').textContent=bal;}
-  if(profit>=0)toast(mult.toFixed(2)+'x +'+profit+' coins','ok');
-  else toast(mult.toFixed(2)+'x '+profit+' coins','err');
+  const coin='\u{1FA99}';
+  if(profit>=0)toast(mult.toFixed(2)+'x  +'+profit+' '+coin,'ok');
+  else toast(mult.toFixed(2)+'x  '+profit+' '+coin,'err');
 }
-
-let betQueue=[];
 
 async function dropBalls(){
   const bet=+document.getElementById('bet-inp').value||0;
-  if(bet<1){toast('Введите ставку','err');return;}
-  if(bet>bal){toast('Недостаточно монет (нужно '+bet+')','err');return;}
+  if(bet<1){toast('\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0441\u0442\u0430\u0432\u043a\u0443','err');return;}
+  if(bet>bal){toast('\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u043c\u043e\u043d\u0435\u0442','err');return;}
   bal-=bet;
   document.getElementById('r-bal').textContent=bal;
   document.getElementById('s-bet').textContent=bet;
@@ -266,7 +283,15 @@ async function dropBalls(){
   if(!animId)animId=requestAnimationFrame(loop);
 }
 
-window.addEventListener('load',()=>{resizeCanvas();drawBoard();loadUser();fetchLuck();});
+window.addEventListener('load',()=>{
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      resizeCanvas();
+      drawBoard();
+      loadUser();
+    });
+  });
+});
 window.addEventListener('resize',()=>{if(!animId){resizeCanvas();drawBoard();}});
 </script>
 </body>
