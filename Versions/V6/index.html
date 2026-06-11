@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root{
+  --bg: #06060F;
+  --lime: #FFFFFF;
+  --lime2: #E0E0E0;
+  --purple: #9B5DFF;
+  --cyan: #00E5FF;
+  --muted: #52527A;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  background: var(--bg);
+  width:100%; height:100%; overflow:hidden;
+  font-family: 'Exo 2', sans-serif;
+}
+body {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:100vh; position:relative;
+}
+
+/* noise */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px;
+}
+
+/* ambient glow orbs */
+.bg-orbs {
+  position:fixed; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 50% 35% at 15% 10%,  rgba(155,93,255,0.1)  0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 85% 85%, rgba(0,229,255,0.07)  0%, transparent 65%),
+    radial-gradient(ellipse 60% 25% at 50% 50%, rgba(255,255,255,0.04)  0%, transparent 70%);
+  animation: orb-shift 8s ease-in-out infinite alternate;
+}
+@keyframes orb-shift {
+  from { opacity:1; }
+  to   { opacity:.7; }
+}
+
+/* scanlines */
+.scanlines {
+  position:fixed; inset:0; pointer-events:none; z-index:1;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+  );
+}
+
+/* MAIN CONTENT */
+.splash {
+  display:flex; flex-direction:column; align-items:center; gap:0;
+  position:relative; z-index:2;
+  animation: splash-in .5s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes splash-in {
+  from { opacity:0; transform:translateY(20px); }
+}
+
+/* Logo container */
+.logo-wrap {
+  width:120px; height:120px; border-radius:28px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.2);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:28px;
+  position:relative;
+  animation: logo-pulse 2.5s ease-in-out infinite;
+}
+@keyframes logo-pulse {
+  0%,100% { box-shadow: 0 0 40px rgba(255,255,255,0.15), 0 0 0 0 rgba(255,255,255,0.1); }
+  50%      { box-shadow: 0 0 70px rgba(255,255,255,0.25), 0 0 0 8px rgba(255,255,255,0); }
+}
+.logo-wrap img { width:84px; height:84px; object-fit:contain; }
+.logo-wrap::after {
+  content:'';
+  position:absolute; inset:-2px; border-radius:30px;
+  background: conic-gradient(from var(--angle,0deg), transparent 50%, rgba(255,255,255,0.3) 100%);
+  animation: spin-border 3s linear infinite;
+  z-index:-1;
+}
+@property --angle { syntax:'<angle>'; initial-value:0deg; inherits:false; }
+@keyframes spin-border { to { --angle: 360deg; } }
+
+/* Brand name */
+.brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 58px;
+  letter-spacing: 8px;
+  color: var(--white);
+  text-shadow: 0 0 40px rgba(255,255,255,0.4), 0 0 80px rgba(255,255,255,0.15);
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+/* Tagline */
+.tagline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 52px;
+}
+.tagline span { color: rgba(255,255,255,0.4); }
+
+/* Loader */
+.loader-wrap { width:220px; margin-bottom:14px; }
+.loader-track {
+  width:100%; height:3px;
+  background: rgba(255,255,255,0.05);
+  border-radius:2px; overflow:hidden;
+  position:relative;
+}
+.loader-bar {
+  height:100%; width:0%;
+  background: linear-gradient(90deg, var(--gray1), var(--white), rgba(255,255,255,0.9));
+  border-radius:2px;
+  transition: width .08s linear;
+  box-shadow: 0 0 12px rgba(255,255,255,0.7), 0 0 4px var(--white);
+}
+.loader-shimmer {
+  position:absolute; top:0; left:-40%; width:40%; height:100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+@keyframes shimmer { to { left:140%; } }
+
+.loader-text {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  font-size: 11px;
+  text-align:center;
+  margin-top:10px;
+  letter-spacing: 1px;
+}
+.loader-text::before { content: '> '; color: var(--white); }
+
+/* Particles */
+.particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+.p {
+  position:absolute; border-radius:50%;
+  opacity:0;
+  animation: p-float var(--d,5s) var(--dl,0s) ease-in-out infinite;
+}
+@keyframes p-float {
+  0%   { opacity:0; transform:translateY(100vh) scale(0); }
+  10%  { opacity:.8; }
+  90%  { opacity:.2; }
+  100% { opacity:0; transform:translateY(-30px) scale(1); }
+}
+
+/* Version badge */
+.version-badge {
+  position:fixed; bottom:20px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  color:rgba(120,120,120,0.5); letter-spacing:2px;
+  z-index:2;
+}
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+<div class="scanlines"></div>
+<div class="particles" id="particles"></div>
+
+<div class="splash">
+  <div class="logo-wrap">
+    <img src="logo.png" alt="TopLuck" onerror="this.style.display='none';this.parentNode.innerHTML='🍀'">
+  </div>
+  <div class="brand">TOPLUCK</div>
+  <div class="tagline"><span>//</span> испытай удачу <span>//</span></div>
+  <div class="loader-wrap">
+    <div class="loader-track">
+      <div class="loader-bar" id="lbar"></div>
+      <div class="loader-shimmer"></div>
+    </div>
+    <div class="loader-text" id="ltxt">init</div>
+  </div>
+</div>
+
+<div class="version-badge">TOPLUCK v3.0</div>
+
+<script>
+// ── DEV IMPERSONATION ──
+(function(){
+  try{
+    const _devUid=localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid) return;
+    const _uid=parseInt(_devUid);
+    if(!_uid) return;
+    const tg=window.Telegram?.WebApp;
+    if(!tg) return;
+    if(!tg.initDataUnsafe)      tg.initDataUnsafe={};
+    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user={};
+    tg.initDataUnsafe.user.id=_uid;
+  }catch(_){}
+})();
+
+const tgApp=window.Telegram?.WebApp;
+if(tgApp){tgApp.expand();tgApp.ready();}
+
+const _tgUser=tgApp?.initDataUnsafe?.user;
+const _hasRealInitData=tgApp?.initData&&tgApp.initData.length>0;
+if(_hasRealInitData){
+  try{localStorage.removeItem('__tl_dev_uid__');localStorage.removeItem('__tl_dev_debug__');}catch(_){}
+}
+if(!_tgUser||!_tgUser.id) window.location.replace('not_telegram.html');
+try{const _activeUid=_tgUser?.id;if(_activeUid)sessionStorage.setItem('__tl_uid__',String(_activeUid));}catch(_){}
+
+// Particles
+const pc=document.getElementById('particles');
+const cols=['#FFFFFF','#E0E0E0','#9B5DFF','#00E5FF','#FF2D6B'];
+for(let i=0;i<35;i++){
+  const p=document.createElement('div');
+  p.className='p';
+  const s=1+Math.random()*3;
+  p.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;background:${cols[i%cols.length]};--d:${3+Math.random()*5}s;--dl:${Math.random()*6}s`;
+  pc.appendChild(p);
+}
+
+// Loader sequence
+const bar=document.getElementById('lbar');
+const txt=document.getElementById('ltxt');
+const msgs=['connecting','loading assets','shuffling deck','checking luck','welcome!'];
+let pct=0,msgI=0;
+const iv=setInterval(()=>{
+  pct+=Math.random()*14+5;
+  if(pct>=100){pct=100;clearInterval(iv);}
+  bar.style.width=pct+'%';
+  const mIdx=Math.floor(pct/22);
+  if(mIdx<msgs.length&&mIdx>msgI){msgI=mIdx;txt.textContent=msgs[mIdx];}
+  if(pct>=100) setTimeout(()=>{window.location.href='main.html';},400);
+},150);
+</script>
+</body>
+</html>

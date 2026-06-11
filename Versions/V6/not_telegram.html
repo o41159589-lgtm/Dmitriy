@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck — Открой в Telegram</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+:root{
+  --bg:#06060F; --lime:#FFFFFF; --lime2:#E0E0E0;
+  --cyan:#00E5FF; --purple:#9B5DFF; --muted:#52527A;
+  --muted2:#7A7AAA; --text:#F0EFFF;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  background:var(--bg);color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  min-height:100vh;overflow-x:hidden;
+}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;}
+
+/* noise */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px;
+}
+
+.bg-orbs{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 50% 35% at 15% 10%, rgba(155,93,255,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 85% 85%, rgba(0,229,255,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 25% at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 70%);
+}
+
+.card{
+  position:relative;z-index:1;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:28px;
+  padding:36px 24px 32px;
+  max-width:360px;width:100%;
+  text-align:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px rgba(0,0,0,0.5);
+  animation:fadeUp .5s cubic-bezier(.4,0,.2,1) both;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+
+/* Logo */
+.logo-mini{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px;}
+.logo-mini-icon{
+  width:42px;height:42px;border-radius:12px;
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.logo-mini-text{
+  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;
+  color:var(--white);text-shadow:0 0 20px rgba(255,255,255,0.4);
+}
+
+/* TG icon */
+.tg-icon{
+  width:86px;height:86px;border-radius:50%;
+  background:linear-gradient(135deg,#2aabee,#229ed9);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 22px;
+  box-shadow:0 0 40px rgba(42,171,238,0.35), 0 8px 24px rgba(0,0,0,0.4);
+  animation:pulse-tg 2.5s ease-in-out infinite;
+}
+@keyframes pulse-tg{
+  0%,100%{box-shadow:0 0 40px rgba(42,171,238,0.3),0 8px 24px rgba(0,0,0,0.4);}
+  50%{box-shadow:0 0 65px rgba(42,171,238,0.55),0 8px 30px rgba(0,0,0,0.5);}
+}
+.tg-icon svg{width:44px;height:44px;}
+
+.headline{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:24px;letter-spacing:2px;
+  color:var(--text);margin-bottom:10px;
+}
+.sub{font-size:14px;color:var(--muted2);line-height:1.7;margin-bottom:26px;}
+.sub b{color:var(--text);}
+
+/* Steps */
+.steps{display:flex;flex-direction:column;gap:8px;margin-bottom:26px;text-align:left;}
+.step{
+  display:flex;align-items:flex-start;gap:12px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;padding:12px 14px;
+}
+.step-num{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--white);color:#000;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 2px 10px rgba(255,255,255,0.4);
+}
+.step-text{font-size:13px;color:var(--text);line-height:1.5;padding-top:3px;}
+.step-text span{color:var(--white);font-weight:700;}
+
+/* CTA button */
+.open-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,#2aabee,#229ed9);
+  border:none;border-radius:16px;color:#fff;
+  font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;
+  cursor:pointer;text-decoration:none;
+  box-shadow:0 4px 24px rgba(42,171,238,0.35),inset 0 1px 0 rgba(255,255,255,0.2);
+  transition:opacity .15s,transform .1s;
+  margin-bottom:14px;
+}
+.open-btn:active{transform:scale(.98);opacity:.9;}
+.open-btn svg{width:20px;height:20px;}
+
+.note{font-size:11px;color:var(--muted);line-height:1.7;font-family:'JetBrains Mono',monospace;}
+.note a{color:var(--white);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+
+<div class="card">
+  <div class="logo-mini">
+    <div class="logo-mini-icon">🍀</div>
+    <span class="logo-mini-text">TOPLUCK</span>
+  </div>
+
+  <div class="tg-icon">
+    <svg viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+  </div>
+
+  <div class="headline">ОТКРОЙ В TELEGRAM</div>
+  <p class="sub">Это приложение работает только как <b>Telegram Mini App</b>. Запустить его в браузере напрямую невозможно.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">Найди нашего бота: <span>@TopLuckBot</span></div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">Нажми <span>/start</span> чтобы зарегистрироваться</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">Нажми кнопку <span>🎮 Играть</span> в боте</div>
+    </div>
+  </div>
+
+  <a class="open-btn" href="https://t.me/TopLuckBot" target="_blank">
+    <svg viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+    ОТКРЫТЬ БОТА
+  </a>
+  <p class="note">// уже зарегистрированы? просто откройте игру через бота — аккаунт привязан автоматически по <a href="#">telegram id</a></p>
+</div>
+
+<script>
+(async()=>{
+  try{
+    await fetch('/api/notify_not_telegram',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ua:navigator.userAgent,ref:document.referrer,lang:navigator.language||''})
+    });
+  }catch(_){}
+})();
+</script>
+</body>
+</html>
