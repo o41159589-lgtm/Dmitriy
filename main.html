@@ -174,7 +174,7 @@
 #dev-debug-badge{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:rgba(255,59,85,0.12);border:1px solid rgba(255,59,85,0.35);border-radius:8px;padding:3px 10px;font-size:10px;color:var(--red);font-family:var(--font-mono);letter-spacing:1px;z-index:200;pointer-events:none;backdrop-filter:blur(10px);}
 
 /* ── ANIMATED BG GRADIENT ── */
-body{background:#06060F;}
+body{background:#0F0F0F;}
 .bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
     radial-gradient(ellipse 65% 38% at 15% 5%,rgba(100,40,220,0.13) 0%,transparent 60%),
@@ -206,7 +206,7 @@ body{background:#06060F;}
 @keyframes pepeBounce{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-5px) rotate(3deg);}}
 .hbs-info{display:flex;flex-direction:column;gap:1px;}
 .hbs-lbl{font-size:9px;color:rgba(255,214,0,0.45);letter-spacing:2px;text-transform:uppercase;font-family:var(--font-mono);}
-.hbs-amt{font-family:var(--font-mono);font-size:24px;font-weight:700;color:#FFD600;line-height:1.1;}
+.hbs-amt{font-family:var(--font-mono);font-size:24px;font-weight:700;color:#F59E0B;line-height:1.1;}
 .hbs-topup{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);border-radius:12px;padding:9px 14px;color:#fff;font-family:var(--font-display);font-size:14px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
 .hbs-topup:active{transform:scale(.95);background:rgba(255,255,255,0.12);}
 
@@ -322,9 +322,9 @@ body{background:#06060F;}
       <div class="prof-stat"><div class="prof-stat-val" id="prof-won">—</div><div class="prof-stat-lbl">Выиграно</div></div>
     </div>
     <div class="prof-menu-card">
-      <div class="prof-menu-row" onclick="openTopup()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#E8C000,#FFD600)">⭐</div><div class="prof-menu-label">Пополнить звёзды</div><span class="prof-menu-arr">›</span></div>
+      <div class="prof-menu-row" onclick="openTopup()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#E8C000,#F59E0B)">⭐</div><div class="prof-menu-label">Пополнить звёзды</div><span class="prof-menu-arr">›</span></div>
       <div class="prof-menu-row" onclick="showGiftsPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#005533,#00C878)">🎁</div><div class="prof-menu-label">Мои подарки</div><span class="prof-menu-arr">›</span></div>
-      <div class="prof-menu-row" onclick="showRefPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#3300AA,#9B5DFF)">👥</div><div class="prof-menu-label">Реф. система</div><span class="prof-menu-right" id="prof-refs">0</span><span class="prof-menu-arr">›</span></div>
+      <div class="prof-menu-row" onclick="showRefPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#3300AA,#8B5CF6)">👥</div><div class="prof-menu-label">Реф. система</div><span class="prof-menu-right" id="prof-refs">0</span><span class="prof-menu-arr">›</span></div>
       <div class="prof-menu-row" onclick="showTasksPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#446600,#C8FF00)">✅</div><div class="prof-menu-label">Задания</div><span class="prof-menu-right" id="prof-tasks-done" style="color:var(--green)"></span><span class="prof-menu-arr">›</span></div>
       <div class="prof-menu-row" onclick="showPromoPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#660022,#FF2D6B)">🎟</div><div class="prof-menu-label">Промокод</div><span class="prof-menu-arr">›</span></div>
     </div>
