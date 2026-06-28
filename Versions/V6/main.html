@@ -18,164 +18,672 @@
   }catch(e){}
 })();
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
 <style>
-:root{--safe-top:env(safe-area-inset-top,0px);}
-/* Hide toast when not active */
-.toast:not(.show){opacity:0!important;pointer-events:none!important;background:transparent!important;border-color:transparent!important;}
-.toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s!important;}
-.page{display:none;min-height:calc(100vh - var(--nav-h));animation:fadeIn .2s ease both;}
+/* ═══════════════════════════════════════════════
+   TOPLUCK — DAYTIME SKY THEME
+   Overrides shared.css dark theme for main.html
+═══════════════════════════════════════════════ */
+:root {
+  /* New light-sky vars */
+  --F: 'Caveat', cursive;
+  --FU: 'Nunito', sans-serif;
+  --sky: #7EC0E4;
+  --DT: #1A2040;
+  --DT2: #445080;
+  --DM: #8090B0;
+  --DC: rgba(255,255,255,0.88);
+  --DB: rgba(255,255,255,0.72);
+  --DS: 0 4px 18px rgba(0,30,70,0.10);
+  /* Override shared.css dark CSS vars */
+  --lime: #C8FF00;
+  --glass-bg: rgba(255,255,255,0.85);
+  --glass-border: rgba(255,255,255,0.68);
+  --bg: #90C8E8;
+  --bg2: #F4F8FF;
+  --bg3: #EAF2FF;
+  --text: #1A2040;
+  --muted: #8090B0;
+  --muted2: #8090B0;
+  --white: #1A2040;
+  --gold: #C07800;
+  --green: #1A9A50;
+  --red: #CC2030;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.12);
+  --card: rgba(255,255,255,0.82);
+  --safe-top: env(safe-area-inset-top,0px);
+}
+
+/* ── Global sky background ── */
+html, body {
+  background: linear-gradient(175deg,#70B8DC 0%,#84C4E8 28%,#9FD2F0 55%,#BEE3F8 100%) fixed !important;
+  color: var(--DT) !important;
+  font-family: var(--FU) !important;
+}
+body::before { display:none !important; }
+.liquid-bg { display:none !important; }
+
+/* ── Clouds layer (fixed, behind everything) ── */
+.sky-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.cld {
+  position: absolute;
+  background: rgba(255,255,255,0.86);
+  border-radius: 60px;
+  filter: drop-shadow(0 5px 14px rgba(80,140,190,0.22));
+}
+.cld::before, .cld::after {
+  content: '';
+  position: absolute;
+  background: rgba(255,255,255,0.90);
+  border-radius: 50%;
+}
+/* Cloud 1 – top-left */
+.c1{width:150px;height:50px;top:3%;left:2%}
+.c1::before{width:72px;height:68px;top:-36px;left:20px}
+.c1::after{width:56px;height:56px;top:-26px;left:72px}
+/* Cloud 2 – top-right */
+.c2{width:190px;height:60px;top:2%;right:3%}
+.c2::before{width:90px;height:82px;top:-44px;left:24px}
+.c2::after{width:68px;height:64px;top:-30px;left:94px}
+/* Cloud 3 – mid-left */
+.c3{width:120px;height:40px;top:25%;left:-18px}
+.c3::before{width:58px;height:56px;top:-30px;left:16px}
+.c3::after{width:46px;height:44px;top:-18px;left:60px}
+/* Cloud 4 – mid-right small */
+.c4{width:100px;height:34px;top:20%;right:8%}
+.c4::before{width:48px;height:46px;top:-24px;left:12px}
+.c4::after{width:38px;height:36px;top:-14px;left:50px}
+/* Cloud 5 – lower-right */
+.c5{width:140px;height:46px;top:55%;right:1%}
+.c5::before{width:66px;height:62px;top:-34px;left:18px}
+.c5::after{width:52px;height:50px;top:-22px;left:68px}
+/* Cloud 6 – lower-left */
+.c6{width:170px;height:56px;top:72%;left:20%}
+.c6::before{width:80px;height:74px;top:-40px;left:22px}
+.c6::after{width:62px;height:58px;top:-24px;left:84px}
+/* Cloud 7 – bottom-right */
+.c7{width:105px;height:36px;top:86%;right:35%}
+.c7::before{width:50px;height:48px;top:-26px;left:12px}
+.c7::after{width:40px;height:38px;top:-14px;left:52px}
+
+/* Sun */
+.sky-sun {
+  position: fixed;
+  width: 54px; height: 54px;
+  background: #FFD028;
+  border-radius: 50%;
+  top: 36%; right: 16%;
+  z-index: 0; pointer-events: none;
+  box-shadow: 0 0 0 7px rgba(255,210,40,0.20),
+              0 0 0 16px rgba(255,210,40,0.09),
+              0 0 28px rgba(255,210,40,0.25);
+}
+
+/* ── Page base ── */
+.page{display:none;min-height:calc(100vh - var(--nav-h));animation:fadeIn .2s ease both;position:relative;z-index:1;}
 .page.active{display:block;}
-/* Fix black bar — safe area padding for sticky topbar in shared.css */
+.toast:not(.show){opacity:0!important;pointer-events:none!important;background:transparent!important;border-color:transparent!important;}
+.toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s !important;}
 .topbar{padding-top:calc(12px + env(safe-area-inset-top,0px)) !important;}
-/* Nav sits above bottom safe area */
 .nav{bottom:calc(10px + env(safe-area-inset-bottom,0px)) !important;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}}
 
-/* Cards */
-.bj-card{background:linear-gradient(135deg,#0D0D0D,#181818);border:1px solid rgba(255,255,255,.1);align-items:center;}
-.plinko-card{background:linear-gradient(135deg,#0D0010,#180020);border:1px solid rgba(139,92,246,.2);align-items:center;}
-.badge-white{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);}
-.badge-blue{background:rgba(59,130,246,.2);color:#93C5FD;border:1px solid rgba(59,130,246,.3);}
-.badge-purple{background:rgba(139,92,246,.2);color:#C4B5FD;border:1px solid rgba(139,92,246,.3);}
+/* ── Toast (light) ── */
+.toast{
+  background:rgba(255,255,255,0.97)!important;
+  border:1.5px solid rgba(0,0,0,0.09)!important;
+  color:var(--DT)!important;
+  box-shadow:0 8px 28px rgba(0,30,70,0.13)!important;
+}
+.toast.ok{color:#1A9A50!important;border-color:rgba(26,154,80,0.3)!important;}
+.toast.err{color:#CC2030!important;border-color:rgba(204,32,48,0.3)!important;}
 
-/* HOME */
+/* ══════════════════════════════
+   NAVIGATION
+══════════════════════════════ */
+.nav {
+  background: rgba(255,255,255,0.94)!important;
+  border: 1.5px solid rgba(255,255,255,0.88)!important;
+  box-shadow: 0 -3px 20px rgba(0,30,70,0.11), 0 4px 0 rgba(255,255,255,0.4)!important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.nav-btn {
+  color: #C0C8D8!important;
+  font-family: var(--FU)!important;
+  font-size: 9px!important;
+  font-weight: 800!important;
+  letter-spacing: .3px!important;
+}
+.nav-btn.active{color:var(--DT)!important;}
+.nav-ind{background:#FFD028!important;box-shadow:0 0 10px rgba(255,210,40,0.65)!important;}
+
+/* ══════════════════════════════
+   GAMES PAGE
+══════════════════════════════ */
+.games-content{padding:0 14px 28px;}
+.games-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:calc(18px + env(safe-area-inset-top,0px));
+  padding-bottom:14px;
+}
+.games-title{
+  font-family:var(--F)!important;
+  font-size:38px!important;
+  font-weight:700!important;
+  color:var(--DT)!important;
+  letter-spacing:0!important;
+  line-height:1.05;
+}
+.coin-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,0.95)!important;
+  border:2px solid #FFD028!important;
+  border-radius:22px!important;
+  padding:8px 16px!important;
+  font-family:var(--FU)!important;
+  font-size:17px!important;
+  font-weight:900!important;
+  color:var(--DT)!important;
+  box-shadow:0 3px 12px rgba(0,30,70,0.09)!important;
+}
+
+/* ── Sketch game cards base ── */
+.game-card{
+  display:flex!important;
+  align-items:stretch!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  margin-bottom:14px!important;
+  cursor:pointer!important;
+  transition:transform .12s, box-shadow .15s!important;
+  min-height:148px!important;
+  text-decoration:none!important;
+  border:none!important;
+  box-shadow:0 5px 20px rgba(0,30,70,0.13), inset 0 1px 0 rgba(255,255,255,0.75)!important;
+  position:relative;
+}
+.game-card:active{transform:scale(.975)!important;box-shadow:0 2px 10px rgba(0,30,70,0.14)!important;}
+.gc-overlay{display:none!important;}
+.banner-card{border:none!important;}
+
+/* Card left/right columns */
+.sk-l{flex:1;padding:20px 0 20px 22px;display:flex;flex-direction:column;justify-content:center;}
+.sk-r{width:128px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:12px 14px 12px 0;}
+
+/* Text inside cards */
+.sk-name{
+  font-family:var(--F)!important;
+  font-size:44px!important;
+  font-weight:700!important;
+  line-height:1;
+  margin-bottom:7px;
+  letter-spacing:0;
+}
+.sk-desc{
+  font-family:var(--FU)!important;
+  font-size:13px!important;
+  font-weight:700!important;
+  line-height:1.5;
+  max-width:172px;
+}
+.sk-badge{
+  display:inline-block;
+  padding:3px 10px;
+  border-radius:20px;
+  font-family:var(--FU);
+  font-size:11px;font-weight:800;
+  margin-bottom:6px;
+}
+.sk-badge.violet{background:rgba(140,60,240,0.14);color:#6820A8;border:1.5px solid rgba(140,60,240,0.32);}
+.sk-badge.rose{background:rgba(240,60,80,0.11);color:#A01830;border:1.5px solid rgba(240,60,80,0.28);}
+
+/* Card color themes */
+.sk-roulette{background:linear-gradient(135deg,#FFECF0,#FFD8E4);}
+.sk-roulette .sk-name{color:#C83858;}
+.sk-roulette .sk-desc{color:rgba(70,10,30,0.68);}
+
+.sk-mines{background:linear-gradient(135deg,#E8F4FF,#D0E8FF);}
+.sk-mines .sk-name{color:#2868B8;}
+.sk-mines .sk-desc{color:rgba(15,40,80,0.68);}
+
+.sk-tower{background:linear-gradient(135deg,#F0FFE4,#DFFFC2);}
+.sk-tower .sk-name{color:#489818;}
+.sk-tower .sk-desc{color:rgba(20,50,8,0.65);}
+
+.sk-gta{background:linear-gradient(135deg,#FFF4E0,#FFDFA0);}
+.sk-gta .sk-name{color:#B86810;}
+.sk-gta .sk-desc{color:rgba(70,35,5,0.65);}
+
+.sk-bj{background:linear-gradient(135deg,#EDE8FF,#DDD0FF);}
+.sk-bj .sk-name{color:#5828A8;}
+.sk-bj .sk-desc{color:rgba(35,15,65,0.65);}
+
+.sk-plinko{background:linear-gradient(135deg,#E0F8FF,#C4EEFF);}
+.sk-plinko .sk-name{color:#1068A0;}
+.sk-plinko .sk-desc{color:rgba(5,35,65,0.65);}
+
+/* Art: roulette CSS wheel */
+.roulette-art{
+  width:96px;height:96px;flex-shrink:0;
+  border-radius:50%;
+  background:conic-gradient(
+    #F06880 0deg 30deg,#fff 30deg 60deg,
+    #F06880 60deg 90deg,#fff 90deg 120deg,
+    #F06880 120deg 150deg,#fff 150deg 180deg,
+    #F06880 180deg 210deg,#fff 210deg 240deg,
+    #F06880 240deg 270deg,#fff 270deg 300deg,
+    #F06880 300deg 330deg,#fff 330deg 360deg
+  );
+  border:5px solid #B848A0;
+  box-shadow:0 0 0 3px rgba(255,255,255,0.7),0 6px 20px rgba(200,60,160,0.28);
+  transform:rotate(10deg);
+  position:relative;
+}
+.roulette-art::before{
+  content:'';position:absolute;inset:7px;
+  border-radius:50%;border:2px dashed rgba(255,255,255,0.5);
+}
+.roulette-art::after{
+  content:'';position:absolute;
+  width:24px;height:24px;background:#FFD028;
+  border-radius:50%;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  border:3px solid rgba(190,70,150,0.5);
+  box-shadow:0 2px 8px rgba(0,0,0,0.22);
+}
+
+/* Art: mines grid */
+.mines-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.mines-grid span{
+  width:32px;height:32px;
+  background:rgba(255,255,255,0.70);
+  border:1.5px solid rgba(50,110,200,0.22);
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;line-height:1;
+}
+
+/* Art: big emoji */
+.sk-emoji{
+  font-size:74px;line-height:1;
+  filter:drop-shadow(0 4px 14px rgba(0,0,0,0.16));
+  display:block;
+}
+.sk-emoji.tilt-r{transform:rotate(6deg);}
+.sk-emoji.tilt-l{transform:rotate(-6deg);}
+
+/* star decorations */
+.sk-star{
+  position:absolute;pointer-events:none;user-select:none;
+  font-style:normal;
+}
+
+/* ══════════════════════════════
+   HOME (ИНФО) PAGE
+══════════════════════════════ */
 .home-content{padding:0 14px 24px;}
-.hero{padding:20px 0 16px;display:flex;align-items:center;gap:14px;}
-.hero-logo{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 20px rgba(255,255,255,0.08);}
+.hero{padding:calc(18px + env(safe-area-inset-top,0px)) 0 16px;display:flex;align-items:center;gap:14px;}
+.hero-logo{
+  width:54px;height:54px;border-radius:16px;
+  background:rgba(255,255,255,0.80)!important;
+  border:2px solid rgba(255,255,255,0.60)!important;
+  box-shadow:0 4px 14px rgba(0,30,70,0.10)!important;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
 .hero-logo img{width:38px;height:38px;object-fit:contain;}
-.hero h1{font-family:var(--font-display);font-size:34px;letter-spacing:2px;color:var(--white);text-shadow:0 0 30px rgba(200,255,0,0.4);margin-bottom:2px;}
-.hero p{font-size:13px;color:var(--muted2);font-weight:500;}
-.about-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;position:relative;}
-.about-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,255,0,0.2),transparent);pointer-events:none;}
-.about-card-head{padding:12px 16px;font-family:var(--font-mono);font-size:11px;color:var(--white);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid rgba(200,255,0,0.08);}
-.about-links{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05);}
-.about-links p{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:12px;}
-.about-link{display:flex;align-items:center;gap:12px;border-radius:14px;padding:12px 14px;margin-bottom:8px;text-decoration:none;color:var(--text);border:1px solid;transition:opacity .15s;}
+.hero h1{
+  font-family:var(--F)!important;font-size:36px!important;
+  color:var(--DT)!important;text-shadow:none!important;letter-spacing:0!important;margin-bottom:2px;
+}
+.hero p{color:var(--DT2)!important;font-family:var(--FU)!important;font-size:13px;}
+.about-card{
+  background:var(--DC)!important;
+  border:2px solid var(--DB)!important;
+  box-shadow:var(--DS)!important;
+  border-radius:var(--r);overflow:hidden;margin-bottom:12px;
+}
+.about-card::before{display:none!important;}
+.about-card-head{
+  padding:12px 16px;
+  font-family:var(--FU)!important;font-size:11px;font-weight:800;
+  color:var(--DM)!important;letter-spacing:1px;text-transform:uppercase;
+  background:rgba(68,80,128,0.04);
+  border-bottom:1px solid rgba(0,0,0,0.06)!important;
+}
+.about-links{padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.05);}
+.about-links p{font-size:14px;line-height:1.7;color:var(--DT2)!important;margin-bottom:12px;}
+.about-link{
+  display:flex;align-items:center;gap:12px;border-radius:14px;
+  padding:12px 14px;margin-bottom:8px;text-decoration:none;
+  color:var(--DT)!important;border:1.5px solid;transition:opacity .15s;
+}
 .about-link:last-child{margin-bottom:0;}
-.about-link.cyan{background:rgba(0,229,255,0.06);border-color:rgba(0,229,255,0.18);}
-.about-link.purple{background:rgba(155,93,255,0.06);border-color:rgba(155,93,255,0.18);}
-.about-link.green{background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.18);}
+.about-link.cyan{background:rgba(0,180,220,0.06)!important;border-color:rgba(0,180,220,0.22)!important;}
+.about-link.purple{background:rgba(140,80,255,0.06)!important;border-color:rgba(140,80,255,0.22)!important;}
+.about-link.green{background:rgba(0,200,100,0.06)!important;border-color:rgba(0,200,100,0.22)!important;}
 .about-link:active{opacity:.75;}
 .about-link-icon{font-size:22px;}
-.about-link-title{font-weight:700;font-size:14px;margin-bottom:2px;}
-.about-link-sub{font-size:11px;color:var(--muted2);}
-.about-person{border-top:1px solid rgba(255,255,255,0.04);}
-.about-person:first-child{border-top:none;}
+.about-link-title{font-weight:700;font-size:14px;margin-bottom:2px;color:var(--DT)!important;}
+.about-link-sub{font-size:11px;color:var(--DM)!important;}
+.about-person{border-top:1px solid rgba(0,0,0,0.05)!important;}
+.about-person:first-child{border-top:none!important;}
 .ap-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;}
 .ap-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
-.ap-title{flex:1;font-weight:700;font-size:14px;}
-.ap-arr{color:var(--muted2);font-size:18px;transition:transform .2s;}
+.ap-title{flex:1;font-weight:700;font-size:14px;color:var(--DT)!important;}
+.ap-arr{color:var(--DM)!important;font-size:18px;transition:transform .2s;}
 .ap-arr.open{transform:rotate(90deg);}
-.ap-content{padding:4px 16px 14px 52px;font-size:13px;line-height:1.7;color:rgba(240,239,255,.7);}
+.ap-content{padding:4px 16px 14px 52px;font-size:13px;line-height:1.7;color:var(--DT2)!important;}
 .ap-content p{margin-bottom:5px;}
-.ap-content a{color:var(--white);text-decoration:none;}
+.ap-content a{color:var(--DT)!important;text-decoration:none;}
 
-/* PROFILE */
-.profile-wrap{padding:14px 14px 24px;}
-.profile-top-card{position:relative;overflow:hidden;background:var(--glass-bg);border:1px solid rgba(200,255,0,0.12);border-radius:var(--r);padding:28px 20px 22px;text-align:center;margin-bottom:12px;}
-.profile-top-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,255,0,0.35),transparent);}
-.profile-top-card::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(200,255,0,0.05) 0%,transparent 70%);}
-.prof-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#6030EE);border:2px solid rgba(200,255,0,0.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:32px;color:#fff;margin:0 auto 12px;box-shadow:0 0 30px rgba(155,93,255,0.35);background-size:cover;background-position:center;position:relative;z-index:1;}
-.prof-name{font-family:var(--font-display);font-size:24px;color:var(--text);letter-spacing:1px;margin-bottom:2px;position:relative;z-index:1;}
-.prof-username{font-size:13px;color:var(--white);font-weight:600;position:relative;z-index:1;}
-.prof-bal-row{background:rgba(255,214,0,0.06);border:1px solid rgba(255,214,0,0.2);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
-.prof-bal-lbl{font-size:11px;color:rgba(255,214,0,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-family:var(--font-mono);}
-.prof-bal-val{font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--gold);}
-.prof-topup-btn{padding:10px 16px;background:var(--white);border:none;border-radius:12px;color:#000;font-family:var(--font-display);font-size:16px;cursor:pointer;letter-spacing:.5px;box-shadow:0 0 16px rgba(200,255,0,0.3);}
-/* XP bar — orange fill */
-.prof-xp-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;}
+/* ══════════════════════════════
+   PROFILE PAGE
+══════════════════════════════ */
+.profile-wrap{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;}
+.profile-top-card{
+  position:relative;overflow:hidden;
+  background:var(--DC)!important;
+  border:2px solid var(--DB)!important;
+  box-shadow:var(--DS)!important;
+  border-radius:var(--r);padding:28px 20px 22px;text-align:center;margin-bottom:12px;
+}
+.profile-top-card::before,.profile-top-card::after{display:none!important;}
+.prof-avatar{
+  width:80px;height:80px;border-radius:50%;
+  background:linear-gradient(135deg,#5030C8,#4090E0)!important;
+  border:2px solid rgba(255,255,255,0.58)!important;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--F);font-size:32px;color:#fff;
+  margin:0 auto 12px;
+  box-shadow:0 6px 20px rgba(50,80,200,0.25)!important;
+  background-size:cover;background-position:center;position:relative;z-index:1;
+}
+.prof-name{font-family:var(--F)!important;font-size:26px!important;color:var(--DT)!important;letter-spacing:0!important;margin-bottom:2px;position:relative;z-index:1;}
+.prof-username{font-size:13px;color:var(--DT2)!important;font-weight:600;position:relative;z-index:1;}
+.prof-bal-row{
+  background:rgba(255,255,255,0.88)!important;
+  border:2px solid rgba(255,210,40,0.40)!important;
+  border-radius:var(--r);padding:14px 16px;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.prof-bal-lbl{font-size:11px;color:rgba(150,110,0,0.55)!important;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-family:var(--FU);}
+.prof-bal-val{font-family:var(--FU)!important;font-size:24px!important;font-weight:900!important;color:#A07000!important;}
+.prof-topup-btn{
+  padding:10px 16px;background:var(--DT)!important;border:none;border-radius:12px;
+  color:#fff!important;font-family:var(--FU)!important;font-size:14px!important;font-weight:800!important;
+  cursor:pointer;box-shadow:0 4px 14px rgba(0,20,60,0.22)!important;
+}
+.prof-xp-card{
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  box-shadow:var(--DS)!important;border-radius:var(--r);padding:14px 16px;margin-bottom:12px;
+}
 .prof-xp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.prof-xp-label{font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:1.5px;}
-.prof-xp-level{font-family:var(--font-display);font-size:28px;color:var(--white);}
-.prof-xp-track{height:7px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;}
-.prof-xp-fill{height:100%;background:linear-gradient(90deg,#E8630A,#FF9500);border-radius:4px;width:0%;transition:width .6s ease;box-shadow:0 0 10px rgba(255,120,0,0.6);}
+.prof-xp-label{font-family:var(--FU)!important;font-size:10px;color:var(--DM)!important;letter-spacing:1.5px;text-transform:uppercase;}
+.prof-xp-level{font-family:var(--F)!important;font-size:30px!important;color:var(--DT)!important;}
+.prof-xp-track{height:7px;background:rgba(0,0,0,0.08)!important;border-radius:4px;overflow:hidden;}
+.prof-xp-fill{height:100%;background:linear-gradient(90deg,#E8630A,#FF9800);border-radius:4px;width:0%;transition:width .6s ease;box-shadow:0 0 10px rgba(255,130,0,0.55);}
 .prof-xp-sub{display:flex;justify-content:space-between;margin-top:5px;}
-.prof-xp-sub span{font-size:10px;color:var(--muted2);font-family:var(--font-mono);}
+.prof-xp-sub span{font-size:10px;color:var(--DM)!important;font-family:var(--FU);}
 .prof-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
-.prof-stat{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:12px 8px;text-align:center;}
-.prof-stat-val{font-family:var(--font-mono);font-size:17px;color:var(--white);font-weight:700;}
-.prof-stat-lbl{font-size:10px;color:var(--muted2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
-.prof-menu-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
-.prof-menu-row{display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;transition:background .12s;border-bottom:1px solid rgba(255,255,255,.04);}
-.prof-menu-row:last-child{border-bottom:none;}
-.prof-menu-row:active{background:rgba(255,255,255,0.04);}
+.prof-stat{
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  box-shadow:var(--DS)!important;border-radius:14px;padding:12px 8px;text-align:center;
+}
+.prof-stat-val{font-family:var(--FU)!important;font-size:17px;color:var(--DT)!important;font-weight:800!important;}
+.prof-stat-lbl{font-size:10px;color:var(--DM)!important;margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+.prof-menu-card{
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  box-shadow:var(--DS)!important;border-radius:var(--r);overflow:hidden;margin-bottom:12px;
+}
+.prof-menu-row{
+  display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;
+  transition:background .12s;border-bottom:1px solid rgba(0,0,0,0.05)!important;
+  background:transparent!important;
+}
+.prof-menu-row:last-child{border-bottom:none!important;}
+.prof-menu-row:active{background:rgba(0,0,0,0.03)!important;}
 .prof-menu-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.prof-menu-label{flex:1;font-size:15px;font-weight:600;color:var(--text);}
-.prof-menu-right{font-size:13px;color:var(--muted2);font-weight:600;margin-right:3px;font-family:var(--font-mono);}
-.prof-menu-arr{font-size:18px;color:var(--muted2);line-height:1;}
-.prof-invite-btn{width:100%;padding:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:var(--r);color:var(--white);font-family:var(--font-display);font-size:18px;letter-spacing:1px;cursor:pointer;margin-bottom:12px;transition:background .15s,transform .1s;}
-.prof-invite-btn:active{transform:scale(.98);background:rgba(255,255,255,0.14);}
+.prof-menu-label{flex:1;font-size:15px;font-weight:700;color:var(--DT)!important;}
+.prof-menu-right{font-size:13px;color:var(--DM)!important;font-weight:600;margin-right:3px;}
+.prof-menu-arr{font-size:18px;color:#C8D0E0!important;line-height:1;}
+.prof-invite-btn{
+  width:100%;padding:16px;
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  border-radius:var(--r);color:var(--DT)!important;
+  font-family:var(--F)!important;font-size:20px!important;letter-spacing:0!important;
+  cursor:pointer;margin-bottom:12px;transition:background .15s,transform .1s;
+}
+.prof-invite-btn:active{transform:scale(.98);}
 .sub-panel-back{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.sub-panel-back button{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:7px 12px;color:var(--white);font-size:18px;cursor:pointer;font-weight:700;}
-.sub-panel-title{font-family:var(--font-display);font-size:18px;color:var(--white);letter-spacing:1px;}
-.promo-input-wrap{background:rgba(255,214,0,0.05);border:1px solid rgba(255,214,0,0.2);border-radius:var(--r);padding:16px;margin-bottom:10px;}
+.sub-panel-back button{
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  border-radius:10px;padding:7px 12px;color:var(--DT)!important;font-size:18px;cursor:pointer;font-weight:700;
+}
+.sub-panel-title{font-family:var(--F)!important;font-size:22px!important;color:var(--DT)!important;letter-spacing:0!important;}
+.promo-input-wrap{
+  background:rgba(255,210,40,0.07)!important;
+  border:2px solid rgba(255,210,40,0.28)!important;
+  border-radius:var(--r);padding:16px;margin-bottom:10px;
+}
 .promo-row{display:flex;gap:8px;}
-.promo-input{flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-transform:uppercase;}
-.promo-input:focus{border-color:rgba(200,255,0,0.5);}
-.promo-ok{padding:11px 16px;background:var(--white);border:none;border-radius:12px;color:#000;font-family:var(--font-display);font-size:16px;cursor:pointer;white-space:nowrap;}
+.promo-input{
+  flex:1;background:rgba(255,255,255,0.88)!important;
+  border:1.5px solid rgba(0,0,0,0.12)!important;
+  border-radius:12px;padding:11px 14px;color:var(--DT)!important;
+  font-family:var(--FU)!important;font-size:14px;outline:none;text-transform:uppercase;
+}
+.promo-input:focus{border-color:rgba(60,90,200,0.50)!important;}
+.promo-ok{
+  padding:11px 16px;background:var(--DT)!important;border:none;
+  border-radius:12px;color:#fff!important;font-family:var(--F)!important;
+  font-size:18px!important;cursor:pointer;white-space:nowrap;
+}
 .promo-result{text-align:center;font-size:13px;font-weight:600;min-height:16px;margin-top:10px;}
-.ref-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);margin-bottom:12px;}
+.ref-card{
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  border-radius:var(--r);margin-bottom:12px;
+}
 .ref-card-body{padding:14px 16px;}
-.ref-link-btn{margin-top:12px;width:100%;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:var(--white);font-weight:700;font-size:13px;cursor:pointer;}
-
-/* GAMES */
-.games-content{padding:14px 14px 0;}
-.games-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
-.games-title{font-family:var(--font-display);font-size:24px;color:var(--text);letter-spacing:1px;}
-.coin-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,214,0,0.1);border:1px solid rgba(255,214,0,0.2);border-radius:12px;padding:8px 14px;font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--gold);}
-.game-card{display:flex;align-items:flex-end;border-radius:22px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .12s,box-shadow .15s;position:relative;min-height:140px;text-decoration:none;}
-.game-card:active{transform:scale(.985);}
-.banner-card{background-size:cover;background-position:center top;border:1px solid rgba(255,255,255,0.1);min-height:160px;}
-.gc-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.1) 55%,transparent 100%);border-radius:inherit;}
-.gta-card{background:linear-gradient(135deg,#0D0D0D,#1A1A1A);border:1px solid rgba(255,255,255,.1);align-items:center;}
-.gc-text{flex:1;padding:16px 18px;position:relative;z-index:2;}
-.gc-badge{display:inline-block;margin-bottom:7px;padding:3px 9px;border-radius:6px;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
-.badge-red{background:rgba(239,68,68,.25);color:#ff6b6b;border:1px solid rgba(239,68,68,.3);}
-.badge-brown{background:rgba(180,100,30,.3);color:#fbbf6a;border:1px solid rgba(200,120,40,.4);}
-.badge-cyan{background:rgba(6,182,212,.2);color:#67e8f9;border:1px solid rgba(6,182,212,.3);}
-.gc-name{font-family:var(--font-display);font-size:28px;color:#fff;letter-spacing:.5px;margin-bottom:5px;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.8);}
-.gc-desc{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5;}
-.gc-art{width:100px;flex-shrink:0;display:flex;align-items:center;justify-content:center;align-self:stretch;position:relative;z-index:2;}
-.gc-art-emoji{font-size:60px;line-height:1;filter:drop-shadow(0 4px 16px rgba(0,0,0,.5));transform:rotate(-8deg);animation:float-emoji 3s ease-in-out infinite;}
-@keyframes float-emoji{0%,100%{transform:rotate(-8deg) translateY(0);}50%{transform:rotate(-5deg) translateY(-5px);}}
-
-/* HISTORY */
-.hist-content{padding:14px;}
-/* SHOP */
-.shop-content{padding:14px;}
-.shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.shop-title{font-family:var(--font-display);font-size:22px;color:var(--text);letter-spacing:1px;}
-.shop-bal{display:flex;align-items:center;gap:5px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:7px 12px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);}
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:200;display:none;align-items:flex-end;}
-.ov.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid rgba(200,255,0,0.12);border-radius:24px 24px 0 0;padding:20px 18px 36px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(200,255,0,0.1);}
-.error-msg{background:rgba(255,59,85,.08);border:1px solid rgba(255,59,85,.25);border-radius:12px;padding:10px 13px;color:var(--red);font-size:13px;margin-bottom:12px;display:none;}
-.error-msg.show{display:block;}
-.bal-card{background:rgba(255,214,0,0.06);border:1px solid rgba(255,214,0,0.18);border-radius:var(--r);padding:18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
-.bal-card-num{font-family:var(--font-mono);font-size:30px;font-weight:700;color:var(--gold);}
-.bal-card-lbl{font-size:11px;color:rgba(255,214,0,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-family:var(--font-mono);}
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.sc{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:14px 12px;text-align:center;}
-.sc-ico{font-size:22px;margin-bottom:6px;}
-.sc-lbl{font-size:11px;color:var(--muted2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
-.sc-val{font-family:var(--font-mono);font-size:18px;color:var(--text);font-weight:700;}
-.topup-btn{width:100%;padding:14px;margin-bottom:12px;background:var(--white);border:none;border-radius:var(--r);color:#000;font-family:var(--font-display);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 24px rgba(200,255,0,.3);transition:opacity .15s,transform .1s;}
-.topup-btn:active{transform:scale(.98);opacity:.9;}
-.task-item{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
-.task-item.done{border-color:rgba(0,255,136,0.25);}
-.task-icon{width:40px;height:40px;border-radius:12px;background:rgba(200,255,0,0.08);border:1px solid rgba(200,255,0,0.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.task-icon.done{background:rgba(0,255,136,0.1);border-color:rgba(0,255,136,0.2);}
+.irow{border-bottom:1px solid rgba(0,0,0,0.06)!important;}
+.irow-l{color:var(--DM)!important;font-family:var(--FU);}
+.irow-r{color:var(--DT)!important;font-family:var(--FU);}
+.ref-link-btn{
+  margin-top:12px;width:100%;padding:12px;
+  background:rgba(0,0,0,0.05)!important;border:1.5px solid rgba(0,0,0,0.10)!important;
+  border-radius:12px;color:var(--DT)!important;font-weight:700;font-size:13px;cursor:pointer;
+}
+.task-item{
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  border-radius:16px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
+}
+.task-item.done{border-color:rgba(26,154,80,0.28)!important;}
+.task-icon{
+  width:40px;height:40px;border-radius:12px;
+  background:rgba(68,80,160,0.07)!important;border:1.5px solid rgba(68,80,160,0.14)!important;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.task-icon.done{background:rgba(26,154,80,0.10)!important;border-color:rgba(26,154,80,0.22)!important;}
 .task-body{flex:1;}
-.task-title{font-weight:700;font-size:14px;margin-bottom:2px;}
-.task-desc{font-size:11px;color:var(--muted2);}
+.task-title{font-weight:700;font-size:14px;margin-bottom:2px;color:var(--DT);}
+.task-desc{font-size:11px;color:var(--DM);}
 .task-right{text-align:right;flex-shrink:0;}
-.task-reward{font-family:var(--font-mono);font-size:13px;color:var(--white);font-weight:700;}
-.task-btn{margin-top:5px;padding:5px 10px;background:var(--lime);border:none;border-radius:8px;color:#000;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-display);}
-.ref-hi{display:flex;align-items:center;gap:12px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:12px 14px;margin-bottom:8px;}
-#dev-debug-badge{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:rgba(255,59,85,0.12);border:1px solid rgba(255,59,85,0.35);border-radius:8px;padding:3px 10px;font-size:10px;color:var(--red);font-family:var(--font-mono);letter-spacing:1px;z-index:200;pointer-events:none;backdrop-filter:blur(10px);}
+.task-reward{font-family:var(--FU)!important;font-size:13px;color:var(--DT)!important;font-weight:800!important;}
+.task-btn{
+  margin-top:5px;padding:5px 10px;background:var(--DT)!important;border:none;
+  border-radius:8px;color:#fff!important;font-size:11px;font-weight:700;cursor:pointer;
+}
+.ref-hi{
+  display:flex;align-items:center;gap:12px;
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  border-radius:14px;padding:12px 14px;margin-bottom:8px;
+}
+
+/* ══════════════════════════════
+   HISTORY PAGE
+══════════════════════════════ */
+.hist-content{padding:14px;}
+.hist-filter .hf{
+  background:rgba(255,255,255,0.75)!important;border:1.5px solid rgba(255,255,255,0.88)!important;
+  color:var(--DM)!important;font-family:var(--FU)!important;font-weight:700!important;
+}
+.hist-filter .hf.a{background:var(--DT)!important;color:#fff!important;border-color:var(--DT)!important;}
+.hstats .hs{background:var(--DC)!important;border:2px solid var(--DB)!important;}
+.hs-l{color:var(--DM)!important;font-family:var(--FU);}
+.hi{
+  background:var(--DC)!important;border:2px solid var(--DB)!important;
+  box-shadow:0 2px 8px rgba(0,30,70,0.07)!important;
+}
+.hi-t{color:var(--DT)!important;font-family:var(--FU);}
+.hi-s{color:var(--DM)!important;font-family:var(--FU);}
+
+/* ══════════════════════════════
+   SHOP PAGE
+══════════════════════════════ */
+.shop-content{padding:14px;}
+.shop-header{display:flex;align-items:center;justify-content:space-between;
+  padding-top:calc(0px + env(safe-area-inset-top,0px));margin-bottom:14px;}
+.shop-title{font-family:var(--F)!important;font-size:28px!important;color:var(--DT)!important;letter-spacing:0!important;}
+.shop-bal{
+  background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(255,210,40,0.38)!important;
+  border-radius:10px;padding:7px 12px;
+  font-family:var(--FU)!important;font-size:13px!important;font-weight:800!important;color:#A07000!important;
+  display:flex;align-items:center;gap:5px;
+}
+.owner-note{
+  background:rgba(255,255,255,0.75)!important;border:1.5px solid rgba(0,0,0,0.07)!important;
+  color:var(--DT2)!important;border-radius:var(--r);padding:14px;margin-bottom:12px;font-size:13px;line-height:1.6;
+}
+.gift-card{
+  background:rgba(255,255,255,0.92)!important;border:2px solid rgba(255,255,255,0.82)!important;
+  box-shadow:0 4px 16px rgba(0,30,70,0.09)!important;
+}
+.gift-card:hover{border-color:rgba(68,80,160,0.25)!important;}
+.gift-emoji-wrap{background:rgba(68,80,160,0.05)!important;border-color:rgba(68,80,160,0.12)!important;}
+.gift-name{color:var(--DT)!important;}
+.gift-price{color:#A07000!important;}
+.gift-buy-btn{background:var(--DT)!important;color:#fff!important;font-family:var(--FU)!important;font-weight:800!important;}
+.gift-loading{color:var(--DM)!important;}
+
+/* ══════════════════════════════
+   MODALS
+══════════════════════════════ */
+.ov{position:fixed;inset:0;background:rgba(0,20,60,0.42);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;display:none;align-items:flex-end;}
+.ov.open{display:flex;}
+.modal{
+  background:rgba(244,248,255,0.98)!important;
+  border:2px solid rgba(255,255,255,0.90)!important;
+  border-radius:24px 24px 0 0;padding:20px 18px 36px;width:100%;
+  max-height:90vh;overflow-y:auto;
+  box-shadow:0 -8px 40px rgba(0,30,70,0.16)!important;
+}
+.mh{background:rgba(0,0,0,0.14)!important;}
+.mt{color:var(--DT)!important;font-family:var(--F)!important;font-size:26px!important;font-weight:700!important;letter-spacing:0!important;margin-bottom:14px;}
+.error-msg{
+  background:rgba(204,32,48,0.07)!important;border:1.5px solid rgba(204,32,48,0.25)!important;
+  border-radius:12px;padding:10px 13px;color:#CC2030!important;font-size:13px;margin-bottom:12px;display:none;
+}
+.error-msg.show{display:block;}
+.form-input{
+  background:rgba(0,0,0,0.04)!important;border:1.5px solid rgba(0,0,0,0.12)!important;
+  border-radius:12px;padding:10px 12px;color:var(--DT)!important;
+  font-family:var(--FU)!important;font-size:14px;outline:none;width:100%;
+}
+.form-input:focus{border-color:rgba(60,90,200,0.48)!important;}
+textarea.form-input{color:var(--DT)!important;}
+.form-label{color:var(--DM)!important;font-family:var(--FU)!important;font-size:12px!important;margin-bottom:6px;display:block;}
+.toggle-slider{background:rgba(0,0,0,0.09)!important;border-color:rgba(0,0,0,0.12)!important;}
+.toggle-slider::before{background:#B0BCC8!important;}
+input:checked + .toggle-slider{background:var(--DT)!important;}
+input:checked + .toggle-slider::before{background:#fff!important;transform:translateX(20px);}
+.toggle-label{color:var(--DT)!important;font-family:var(--FU)!important;}
+.rc-btn{
+  background:rgba(0,0,0,0.05)!important;border:1px solid rgba(0,0,0,0.09)!important;
+  color:var(--DM)!important;border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:700;
+}
+.rc-btn.active{background:rgba(26,32,64,0.09)!important;border-color:rgba(26,32,64,0.20)!important;color:var(--DT)!important;}
+.mqb{
+  background:rgba(0,0,0,0.05)!important;border:1px solid rgba(0,0,0,0.08)!important;
+  color:var(--DM)!important;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;font-weight:700;
+}
+.btn-cancel{background:rgba(0,0,0,0.06)!important;border:1px solid rgba(0,0,0,0.09)!important;color:var(--DM)!important;}
+.btn-confirm{background:var(--DT)!important;color:#fff!important;font-family:var(--FU)!important;font-weight:800!important;}
+.modal-gift-preview{background:rgba(0,0,0,0.04)!important;border:1px solid rgba(0,0,0,0.08)!important;border-radius:16px;padding:14px;display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.mg-icon{
+  width:52px;height:52px;border-radius:14px;font-size:28px;
+  background:rgba(68,80,160,0.06)!important;border:1.5px solid rgba(68,80,160,0.12)!important;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.mg-name{color:var(--DT)!important;font-weight:700;margin-bottom:3px;}
+.mg-price{color:#A07000!important;font-size:13px;font-weight:700;}
+.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.ta{
+  background:rgba(0,0,0,0.04)!important;border:1.5px solid rgba(0,0,0,0.09)!important;
+  border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:border-color .12s;
+}
+.ta.sel{background:rgba(26,32,64,0.07)!important;border-color:rgba(26,32,64,0.22)!important;}
+.ta-c{color:#A07000!important;font-family:var(--FU)!important;font-weight:800;font-size:16px;margin-bottom:3px;}
+.ta-s{color:var(--DM)!important;font-size:11px;font-weight:700;}
+.ta-confirm{
+  width:100%;padding:14px;background:var(--DT)!important;border:none;
+  border-radius:var(--r);color:#fff!important;
+  font-family:var(--FU)!important;font-weight:800!important;font-size:16px;cursor:pointer;
+}
+/* topup custom input */
+#ta-custom{
+  background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(0,0,0,0.12)!important;
+  border-radius:10px;padding:9px 12px;color:var(--DT)!important;
+  font-family:var(--FU)!important;font-size:14px;outline:none;text-align:center;
+}
+/* topup star label */
+.ov p[style]{color:var(--DM)!important;}
+
+/* ── Misc ── */
+.empty{color:var(--DM)!important;}
+.inv-item{background:var(--DC)!important;border:2px solid var(--DB)!important;border-radius:14px;display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;}
+.inv-icon{width:40px;height:40px;border-radius:12px;background:rgba(68,80,160,0.06)!important;border:1.5px solid rgba(68,80,160,0.12)!important;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.inv-name{color:var(--DT)!important;font-weight:700;}
+.inv-meta{color:var(--DM)!important;font-size:11px;}
+.inv-qty{color:var(--DT2)!important;font-weight:700;}
+.topbar{background:rgba(255,255,255,0.92)!important;border-bottom:1px solid rgba(0,0,0,0.06)!important;backdrop-filter:blur(16px);}
+.fp-back{background:rgba(0,0,0,0.05)!important;border-color:rgba(0,0,0,0.10)!important;color:var(--DT)!important;}
+.fp-title{color:var(--DT)!important;}
+.bal-chip{background:rgba(255,210,40,0.12)!important;border-color:rgba(255,210,40,0.34)!important;color:#A07000!important;}
+#dev-debug-badge{
+  position:fixed;top:8px;left:50%;transform:translateX(-50%);
+  background:rgba(255,59,85,0.10)!important;border:1.5px solid rgba(255,59,85,0.30)!important;
+  border-radius:8px;padding:3px 10px;font-size:10px;color:#CC2030!important;
+  font-family:var(--FU);letter-spacing:1px;z-index:200;pointer-events:none;backdrop-filter:blur(10px);
+}
+.bal-card{background:rgba(255,210,40,0.07)!important;border:1.5px solid rgba(255,210,40,0.20)!important;}
+.bal-card-num{color:#A07000!important;}
+.bal-card-lbl{color:rgba(150,110,0,0.55)!important;}
 </style>
 </head>
 <body>
+
+<!-- Sky layer: clouds + sun -->
+<div class="sky-layer" aria-hidden="true">
+  <div class="cld c1"></div>
+  <div class="cld c2"></div>
+  <div class="cld c3"></div>
+  <div class="cld c4"></div>
+  <div class="cld c5"></div>
+  <div class="cld c6"></div>
+  <div class="cld c7"></div>
+  <div class="sky-sun"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="liquid-bg"></div>
 
@@ -187,7 +695,7 @@
       <div><h1>TOPLUCK</h1><p>Испытай удачу вместе с нами!</p></div>
     </div>
     <div class="about-card">
-      <div class="about-card-head">// О TOPLUCK</div>
+      <div class="about-card-head">О TOPLUCK</div>
       <div class="about-links">
         <p><b>TOPLUCK</b> — платформа для игр в Telegram 🍀<br>Испытай удачу в рулетке, минах, башне и ГТА-режиме!</p>
         <a href="https://t.me/TopLuckScrins" target="_blank" class="about-link cyan"><span class="about-link-icon">📢</span><div><div class="about-link-title">Канал с выдачами</div><div class="about-link-sub">@TopLuckScrins — новости и призы</div></div></a>
@@ -204,7 +712,7 @@
       <div class="ap-content" id="cnt-sponsor" style="display:none;border-bottom:none"><p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p></div>
     </div>
     <div class="about-card" style="margin-bottom:0">
-      <div class="about-card-head">// ПРАВИЛА ИГР</div>
+      <div class="about-card-head">ПРАВИЛА ИГР</div>
       <div class="about-person" onclick="togglePerson('r-roulette')"><div class="ap-head"><span class="ap-icon">🎡</span><div class="ap-title">Европейская рулетка</div><span class="ap-arr" id="arr-r-roulette">›</span></div></div>
       <div class="ap-content" id="cnt-r-roulette" style="display:none"><p>Поставь монеты на цвет, чётность или число. Колесо 0–36.</p><p>🔴 Красное/Чёрное — <b>×2</b> | 🟢 Зеро — <b>×14</b></p><p>Чётное/Нечётное — <b>×2</b> | Дюжина — <b>×3</b></p></div>
       <div class="about-person" onclick="togglePerson('r-gta')"><div class="ap-head"><span class="ap-icon">🏎️</span><div class="ap-title">ГТА Рулетка</div><span class="ap-arr" id="arr-r-gta">›</span></div></div>
@@ -214,7 +722,7 @@
       <div class="about-person" onclick="togglePerson('r-tower')"><div class="ap-head"><span class="ap-icon">🗼</span><div class="ap-title">Башня</div><span class="ap-arr" id="arr-r-tower">›</span></div></div>
       <div class="ap-content" id="cnt-r-tower" style="display:none"><p>Поднимайся по этажам — на каждом 1 бомба из 3 клеток. Кешаут в любой момент.</p></div>
       <div class="about-person" onclick="togglePerson('r-plinko')" style="border-bottom:none"><div class="ap-head"><span class="ap-icon">🟣</span><div class="ap-title">Plinko</div><span class="ap-arr" id="arr-r-plinko">›</span></div></div>
-      <div class="ap-content" id="cnt-r-plinko" style="display:none;border-bottom:none"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
+      <div class="ap-content" id="cnt-r-plinko" style="display:none;border-bottom:none"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/2.5/2/1.5/1.2/<b style="color:#CC2030">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
     </div>
   </div>
 </div>
@@ -232,7 +740,7 @@
       <button class="prof-topup-btn" onclick="openTopup()">+ ПОПОЛНИТЬ</button>
     </div>
     <div class="prof-xp-card">
-      <div class="prof-xp-header"><span class="prof-xp-label">// УРОВЕНЬ</span><span class="prof-xp-level" id="prof-level">0</span></div>
+      <div class="prof-xp-header"><span class="prof-xp-label">УРОВЕНЬ</span><span class="prof-xp-level" id="prof-level">0</span></div>
       <div class="prof-xp-track"><div class="prof-xp-fill" id="prof-xp-bar"></div></div>
       <div class="prof-xp-sub"><span>XP: <span id="prof-xp">0</span></span><span>до ур. <span id="prof-xp-next">100</span></span></div>
     </div>
@@ -245,12 +753,17 @@
       <div class="prof-menu-row" onclick="openTopup()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#E8C000,#FFD600)">⭐</div><div class="prof-menu-label">Пополнить звёзды</div><span class="prof-menu-arr">›</span></div>
       <div class="prof-menu-row" onclick="showGiftsPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#005533,#00C878)">🎁</div><div class="prof-menu-label">Мои подарки</div><span class="prof-menu-arr">›</span></div>
       <div class="prof-menu-row" onclick="showRefPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#3300AA,#9B5DFF)">👥</div><div class="prof-menu-label">Реф. система</div><span class="prof-menu-right" id="prof-refs">0</span><span class="prof-menu-arr">›</span></div>
-      <div class="prof-menu-row" onclick="showTasksPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#446600,#C8FF00)">✅</div><div class="prof-menu-label">Задания</div><span class="prof-menu-right" id="prof-tasks-done" style="color:var(--green)"></span><span class="prof-menu-arr">›</span></div>
+      <div class="prof-menu-row" onclick="showTasksPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#226600,#5DBB00)">✅</div><div class="prof-menu-label">Задания</div><span class="prof-menu-right" id="prof-tasks-done" style="color:#1A9A50"></span><span class="prof-menu-arr">›</span></div>
       <div class="prof-menu-row" onclick="showPromoPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#660022,#FF2D6B)">🎟</div><div class="prof-menu-label">Промокод</div><span class="prof-menu-arr">›</span></div>
     </div>
     <button class="prof-invite-btn" onclick="copyRef()">🔗 ПРИГЛАСИТЬ ДРУЗЕЙ</button>
     <div id="prof-gifts-panel" style="display:none"><div class="sub-panel-back"><button onclick="hideGiftsPanel()">‹</button><span class="sub-panel-title">МОИ ПОДАРКИ</span></div><div id="prof-gifts-list"><div class="empty"><span class="empty-i">📭</span><p>Подарков нет</p></div></div></div>
-    <div id="prof-ref-panel" style="display:none"><div class="sub-panel-back"><button onclick="hideRefPanel()">‹</button><span class="sub-panel-title">РЕФЕРАЛЫ</span></div><div class="ref-card"><div class="ref-card-body"><div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div><div class="irow"><span class="irow-l">Приглашено</span><span class="irow-r" id="ref-count-big">0</span></div><button class="ref-link-btn" onclick="copyRef()">🔗 Скопировать реф. ссылку</button></div></div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:1.5px;margin:12px 0 8px">// КТО И КОГДА ПЕРЕШЁЛ</div><div id="ref-history-list"><div class="empty"><span class="empty-i">📭</span><p>Рефералов пока нет</p></div></div></div>
+    <div id="prof-ref-panel" style="display:none">
+      <div class="sub-panel-back"><button onclick="hideRefPanel()">‹</button><span class="sub-panel-title">РЕФЕРАЛЫ</span></div>
+      <div class="ref-card"><div class="ref-card-body"><div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:#1A9A50">+10 монет</span></div><div class="irow"><span class="irow-l">Приглашено</span><span class="irow-r" id="ref-count-big">0</span></div><button class="ref-link-btn" onclick="copyRef()">🔗 Скопировать реф. ссылку</button></div></div>
+      <div style="font-family:var(--FU);font-size:10px;color:var(--DM);letter-spacing:1.5px;margin:12px 0 8px;text-transform:uppercase">КТО И КОГДА ПЕРЕШЁЛ</div>
+      <div id="ref-history-list"><div class="empty"><span class="empty-i">📭</span><p>Рефералов пока нет</p></div></div>
+    </div>
     <div id="prof-promo-panel" style="display:none"><div class="sub-panel-back"><button onclick="hidePromoPanel()">‹</button><span class="sub-panel-title">ПРОМОКОД</span></div><div class="promo-input-wrap"><div class="promo-row"><input id="promo-inp" type="text" class="promo-input" placeholder="ВВЕДИ КОД..." oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')activatePromo()"/><button class="promo-ok" onclick="activatePromo()">OK</button></div><div id="promo-result" class="promo-result"></div></div></div>
     <div id="prof-tasks-panel" style="display:none"><div class="sub-panel-back"><button onclick="hideTasksPanel()">‹</button><span class="sub-panel-title">ЗАДАНИЯ</span></div><div id="tasks-list"><div class="empty"><span class="empty-i">⏳</span><p>Загружаем задания...</p></div></div></div>
   </div>
@@ -259,13 +772,88 @@
 <!-- GAMES -->
 <div class="page active" id="page-games">
   <div class="games-content">
-    <div class="games-header"><div class="games-title">ВЫБЕРИ ИГРУ</div><div class="coin-pill">🪙 <span id="r-bal">0</span></div></div>
-    <a class="game-card banner-card" href="european_roulette.html" style="background-image:url('banner_roulette.png')"><div class="gc-overlay"></div></a>
-    <a class="game-card banner-card" href="mines.html" style="background-image:url('banner_mines.png')"><div class="gc-overlay"></div></a>
-    <a class="game-card banner-card" href="tower.html" style="background-image:url('banner_tower.png')"><div class="gc-overlay"></div></a>
-    <a class="game-card gta-card" href="gta_roulette.html"><div class="gc-text"><div class="gc-badge badge-cyan">ХАЙСТАВКИ</div><div class="gc-name">ГТА РУЛЕТКА</div><div class="gc-desc">Общий банк — чем больше ставка, тем выше шанс</div></div><div class="gc-art"><span class="gc-art-emoji">🏎️</span></div></a>
-    <a class="game-card bj-card" href="blackjack.html"><div class="gc-text"><div class="gc-badge badge-white">КАРТЫ</div><div class="gc-name">БЛЭКДЖЕК</div><div class="gc-desc">Побей дилера не перебрав 21 — классика казино</div></div><div class="gc-art"><span class="gc-art-emoji">🃏</span></div></a>
-    <a class="game-card plinko-card" href="plinko.html"><div class="gc-text"><div class="gc-badge badge-purple">ФИЗИКА</div><div class="gc-name">PLINKO</div><div class="gc-desc">Брось шар — он сам найдёт путь к множителю</div></div><div class="gc-art"><span class="gc-art-emoji">🟣</span></div></a>
+    <div class="games-header">
+      <div class="games-title">Где полудим?)</div>
+      <div class="coin-pill">🪙 <span id="r-bal">0</span></div>
+    </div>
+
+    <!-- Рулетка -->
+    <a class="game-card sk-roulette" href="european_roulette.html">
+      <div class="sk-l">
+        <em class="sk-star" style="top:12px;right:128px;font-size:16px">⭐</em>
+        <div class="sk-name">РУЛЕТКА</div>
+        <div class="sk-desc">Крути колесо, ставь на красное/чёрное — до ×36!</div>
+      </div>
+      <div class="sk-r">
+        <div class="roulette-art"></div>
+        <em class="sk-star" style="bottom:14px;right:16px;font-size:13px">⭐</em>
+      </div>
+    </a>
+
+    <!-- Mines -->
+    <a class="game-card sk-mines" href="mines.html">
+      <div class="sk-l">
+        <em class="sk-star" style="top:14px;right:130px;font-size:13px;color:rgba(50,120,220,0.5)">✦</em>
+        <div class="sk-name">MINES</div>
+        <div class="sk-desc">Откопай алмазы, не попадись на мины и делай иксы!</div>
+        <em class="sk-star" style="bottom:14px;left:20px;font-size:12px;color:rgba(50,120,220,0.4)">✦</em>
+      </div>
+      <div class="sk-r">
+        <div class="mines-grid">
+          <span>💎</span><span>💣</span><span>💎</span>
+          <span>💣</span><span>💎</span><span>❓</span>
+          <span>❓</span><span>💎</span><span>💣</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Башня -->
+    <a class="game-card sk-tower" href="tower.html">
+      <div class="sk-l">
+        <em class="sk-star" style="top:12px;right:126px;font-size:16px">⭐</em>
+        <div class="sk-name">БАШНЯ</div>
+        <div class="sk-desc">Поднимайся по этажам — каждый шаг умножает выигрыш!</div>
+      </div>
+      <div class="sk-r" style="align-items:flex-end;padding-bottom:0">
+        <span class="sk-emoji tilt-l" style="font-size:90px;margin-bottom:-4px">🗼</span>
+      </div>
+    </a>
+
+    <!-- GTA Рулетка -->
+    <a class="game-card sk-gta" href="gta_roulette.html">
+      <div class="sk-l">
+        <div class="sk-badge violet">ХАЙСТАВКИ</div>
+        <div class="sk-name">ГТА РУЛЕТКА</div>
+        <div class="sk-desc">Общий банк — чем больше ставка, тем выше шанс</div>
+      </div>
+      <div class="sk-r">
+        <span class="sk-emoji tilt-r">🏎️</span>
+      </div>
+    </a>
+
+    <!-- Блэкджек -->
+    <a class="game-card sk-bj" href="blackjack.html">
+      <div class="sk-l">
+        <div class="sk-badge rose">КАРТЫ</div>
+        <div class="sk-name">БЛЭКДЖЕК</div>
+        <div class="sk-desc">Побей дилера не перебрав 21 — классика казино</div>
+      </div>
+      <div class="sk-r">
+        <span class="sk-emoji tilt-r">🃏</span>
+      </div>
+    </a>
+
+    <!-- Plinko -->
+    <a class="game-card sk-plinko" href="plinko.html">
+      <div class="sk-l">
+        <div class="sk-name">PLINKO</div>
+        <div class="sk-desc">Брось шар — он сам найдёт путь к множителю</div>
+      </div>
+      <div class="sk-r">
+        <span class="sk-emoji tilt-l">🟣</span>
+      </div>
+    </a>
+
   </div>
 </div>
 
@@ -287,10 +875,22 @@
 <!-- SHOP -->
 <div class="page" id="page-shop">
   <div class="shop-content">
-    <div class="shop-header"><div class="shop-title">МАГАЗИН</div><div style="display:flex;align-items:center;gap:8px"><div class="shop-bal">🪙 <span id="shop-bal">—</span></div><button onclick="openTopup()" style="background:var(--lime);border:none;border-radius:10px;color:#000;padding:7px 12px;font-family:var(--font-display);font-size:14px;cursor:pointer;">+ ТОП</button></div></div>
+    <div class="shop-header">
+      <div class="shop-title">МАГАЗИН</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="shop-bal">🪙 <span id="shop-bal">—</span></div>
+        <button onclick="openTopup()" style="background:var(--DT);border:none;border-radius:10px;color:#fff;padding:7px 12px;font-family:var(--FU);font-size:13px;font-weight:800;cursor:pointer;">+ ТОП</button>
+      </div>
+    </div>
     <div class="hist-filter" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="hf a" onclick="shopTab('bot',this)">🤖 От бота</div><div class="hf" onclick="shopTab('owner',this)">👑 От владельца</div></div>
-    <div id="shop-bot"><div class="owner-note" style="border-color:rgba(255,59,85,.3);background:rgba(255,59,85,.07);color:rgba(255,200,200,.9);">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div><div id="bot-gifts-inner"><div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div></div></div>
-    <div id="shop-owner" style="display:none"><div class="owner-note">👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>✅ <b>Можно конвертировать в звёзды</b>.<br><br>После покупки владелец получит уведомление.</div><div class="gift-grid" id="owner-gifts-grid"></div></div>
+    <div id="shop-bot">
+      <div class="owner-note" style="border-color:rgba(204,32,48,.25);background:rgba(204,32,48,.05);color:#A01828;">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div>
+      <div id="bot-gifts-inner"><div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div></div>
+    </div>
+    <div id="shop-owner" style="display:none">
+      <div class="owner-note">👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>✅ <b>Можно конвертировать в звёзды</b>.<br><br>После покупки владелец получит уведомление.</div>
+      <div class="gift-grid" id="owner-gifts-grid"></div>
+    </div>
   </div>
 </div>
 
@@ -298,7 +898,7 @@
 <div class="ov" id="buy-modal" onclick="closeBuyModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">КУПИТЬ ПОДАРОК</div><div class="error-msg" id="buy-error"></div><div class="modal-gift-preview"><div class="mg-icon" id="m-icon">🎁</div><div><div class="mg-name" id="m-name">—</div><div class="mg-price">🪙 <span id="m-price">—</span> монет</div></div></div><div class="form-group"><label class="form-label">Кому:</label><div class="rc-btns"><div class="rc-btn active" onclick="setRecipient('self',this)">🙋 Себе</div><div class="rc-btn" onclick="setRecipient('other',this)">👤 По ID</div></div><div id="m-recipient-wrap" style="display:none;margin-top:6px"><input class="form-input" id="m-recipient" type="number" placeholder="Telegram ID получателя" inputmode="numeric"></div></div><div class="toggle-row"><span class="toggle-label">🎭 Анонимно</span><label class="toggle"><input type="checkbox" id="m-anon"><span class="toggle-slider"></span></label></div><div class="form-group"><label class="form-label">Подпись (необязательно):</label><textarea class="form-input" id="m-msg" rows="2" placeholder="Текст подписи..."></textarea><div class="msg-quick"><div class="mqb" onclick="document.getElementById('m-msg').value=''">Без подписи</div><div class="mqb" onclick="setAutoMsg()">Авто 🤖</div></div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeBuyModal()">Отмена</button><button class="btn-confirm" id="m-confirm" onclick="confirmPurchase()">КУПИТЬ ⭐</button></div></div></div>
 
 <!-- TOPUP MODAL -->
-<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)"><div class="modal"><div class="mh"></div><div class="mt">💳 ПОПОЛНЕНИЕ</div><p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p><div class="ta-grid"><div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 🪙</div></div><div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 🪙</div></div><div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 🪙</div></div><div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 🪙</div></div></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span><input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()" style="flex:1;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-align:center;"/><span style="color:var(--gold)">⭐</span></div><button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button></div></div>
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)"><div class="modal"><div class="mh"></div><div class="mt">💳 ПОПОЛНЕНИЕ</div><p style="color:var(--DM);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p><div class="ta-grid"><div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 🪙</div></div><div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 🪙</div></div><div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 🪙</div></div><div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 🪙</div></div></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:var(--DM);font-size:13px;white-space:nowrap">Или введите:</span><input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()"/><span style="color:#A07000">⭐</span></div><button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button></div></div>
 
 <!-- NAV -->
 <nav class="nav" id="main-nav">
@@ -313,13 +913,8 @@
 <script>
 const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
-// Show close button (×) on main — acts like dismissing the app
-if(tg?.BackButton){
-  tg.BackButton.hide();
-}
-if(tg?.MainButton){
-  tg.MainButton.hide();
-}
+if(tg?.BackButton){tg.BackButton.hide();}
+if(tg?.MainButton){tg.MainButton.hide();}
 if(!tg?.initDataUnsafe?.user?.id)window.location.replace('not_telegram.html');
 
 const UID=tg?.initDataUnsafe?.user?.id||0;
@@ -328,7 +923,6 @@ let FIRST_NAME=tg?.initDataUnsafe?.user?.first_name||'Игрок';
 const _IS_DEV_MODE=!!localStorage.getItem('__tl_dev_uid__');
 if(_IS_DEV_MODE){USERNAME='';FIRST_NAME='';}
 
-// Bot username — fetched dynamically from /api/bot_info, fallback to hardcoded
 let BOT_USERNAME='TopLuckBot';
 let REF=`https://t.me/${BOT_USERNAME}?start=ref_${UID}`;
 
@@ -398,7 +992,6 @@ function showPage(n,btn,i){
 })();
 
 function copyRef(){
-  // Use Telegram's API to share/copy to avoid DynamicProxy error on Android
   const link=REF;
   if(tg?.shareText){try{tg.shareText(link);return;}catch(e){}}
   if(typeof ClipboardItem!=='undefined'&&navigator.clipboard?.write){
@@ -474,7 +1067,7 @@ async function loadTasks(){
     const dEl=document.getElementById('prof-tasks-done');if(dEl)dEl.textContent=done?`${done}/${tasks.length}`:'';
     if(!tasks.length){listEl.innerHTML='<div class="empty"><span class="empty-i">📋</span><p>Заданий пока нет</p></div>';return;}
     const ICONS={channel:'📢',group:'👥',bot:'🤖',spend:'🎰',deposit:'💳'};
-    listEl.innerHTML=tasks.map(t=>`<div class="task-item ${t.completed?'done':''}"><div class="task-icon ${t.completed?'done':''}">${t.completed?'✅':(ICONS[t.type]||'📋')}</div><div class="task-body"><div class="task-title" style="color:${t.completed?'var(--muted2)':'var(--text)'}">${t.title}</div><div class="task-desc">${t.description||''}</div></div><div class="task-right"><div class="task-reward">+${t.reward}🪙</div>${!t.completed?`<button class="task-btn" onclick="doTask(${t.id},'${t.type}','${t.target||''}')">Выполнить</button>`:'<div style="font-size:11px;color:var(--green);margin-top:3px">Готово ✓</div>'}</div></div>`).join('');
+    listEl.innerHTML=tasks.map(t=>`<div class="task-item ${t.completed?'done':''}"><div class="task-icon ${t.completed?'done':''}">${t.completed?'✅':(ICONS[t.type]||'📋')}</div><div class="task-body"><div class="task-title" style="color:${t.completed?'var(--DM)':'var(--DT)'}">${t.title}</div><div class="task-desc">${t.description||''}</div></div><div class="task-right"><div class="task-reward">+${t.reward}🪙</div>${!t.completed?`<button class="task-btn" onclick="doTask(${t.id},'${t.type}','${t.target||''}')">Выполнить</button>`:'<div style="font-size:11px;color:#1A9A50;margin-top:3px">Готово ✓</div>'}</div></div>`).join('');
   }catch(e){listEl.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Ошибка загрузки</p></div>';}
 }
 async function doTask(taskId,type,target){if(target&&(type==='channel'||type==='group'||type==='bot')){const url=target.startsWith('http')?target:`https://t.me/${target.replace('@','')}`;tg?.openTelegramLink?tg.openTelegramLink(url):window.open(url,'_blank');setTimeout(()=>claimTask(taskId),2000);}else claimTask(taskId);}
@@ -482,7 +1075,7 @@ async function claimTask(taskId){try{const r=await fetch('/api/tasks/complete',{
 
 async function loadRefHistory(){
   const listEl=document.getElementById('ref-history-list');if(!listEl||!UID)return;
-  listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted2);font-size:13px">⏳ Загружаем...</div>';
+  listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--DM);font-size:13px">⏳ Загружаем...</div>';
   try{
     const r=await get(`/api/user/${UID}/refs`).catch(()=>({refs:[],count:0}));
     const refs=r.refs||[];
@@ -499,7 +1092,7 @@ async function loadShopGifts(){
   try{const data=await get('/api/gifts');shopGifts=data.gifts||[];if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}else renderBotGifts();}catch(e){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Не удалось загрузить подарки</p></div>';}
   renderOwnerGifts();
 }
-function giftCard(gift,source){const limited=gift.is_limited&&gift.remaining_count!==null;const cls=limited?'gift-card limited':'gift-card';const emoji=gift.emoji||'🎁';const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';const gd=JSON.stringify({id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,is_limited:gift.is_limited||false}).replace(/"/g,'&quot;');return`<div class="${cls}" onclick="openBuyModal(${gd},'${source}')"><div class="gift-emoji-wrap"><span class="gift-emoji">${emoji}</span></div><div class="gift-name">${gift.name||'Подарок'}</div><div class="gift-price">⭐ ${gift.star_count}</div><div class="gift-stars">${gift.star_count*10} 🪙 монет</div>${remaining}<button class="gift-buy-btn">КУПИТЬ</button></div>`;}
+function giftCard(gift,source){const limited=gift.is_limited&&gift.remaining_count!==null;const cls=limited?'gift-card limited':'gift-card';const emoji=gift.emoji||'🎁';const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';const gd=JSON.stringify({id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,is_limited:gift.is_limited||false}).replace(/\"/g,'&quot;');return`<div class="${cls}" onclick="openBuyModal(${gd},'${source}')"><div class="gift-emoji-wrap"><span class="gift-emoji">${emoji}</span></div><div class="gift-name">${gift.name||'Подарок'}</div><div class="gift-price">⭐ ${gift.star_count}</div><div class="gift-stars">${gift.star_count*10} 🪙 монет</div>${remaining}<button class="gift-buy-btn">КУПИТЬ</button></div>`;}
 function renderBotGifts(){const inner=document.getElementById('bot-gifts-inner');if(inner)inner.innerHTML=`<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;}
 function renderOwnerGifts(){const g=document.getElementById('owner-gifts-grid');if(!shopGifts.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}g.innerHTML=shopGifts.map(g=>giftCard(g,'owner')).join('');}
 function openBuyModal(gift,source){pendingGift=gift;pendingSource=source;document.getElementById('m-icon').textContent=gift.emoji;document.getElementById('m-name').textContent=gift.name||gift.emoji;document.getElementById('m-price').textContent=gift.star_count;document.getElementById('m-msg').value='';document.getElementById('m-anon').checked=false;document.getElementById('buy-error').classList.remove('show');setRecipient('self',document.querySelector('.rc-btn'));document.getElementById('buy-modal').classList.add('open');}
@@ -552,21 +1145,20 @@ async function loadGifts(){
 async function activatePromo(){
   const code=(document.getElementById('promo-inp').value||'').trim().toUpperCase();
   const res_el=document.getElementById('promo-result');
-  if(!code){res_el.textContent='Введи код промокода';res_el.style.color='var(--muted2)';return;}
-  if(!UID){res_el.textContent='Нужен Telegram';res_el.style.color='var(--red)';return;}
-  res_el.textContent='⏳ Проверяем...';res_el.style.color='var(--muted2)';
+  if(!code){res_el.textContent='Введи код промокода';res_el.style.color='var(--DM)';return;}
+  if(!UID){res_el.textContent='Нужен Telegram';res_el.style.color='#CC2030';return;}
+  res_el.textContent='⏳ Проверяем...';res_el.style.color='var(--DM)';
   try{
     const r=await post('/api/promo/activate',{user_id:UID,code});
-    if(r.error){res_el.textContent='❌ '+r.error;res_el.style.color='var(--red)';return;}
-    const amt=r.reward;res_el.textContent=`${amt>=0?'✅':'⚠️'} ${amt>=0?'+':''}${amt} 🪙 — промокод активирован!`;res_el.style.color=amt>=0?'var(--green)':'var(--red)';
+    if(r.error){res_el.textContent='❌ '+r.error;res_el.style.color='#CC2030';return;}
+    const amt=r.reward;res_el.textContent=`${amt>=0?'✅':'⚠️'} ${amt>=0?'+':''}${amt} 🪙 — промокод активирован!`;res_el.style.color=amt>=0?'#1A9A50':'#CC2030';
     document.getElementById('promo-inp').value='';toast(`🎟 ${amt>=0?'+':''}${amt} 🪙 — промокод применён!`,amt>=0?'ok':'err');
     if(userData){userData.balance=r.new_balance;updateUI();}
-  }catch(e){res_el.textContent='❌ Ошибка соединения';res_el.style.color='var(--red)';}
+  }catch(e){res_el.textContent='❌ Ошибка соединения';res_el.style.color='#CC2030';}
 }
 function playSound(){}window.playSound=playSound;
 
 window.addEventListener('load',async()=>{
-  // Start fetching bot info immediately (async, no await — fallback already set)
   fetchBotInfo();
   const urlParams=new URLSearchParams(window.location.search);
   const tabParam=urlParams.get('tab')||'games';
