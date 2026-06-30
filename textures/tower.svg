@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 165" width="110" height="165">
+  <!-- Grass base -->
+  <ellipse cx="58" cy="154" rx="46" ry="12" fill="#6BBF30"/>
+  <ellipse cx="58" cy="150" rx="40" ry="9" fill="#80D040"/>
+  <rect x="18" y="143" width="80" height="12" rx="6" fill="#6BBF30"/>
+
+  <!-- Tower main body (slightly tilted right) -->
+  <g transform="rotate(5, 55, 80)">
+    <!-- Base level -->
+    <rect x="20" y="90" width="72" height="55" rx="4" fill="#D4855A" stroke="#B86040" stroke-width="1.5"/>
+    <!-- Arch on base -->
+    <path d="M 34,145 L 34,118 Q 56,106 78,118 L 78,145 Z" fill="rgba(0,0,0,0.5)"/>
+    <!-- Base arches decoration -->
+    <path d="M 26,145 Q 26,132 36,132 Q 46,132 46,145" fill="rgba(255,255,255,0.08)"/>
+    <path d="M 66,145 Q 66,132 76,132 Q 86,132 86,145" fill="rgba(255,255,255,0.08)"/>
+
+    <!-- Level 2 -->
+    <rect x="24" y="58" width="64" height="36" rx="3" fill="#C87848" stroke="#A85A30" stroke-width="1.5"/>
+    <!-- Arches level 2 -->
+    <path d="M 30,94 Q 30,80 43,80 Q 56,80 56,94" fill="rgba(0,0,0,0.3)"/>
+    <path d="M 56,94 Q 56,80 69,80 Q 82,80 82,94" fill="rgba(0,0,0,0.3)"/>
+
+    <!-- Level 3 -->
+    <rect x="28" y="30" width="56" height="32" rx="3" fill="#BC7040" stroke="#9C5228" stroke-width="1.5"/>
+    <!-- Arch level 3 -->
+    <path d="M 36,62 Q 36,50 56,50 Q 76,50 76,62" fill="rgba(0,0,0,0.25)"/>
+
+    <!-- Top battlements -->
+    <rect x="28" y="18" width="56" height="16" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
+    <rect x="28" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
+    <rect x="43" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
+    <rect x="58" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
+    <rect x="73" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
+
+    <!-- Brick texture lines -->
+    <line x1="20" y1="110" x2="92" y2="110" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+    <line x1="20" y1="125" x2="92" y2="125" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+    <line x1="24" y1="72" x2="88" y2="72" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+    <line x1="24" y1="85" x2="88" y2="85" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+  </g>
+
+  <!-- Small cloud top-right -->
+  <ellipse cx="95" cy="28" rx="16" ry="9" fill="rgba(255,255,255,0.88)"/>
+  <ellipse cx="83" cy="30" rx="12" ry="11" fill="rgba(255,255,255,0.88)"/>
+  <ellipse cx="100" cy="32" rx="11" ry="9" fill="rgba(255,255,255,0.82)"/>
+
+  <!-- Star decorations -->
+  <text x="6" y="28" font-size="15" fill="rgba(80,180,30,0.55)" font-family="serif">★</text>
+  <text x="82" y="12" font-size="12" fill="rgba(255,200,0,0.7)" font-family="serif">★</text>
+</svg>

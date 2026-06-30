@@ -23,6 +23,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap');
 /* ═══════════════════════════════════════════════
    TOPLUCK — DAYTIME SKY THEME
    Overrides shared.css dark theme for main.html
@@ -770,92 +771,97 @@ input:checked + .toggle-slider::before{background:#fff!important;transform:trans
 </div>
 
 <!-- GAMES -->
-<div class="page active" id="page-games">
-  <div class="games-content">
-    <div class="games-header">
-      <div class="games-title">Где полудим?)</div>
-      <div class="coin-pill">🪙 <span id="r-bal">0</span></div>
+<div class="page active" id="page-games" style="min-height:100vh;position:relative;">
+
+  <!-- ═══ SKY BACKDROP (fixed inside hidden/visible parent) ═══ -->
+  <div style="position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;">
+    <img src="textures/sky.svg" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+  </div>
+
+  <!-- ═══ CONTENT ═══ -->
+  <div style="position:relative;z-index:1;padding:0 14px 28px;">
+
+    <!-- Header: title + coin -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:14px;">
+      <div style="font-family:'Caveat',cursive;font-size:38px;font-weight:700;color:#1A2040;line-height:1.05;">Где полудим?)</div>
+      <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.96);border:2px solid #FFD028;border-radius:22px;padding:8px 16px;font-family:'Nunito',sans-serif;font-size:17px;font-weight:900;color:#1A2040;box-shadow:0 3px 12px rgba(0,30,70,0.09);">🪙 <span id="r-bal">0</span></div>
     </div>
 
-    <!-- Рулетка -->
-    <a class="game-card sk-roulette" href="european_roulette.html">
-      <div class="sk-l">
-        <em class="sk-star" style="top:12px;right:128px;font-size:16px">⭐</em>
-        <div class="sk-name">РУЛЕТКА</div>
-        <div class="sk-desc">Крути колесо, ставь на красное/чёрное — до ×36!</div>
+    <!-- РУЛЕТКА -->
+    <a href="european_roulette.html" style="display:flex;align-items:stretch;border-radius:24px;overflow:hidden;margin-bottom:14px;text-decoration:none;background:linear-gradient(135deg,#FFECF0,#FFD8E4);box-shadow:0 5px 20px rgba(0,30,70,0.13),inset 0 1px 0 rgba(255,255,255,0.75);min-height:148px;position:relative;border:none;">
+      <div style="flex:1;padding:20px 0 20px 22px;display:flex;flex-direction:column;justify-content:center;position:relative;">
+        <span style="position:absolute;top:12px;right:8px;font-size:16px;opacity:0.7;">⭐</span>
+        <div style="font-family:'Caveat',cursive;font-size:44px;font-weight:700;color:#C83858;line-height:1;margin-bottom:7px;">РУЛЕТКА</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:rgba(70,10,30,0.68);line-height:1.5;max-width:175px;">Крути колесо, ставь на красное/чёрное — до ×36!</div>
       </div>
-      <div class="sk-r">
-        <div class="roulette-art"></div>
-        <em class="sk-star" style="bottom:14px;right:16px;font-size:13px">⭐</em>
-      </div>
-    </a>
-
-    <!-- Mines -->
-    <a class="game-card sk-mines" href="mines.html">
-      <div class="sk-l">
-        <em class="sk-star" style="top:14px;right:130px;font-size:13px;color:rgba(50,120,220,0.5)">✦</em>
-        <div class="sk-name">MINES</div>
-        <div class="sk-desc">Откопай алмазы, не попадись на мины и делай иксы!</div>
-        <em class="sk-star" style="bottom:14px;left:20px;font-size:12px;color:rgba(50,120,220,0.4)">✦</em>
-      </div>
-      <div class="sk-r">
-        <div class="mines-grid">
-          <span>💎</span><span>💣</span><span>💎</span>
-          <span>💣</span><span>💎</span><span>❓</span>
-          <span>❓</span><span>💎</span><span>💣</span>
-        </div>
+      <div style="width:128px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:12px 10px 12px 0;position:relative;">
+        <img src="textures/wheel.svg" width="112" height="112" alt="" style="transform:rotate(8deg);filter:drop-shadow(0 4px 12px rgba(200,60,160,0.3));">
+        <span style="position:absolute;bottom:12px;right:12px;font-size:12px;opacity:0.6;">⭐</span>
       </div>
     </a>
 
-    <!-- Башня -->
-    <a class="game-card sk-tower" href="tower.html">
-      <div class="sk-l">
-        <em class="sk-star" style="top:12px;right:126px;font-size:16px">⭐</em>
-        <div class="sk-name">БАШНЯ</div>
-        <div class="sk-desc">Поднимайся по этажам — каждый шаг умножает выигрыш!</div>
+    <!-- MINES -->
+    <a href="mines.html" style="display:flex;align-items:stretch;border-radius:24px;overflow:hidden;margin-bottom:14px;text-decoration:none;background:linear-gradient(135deg,#E8F4FF,#D0E8FF);box-shadow:0 5px 20px rgba(0,30,70,0.13),inset 0 1px 0 rgba(255,255,255,0.75);min-height:148px;border:none;">
+      <div style="flex:1;padding:20px 0 20px 22px;display:flex;flex-direction:column;justify-content:center;position:relative;">
+        <span style="position:absolute;top:14px;right:8px;font-size:13px;color:rgba(50,120,220,0.5);">✦</span>
+        <div style="font-family:'Caveat',cursive;font-size:44px;font-weight:700;color:#2868B8;line-height:1;margin-bottom:7px;">MINES</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:rgba(15,40,80,0.68);line-height:1.5;max-width:175px;">Откопай алмазы, не попадись на мины и делай иксы!</div>
+        <span style="position:absolute;bottom:14px;left:20px;font-size:12px;color:rgba(50,120,220,0.4);">✦</span>
       </div>
-      <div class="sk-r" style="align-items:flex-end;padding-bottom:0">
-        <span class="sk-emoji tilt-l" style="font-size:90px;margin-bottom:-4px">🗼</span>
-      </div>
-    </a>
-
-    <!-- GTA Рулетка -->
-    <a class="game-card sk-gta" href="gta_roulette.html">
-      <div class="sk-l">
-        <div class="sk-badge violet">ХАЙСТАВКИ</div>
-        <div class="sk-name">ГТА РУЛЕТКА</div>
-        <div class="sk-desc">Общий банк — чем больше ставка, тем выше шанс</div>
-      </div>
-      <div class="sk-r">
-        <span class="sk-emoji tilt-r">🏎️</span>
+      <div style="width:128px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:12px 8px 12px 0;">
+        <img src="textures/mines.svg" width="110" height="110" alt="" style="filter:drop-shadow(0 3px 8px rgba(0,40,100,0.12));">
       </div>
     </a>
 
-    <!-- Блэкджек -->
-    <a class="game-card sk-bj" href="blackjack.html">
-      <div class="sk-l">
-        <div class="sk-badge rose">КАРТЫ</div>
-        <div class="sk-name">БЛЭКДЖЕК</div>
-        <div class="sk-desc">Побей дилера не перебрав 21 — классика казино</div>
+    <!-- БАШНЯ -->
+    <a href="tower.html" style="display:flex;align-items:stretch;border-radius:24px;overflow:hidden;margin-bottom:14px;text-decoration:none;background:linear-gradient(135deg,#F0FFE4,#DFFFC2);box-shadow:0 5px 20px rgba(0,30,70,0.13),inset 0 1px 0 rgba(255,255,255,0.75);min-height:148px;border:none;">
+      <div style="flex:1;padding:20px 0 20px 22px;display:flex;flex-direction:column;justify-content:center;position:relative;">
+        <span style="position:absolute;top:12px;right:8px;font-size:16px;opacity:0.65;">⭐</span>
+        <div style="font-family:'Caveat',cursive;font-size:44px;font-weight:700;color:#489818;line-height:1;margin-bottom:7px;">БАШНЯ</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:rgba(20,50,8,0.65);line-height:1.5;max-width:175px;">Поднимайся по этажам — каждый шаг умножает выигрыш!</div>
       </div>
-      <div class="sk-r">
-        <span class="sk-emoji tilt-r">🃏</span>
-      </div>
-    </a>
-
-    <!-- Plinko -->
-    <a class="game-card sk-plinko" href="plinko.html">
-      <div class="sk-l">
-        <div class="sk-name">PLINKO</div>
-        <div class="sk-desc">Брось шар — он сам найдёт путь к множителю</div>
-      </div>
-      <div class="sk-r">
-        <span class="sk-emoji tilt-l">🟣</span>
+      <div style="width:128px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:center;padding:0 8px 0 0;overflow:visible;">
+        <img src="textures/tower.svg" width="105" height="158" alt="" style="filter:drop-shadow(0 4px 12px rgba(80,40,0,0.18));margin-bottom:-2px;">
       </div>
     </a>
 
-  </div>
-</div>
+    <!-- GTA РУЛЕТКА -->
+    <a href="gta_roulette.html" style="display:flex;align-items:stretch;border-radius:24px;overflow:hidden;margin-bottom:14px;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFDFA0);box-shadow:0 5px 20px rgba(0,30,70,0.13),inset 0 1px 0 rgba(255,255,255,0.75);min-height:132px;border:none;">
+      <div style="flex:1;padding:18px 0 18px 22px;display:flex;flex-direction:column;justify-content:center;">
+        <div style="display:inline-block;padding:3px 10px;border-radius:20px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;margin-bottom:6px;background:rgba(140,60,240,0.14);color:#6820A8;border:1.5px solid rgba(140,60,240,0.32);">ХАЙСТАВКИ</div>
+        <div style="font-family:'Caveat',cursive;font-size:40px;font-weight:700;color:#B86810;line-height:1;margin-bottom:6px;">ГТА РУЛЕТКА</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:rgba(70,35,5,0.65);line-height:1.5;max-width:175px;">Общий банк — чем больше ставка, тем выше шанс</div>
+      </div>
+      <div style="width:120px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:72px;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));transform:rotate(6deg);display:block;">🏎️</span>
+      </div>
+    </a>
+
+    <!-- БЛЭКДЖЕК -->
+    <a href="blackjack.html" style="display:flex;align-items:stretch;border-radius:24px;overflow:hidden;margin-bottom:14px;text-decoration:none;background:linear-gradient(135deg,#EDE8FF,#DDD0FF);box-shadow:0 5px 20px rgba(0,30,70,0.13),inset 0 1px 0 rgba(255,255,255,0.75);min-height:132px;border:none;">
+      <div style="flex:1;padding:18px 0 18px 22px;display:flex;flex-direction:column;justify-content:center;">
+        <div style="display:inline-block;padding:3px 10px;border-radius:20px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;margin-bottom:6px;background:rgba(240,60,80,0.11);color:#A01830;border:1.5px solid rgba(240,60,80,0.28);">КАРТЫ</div>
+        <div style="font-family:'Caveat',cursive;font-size:40px;font-weight:700;color:#5828A8;line-height:1;margin-bottom:6px;">БЛЭКДЖЕК</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:rgba(35,15,65,0.65);line-height:1.5;max-width:175px;">Побей дилера не перебрав 21 — классика казино</div>
+      </div>
+      <div style="width:120px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:72px;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));transform:rotate(-6deg);display:block;">🃏</span>
+      </div>
+    </a>
+
+    <!-- PLINKO -->
+    <a href="plinko.html" style="display:flex;align-items:stretch;border-radius:24px;overflow:hidden;margin-bottom:14px;text-decoration:none;background:linear-gradient(135deg,#E0F8FF,#C4EEFF);box-shadow:0 5px 20px rgba(0,30,70,0.13),inset 0 1px 0 rgba(255,255,255,0.75);min-height:132px;border:none;">
+      <div style="flex:1;padding:18px 0 18px 22px;display:flex;flex-direction:column;justify-content:center;">
+        <div style="font-family:'Caveat',cursive;font-size:40px;font-weight:700;color:#1068A0;line-height:1;margin-bottom:6px;">PLINKO</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:rgba(5,35,65,0.65);line-height:1.5;max-width:175px;">Брось шар — он сам найдёт путь к множителю</div>
+      </div>
+      <div style="width:120px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:72px;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));transform:rotate(5deg);display:block;">🟣</span>
+      </div>
+    </a>
+
+  </div><!-- /content -->
+</div><!-- /page-games -->
 
 <!-- HISTORY -->
 <div class="page" id="page-history">

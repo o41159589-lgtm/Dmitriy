@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" width="390" height="844">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#68B8DC"/>
+      <stop offset="50%" stop-color="#8ECCEA"/>
+      <stop offset="100%" stop-color="#C0E2F6"/>
+    </linearGradient>
+  </defs>
+  <rect width="390" height="844" fill="url(#sky)"/>
+  <!-- Cloud 1 top-right -->
+  <g opacity="0.9">
+    <ellipse cx="310" cy="62" rx="82" ry="36" fill="#EEF4F8"/>
+    <ellipse cx="275" cy="40" rx="50" ry="48" fill="#F4F8FC"/>
+    <ellipse cx="330" cy="44" rx="42" ry="40" fill="#EEF4F8"/>
+    <ellipse cx="362" cy="55" rx="32" ry="28" fill="#E8F0F6"/>
+  </g>
+  <!-- Cloud 2 top-left -->
+  <g opacity="0.85">
+    <ellipse cx="78" cy="118" rx="70" ry="30" fill="#EEF4F8"/>
+    <ellipse cx="50" cy="98" rx="42" ry="40" fill="#F4F8FC"/>
+    <ellipse cx="100" cy="102" rx="36" ry="34" fill="#EEF4F8"/>
+    <ellipse cx="132" cy="112" rx="28" ry="24" fill="#E8F0F6"/>
+  </g>
+  <!-- Sun -->
+  <circle cx="278" cy="270" r="36" fill="#FFD028" opacity="0.88"/>
+  <circle cx="278" cy="270" r="44" fill="none" stroke="#FFD028" stroke-width="10" opacity="0.18"/>
+  <circle cx="278" cy="270" r="54" fill="none" stroke="#FFD028" stroke-width="8" opacity="0.10"/>
+  <!-- Cloud 3 mid-left -->
+  <g opacity="0.75">
+    <ellipse cx="46" cy="390" rx="62" ry="28" fill="#EEF4F8"/>
+    <ellipse cx="20" cy="370" rx="38" ry="36" fill="#F4F8FC"/>
+    <ellipse cx="68" cy="374" rx="32" ry="30" fill="#E8F0F6"/>
+  </g>
+  <!-- Cloud 4 mid-right -->
+  <g opacity="0.72">
+    <ellipse cx="348" cy="490" rx="52" ry="24" fill="#EEF4F8"/>
+    <ellipse cx="318" cy="472" rx="34" ry="32" fill="#F4F8FC"/>
+    <ellipse cx="366" cy="476" rx="28" ry="26" fill="#E8F0F6"/>
+  </g>
+  <!-- Cloud 5 lower -->
+  <g opacity="0.65">
+    <ellipse cx="185" cy="620" rx="78" ry="34" fill="#EEF4F8"/>
+    <ellipse cx="148" cy="596" rx="48" ry="46" fill="#F4F8FC"/>
+    <ellipse cx="208" cy="600" rx="40" ry="38" fill="#EEF4F8"/>
+    <ellipse cx="244" cy="610" rx="30" ry="26" fill="#E8F0F6"/>
+  </g>
+  <!-- Cloud 6 bottom -->
+  <g opacity="0.60">
+    <ellipse cx="90" cy="760" rx="64" ry="28" fill="#EEF4F8"/>
+    <ellipse cx="60" cy="740" rx="40" ry="38" fill="#F4F8FC"/>
+    <ellipse cx="112" cy="744" rx="34" ry="32" fill="#E8F0F6"/>
+  </g>
+</svg>
