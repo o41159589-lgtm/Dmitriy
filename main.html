@@ -251,6 +251,210 @@
 #page-games .tl-emoji.tilt-r{transform:rotate(6deg);}
 #page-games .tl-emoji.tilt-l{transform:rotate(-6deg);}
 #page-games .tl-star{position:absolute;pointer-events:none;user-select:none;font-style:normal;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — NAV BAR
+   .nav / .nav-btn / .nav-ind are sitewide elements used
+   only in this file (telegram_mini_app.html is a separate
+   unused legacy file with its own <style> block) — restyling
+   them here is exactly what was requested for the bottom bar.
+   ════════════════════════════════════════════════════ */
+.nav{
+  background:rgba(255,255,255,0.96);
+  border:1.5px solid rgba(255,255,255,0.85);
+  box-shadow:0 6px 22px rgba(20,40,90,0.16),inset 0 1px 0 rgba(255,255,255,0.6);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.nav-btn{
+  color:#9AA6C0;
+  font-family:'Nunito',sans-serif;
+  font-size:9.5px;font-weight:800;letter-spacing:.3px;
+  gap:4px;
+}
+.nav-btn svg{display:none;}
+.nav-btn .nb-badge{width:30px;height:30px;display:block;transition:transform .15s;}
+.nav-btn.active{color:#1A2040;}
+.nav-btn.active .nb-badge{transform:translateY(-1px) scale(1.05);}
+.nav-ind{background:#FF6FA0;box-shadow:0 0 10px rgba(255,111,160,.65);height:3px;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — TOAST (sitewide popup notification)
+   ════════════════════════════════════════════════════ */
+.toast{
+  background:rgba(255,255,255,0.97);
+  border:1.5px solid rgba(20,40,90,0.10);
+  color:#1A2040;
+  font-family:'Nunito',sans-serif;font-weight:700;
+  box-shadow:0 8px 26px rgba(20,40,90,0.16);
+}
+.toast.ok{color:#1A9A50;border-color:rgba(26,154,80,.3);}
+.toast.err{color:#D8284A;border-color:rgba(216,40,74,.3);}
+.toast.info{color:#445080;border-color:rgba(68,80,128,.2);}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — INFO PAGE (#page-home)
+   ════════════════════════════════════════════════════ */
+#page-home{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-home .home-content{padding:0 14px 28px;position:relative;z-index:1;}
+#page-home .hero{padding:calc(18px + env(safe-area-inset-top,0px)) 0 16px;}
+#page-home .hero-logo{background:rgba(255,255,255,0.85);border:2px solid rgba(255,255,255,0.7);box-shadow:0 4px 14px rgba(20,40,90,0.12);}
+#page-home .hero h1{font-family:'Caveat',cursive;font-size:38px;font-weight:700;letter-spacing:0;color:#1A2040;text-shadow:none;}
+#page-home .hero p{font-family:'Nunito',sans-serif;font-size:13px;color:#445080;font-weight:700;}
+#page-home .about-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:22px;box-shadow:0 5px 18px rgba(20,40,90,0.10);}
+#page-home .about-card::before{display:none;}
+#page-home .about-card-head{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:#8090B0;letter-spacing:1.2px;background:rgba(68,80,128,0.05);border-bottom:1px solid rgba(20,40,90,0.07);}
+#page-home .about-links{border-bottom:1px solid rgba(20,40,90,0.06);}
+#page-home .about-links p{font-family:'Nunito',sans-serif;color:#445080;font-weight:600;}
+#page-home .about-links p b{color:#1A2040;}
+#page-home .about-link{color:#1A2040;}
+#page-home .about-link.cyan{background:rgba(0,170,220,0.08);border-color:rgba(0,170,220,0.24);}
+#page-home .about-link.purple{background:rgba(140,80,255,0.08);border-color:rgba(140,80,255,0.24);}
+#page-home .about-link.green{background:rgba(20,180,100,0.08);border-color:rgba(20,180,100,0.24);}
+#page-home .about-link-title{color:#1A2040;}
+#page-home .about-link-sub{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-home .about-person{border-top:1px solid rgba(20,40,90,0.06);}
+#page-home .ap-title{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-home .ap-arr{color:#A8B4CC;}
+#page-home .ap-content{color:#445080;font-family:'Nunito',sans-serif;}
+#page-home .ap-content a{color:#1860C8;font-weight:700;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — PROFILE PAGE (#page-inventory)
+   ════════════════════════════════════════════════════ */
+#page-inventory{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-inventory .profile-wrap{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
+#page-inventory .profile-top-card{background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.78);border-radius:24px;box-shadow:0 6px 20px rgba(20,40,90,0.12);}
+#page-inventory .profile-top-card::before,#page-inventory .profile-top-card::after{display:none;}
+#page-inventory .prof-avatar{border:3px solid rgba(255,255,255,0.85);box-shadow:0 6px 18px rgba(80,60,200,0.30);}
+#page-inventory .prof-name{font-family:'Caveat',cursive;font-size:30px;font-weight:700;letter-spacing:0;color:#1A2040;}
+#page-inventory .prof-username{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+#page-inventory .prof-bal-row{background:rgba(255,255,255,0.90);border:2px solid rgba(255,210,40,0.45);border-radius:20px;}
+#page-inventory .prof-bal-lbl{color:#B89000;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-inventory .prof-bal-val{font-family:'Nunito',sans-serif;color:#A87800;font-weight:900;font-size:24px;}
+#page-inventory .prof-topup-btn{background:#1A2040;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(20,40,90,0.25);}
+#page-inventory .prof-xp-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:20px;}
+#page-inventory .prof-xp-label{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-inventory .prof-xp-level{font-family:'Caveat',cursive;font-size:30px;color:#1A2040;}
+#page-inventory .prof-xp-track{background:rgba(20,40,90,0.08);}
+#page-inventory .prof-xp-sub span{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+#page-inventory .prof-stat{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:16px;}
+#page-inventory .prof-stat-val{font-family:'Nunito',sans-serif;color:#1A2040;font-weight:900;}
+#page-inventory .prof-stat-lbl{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .prof-menu-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:20px;}
+#page-inventory .prof-menu-row{border-bottom:1px solid rgba(20,40,90,0.06);}
+#page-inventory .prof-menu-row:active{background:rgba(20,40,90,0.04);}
+#page-inventory .prof-menu-label{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;}
+#page-inventory .prof-menu-right{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .prof-menu-arr{color:#C0CADC;}
+#page-inventory .prof-invite-btn{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.78);color:#1A2040;font-family:'Caveat',cursive;font-size:20px;font-weight:700;letter-spacing:0;box-shadow:0 5px 16px rgba(20,40,90,0.10);}
+#page-inventory .sub-panel-back button{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.78);color:#1A2040;}
+#page-inventory .sub-panel-title{font-family:'Caveat',cursive;font-size:24px;font-weight:700;color:#1A2040;letter-spacing:0;}
+#page-inventory .promo-input-wrap{background:rgba(255,210,40,0.10);border:2px solid rgba(255,210,40,0.35);border-radius:20px;}
+#page-inventory .promo-input{background:rgba(255,255,255,0.85);border:1.5px solid rgba(20,40,90,0.15);color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .promo-ok{background:#1A2040;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-inventory .ref-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:20px;}
+#page-inventory .ref-link-btn{background:rgba(20,40,90,0.06);border:1.5px solid rgba(20,40,90,0.14);color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .task-item{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:18px;}
+#page-inventory .task-item.done{border-color:rgba(26,154,80,0.35);}
+#page-inventory .task-icon{background:rgba(68,80,160,0.08);border:1.5px solid rgba(68,80,160,0.15);}
+#page-inventory .task-icon.done{background:rgba(26,154,80,0.12);border-color:rgba(26,154,80,0.28);}
+#page-inventory .task-title{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .task-desc{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .task-reward{font-family:'Nunito',sans-serif;color:#1A2040;font-weight:800;}
+#page-inventory .task-btn{background:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .ref-hi{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);}
+
+/* shared row/list components reused by BOTH profile sub-panels and history page */
+#page-inventory .irow{border-bottom:1px solid rgba(20,40,90,0.07);}
+#page-inventory .irow-l{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .irow-r{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .inv-item,#page-history .hi,#page-inventory .hi{
+  background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);
+  box-shadow:0 2px 8px rgba(20,40,90,0.06);
+}
+#page-inventory .inv-icon{background:rgba(68,80,160,0.07);border:1.5px solid rgba(68,80,160,0.14);}
+#page-inventory .inv-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .inv-meta{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .inv-qty{color:#445080;font-family:'Nunito',sans-serif;}
+#page-history .hi-t,#page-inventory .hi-t{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-history .hi-s,#page-inventory .hi-s{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-history .hi-a.p,#page-inventory .hi-a.p{color:#1A9A50;}
+#page-history .hi-a.n,#page-inventory .hi-a.n{color:#D8284A;}
+
+/* empty-state placeholder, reused on Profile sub-panels and History */
+#page-inventory .empty,#page-history .empty{color:#8090B0;font-family:'Nunito',sans-serif;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — SHOP PAGE (#page-shop)
+   ════════════════════════════════════════════════════ */
+#page-shop{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-shop .shop-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
+#page-shop .shop-title{font-family:'Caveat',cursive;font-size:30px;font-weight:700;letter-spacing:0;color:#1A2040;}
+#page-shop .shop-bal{background:rgba(255,255,255,0.90);border:1.5px solid rgba(255,210,40,0.45);color:#A87800;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-shop .hist-filter .hf{background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,255,255,0.85);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-shop .hist-filter .hf.a{background:#1A2040;color:#fff;border-color:#1A2040;}
+#page-shop .owner-note{background:rgba(255,255,255,0.78);border:1.5px solid rgba(20,40,90,0.10);color:#445080;font-family:'Nunito',sans-serif;border-radius:18px;}
+#page-shop .gift-card{background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.80);box-shadow:0 4px 14px rgba(20,40,90,0.09);border-radius:20px;}
+#page-shop .gift-card:hover{border-color:rgba(68,80,160,0.26);}
+#page-shop .gift-emoji-wrap{background:rgba(68,80,160,0.06);border:1.5px solid rgba(68,80,160,0.13);}
+#page-shop .gift-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-shop .gift-price{color:#A87800;background:rgba(255,210,40,0.12);border-color:rgba(255,210,40,0.30);font-family:'Nunito',sans-serif;}
+#page-shop .gift-stars{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-shop .gift-buy-btn{background:#1A2040;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-shop .gift-loading{color:#8090B0;font-family:'Nunito',sans-serif;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — HISTORY PAGE (#page-history) — dev-only,
+   reachable via admin-panel debug toggle
+   ════════════════════════════════════════════════════ */
+#page-history{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-history .hist-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
+#page-history .hist-filter .hf{background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,255,255,0.85);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-history .hist-filter .hf.a{background:#1A2040;color:#fff;border-color:#1A2040;}
+#page-history .hs{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:16px;}
+#page-history .hs-l{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-history .hs-v.gr{color:#1A9A50;}
+#page-history .hs-v.re{color:#D8284A;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — MODALS (Buy gift / Topup) — top-level
+   overlays triggered only from Profile & Shop, not nested
+   inside any .page, so styled globally here is correct.
+   ════════════════════════════════════════════════════ */
+.ov{background:rgba(20,30,60,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.modal{
+  background:rgba(244,248,255,0.98);
+  border:2px solid rgba(255,255,255,0.9);
+  border-radius:24px 24px 0 0;
+  box-shadow:0 -8px 36px rgba(20,40,90,0.18);
+}
+.mh{background:rgba(20,40,90,0.14);}
+.mt{font-family:'Caveat',cursive;font-size:26px;font-weight:700;letter-spacing:0;color:#1A2040;}
+.error-msg{background:rgba(216,40,74,0.08);border:1.5px solid rgba(216,40,74,0.28);color:#D8284A;font-family:'Nunito',sans-serif;}
+.form-label{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.form-input{background:rgba(20,40,90,0.05);border:1.5px solid rgba(20,40,90,0.14);color:#1A2040;font-family:'Nunito',sans-serif;}
+.form-input:focus{border-color:rgba(60,90,200,0.45);}
+.toggle-label{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;}
+.toggle-slider{background:rgba(20,40,90,0.10);}
+.toggle-slider::before{background:#fff;box-shadow:0 1px 3px rgba(20,40,90,0.3);}
+input:checked + .toggle-slider{background:#1A2040;}
+.rc-btn{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.rc-btn.active{background:rgba(20,40,90,0.10);border-color:rgba(20,40,90,0.22);color:#1A2040;}
+.mqb{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);color:#8090B0;font-family:'Nunito',sans-serif;}
+.btn-cancel{background:rgba(20,40,90,0.06);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.btn-confirm{background:#1A2040;color:#fff;font-family:'Nunito',sans-serif;font-weight:800;}
+.modal-gift-preview{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);}
+.mg-icon{background:rgba(68,80,160,0.07);border:1.5px solid rgba(68,80,160,0.14);}
+.mg-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+.mg-price{color:#A87800;font-family:'Nunito',sans-serif;font-weight:700;}
+.ta{background:rgba(20,40,90,0.04);border:1.5px solid rgba(20,40,90,0.12);}
+.ta.sel{background:rgba(20,40,90,0.08);border-color:rgba(20,40,90,0.24);}
+.ta-c{color:#A87800;font-family:'Nunito',sans-serif;font-weight:800;}
+.ta-s{color:#8090B0;font-family:'Nunito',sans-serif;}
+.ta-confirm{background:#1A2040;color:#fff;font-family:'Nunito',sans-serif;font-weight:800;}
+#ta-custom{background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.14)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;}
+.ov p[style]{color:#8090B0!important;}
+
 </style>
 </head>
 <body>
@@ -437,11 +641,11 @@
 <!-- NAV -->
 <nav class="nav" id="main-nav">
   <div class="nav-ind" id="nav-ind" style="width:25%;left:50%"></div>
-  <button class="nav-btn" onclick="showPage('home',this,0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>ИНФО</button>
-  <button class="nav-btn" onclick="showPage('inventory',this,1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>ПРОФИЛЬ</button>
-  <button class="nav-btn active" onclick="showPage('games',this,2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 10v4M10 12h4"/><circle cx="17" cy="12" r="1"/></svg>ИГРЫ</button>
-  <button class="nav-btn" onclick="showPage('shop',this,3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>МАГАЗИН</button>
-  <button class="nav-btn" id="nav-btn-history" style="display:none" onclick="showPage('history',this,4)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.51"/></svg>ИСТОРИЯ</button>
+  <button class="nav-btn" onclick="showPage('home',this,0)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#4FAEEA"/><circle cx="18" cy="11.6" r="2.3" fill="#fff"/><rect x="15.7" y="16" width="4.6" height="11.4" rx="2.3" fill="#fff"/></svg>ИНФО</button>
+  <button class="nav-btn" onclick="showPage('inventory',this,1)"><svg class="nb-badge" viewBox="0 0 36 36"><defs><clipPath id="nbClipProf"><circle cx="18" cy="18" r="17"/></clipPath></defs><circle cx="18" cy="18" r="17" fill="#4CC97A"/><g clip-path="url(#nbClipProf)" fill="#fff"><circle cx="18" cy="15" r="5.6"/><ellipse cx="18" cy="31.5" rx="11.5" ry="9"/></g></svg>ПРОФИЛЬ</button>
+  <button class="nav-btn active" onclick="showPage('games',this,2)"><svg class="nb-badge" viewBox="0 0 36 36"><rect x="1" y="1" width="34" height="34" rx="12" fill="#FFB020"/><rect x="8" y="14" width="20" height="12" rx="6" fill="#fff"/><rect x="12.2" y="18.7" width="4.4" height="1.8" rx="0.9" fill="#FFB020"/><rect x="13.8" y="17.1" width="1.8" height="4.4" rx="0.9" fill="#FFB020"/><circle cx="23" cy="18" r="1.5" fill="#FFB020"/><circle cx="25.6" cy="20.6" r="1.5" fill="#FFB020"/></svg>ИГРЫ</button>
+  <button class="nav-btn" onclick="showPage('shop',this,3)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</button>
+  <button class="nav-btn" id="nav-btn-history" style="display:none" onclick="showPage('history',this,4)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#9B6BFF"/><circle cx="18" cy="18" r="9" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M18 12.5v6l3.8 2.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>ИСТОРИЯ</button>
 </nav>
 
 <script>
