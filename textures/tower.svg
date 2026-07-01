@@ -1,50 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 165" width="110" height="165">
-  <!-- Grass base -->
-  <ellipse cx="58" cy="154" rx="46" ry="12" fill="#6BBF30"/>
-  <ellipse cx="58" cy="150" rx="40" ry="9" fill="#80D040"/>
-  <rect x="18" y="143" width="80" height="12" rx="6" fill="#6BBF30"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 115 168">
+<defs>
+  <linearGradient id="tBrick" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#D4855A"/>
+    <stop offset="50%" stop-color="#C87848"/>
+    <stop offset="100%" stop-color="#B86030"/>
+  </linearGradient>
+  <linearGradient id="tBrick2" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#C87848"/>
+    <stop offset="100%" stop-color="#A85028"/>
+  </linearGradient>
+  <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#80D040"/>
+    <stop offset="100%" stop-color="#58A020"/>
+  </linearGradient>
+  <filter id="tShadow"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="rgba(80,30,0,0.25)"/></filter>
+  <filter id="cldF"><feGaussianBlur stdDeviation="1"/></filter>
+</defs>
+<!-- Grass -->
+<ellipse cx="60" cy="157" rx="48" ry="13" fill="url(#grassG)"/>
+<ellipse cx="60" cy="153" rx="40" ry="9" fill="#88D848"/>
+<rect x="20" y="147" width="80" height="11" rx="5" fill="url(#grassG)"/>
 
-  <!-- Tower main body (slightly tilted right) -->
-  <g transform="rotate(5, 55, 80)">
-    <!-- Base level -->
-    <rect x="20" y="90" width="72" height="55" rx="4" fill="#D4855A" stroke="#B86040" stroke-width="1.5"/>
-    <!-- Arch on base -->
-    <path d="M 34,145 L 34,118 Q 56,106 78,118 L 78,145 Z" fill="rgba(0,0,0,0.5)"/>
-    <!-- Base arches decoration -->
-    <path d="M 26,145 Q 26,132 36,132 Q 46,132 46,145" fill="rgba(255,255,255,0.08)"/>
-    <path d="M 66,145 Q 66,132 76,132 Q 86,132 86,145" fill="rgba(255,255,255,0.08)"/>
+<!-- Tower (5 degrees lean right) -->
+<g transform="rotate(5,55,90)" filter="url(#tShadow)">
+  <!-- Base level -->
+  <rect x="18" y="92" width="74" height="58" rx="5" fill="url(#tBrick)" stroke="#A85028" stroke-width="1.2"/>
+  <!-- brick lines base -->
+  <line x1="18" y1="107" x2="92" y2="107" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+  <line x1="18" y1="122" x2="92" y2="122" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+  <line x1="18" y1="137" x2="92" y2="137" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+  <line x1="55" y1="92" x2="55" y2="150" stroke="rgba(0,0,0,0.07)" stroke-width="0.8"/>
+  <!-- arch door -->
+  <path d="M 33,150 L 33,124 Q 55,112 77,124 L 77,150 Z" fill="rgba(0,0,0,0.55)"/>
+  <path d="M 35,150 L 35,125 Q 55,114 75,125 L 75,150 Z" fill="#622818" opacity="0.6"/>
+  <!-- highlight -->
+  <rect x="18" y="92" width="8" height="58" rx="2" fill="rgba(255,255,255,0.08)"/>
 
-    <!-- Level 2 -->
-    <rect x="24" y="58" width="64" height="36" rx="3" fill="#C87848" stroke="#A85A30" stroke-width="1.5"/>
-    <!-- Arches level 2 -->
-    <path d="M 30,94 Q 30,80 43,80 Q 56,80 56,94" fill="rgba(0,0,0,0.3)"/>
-    <path d="M 56,94 Q 56,80 69,80 Q 82,80 82,94" fill="rgba(0,0,0,0.3)"/>
+  <!-- Level 2 -->
+  <rect x="22" y="58" width="66" height="38" rx="4" fill="url(#tBrick2)" stroke="#985028" stroke-width="1.2"/>
+  <line x1="22" y1="72" x2="88" y2="72" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+  <line x1="22" y1="85" x2="88" y2="85" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+  <!-- arches level 2 -->
+  <path d="M 28,96 Q 28,82 42,82 Q 55,82 55,96" fill="rgba(0,0,0,0.30)"/>
+  <path d="M 55,96 Q 55,82 68,82 Q 82,82 82,96" fill="rgba(0,0,0,0.30)"/>
+  <rect x="22" y="58" width="7" height="38" rx="2" fill="rgba(255,255,255,0.07)"/>
 
-    <!-- Level 3 -->
-    <rect x="28" y="30" width="56" height="32" rx="3" fill="#BC7040" stroke="#9C5228" stroke-width="1.5"/>
-    <!-- Arch level 3 -->
-    <path d="M 36,62 Q 36,50 56,50 Q 76,50 76,62" fill="rgba(0,0,0,0.25)"/>
+  <!-- Level 3 -->
+  <rect x="26" y="28" width="58" height="34" rx="4" fill="url(#tBrick)" stroke="#A85028" stroke-width="1.2"/>
+  <line x1="26" y1="42" x2="84" y2="42" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+  <line x1="26" y1="55" x2="84" y2="55" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+  <path d="M 33,62 Q 33,50 55,50 Q 77,50 77,62" fill="rgba(0,0,0,0.25)"/>
+  <rect x="26" y="28" width="7" height="34" rx="2" fill="rgba(255,255,255,0.07)"/>
 
-    <!-- Top battlements -->
-    <rect x="28" y="18" width="56" height="16" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
-    <rect x="28" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
-    <rect x="43" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
-    <rect x="58" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
-    <rect x="73" y="14" width="10" height="14" rx="2" fill="#BC7040" stroke="#9C5228" stroke-width="1"/>
+  <!-- Top battlements -->
+  <rect x="26" y="16" width="58" height="16" rx="3" fill="url(#tBrick2)" stroke="#985028" stroke-width="1"/>
+  <!-- Merlon teeth -->
+  <rect x="26" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
+  <rect x="41" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
+  <rect x="56" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
+  <rect x="71" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
+</g>
 
-    <!-- Brick texture lines -->
-    <line x1="20" y1="110" x2="92" y2="110" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
-    <line x1="20" y1="125" x2="92" y2="125" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
-    <line x1="24" y1="72" x2="88" y2="72" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
-    <line x1="24" y1="85" x2="88" y2="85" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
-  </g>
-
-  <!-- Small cloud top-right -->
-  <ellipse cx="95" cy="28" rx="16" ry="9" fill="rgba(255,255,255,0.88)"/>
-  <ellipse cx="83" cy="30" rx="12" ry="11" fill="rgba(255,255,255,0.88)"/>
-  <ellipse cx="100" cy="32" rx="11" ry="9" fill="rgba(255,255,255,0.82)"/>
-
-  <!-- Star decorations -->
-  <text x="6" y="28" font-size="15" fill="rgba(80,180,30,0.55)" font-family="serif">★</text>
-  <text x="82" y="12" font-size="12" fill="rgba(255,200,0,0.7)" font-family="serif">★</text>
+<!-- Small cloud top-right -->
+<g opacity="0.90">
+  <ellipse cx="97" cy="26" rx="17" ry="9" fill="rgba(255,255,255,0.92)"/>
+  <ellipse cx="84" cy="28" rx="14" ry="13" fill="rgba(255,255,255,0.92)"/>
+  <ellipse cx="103" cy="30" rx="12" ry="10" fill="rgba(255,255,255,0.88)"/>
+  <ellipse cx="95" cy="34" rx="12" ry="6" fill="rgba(200,220,240,0.4)" filter="url(#cldF)"/>
+</g>
+<!-- Stars -->
+<text x="5"  y="26" font-size="15" fill="rgba(80,180,30,0.60)" font-family="serif">★</text>
+<text x="83" y="12" font-size="12" fill="rgba(255,200,0,0.75)" font-family="serif">★</text>
 </svg>

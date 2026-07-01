@@ -1,53 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" width="390" height="844">
-  <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#68B8DC"/>
-      <stop offset="50%" stop-color="#8ECCEA"/>
-      <stop offset="100%" stop-color="#C0E2F6"/>
-    </linearGradient>
-  </defs>
-  <rect width="390" height="844" fill="url(#sky)"/>
-  <!-- Cloud 1 top-right -->
-  <g opacity="0.9">
-    <ellipse cx="310" cy="62" rx="82" ry="36" fill="#EEF4F8"/>
-    <ellipse cx="275" cy="40" rx="50" ry="48" fill="#F4F8FC"/>
-    <ellipse cx="330" cy="44" rx="42" ry="40" fill="#EEF4F8"/>
-    <ellipse cx="362" cy="55" rx="32" ry="28" fill="#E8F0F6"/>
-  </g>
-  <!-- Cloud 2 top-left -->
-  <g opacity="0.85">
-    <ellipse cx="78" cy="118" rx="70" ry="30" fill="#EEF4F8"/>
-    <ellipse cx="50" cy="98" rx="42" ry="40" fill="#F4F8FC"/>
-    <ellipse cx="100" cy="102" rx="36" ry="34" fill="#EEF4F8"/>
-    <ellipse cx="132" cy="112" rx="28" ry="24" fill="#E8F0F6"/>
-  </g>
-  <!-- Sun -->
-  <circle cx="278" cy="270" r="36" fill="#FFD028" opacity="0.88"/>
-  <circle cx="278" cy="270" r="44" fill="none" stroke="#FFD028" stroke-width="10" opacity="0.18"/>
-  <circle cx="278" cy="270" r="54" fill="none" stroke="#FFD028" stroke-width="8" opacity="0.10"/>
-  <!-- Cloud 3 mid-left -->
-  <g opacity="0.75">
-    <ellipse cx="46" cy="390" rx="62" ry="28" fill="#EEF4F8"/>
-    <ellipse cx="20" cy="370" rx="38" ry="36" fill="#F4F8FC"/>
-    <ellipse cx="68" cy="374" rx="32" ry="30" fill="#E8F0F6"/>
-  </g>
-  <!-- Cloud 4 mid-right -->
-  <g opacity="0.72">
-    <ellipse cx="348" cy="490" rx="52" ry="24" fill="#EEF4F8"/>
-    <ellipse cx="318" cy="472" rx="34" ry="32" fill="#F4F8FC"/>
-    <ellipse cx="366" cy="476" rx="28" ry="26" fill="#E8F0F6"/>
-  </g>
-  <!-- Cloud 5 lower -->
-  <g opacity="0.65">
-    <ellipse cx="185" cy="620" rx="78" ry="34" fill="#EEF4F8"/>
-    <ellipse cx="148" cy="596" rx="48" ry="46" fill="#F4F8FC"/>
-    <ellipse cx="208" cy="600" rx="40" ry="38" fill="#EEF4F8"/>
-    <ellipse cx="244" cy="610" rx="30" ry="26" fill="#E8F0F6"/>
-  </g>
-  <!-- Cloud 6 bottom -->
-  <g opacity="0.60">
-    <ellipse cx="90" cy="760" rx="64" ry="28" fill="#EEF4F8"/>
-    <ellipse cx="60" cy="740" rx="40" ry="38" fill="#F4F8FC"/>
-    <ellipse cx="112" cy="744" rx="34" ry="32" fill="#E8F0F6"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+<defs>
+  <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"  stop-color="#5AB0DC"/>
+    <stop offset="40%" stop-color="#80C4E8"/>
+    <stop offset="80%" stop-color="#A8D8F4"/>
+    <stop offset="100%" stop-color="#C8EAF8"/>
+  </linearGradient>
+  <radialGradient id="sunG" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE040"/>
+    <stop offset="60%" stop-color="#FFD020"/>
+    <stop offset="100%" stop-color="#FFA800"/>
+  </radialGradient>
+  <filter id="cldBlur"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="sunGlow"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="390" height="844" fill="url(#skyG)"/>
+
+<!-- Sun + glow -->
+<circle cx="282" cy="272" r="48" fill="rgba(255,220,40,0.18)" filter="url(#sunGlow)"/>
+<circle cx="282" cy="272" r="34" fill="url(#sunG)" opacity="0.86"/>
+<!-- Sun rays (8 short dashes) -->
+<g stroke="#FFD028" stroke-width="3.5" stroke-linecap="round" opacity="0.55">
+  <line x1="282" y1="228" x2="282" y2="218"/>
+  <line x1="282" y1="316" x2="282" y2="326"/>
+  <line x1="238" y1="272" x2="228" y2="272"/>
+  <line x1="326" y1="272" x2="336" y2="272"/>
+  <line x1="251" y1="241" x2="244" y2="234"/>
+  <line x1="313" y1="303" x2="320" y2="310"/>
+  <line x1="313" y1="241" x2="320" y2="234"/>
+  <line x1="251" y1="303" x2="244" y2="310"/>
+</g>
+
+<!-- Cloud 1 – top-right, large -->
+<g opacity="0.92">
+  <ellipse cx="315" cy="70" rx="85" ry="40" fill="#EDF4FA"/>
+  <ellipse cx="278" cy="46" rx="54" ry="52" fill="#F2F8FC"/>
+  <ellipse cx="338" cy="50" rx="44" ry="42" fill="#EDF4FA"/>
+  <ellipse cx="368" cy="62" rx="34" ry="30" fill="#E8F0F6"/>
+  <ellipse cx="295" cy="80" rx="40" ry="22" fill="rgba(200,220,240,0.4)" filter="url(#cldBlur)"/>
+</g>
+<!-- Cloud 2 – top-left -->
+<g opacity="0.86">
+  <ellipse cx="72" cy="122" rx="72" ry="34" fill="#EDF4FA"/>
+  <ellipse cx="42" cy="100" rx="44" ry="42" fill="#F2F8FC"/>
+  <ellipse cx="98" cy="104" rx="38" ry="36" fill="#EDF4FA"/>
+  <ellipse cx="130" cy="116" rx="30" ry="26" fill="#E8F0F6"/>
+  <ellipse cx="80" cy="134" rx="36" ry="18" fill="rgba(200,220,240,0.4)" filter="url(#cldBlur)"/>
+</g>
+<!-- Cloud 3 – mid left -->
+<g opacity="0.78">
+  <ellipse cx="42" cy="390" rx="64" ry="30" fill="#EDF4FA"/>
+  <ellipse cx="14" cy="370" rx="40" ry="38" fill="#F2F8FC"/>
+  <ellipse cx="66" cy="373" rx="34" ry="32" fill="#EDF4FA"/>
+  <ellipse cx="50" cy="402" rx="32" ry="16" fill="rgba(200,220,240,0.35)" filter="url(#cldBlur)"/>
+</g>
+<!-- Cloud 4 – mid right -->
+<g opacity="0.74">
+  <ellipse cx="352" cy="495" rx="56" ry="26" fill="#EDF4FA"/>
+  <ellipse cx="320" cy="475" rx="36" ry="34" fill="#F2F8FC"/>
+  <ellipse cx="370" cy="479" rx="30" ry="28" fill="#EDF4FA"/>
+  <ellipse cx="358" cy="508" rx="28" ry="14" fill="rgba(200,220,240,0.3)" filter="url(#cldBlur)"/>
+</g>
+<!-- Cloud 5 – lower centre -->
+<g opacity="0.68">
+  <ellipse cx="188" cy="628" rx="80" ry="36" fill="#EDF4FA"/>
+  <ellipse cx="150" cy="604" rx="50" ry="48" fill="#F2F8FC"/>
+  <ellipse cx="212" cy="608" rx="42" ry="40" fill="#EDF4FA"/>
+  <ellipse cx="248" cy="620" rx="32" ry="28" fill="#E8F0F6"/>
+  <ellipse cx="195" cy="642" rx="46" ry="20" fill="rgba(200,220,240,0.3)" filter="url(#cldBlur)"/>
+</g>
+<!-- Cloud 6 – bottom left -->
+<g opacity="0.60">
+  <ellipse cx="84" cy="765" rx="68" ry="30" fill="#EDF4FA"/>
+  <ellipse cx="54" cy="744" rx="42" ry="40" fill="#F2F8FC"/>
+  <ellipse cx="108" cy="748" rx="36" ry="34" fill="#EDF4FA"/>
+  <ellipse cx="92" cy="778" rx="38" ry="16" fill="rgba(200,220,240,0.25)" filter="url(#cldBlur)"/>
+</g>
 </svg>

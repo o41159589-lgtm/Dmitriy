@@ -87,7 +87,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;op
 .uinfo-val{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gray1);}
 
 /* ── ACTION BUTTONS (admin) ── */
-.active-hist{background:rgba(155,93,255,0.2)!important;border-color:rgba(155,93,255,0.5)!important;color:var(--purple)!important;}
 .abtn{padding:7px 12px;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;font-family:var(--font-mono);transition:all .15s;background:none;display:inline-flex;align-items:center;gap:5px;}
 .abtn:active{opacity:.8;transform:scale(.97);}
 .abtn.add{border-color:rgba(34,197,94,.3);color:var(--green);}
@@ -701,38 +700,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="dev-recent-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
   </div>
 
-  <!-- Balance history in debug mode -->
-  <div class="rev-card" id="dev-history-block" style="margin-top:12px;display:none">
-    <div class="rev-title">&#x1F4CA; &#x418;&#x421;&#x422;&#x41e;&#x420;&#x418;&#x42F; &#x411;&#x410;&#x41b;&#x410;&#x41d;&#x421;&#x410;</div>
-    <div id="dev-hist-filters" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:10px 0 12px">
-      <button onclick="devHistFilter('all',this)" class="abtn set active-hist" style="padding:7px 4px;font-size:10px;letter-spacing:.5px">&#x1F4CB; &#x412;&#x421;&#x415;</button>
-      <button onclick="devHistFilter('win',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F3C6; &#x41F;&#x43E;&#x431;&#x435;&#x434;&#x44B;</button>
-      <button onclick="devHistFilter('lose',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F480; &#x41F;&#x440;&#x43E;&#x438;&#x433;&#x440;</button>
-      <button onclick="devHistFilter('deposit',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F4B3; &#x41F;&#x43E;&#x43F;&#x43E;&#x43B;&#x43D;</button>
-      <button onclick="devHistFilter('ref',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F91D; &#x420;&#x435;&#x444;&#x435;&#x440;</button>
-      <button onclick="devHistFilter('promo',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F39F; &#x41F;&#x440;&#x43E;&#x43C;&#x43E;</button>
-      <button onclick="devHistFilter('task',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F4CB; &#x417;&#x430;&#x434;&#x430;&#x43D;&#x438;&#x44F;</button>
-      <button onclick="devHistFilter('gift',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F381; &#x41F;&#x43E;&#x434;&#x430;&#x440;&#x43A;&#x438;</button>
-      <button onclick="devHistFilter('admin',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x1F4BC; &#x410;&#x434;&#x43C;.</button>
-      <button onclick="devHistFilter('pos',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x2B06;&#xFE0F; &#x41F;&#x43B;&#x44E;&#x441;</button>
-      <button onclick="devHistFilter('neg',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x2B07;&#xFE0F; &#x41C;&#x438;&#x43D;&#x443;&#x441;</button>
-      <button onclick="devHistFilter('admin_credit',this)" class="abtn" style="padding:7px 4px;font-size:10px">&#x2B06; &#x41A;&#x440;&#x435;&#x434;&#x438;&#x442;</button>
-    </div>
-    <div id="dev-hist-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div style="background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:3px">&#x41F;&#x41B;&#x42E;&#x421;</div>
-        <div id="dev-hist-won" style="font-family:var(--font-mono);font-size:18px;color:var(--green);font-weight:700">0</div>
-      </div>
-      <div style="background:rgba(255,59,85,0.06);border:1px solid rgba(255,59,85,0.15);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:3px">&#x41C;&#x418;&#x41D;&#x423;&#x421;</div>
-        <div id="dev-hist-lost" style="font-family:var(--font-mono);font-size:18px;color:var(--red);font-weight:700">0</div>
-      </div>
-    </div>
-    <div id="dev-hist-list" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
-      <div style="color:var(--muted);text-align:center;padding:20px">&#x1F4ED; &#x417;&#x430;&#x433;&#x440;&#x443;&#x437;&#x438;&#x442;&#x435; &#x43F;&#x43E;&#x43B;&#x44C;&#x437;&#x43E;&#x432;&#x430;&#x442;&#x435;&#x43B;&#x44F;</div>
-    </div>
-  </div>
-
   <!-- Luck for new games -->
   <div class="settings-block">
     <div class="settings-title">&#x1F3B2; НОВЫЕ ИГРЫ — УДАЧА</div>
@@ -1075,78 +1042,6 @@ function devEnter(debug){
   overlay.style.display = 'block';
   st.textContent = `✅ Вошли как UID ${uid}${debug?' (режим отладки)':''}`;
   st.style.color = 'var(--green)';
-  // Load balance history for this user
-  loadDevHistory(uid);
-}
-
-let _devHistData=[], _devHistFilter='all';
-
-function devHistFilter(f, btn){
-  _devHistFilter=f;
-  document.querySelectorAll('#dev-hist-filters button').forEach(b=>b.classList.remove('active-hist'));
-  if(btn)btn.classList.add('active-hist');
-  renderDevHist();
-}
-
-const DEV_HIST_POS=['win','deposit','ref','gift_received','admin_credit','promo','task'];
-const DEV_HIST_NEG=['lose','admin_deduct','gift_sent'];
-const DEV_HIST_ICONS={win:'&#x1F3C6;',lose:'&#x1F480;',deposit:'&#x1F4B3;',ref:'&#x1F91D;',gift_sent:'&#x1F381;',gift_received:'&#x1F381;',admin_luck:'&#x1F340;',admin_deduct:'&#x2B07;&#xFE0F;',admin_credit:'&#x2B06;&#xFE0F;',promo:'&#x1F39F;',task:'&#x1F4CB;'};
-const DEV_HIST_TITLES={win:'&#x41F;&#x43E;&#x431;&#x435;&#x434;&#x430;',lose:'&#x41F;&#x440;&#x43E;&#x438;&#x433;&#x440;&#x44B;&#x448;',deposit:'&#x41F;&#x43E;&#x43F;&#x43E;&#x43B;&#x43D;&#x435;&#x43D;&#x438;&#x435;',ref:'&#x420;&#x435;&#x444;&#x435;&#x440;&#x430;&#x43B;',gift_sent:'&#x41F;&#x43E;&#x434;&#x430;&#x440;&#x43E;&#x43A; &#x43E;&#x442;&#x43F;&#x440;&#x430;&#x432;&#x43B;&#x435;&#x43D;',gift_received:'&#x41F;&#x43E;&#x434;&#x430;&#x440;&#x43E;&#x43A; &#x43F;&#x43E;&#x43B;&#x443;&#x447;&#x435;&#x43D;',admin_luck:'&#x418;&#x437;&#x43C;. &#x443;&#x434;&#x430;&#x447;&#x438;',admin_deduct:'&#x421;&#x43F;&#x438;&#x441;&#x430;&#x43D;&#x438;&#x435;',admin_credit:'&#x41F;&#x43E;&#x43F;&#x43E;&#x43B;&#x43D;&#x435;&#x43D;&#x438;&#x435; (&#x430;&#x434;&#x43C;)',promo:'&#x41F;&#x440;&#x43E;&#x43C;&#x43E;&#x43A;&#x43E;&#x434;',task:'&#x417;&#x430;&#x434;&#x430;&#x43D;&#x438;&#x435;'};
-
-function renderDevHist(){
-  const f=_devHistFilter;
-  let items=_devHistData;
-  if(f==='win')items=items.filter(i=>i.type==='win');
-  else if(f==='lose')items=items.filter(i=>i.type==='lose');
-  else if(f==='deposit')items=items.filter(i=>i.type==='deposit'||i.type==='admin_credit');
-  else if(f==='ref')items=items.filter(i=>i.type==='ref');
-  else if(f==='promo')items=items.filter(i=>i.type==='promo');
-  else if(f==='task')items=items.filter(i=>i.type==='task');
-  else if(f==='gift')items=items.filter(i=>i.type==='gift_sent'||i.type==='gift_received');
-  else if(f==='admin')items=items.filter(i=>['admin_credit','admin_deduct','admin_luck'].includes(i.type));
-  else if(f==='pos')items=items.filter(i=>DEV_HIST_POS.includes(i.type));
-  else if(f==='neg')items=items.filter(i=>DEV_HIST_NEG.includes(i.type));
-  else if(f!=='all')items=items.filter(i=>i.type===f);
-
-  let won=0,lost=0;
-  items.forEach(i=>{
-    if(DEV_HIST_POS.includes(i.type))won+=Math.abs(i.amount||0);
-    if(DEV_HIST_NEG.includes(i.type))lost+=Math.abs(i.amount||0);
-  });
-  document.getElementById('dev-hist-won').textContent=won;
-  document.getElementById('dev-hist-lost').textContent=lost;
-
-  const list=document.getElementById('dev-hist-list');
-  if(!items.length){list.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">&#x1F4ED; &#x41F;&#x443;&#x441;&#x442;&#x43E;</div>';return;}
-  list.innerHTML=items.slice(0,100).map(i=>{
-    const d=new Date((i.created_at||0)*1000);
-    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
-    const pos=DEV_HIST_POS.includes(i.type);
-    const amt=Math.abs(i.amount||0);
-    const col=pos?'var(--green)':'var(--red)';
-    return \`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 12px;">
-      <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">\${DEV_HIST_ICONS[i.type]||'&#x2022;'}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600">\${DEV_HIST_TITLES[i.type]||i.type}</div>
-        <div style="font-size:11px;color:var(--muted2);margin-top:2px">\${i.detail||''} &middot; \${dt}</div>
-      </div>
-      <div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:\${col}">\${pos?'+':'-'}\${amt}</div>
-    </div>\`;
-  }).join('');
-}
-
-async function loadDevHistory(uid){
-  const block=document.getElementById('dev-history-block');
-  if(block)block.style.display='block';
-  const list=document.getElementById('dev-hist-list');
-  if(list)list.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px">&#x23F3; &#x41B;&#x430;&#x434;&#x438;&#x43C;...</div>';
-  try{
-    const r=await fetch('/api/history/'+uid);
-    _devHistData=await r.json();
-    _devHistFilter='all';
-    document.querySelectorAll('#dev-hist-filters button').forEach((b,i)=>{b.classList.remove('active-hist');if(i===0)b.classList.add('active-hist');});
-    renderDevHist();
-  }catch(e){if(list)list.innerHTML='<div style="color:var(--red);text-align:center;padding:20px">&#x274C; &#x41E;&#x448;&#x438;&#x431;&#x43A;&#x430; &#x437;&#x430;&#x433;&#x440;&#x443;&#x437;&#x43A;&#x438;</div>';}
 }
 
 function devClose(){
@@ -2113,21 +2008,31 @@ function showLoadingError(msg){
 })();
 
 // ── ADMIN GUARD ──
+// Uses /api/admin/get_global_luck for auth-check — returns instantly (no DB table scan).
+// Full data loads via load() / loadGl() AFTER the overlay is dismissed.
 (async function checkAdminAccess(){
   if(!ADMIN_UID){
     window.location.replace('not_telegram.html');
     return;
   }
   try{
-    const r = await fetch('/api/admin/users',{
-      headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID}
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), 6000);
+    const r = await fetch('/api/admin/get_global_luck',{
+      headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID},
+      signal: ctrl.signal
     });
+    clearTimeout(t);
     if(r.status === 403){
       window.location.replace('index.html');
       return;
     }
   } catch(e){
-    // Network error – allow panel to load anyway
+    if(e.name==='AbortError'){
+      showLoadingError('Сервер не отвечает.<br>Обновите страницу.');
+      return;
+    }
+    // Other network error – allow panel to load anyway
   }
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();

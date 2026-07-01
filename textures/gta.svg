@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 90">
+<defs>
+  <linearGradient id="carBody" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#FF4060"/>
+    <stop offset="55%" stop-color="#D82040"/>
+    <stop offset="100%" stop-color="#A01030"/>
+  </linearGradient>
+  <linearGradient id="carTop" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#FF8090"/>
+    <stop offset="100%" stop-color="#E03050"/>
+  </linearGradient>
+  <radialGradient id="wheelG" cx="40%" cy="35%" r="60%">
+    <stop offset="0%" stop-color="#555"/>
+    <stop offset="100%" stop-color="#111"/>
+  </radialGradient>
+  <filter id="carShadow"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(180,0,30,0.3)"/></filter>
+  <filter id="speedBlur"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+
+<!-- Speed lines -->
+<g stroke="#FFB0C0" stroke-width="1.5" stroke-linecap="round" opacity="0.45">
+  <line x1="2" y1="40" x2="22" y2="40"/>
+  <line x1="4" y1="48" x2="18" y2="48"/>
+  <line x1="6" y1="32" x2="16" y2="32"/>
+  <line x1="2" y1="55" x2="14" y2="55"/>
+</g>
+
+<!-- Car body shadow -->
+<ellipse cx="72" cy="74" rx="42" ry="7" fill="rgba(180,0,30,0.18)" filter="url(#speedBlur)"/>
+
+<!-- Main body -->
+<g filter="url(#carShadow)">
+  <!-- Lower body (wide) -->
+  <rect x="22" y="52" width="88" height="18" rx="8" fill="url(#carBody)"/>
+  <!-- Upper cabin -->
+  <rect x="38" y="34" width="56" height="22" rx="8" fill="url(#carTop)"/>
+  <!-- Windshield -->
+  <rect x="44" y="36" width="24" height="16" rx="5" fill="rgba(150,220,255,0.75)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+  <rect x="72" y="36" width="16" height="16" rx="4" fill="rgba(150,220,255,0.6)" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+  <!-- Roof spoiler -->
+  <rect x="88" y="30" width="6" height="8" rx="2" fill="#C01828"/>
+  <rect x="82" y="28" width="18" height="5" rx="2" fill="#E02038"/>
+  <!-- Hood detail -->
+  <path d="M22,52 Q22,44 38,40 L38,52 Z" fill="rgba(255,255,255,0.1)"/>
+  <!-- Side vents -->
+  <rect x="26" y="56" width="12" height="4" rx="2" fill="rgba(0,0,0,0.3)"/>
+  <rect x="100" y="56" width="8" height="4" rx="2" fill="rgba(0,0,0,0.3)"/>
+  <!-- Highlight line on body -->
+  <path d="M24,54 Q72,50 108,53" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" stroke-linecap="round"/>
+</g>
+
+<!-- Front wheel -->
+<g>
+  <circle cx="42" cy="70" r="13" fill="url(#wheelG)"/>
+  <circle cx="42" cy="70" r="9" fill="#333"/>
+  <circle cx="42" cy="70" r="5" fill="#555"/>
+  <circle cx="42" cy="70" r="2.5" fill="#888"/>
+  <!-- tyre -->
+  <circle cx="42" cy="70" r="13" fill="none" stroke="#444" stroke-width="3"/>
+</g>
+<!-- Rear wheel -->
+<g>
+  <circle cx="98" cy="70" r="13" fill="url(#wheelG)"/>
+  <circle cx="98" cy="70" r="9" fill="#333"/>
+  <circle cx="98" cy="70" r="5" fill="#555"/>
+  <circle cx="98" cy="70" r="2.5" fill="#888"/>
+  <circle cx="98" cy="70" r="13" fill="none" stroke="#444" stroke-width="3"/>
+</g>
+
+<!-- Stars around car -->
+<text x="115" y="22" font-size="13" fill="rgba(255,180,0,0.75)" font-family="serif">★</text>
+<text x="10"  y="18" font-size="10" fill="rgba(255,180,0,0.55)" font-family="serif">★</text>
+</svg>

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130">
+<defs>
+  <radialGradient id="ballG" cx="35%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="#C0EEFF"/>
+    <stop offset="50%" stop-color="#6060E8"/>
+    <stop offset="100%" stop-color="#3030C0"/>
+  </radialGradient>
+  <radialGradient id="pegG" cx="35%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="#FFF0B0"/>
+    <stop offset="100%" stop-color="#C09000"/>
+  </radialGradient>
+  <linearGradient id="boardG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#E8F4FF"/>
+    <stop offset="100%" stop-color="#C8E4FF"/>
+  </linearGradient>
+  <filter id="ballGlow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(80,80,240,0.4)"/></filter>
+  <filter id="pegGlow"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="rgba(200,160,0,0.3)"/></filter>
+</defs>
+
+<!-- Board background -->
+<rect x="4" y="4" width="112" height="122" rx="12" fill="url(#boardG)" stroke="#A8D0F0" stroke-width="1.5"/>
+
+<!-- Peg rows (4 rows, staggered) -->
+<!-- Row 1: 3 pegs -->
+<g filter="url(#pegGlow)">
+  <circle cx="36" cy="20" r="5" fill="url(#pegG)"/><circle cx="60" cy="20" r="5" fill="url(#pegG)"/><circle cx="84" cy="20" r="5" fill="url(#pegG)"/>
+</g>
+<!-- Row 2: 4 pegs -->
+<g filter="url(#pegGlow)">
+  <circle cx="24" cy="38" r="5" fill="url(#pegG)"/><circle cx="48" cy="38" r="5" fill="url(#pegG)"/><circle cx="72" cy="38" r="5" fill="url(#pegG)"/><circle cx="96" cy="38" r="5" fill="url(#pegG)"/>
+</g>
+<!-- Row 3: 3 pegs -->
+<g filter="url(#pegGlow)">
+  <circle cx="36" cy="56" r="5" fill="url(#pegG)"/><circle cx="60" cy="56" r="5" fill="url(#pegG)"/><circle cx="84" cy="56" r="5" fill="url(#pegG)"/>
+</g>
+<!-- Row 4: 4 pegs -->
+<g filter="url(#pegGlow)">
+  <circle cx="24" cy="74" r="5" fill="url(#pegG)"/><circle cx="48" cy="74" r="5" fill="url(#pegG)"/><circle cx="72" cy="74" r="5" fill="url(#pegG)"/><circle cx="96" cy="74" r="5" fill="url(#pegG)"/>
+</g>
+
+<!-- Ball (falling, with trail) -->
+<ellipse cx="62" cy="60" rx="4" ry="6" fill="rgba(80,80,240,0.20)" filter="url(#ballGlow)"/>
+<ellipse cx="62" cy="52" rx="3" ry="4" fill="rgba(80,80,240,0.12)"/>
+<circle cx="62" cy="44" r="9" fill="url(#ballG)" filter="url(#ballGlow)"/>
+<circle cx="59" cy="41" r="3" fill="rgba(255,255,255,0.45)"/>
+
+<!-- Multiplier buckets at bottom -->
+<g font-family="Arial,sans-serif" font-size="8.5" font-weight="800" text-anchor="middle">
+  <!-- bucket backgrounds -->
+  <rect x="5"  y="92" width="19" height="22" rx="4" fill="#8040E0" opacity="0.85"/>
+  <rect x="26" y="96" width="16" height="18" rx="4" fill="#4060E0" opacity="0.80"/>
+  <rect x="44" y="98" width="16" height="16" rx="4" fill="#20A060" opacity="0.80"/>
+  <rect x="62" y="98" width="16" height="16" rx="4" fill="#20A060" opacity="0.80"/>
+  <rect x="80" y="96" width="16" height="18" rx="4" fill="#4060E0" opacity="0.80"/>
+  <rect x="98" y="92" width="17" height="22" rx="4" fill="#8040E0" opacity="0.85"/>
+  <!-- labels -->
+  <text x="14.5" y="107" fill="white">10x</text>
+  <text x="34"   y="109" fill="white">3x</text>
+  <text x="52"   y="109" fill="white">1x</text>
+  <text x="70"   y="109" fill="white">1x</text>
+  <text x="88"   y="109" fill="white">3x</text>
+  <text x="106.5" y="107" fill="white">10x</text>
+</g>
+
+<!-- Stars decoration -->
+<text x="5" y="18" font-size="11" fill="rgba(80,80,240,0.5)" font-family="serif">★</text>
+<text x="105" y="22" font-size="10" fill="rgba(80,80,240,0.4)" font-family="serif">★</text>
+</svg>

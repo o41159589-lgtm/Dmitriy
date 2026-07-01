@@ -6,94 +6,184 @@
 <title>Европейская рулетка — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+/* ── Keep original JS-referenced vars ── */
 :root{
-  --bg:#141414;--bg2:#1C1C1C;
-  --white:#FFF;--gray1:#E0E0E0;--gray2:#AAA;--gray3:#555;
-  --green:#5DD98C;--red:#E07878;--gold:#D9AC5A;--purple:#9977CC;--cyan:#6BAAB8;
-  --text:#F0F0F0;--muted:#848484;--muted2:#636363;
-  --card:rgba(255,255,255,.04);--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.13);
-  --fd:'Bebas Neue',sans-serif;--fu:'Exo 2',sans-serif;--fm:'JetBrains Mono',monospace;
+  --bg:#90C8E8;--bg2:#F4F8FF;
+  --white:#1A2040;--gray1:#445080;--gray2:#8090B0;--gray3:#C0C8D8;
+  --green:#1A9A50;--red:#D8284A;--gold:#A87800;--purple:#6030B0;--cyan:#1068A0;
+  --text:#1A2040;--muted:#8090B0;--muted2:#A0AAB8;
+  --card:rgba(255,255,255,0.88);--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.14);
+  --fd:'Caveat',cursive;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{background:var(--bg);color:var(--text);font-family:var(--fu);min-height:100vh;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;}
-.amb{position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 50% 35% at 50% 0%,rgba(255,255,255,.03) 0%,transparent 60%);}
+html,body{
+  background:linear-gradient(175deg,#5AB0DC 0%,#7EC4E8 30%,#A0D4F0 60%,#C2E8F8 100%) fixed;
+  color:var(--text);font-family:var(--fu);min-height:100vh;overflow-x:hidden;
+}
+
+/* Sky background fixed layer */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url('../textures/sky.svg');
+  background-size:cover;background-position:top center;
+}
 
 /* ── TOPBAR ── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(20,20,20,.94);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
-.fp-back{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:22px;cursor:pointer;font-weight:700;}
-.fp-title{font-family:var(--fd);font-size:18px;color:var(--white);letter-spacing:2px;}
-.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(217,172,90,.1);border:1px solid rgba(217,172,90,.25);border-radius:12px;padding:7px 12px;font-family:var(--fm);font-size:13px;font-weight:700;color:var(--gold);}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));
+  position:sticky;top:0;z-index:50;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,0,0,0.07);
+  box-shadow:0 2px 12px rgba(0,30,70,0.10);
+}
+.fp-back{
+  width:38px;height:38px;border-radius:12px;
+  background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.10);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);font-size:22px;cursor:pointer;font-weight:700;
+}
+.fp-title{
+  font-family:'Caveat',cursive;font-size:22px;font-weight:700;
+  color:var(--text);letter-spacing:0;
+}
+.bal-chip{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,0.95);border:2px solid #FFD028;
+  border-radius:14px;padding:7px 12px;
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#A87800;
+}
+
 /* ── TOAST ── */
-.toast{position:fixed;top:80px;left:14px;right:14px;z-index:500;background:rgba(22,22,22,.98);border:1px solid var(--border2);backdrop-filter:blur(20px);border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);opacity:0;transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s;pointer-events:none;}
+.toast{
+  position:fixed;top:80px;left:14px;right:14px;z-index:500;
+  background:rgba(255,255,255,0.97);border:1.5px solid rgba(0,0,0,0.09);
+  backdrop-filter:blur(20px);border-radius:16px;padding:12px 18px;
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;text-align:center;
+  transform:translateY(-80px);opacity:0;
+  transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s;pointer-events:none;
+  box-shadow:0 6px 24px rgba(0,30,70,0.14);color:var(--text);
+}
 .toast.show{transform:translateY(0);opacity:1;}
-.toast.ok{color:var(--green);border-color:rgba(93,217,140,.25);}
-.toast.err{color:var(--red);border-color:rgba(224,120,120,.28);}
-.toast.info{color:var(--cyan);border-color:rgba(107,170,184,.25);}
+.toast.ok{color:#1A9A50;border-color:rgba(26,154,80,.3);}
+.toast.err{color:#D8284A;border-color:rgba(216,40,74,.3);}
+.toast.info{color:#1068A0;border-color:rgba(16,104,160,.2);}
 
 /* ── WHEEL SECTION ── */
-.wheel-section{background:rgba(0,0,0,.35);padding:20px 0 18px;display:flex;flex-direction:column;align-items:center;gap:14px;border-bottom:1px solid var(--border);position:relative;}
+.wheel-section{
+  background:rgba(255,255,255,0.55);
+  padding:20px 0 18px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  border-bottom:1px solid rgba(0,0,0,0.07);
+  position:relative;z-index:1;
+  backdrop-filter:blur(8px);
+}
 .wheel-frame{position:relative;width:272px;height:272px;}
-#wc{position:absolute;inset:0;border-radius:50%;}
-/* Gold pointer — same triangle as GTA */
-.w-ptr{position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:22px solid var(--gold);filter:drop-shadow(0 0 8px rgba(255,214,0,.9));z-index:10;}
+#wc{position:absolute;inset:0;border-radius:50%;filter:drop-shadow(0 8px 24px rgba(0,30,70,0.20));}
+.w-ptr{
+  position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:10px solid transparent;border-right:10px solid transparent;
+  border-top:22px solid #FFD028;
+  filter:drop-shadow(0 0 8px rgba(255,210,40,.9));z-index:10;
+}
 
 /* Result band */
-.res-band{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:11px 22px;min-width:200px;justify-content:center;}
-.res-num{font-family:var(--fm);font-size:46px;font-weight:700;line-height:1;min-width:60px;text-align:center;transition:color .2s;}
-.res-num.red{color:var(--red);text-shadow:0 0 20px rgba(224,120,120,.4);}
-.res-num.black{color:#ccc;text-shadow:none;}
-.res-num.green{color:var(--green);text-shadow:0 0 20px rgba(93,217,140,.4);}
-.res-lbl{font-size:13px;font-weight:600;color:var(--muted2);line-height:1.5;text-align:left;}
+.res-band{
+  display:flex;align-items:center;gap:14px;
+  background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);
+  border-radius:18px;padding:11px 22px;min-width:200px;justify-content:center;
+  box-shadow:0 4px 14px rgba(0,30,70,0.10);
+}
+.res-num{
+  font-family:'Caveat',cursive;font-size:52px;font-weight:700;line-height:1;
+  min-width:60px;text-align:center;transition:color .2s;color:var(--muted2);
+}
+.res-num.red{color:#D8284A;text-shadow:0 0 20px rgba(216,40,74,0.35);}
+.res-num.black{color:#2A2A3A;text-shadow:0 0 10px rgba(40,40,60,0.2);}
+.res-num.green{color:#1A9A50;text-shadow:0 0 20px rgba(26,154,80,0.35);}
+.res-lbl{font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--muted);line-height:1.5;text-align:left;}
 
 /* History pills */
-.hist{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 4px;min-height:18px;}
-.hp{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:10px;font-weight:700;flex-shrink:0;animation:hpin .2s cubic-bezier(.34,1.5,.64,1) both;}
+.hist{display:flex;gap:5px;flex-wrap:wrap;padding:10px 14px 4px;min-height:18px;position:relative;z-index:1;}
+.hp{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;flex-shrink:0;
+  animation:hpin .2s cubic-bezier(.34,1.5,.64,1) both;
+}
 @keyframes hpin{from{transform:scale(0);}to{transform:scale(1);}}
-.hp.red{background:rgba(224,120,120,.1);border:1px solid rgba(224,120,120,.3);color:var(--red);}
-.hp.black{background:rgba(180,180,200,.08);border:1px solid rgba(180,180,200,.2);color:#bbb;}
-.hp.green{background:rgba(93,217,140,.1);border:1px solid rgba(93,217,140,.25);color:var(--green);}
+.hp.red{background:rgba(216,40,74,0.12);border:1.5px solid rgba(216,40,74,.30);color:#D8284A;}
+.hp.black{background:rgba(40,40,60,0.08);border:1.5px solid rgba(40,40,60,.18);color:#2A2A3A;}
+.hp.green{background:rgba(26,154,80,0.10);border:1.5px solid rgba(26,154,80,.28);color:#1A9A50;}
 
 /* ── BET SECTION ── */
-.bet-wrap{padding:14px;}
-.stag{font-family:var(--fm);font-size:10px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.bet-wrap{padding:14px;position:relative;z-index:1;}
+.stag{
+  font-family:'Caveat',cursive;font-size:18px;font-weight:700;
+  color:var(--muted);margin-bottom:10px;
+}
 .bet-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.bet-lbl{color:var(--muted2);font-size:12px;font-weight:600;font-family:var(--fm);white-space:nowrap;}
-.bet-inp{flex:1;background:rgba(0,0,0,.5);border:1px solid var(--border2);border-radius:12px;padding:10px 12px;color:var(--white);font-family:var(--fm);font-size:18px;outline:none;text-align:center;width:0;}
-.bet-inp:focus{border-color:rgba(255,255,255,.3);}
+.bet-lbl{color:var(--muted);font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;white-space:nowrap;}
+.bet-inp{
+  flex:1;background:rgba(255,255,255,0.88);
+  border:1.5px solid rgba(0,0,0,0.12);border-radius:14px;
+  padding:11px 14px;color:var(--text);
+  font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;
+  outline:none;text-align:center;width:0;
+}
+.bet-inp:focus{border-color:rgba(60,90,200,0.40);}
 .qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-.qb{background:var(--card);border:1px solid var(--border2);border-radius:9px;padding:7px 12px;color:var(--gray1);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fm);transition:all .12s;}
-.qb:active{background:rgba(255,255,255,.12);color:var(--white);}
+.qb{
+  background:rgba(255,255,255,0.82);border:1.5px solid rgba(0,0,0,0.10);
+  border-radius:10px;padding:7px 13px;color:var(--text);
+  font-size:12px;font-weight:800;cursor:pointer;
+  font-family:'Nunito',sans-serif;transition:all .12s;
+}
+.qb:active{background:rgba(0,0,0,0.08);}
 
 /* Bet type buttons */
 .btypes{display:grid;gap:8px;margin-bottom:10px;}
 .btypes.c3{grid-template-columns:repeat(3,1fr);}
 .btypes.c2{grid-template-columns:repeat(2,1fr);}
-.bt{border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;border:1px solid var(--border);background:var(--card);color:var(--text);transition:all .15s;user-select:none;}
-.bt-s{font-size:10px;color:var(--muted2);margin-top:4px;font-family:var(--fm);}
-.bt.r{border-color:rgba(224,120,120,.15);}
-.bt.r.sel{background:rgba(224,120,120,.1);border-color:rgba(224,120,120,.45);color:#E09090;}
-.bt.bl{border-color:rgba(180,180,200,.12);}
-.bt.bl.sel{background:rgba(180,180,200,.08);border-color:rgba(180,180,200,.3);color:#ddd;}
-.bt.g{border-color:rgba(93,217,140,.1);}
-.bt.g.sel{background:rgba(93,217,140,.07);border-color:rgba(93,217,140,.3);color:var(--green);}
-.bt.o{border-color:rgba(255,255,255,.1);}
-.bt.o.sel{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.28);color:var(--white);}
+.bt{
+  border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;
+  font-size:13px;font-weight:800;border:1.5px solid;
+  background:rgba(255,255,255,0.80);color:var(--text);
+  font-family:'Nunito',sans-serif;transition:all .15s;user-select:none;
+}
+.bt-s{font-size:10px;color:var(--muted);margin-top:4px;font-family:'Nunito',sans-serif;font-weight:700;}
+.bt.r{border-color:rgba(216,40,74,.22);}
+.bt.r.sel{background:rgba(216,40,74,.12);border-color:rgba(216,40,74,.55);color:#D8284A;}
+.bt.bl{border-color:rgba(40,40,60,.14);}
+.bt.bl.sel{background:rgba(40,40,60,.08);border-color:rgba(40,40,60,.35);color:#2A2A3A;}
+.bt.g{border-color:rgba(26,154,80,.16);}
+.bt.g.sel{background:rgba(26,154,80,.10);border-color:rgba(26,154,80,.45);color:#1A9A50;}
+.bt.o{border-color:rgba(0,0,0,.10);}
+.bt.o.sel{background:rgba(26,32,64,.08);border-color:rgba(26,32,64,.28);color:#1A2040;}
 
 /* Spin button */
-.spin-btn{width:100%;padding:16px;background:var(--white);border:none;border-radius:14px;color:#000;font-family:var(--fd);font-size:22px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 20px rgba(255,255,255,.08);transition:opacity .15s,transform .1s;}
+.spin-btn{
+  width:100%;padding:16px;
+  background:#1A2040;border:none;border-radius:16px;
+  color:#fff;font-family:'Caveat',cursive;font-size:24px;font-weight:700;
+  cursor:pointer;box-shadow:0 4px 18px rgba(20,30,80,.28);
+  transition:opacity .15s,transform .1s;letter-spacing:0;
+}
 .spin-btn:active{transform:scale(.98);}
 .spin-btn:disabled{opacity:.35;cursor:not-allowed;}
 </style>
 </head>
 <body>
-<div class="amb"></div>
 <div class="toast" id="toast"></div>
 <div class="topbar">
   <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
-  <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">🎰</span><span class="fp-title">ЕВРОП. РУЛЕТКА</span></div>
+  <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">🎡</span><span class="fp-title">ЕВРОП. РУЛЕТКА</span></div>
   <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
 </div>
 
@@ -103,14 +193,14 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
     <canvas id="wc" width="272" height="272"></canvas>
   </div>
   <div class="res-band">
-    <div class="res-num" id="res-num" style="color:var(--muted)">—</div>
+    <div class="res-num" id="res-num" style="color:var(--muted2)">—</div>
     <div class="res-lbl" id="res-lbl">Выберите<br>ставку</div>
   </div>
 </div>
 <div class="hist" id="hist"></div>
 
 <div class="bet-wrap">
-  <div class="stag">// ставка</div>
+  <div class="stag">Ставка</div>
   <div class="bet-row">
     <span class="bet-lbl">🪙</span>
     <input class="bet-inp" id="bet-inp" type="number" min="1" value="10" inputmode="numeric">
@@ -120,7 +210,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
     <div class="qb" onclick="sb(50)">50</div><div class="qb" onclick="sb(100)">100</div>
     <div class="qb" onclick="sbAll()">MAX</div><div class="qb" onclick="sbHalf()">½</div>
   </div>
-  <div class="stag">// тип ставки</div>
+  <div class="stag">Тип ставки</div>
   <div class="btypes c3" style="margin-bottom:8px">
     <div class="bt r" data-bet="red" onclick="selBet(this)">🔴 Красное<div class="bt-s">×2</div></div>
     <div class="bt bl" data-bet="black" onclick="selBet(this)">⚫ Чёрное<div class="bt-s">×2</div></div>
@@ -138,7 +228,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
     <div class="bt o" data-bet="dozen1" onclick="selBet(this)">1–12<div class="bt-s">×3</div></div>
     <div class="bt o" data-bet="dozen2" onclick="selBet(this)">13–24<div class="bt-s">×3</div></div>
   </div>
-  <button class="spin-btn" id="spin-btn" onclick="spinEuro()">🎰 КРУТИТЬ</button>
+  <button class="spin-btn" id="spin-btn" onclick="spinEuro()">🎡 КРУТИТЬ</button>
 </div>
 <div style="height:30px"></div>
 

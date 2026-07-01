@@ -1,38 +1,101 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
-  <!-- Outer purple ring -->
-  <circle cx="60" cy="60" r="58" fill="#C060D8" stroke="#9030B8" stroke-width="1.5"/>
-  <!-- Gold dots on ring -->
-  <circle cx="60.0" cy="4.0" r="2.5" fill="#FFD028"/>
-  <circle cx="88.0" cy="11.5" r="2.5" fill="#FFD028"/>
-  <circle cx="108.5" cy="32.0" r="2.5" fill="#FFD028"/>
-  <circle cx="116.0" cy="60.0" r="2.5" fill="#FFD028"/>
-  <circle cx="108.5" cy="88.0" r="2.5" fill="#FFD028"/>
-  <circle cx="88.0" cy="108.5" r="2.5" fill="#FFD028"/>
-  <circle cx="60.0" cy="116.0" r="2.5" fill="#FFD028"/>
-  <circle cx="32.0" cy="108.5" r="2.5" fill="#FFD028"/>
-  <circle cx="11.5" cy="88.0" r="2.5" fill="#FFD028"/>
-  <circle cx="4.0" cy="60.0" r="2.5" fill="#FFD028"/>
-  <circle cx="11.5" cy="32.0" r="2.5" fill="#FFD028"/>
-  <circle cx="32.0" cy="11.5" r="2.5" fill="#FFD028"/>
-  <!-- Sectors -->
-  <path d="M 60,60 L 60.0,10.0 A 50,50 0 0,1 85.0,16.7 Z" fill="#F06880"/>
-  <path d="M 60,60 L 85.0,16.7 A 50,50 0 0,1 103.3,35.0 Z" fill="#FFF0F2"/>
-  <path d="M 60,60 L 103.3,35.0 A 50,50 0 0,1 110.0,60.0 Z" fill="#F06880"/>
-  <path d="M 60,60 L 110.0,60.0 A 50,50 0 0,1 103.3,85.0 Z" fill="#FFF0F2"/>
-  <path d="M 60,60 L 103.3,85.0 A 50,50 0 0,1 85.0,103.3 Z" fill="#F06880"/>
-  <path d="M 60,60 L 85.0,103.3 A 50,50 0 0,1 60.0,110.0 Z" fill="#FFF0F2"/>
-  <path d="M 60,60 L 60.0,110.0 A 50,50 0 0,1 35.0,103.3 Z" fill="#F06880"/>
-  <path d="M 60,60 L 35.0,103.3 A 50,50 0 0,1 16.7,85.0 Z" fill="#FFF0F2"/>
-  <path d="M 60,60 L 16.7,85.0 A 50,50 0 0,1 10.0,60.0 Z" fill="#F06880"/>
-  <path d="M 60,60 L 10.0,60.0 A 50,50 0 0,1 16.7,35.0 Z" fill="#FFF0F2"/>
-  <path d="M 60,60 L 16.7,35.0 A 50,50 0 0,1 35.0,16.7 Z" fill="#F06880"/>
-  <path d="M 60,60 L 35.0,16.7 A 50,50 0 0,1 60.0,10.0 Z" fill="#FFF0F2"/>
-  <!-- Inner dashed ring -->
-  <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1" stroke-dasharray="4,3"/>
-  <!-- Center hub gold -->
-  <circle cx="60" cy="60" r="13" fill="#FFD028" stroke="#C8900  0" stroke-width="2"/>
-  <circle cx="60" cy="60" r="5.5" fill="#FFF080" stroke="#C09000" stroke-width="1"/>
-  <!-- Stars decoration -->
-  <text x="6" y="22" font-size="13" fill="rgba(240,80,120,0.55)" font-family="serif">★</text>
-  <text x="98" y="112" font-size="11" fill="rgba(240,80,120,0.45)" font-family="serif">★</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 124">
+<defs>
+  <radialGradient id="wHub" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE878"/>
+    <stop offset="100%" stop-color="#C89000"/>
+  </radialGradient>
+  <filter id="wShadow" x="-10%" y="-10%" width="120%" height="120%">
+    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.3)"/>
+  </filter>
+</defs>
+<!-- Outer wood ring -->
+<circle cx="62" cy="62" r="61" fill="#8B4513" stroke="#6B3010" stroke-width="1.5"/>
+<!-- Purple/gold rim -->
+<circle cx="62" cy="62" r="59" fill="#C050B8" stroke="#9020A0" stroke-width="1"/>
+  <circle cx="62.0" cy="3.5" r="2.8" fill="#FFD028"/>
+  <circle cx="91.25" cy="11.34" r="2.8" fill="#FFD028"/>
+  <circle cx="112.66" cy="32.75" r="2.8" fill="#FFD028"/>
+  <circle cx="120.5" cy="62.0" r="2.8" fill="#FFD028"/>
+  <circle cx="112.66" cy="91.25" r="2.8" fill="#FFD028"/>
+  <circle cx="91.25" cy="112.66" r="2.8" fill="#FFD028"/>
+  <circle cx="62.0" cy="120.5" r="2.8" fill="#FFD028"/>
+  <circle cx="32.75" cy="112.66" r="2.8" fill="#FFD028"/>
+  <circle cx="11.34" cy="91.25" r="2.8" fill="#FFD028"/>
+  <circle cx="3.5" cy="62.0" r="2.8" fill="#FFD028"/>
+  <circle cx="11.34" cy="32.75" r="2.8" fill="#FFD028"/>
+  <circle cx="32.75" cy="11.34" r="2.8" fill="#FFD028"/>
+
+<!-- Sectors -->
+  <path d="M 62,62 L 62.0,10.0 A 52,52 0 0,1 88.0,16.97 Z" fill="#E84060"/>
+  <text x="71.84" y="29.29" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">32</text>
+  <path d="M 62,62 L 88.0,16.97 A 52,52 0 0,1 107.03,36.0 Z" fill="#2A2A3A"/>
+  <text x="88.87" y="39.13" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">15</text>
+  <path d="M 62,62 L 107.03,36.0 A 52,52 0 0,1 114.0,62.0 Z" fill="#E84060"/>
+  <text x="98.71" y="56.16" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">19</text>
+  <path d="M 62,62 L 114.0,62.0 A 52,52 0 0,1 107.03,88.0 Z" fill="#2A2A3A"/>
+  <text x="98.71" y="75.84" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">4</text>
+  <path d="M 62,62 L 107.03,88.0 A 52,52 0 0,1 88.0,107.03 Z" fill="#E84060"/>
+  <text x="88.87" y="92.87" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">21</text>
+  <path d="M 62,62 L 88.0,107.03 A 52,52 0 0,1 62.0,114.0 Z" fill="#2A2A3A"/>
+  <text x="71.84" y="102.71" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">2</text>
+  <path d="M 62,62 L 62.0,114.0 A 52,52 0 0,1 36.0,107.03 Z" fill="#E84060"/>
+  <text x="52.16" y="102.71" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">25</text>
+  <path d="M 62,62 L 36.0,107.03 A 52,52 0 0,1 16.97,88.0 Z" fill="#2A2A3A"/>
+  <text x="35.13" y="92.87" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">17</text>
+  <path d="M 62,62 L 16.97,88.0 A 52,52 0 0,1 10.0,62.0 Z" fill="#E84060"/>
+  <text x="25.29" y="75.84" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">34</text>
+  <path d="M 62,62 L 10.0,62.0 A 52,52 0 0,1 16.97,36.0 Z" fill="#2A2A3A"/>
+  <text x="25.29" y="56.16" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">6</text>
+  <path d="M 62,62 L 16.97,36.0 A 52,52 0 0,1 36.0,16.97 Z" fill="#00B860"/>
+  <text x="35.13" y="39.13" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">0</text>
+  <path d="M 62,62 L 36.0,16.97 A 52,52 0 0,1 62.0,10.0 Z" fill="#2A2A3A"/>
+  <text x="52.16" y="29.29" text-anchor="middle" font-size="9.5" font-weight="700" fill="white" font-family="Arial">27</text>
+
+  <line x1="62.0" y1="10.0" x2="62.0" y2="5.0" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="71.03" y1="10.79" x2="71.9" y2="5.87" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="79.79" y1="13.14" x2="81.5" y2="8.44" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="88.0" y1="16.97" x2="90.5" y2="12.64" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="95.42" y1="22.17" x2="98.64" y2="18.34" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="101.83" y1="28.58" x2="105.66" y2="25.36" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="107.03" y1="36.0" x2="111.36" y2="33.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="110.86" y1="44.21" x2="115.56" y2="42.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="113.21" y1="52.97" x2="118.13" y2="52.1" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="114.0" y1="62.0" x2="119.0" y2="62.0" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="113.21" y1="71.03" x2="118.13" y2="71.9" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="110.86" y1="79.79" x2="115.56" y2="81.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="107.03" y1="88.0" x2="111.36" y2="90.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="101.83" y1="95.42" x2="105.66" y2="98.64" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="95.42" y1="101.83" x2="98.64" y2="105.66" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="88.0" y1="107.03" x2="90.5" y2="111.36" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="79.79" y1="110.86" x2="81.5" y2="115.56" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="71.03" y1="113.21" x2="71.9" y2="118.13" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="62.0" y1="114.0" x2="62.0" y2="119.0" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="52.97" y1="113.21" x2="52.1" y2="118.13" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="44.21" y1="110.86" x2="42.5" y2="115.56" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="36.0" y1="107.03" x2="33.5" y2="111.36" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="28.58" y1="101.83" x2="25.36" y2="105.66" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="22.17" y1="95.42" x2="18.34" y2="98.64" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="16.97" y1="88.0" x2="12.64" y2="90.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="13.14" y1="79.79" x2="8.44" y2="81.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="10.79" y1="71.03" x2="5.87" y2="71.9" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="10.0" y1="62.0" x2="5.0" y2="62.0" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="10.79" y1="52.97" x2="5.87" y2="52.1" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="13.14" y1="44.21" x2="8.44" y2="42.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="16.97" y1="36.0" x2="12.64" y2="33.5" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="22.17" y1="28.58" x2="18.34" y2="25.36" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="28.58" y1="22.17" x2="25.36" y2="18.34" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="36.0" y1="16.97" x2="33.5" y2="12.64" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="44.21" y1="13.14" x2="42.5" y2="8.44" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+  <line x1="52.97" y1="10.79" x2="52.1" y2="5.87" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+
+<!-- Inner separator ring -->
+<circle cx="62" cy="62" r="52" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.2"/>
+<circle cx="62" cy="62" r="24" fill="#3A1A08" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+<!-- Center hub -->
+<circle cx="62" cy="62" r="16" fill="url(#wHub)" filter="url(#wShadow)"/>
+<circle cx="62" cy="62" r="8" fill="#FFF0A0" stroke="#C08800" stroke-width="1"/>
+<circle cx="62" cy="62" r="3" fill="#8B6000"/>
+<!-- Stars decoration -->
+<text x="8" y="22" font-size="13" fill="rgba(240,80,120,0.6)" font-family="serif">★</text>
+<text x="100" y="114" font-size="11" fill="rgba(240,80,120,0.5)" font-family="serif">★</text>
 </svg>
