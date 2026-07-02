@@ -1598,6 +1598,23 @@ function uCard(u){
           }
         </div>
       </div>
+      <!-- История пользователя -->
+      <div class="ag" style="padding-top:4px">
+        <div class="ag-l">📋 История транзакций</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+          <button class="abtn msg" style="font-size:10px;padding:4px 8px" onclick="loadUHist(${u.user_id},'all',this)">Все</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(45,198,83,.1);border-color:rgba(45,198,83,.3);color:var(--green)" onclick="loadUHist(${u.user_id},'win',this)">🏆 Победы</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(230,57,70,.1);border-color:rgba(230,57,70,.3);color:var(--red)" onclick="loadUHist(${u.user_id},'lose',this)">💀 Проигрыши</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(76,201,240,.1);border-color:rgba(76,201,240,.3);color:var(--blue)" onclick="loadUHist(${u.user_id},'deposit',this)">💳 Пополн.</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(245,197,66,.1);border-color:rgba(245,197,66,.3);color:var(--gold)" onclick="loadUHist(${u.user_id},'task',this)">✅ Задания</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(155,89,182,.1);border-color:rgba(155,89,182,.3);color:var(--purple)" onclick="loadUHist(${u.user_id},'promo',this)">🎟 Промо</button>
+          <button class="abtn add" style="font-size:10px;padding:4px 8px" onclick="loadUHist(${u.user_id},'admin_credit',this)">⬆️ Добавление</button>
+          <button class="abtn sub" style="font-size:10px;padding:4px 8px" onclick="loadUHist(${u.user_id},'admin_deduct',this)">⬇️ Списание</button>
+        </div>
+        <div id="uhist-${u.user_id}" style="max-height:220px;overflow-y:auto;font-size:11px;color:var(--muted)">
+          <button class="abtn msg" style="width:100%" onclick="loadUHist(${u.user_id},'all',this)">📋 Загрузить историю</button>
+        </div>
+      </div>
     </div>
   </div>`;
 }
@@ -1619,7 +1636,41 @@ async function loadUserRefsCount(uid){
     if(el) el.textContent = r.count||0;
   }catch(e){}
 }
-async function loadUserRefs(uid){
+async function loadUHist(uid, filter, btn){
+  const listEl = document.getElementById('uhist-'+uid);
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="padding:8px;text-align:center">⏳ Загружаем...</div>';
+  try{
+    const r = await api(`/api/history/${uid}`);
+    let items = Array.isArray(r) ? r : [];
+    if(filter && filter !== 'all') items = items.filter(i => i.type === filter);
+    if(!items.length){
+      listEl.innerHTML = '<div style="padding:8px;text-align:center;color:var(--muted)">Записей нет</div>';
+      return;
+    }
+    const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',
+      admin_credit:'⬆️',admin_deduct:'⬇️',promo:'🎟',task:'✅'};
+    const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',
+      gift_sent:'Подарок отпр.',gift_received:'Подарок получ.',
+      admin_credit:'Начисление',admin_deduct:'Списание',promo:'Промокод',task:'Задание'};
+    const POS=['win','deposit','ref','gift_received','admin_credit','promo','task'];
+    listEl.innerHTML = items.slice(0,60).map(i=>{
+      const d = new Date((i.created_at||0)*1000);
+      const dt = d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+               +' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+      const pos = POS.includes(i.type);
+      const col = pos ? 'var(--green)' : 'var(--red)';
+      return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--card-br)">
+        <span>${ICONS[i.type]||'•'}</span>
+        <span style="flex:1;color:var(--text-main)">${TITLES[i.type]||i.type}${i.detail?' · <span style="color:var(--muted)">'+esc(i.detail)+'</span>':''}</span>
+        <span style="color:${col};font-weight:700;white-space:nowrap">${pos?'+':'-'}${Math.abs(i.amount)}🪙</span>
+        <span style="color:var(--muted);white-space:nowrap">${dt}</span>
+      </div>`;
+    }).join('');
+  }catch(e){
+    listEl.innerHTML='<div style="padding:8px;text-align:center;color:var(--red)">Ошибка загрузки</div>';
+  }
+}
   const listEl = document.getElementById('refs-list-'+uid);
   if(!listEl) return;
   listEl.innerHTML = '⏳ Загружаем...';

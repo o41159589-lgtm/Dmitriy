@@ -1,74 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 115 168">
 <defs>
-  <linearGradient id="tBrick" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%" stop-color="#D4855A"/>
-    <stop offset="50%" stop-color="#C87848"/>
-    <stop offset="100%" stop-color="#B86030"/>
+  <linearGradient id="tFace" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#D08060"/>
+    <stop offset="40%" stop-color="#C47848"/>
+    <stop offset="100%" stop-color="#A85030"/>
   </linearGradient>
-  <linearGradient id="tBrick2" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%" stop-color="#C87848"/>
-    <stop offset="100%" stop-color="#A85028"/>
+  <linearGradient id="tSide" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#B86038"/>
+    <stop offset="100%" stop-color="#904020"/>
   </linearGradient>
   <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#80D040"/>
+    <stop offset="0%" stop-color="#88DC40"/>
     <stop offset="100%" stop-color="#58A020"/>
   </linearGradient>
-  <filter id="tShadow"><feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="rgba(80,30,0,0.25)"/></filter>
-  <filter id="cldF"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="tDrop">
+    <feDropShadow dx="3" dy="5" stdDeviation="5" flood-color="rgba(80,30,0,0.28)"/>
+  </filter>
+  <filter id="cF"><feGaussianBlur stdDeviation="1.5"/></filter>
 </defs>
-<!-- Grass -->
-<ellipse cx="60" cy="157" rx="48" ry="13" fill="url(#grassG)"/>
-<ellipse cx="60" cy="153" rx="40" ry="9" fill="#88D848"/>
-<rect x="20" y="147" width="80" height="11" rx="5" fill="url(#grassG)"/>
+<!-- Grass and shadow -->
+<ellipse cx="60" cy="162" rx="50" ry="8" fill="rgba(40,80,0,0.18)" filter="url(#cF)"/>
+<ellipse cx="60" cy="158" rx="50" ry="14" fill="url(#grassG)"/>
+<ellipse cx="60" cy="154" rx="42" ry="10" fill="#90E048"/>
+<rect x="18" y="148" width="84" height="12" rx="6" fill="url(#grassG)"/>
 
-<!-- Tower (5 degrees lean right) -->
-<g transform="rotate(5,55,90)" filter="url(#tShadow)">
-  <!-- Base level -->
-  <rect x="18" y="92" width="74" height="58" rx="5" fill="url(#tBrick)" stroke="#A85028" stroke-width="1.2"/>
-  <!-- brick lines base -->
-  <line x1="18" y1="107" x2="92" y2="107" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
-  <line x1="18" y1="122" x2="92" y2="122" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
-  <line x1="18" y1="137" x2="92" y2="137" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
-  <line x1="55" y1="92" x2="55" y2="150" stroke="rgba(0,0,0,0.07)" stroke-width="0.8"/>
-  <!-- arch door -->
-  <path d="M 33,150 L 33,124 Q 55,112 77,124 L 77,150 Z" fill="rgba(0,0,0,0.55)"/>
-  <path d="M 35,150 L 35,125 Q 55,114 75,125 L 75,150 Z" fill="#622818" opacity="0.6"/>
-  <!-- highlight -->
-  <rect x="18" y="92" width="8" height="58" rx="2" fill="rgba(255,255,255,0.08)"/>
+<!-- Tower (tilted 5° right) -->
+<g transform="rotate(5,55,90)" filter="url(#tDrop)">
+  <!-- Ground level -->
+  <rect x="16" y="93" width="76" height="58" rx="5" fill="url(#tFace)" stroke="#955028" stroke-width="1.2"/>
+  <!-- Brick lines base -->
+  <line x1="16" y1="108" x2="92" y2="108" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="16" y1="123" x2="92" y2="123" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="16" y1="138" x2="92" y2="138" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="54" y1="93" x2="54" y2="151" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
+  <!-- Main arch / door opening -->
+  <path d="M 30,151 L 30,122 Q 54,109 78,122 L 78,151 Z" fill="#621A08" opacity="0.75"/>
+  <path d="M 32,151 L 32,124 Q 54,113 76,124 L 76,151 Z" fill="#401008" opacity="0.5"/>
+  <!-- Left shadow -->
+  <rect x="16" y="93" width="9" height="58" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <!-- Right shadow -->
+  <rect x="83" y="93" width="9" height="58" rx="2" fill="rgba(0,0,0,0.08)"/>
 
   <!-- Level 2 -->
-  <rect x="22" y="58" width="66" height="38" rx="4" fill="url(#tBrick2)" stroke="#985028" stroke-width="1.2"/>
-  <line x1="22" y1="72" x2="88" y2="72" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
-  <line x1="22" y1="85" x2="88" y2="85" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
-  <!-- arches level 2 -->
-  <path d="M 28,96 Q 28,82 42,82 Q 55,82 55,96" fill="rgba(0,0,0,0.30)"/>
-  <path d="M 55,96 Q 55,82 68,82 Q 82,82 82,96" fill="rgba(0,0,0,0.30)"/>
-  <rect x="22" y="58" width="7" height="38" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="20" y="58" width="68" height="38" rx="4" fill="url(#tFace)" stroke="#905028" stroke-width="1.2"/>
+  <line x1="20" y1="73" x2="88" y2="73" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="20" y1="87" x2="88" y2="87" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <!-- Arches level 2 -->
+  <path d="M 26,96 Q 26,82 44,82 Q 54,82 54,96" fill="rgba(0,0,0,0.28)"/>
+  <path d="M 54,96 Q 54,82 66,82 Q 82,82 82,96" fill="rgba(0,0,0,0.28)"/>
+  <rect x="20" y="58" width="8" height="38" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="80" y="58" width="8" height="38" rx="2" fill="rgba(0,0,0,0.07)"/>
 
   <!-- Level 3 -->
-  <rect x="26" y="28" width="58" height="34" rx="4" fill="url(#tBrick)" stroke="#A85028" stroke-width="1.2"/>
-  <line x1="26" y1="42" x2="84" y2="42" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
-  <line x1="26" y1="55" x2="84" y2="55" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
-  <path d="M 33,62 Q 33,50 55,50 Q 77,50 77,62" fill="rgba(0,0,0,0.25)"/>
-  <rect x="26" y="28" width="7" height="34" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="24" y="26" width="60" height="36" rx="4" fill="url(#tFace)" stroke="#905028" stroke-width="1.2"/>
+  <line x1="24" y1="41" x2="84" y2="41" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="24" y1="55" x2="84" y2="55" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <path d="M 32,62 Q 32,50 54,50 Q 76,50 76,62" fill="rgba(0,0,0,0.24)"/>
+  <rect x="24" y="26" width="8" height="36" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="76" y="26" width="8" height="36" rx="2" fill="rgba(0,0,0,0.07)"/>
 
-  <!-- Top battlements -->
-  <rect x="26" y="16" width="58" height="16" rx="3" fill="url(#tBrick2)" stroke="#985028" stroke-width="1"/>
-  <!-- Merlon teeth -->
-  <rect x="26" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
-  <rect x="41" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
-  <rect x="56" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
-  <rect x="71" y="10" width="11" height="14" rx="3" fill="url(#tBrick)" stroke="#985028" stroke-width="1"/>
+  <!-- Battlements bar -->
+  <rect x="24" y="14" width="60" height="16" rx="3" fill="url(#tSide)" stroke="#804020" stroke-width="1"/>
+  <!-- 4 merlons -->
+  <rect x="24" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
+  <rect x="40" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
+  <rect x="56" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
+  <rect x="72" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
 </g>
 
-<!-- Small cloud top-right -->
-<g opacity="0.90">
-  <ellipse cx="97" cy="26" rx="17" ry="9" fill="rgba(255,255,255,0.92)"/>
-  <ellipse cx="84" cy="28" rx="14" ry="13" fill="rgba(255,255,255,0.92)"/>
-  <ellipse cx="103" cy="30" rx="12" ry="10" fill="rgba(255,255,255,0.88)"/>
-  <ellipse cx="95" cy="34" rx="12" ry="6" fill="rgba(200,220,240,0.4)" filter="url(#cldF)"/>
+<!-- Small cloud -->
+<g opacity="0.92">
+  <ellipse cx="97" cy="27" rx="18" ry="10" fill="rgba(255,255,255,0.94)"/>
+  <ellipse cx="83" cy="30" rx="15" ry="14" fill="rgba(255,255,255,0.94)"/>
+  <ellipse cx="105" cy="31" rx="13" ry="11" fill="rgba(255,255,255,0.90)"/>
+  <ellipse cx="97" cy="36" rx="14" ry="6" fill="rgba(180,210,230,0.35)" filter="url(#cF)"/>
 </g>
 <!-- Stars -->
-<text x="5"  y="26" font-size="15" fill="rgba(80,180,30,0.60)" font-family="serif">★</text>
-<text x="83" y="12" font-size="12" fill="rgba(255,200,0,0.75)" font-family="serif">★</text>
+<text x="4"  y="26" font-size="15" fill="rgba(80,180,30,0.65)" font-family="serif">★</text>
+<text x="84" y="11" font-size="12" fill="rgba(255,200,0,0.80)" font-family="serif">★</text>
 </svg>

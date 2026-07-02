@@ -184,7 +184,7 @@ body::before{
 <div class="topbar">
   <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
   <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">🎡</span><span class="fp-title">ЕВРОП. РУЛЕТКА</span></div>
-  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+  <div class="bal-chip"><img src="../textures/coin.svg" width="20" height="20" alt="🪙" style="vertical-align:middle"> <span id="r-bal">—</span></div>
 </div>
 
 <div class="wheel-section">
@@ -288,11 +288,11 @@ function drawWheel(angle,winIdx=-1){
       else{g.addColorStop(0,'#00FF88');g.addColorStop(1,'#0A6030');}
       ctx.fillStyle=g;
     }else{
-      ctx.fillStyle=c==='red'?'#9A0E18':c==='black'?'#101025':'#0A5028';
+      ctx.fillStyle=c==='red'?'#E83050':c==='black'?'#2A2A44':'#18A050';
     }
     ctx.fill();
     // Divider
-    ctx.save();ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=.8;
+    ctx.save();ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(cx+Math.cos(sa)*(R*.5),cy+Math.sin(sa)*(R*.5));
     ctx.lineTo(cx+Math.cos(sa)*(R-2),cy+Math.sin(sa)*(R-2));ctx.stroke();ctx.restore();
     // Win border
@@ -311,12 +311,15 @@ function drawWheel(angle,winIdx=-1){
 
   // Gold outer ring
   ctx.beginPath();ctx.arc(cx,cy,R-1,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,214,0,.4)';ctx.lineWidth=2;ctx.stroke();
+  ctx.strokeStyle='rgba(255,214,0,.7)';ctx.lineWidth=2.5;ctx.stroke();
+  // Decorative inner ring
+  ctx.beginPath();ctx.arc(cx,cy,R-14,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=1;ctx.strokeStyle='rgba(255,214,0,.25)';ctx.stroke();
 
   // Hub
   const hr=R*.13;
-  const hg=ctx.createRadialGradient(cx,cy,0,cx,cy,hr);
-  hg.addColorStop(0,'#555');hg.addColorStop(.5,'#222');hg.addColorStop(1,'#111');
+  const hg=ctx.createRadialGradient(cx-hr*.2,cy-hr*.25,0,cx,cy,hr);
+  hg.addColorStop(0,'#FFE878');hg.addColorStop(.5,'#FFD028');hg.addColorStop(1,'#C09000');
   ctx.beginPath();ctx.arc(cx,cy,hr,0,Math.PI*2);ctx.fillStyle=hg;ctx.fill();
   ctx.strokeStyle='rgba(255,214,0,.4)';ctx.lineWidth=1;ctx.stroke();
   // Hub shine

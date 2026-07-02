@@ -1,68 +1,109 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 136">
 <defs>
-  <radialGradient id="ballG" cx="35%" cy="30%" r="65%">
-    <stop offset="0%" stop-color="#C0EEFF"/>
-    <stop offset="50%" stop-color="#6060E8"/>
-    <stop offset="100%" stop-color="#3030C0"/>
-  </radialGradient>
-  <radialGradient id="pegG" cx="35%" cy="30%" r="65%">
-    <stop offset="0%" stop-color="#FFF0B0"/>
+  <linearGradient id="boardG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"  stop-color="#E4F2FF"/>
+    <stop offset="100%" stop-color="#C4E0FF"/>
+  </linearGradient>
+  <radialGradient id="pegG" cx="35%" cy="28%" r="65%">
+    <stop offset="0%"  stop-color="#FFF5C0"/>
+    <stop offset="45%" stop-color="#FFD828"/>
     <stop offset="100%" stop-color="#C09000"/>
   </radialGradient>
-  <linearGradient id="boardG" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#E8F4FF"/>
-    <stop offset="100%" stop-color="#C8E4FF"/>
-  </linearGradient>
-  <filter id="ballGlow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(80,80,240,0.4)"/></filter>
-  <filter id="pegGlow"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="rgba(200,160,0,0.3)"/></filter>
+  <radialGradient id="ballG" cx="32%" cy="28%" r="68%">
+    <stop offset="0%"  stop-color="#C8F0FF"/>
+    <stop offset="40%" stop-color="#6060E8"/>
+    <stop offset="100%" stop-color="#2828B0"/>
+  </radialGradient>
+  <radialGradient id="pegShine" cx="35%" cy="28%" r="55%">
+    <stop offset="0%"  stop-color="rgba(255,255,220,0.80)"/>
+    <stop offset="100%" stop-color="rgba(255,255,220,0)"/>
+  </radialGradient>
+  <filter id="pDrop">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="rgba(160,110,0,0.35)"/>
+  </filter>
+  <filter id="bDrop">
+    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(40,40,180,0.45)"/>
+  </filter>
+  <filter id="boardDrop">
+    <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(20,60,140,0.18)"/>
+  </filter>
+  <filter id="bucketGlow">
+    <feGaussianBlur stdDeviation="1" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
 </defs>
 
-<!-- Board background -->
-<rect x="4" y="4" width="112" height="122" rx="12" fill="url(#boardG)" stroke="#A8D0F0" stroke-width="1.5"/>
+<!-- Board -->
+<rect x="4" y="4" width="116" height="128" rx="14" fill="url(#boardG)" stroke="#90C4F0" stroke-width="2" filter="url(#boardDrop)"/>
+<!-- Board inner border -->
+<rect x="7" y="7" width="110" height="122" rx="11" fill="none" stroke="rgba(100,160,220,0.25)" stroke-width="1"/>
 
-<!-- Peg rows (4 rows, staggered) -->
-<!-- Row 1: 3 pegs -->
-<g filter="url(#pegGlow)">
-  <circle cx="36" cy="20" r="5" fill="url(#pegG)"/><circle cx="60" cy="20" r="5" fill="url(#pegG)"/><circle cx="84" cy="20" r="5" fill="url(#pegG)"/>
+<!-- Helper: peg at cx,cy with r=5 -->
+<!-- Row 1 (y=22): 3 pegs -->
+<g filter="url(#pDrop)">
+  <circle cx="38" cy="22" r="5.5" fill="url(#pegG)"/><circle cx="38" cy="22" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="62" cy="22" r="5.5" fill="url(#pegG)"/><circle cx="62" cy="22" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="86" cy="22" r="5.5" fill="url(#pegG)"/><circle cx="86" cy="22" r="5.5" fill="url(#pegShine)"/>
 </g>
-<!-- Row 2: 4 pegs -->
-<g filter="url(#pegGlow)">
-  <circle cx="24" cy="38" r="5" fill="url(#pegG)"/><circle cx="48" cy="38" r="5" fill="url(#pegG)"/><circle cx="72" cy="38" r="5" fill="url(#pegG)"/><circle cx="96" cy="38" r="5" fill="url(#pegG)"/>
+<!-- Row 2 (y=38): 4 pegs -->
+<g filter="url(#pDrop)">
+  <circle cx="26" cy="40" r="5.5" fill="url(#pegG)"/><circle cx="26" cy="40" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="50" cy="40" r="5.5" fill="url(#pegG)"/><circle cx="50" cy="40" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="74" cy="40" r="5.5" fill="url(#pegG)"/><circle cx="74" cy="40" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="98" cy="40" r="5.5" fill="url(#pegG)"/><circle cx="98" cy="40" r="5.5" fill="url(#pegShine)"/>
 </g>
-<!-- Row 3: 3 pegs -->
-<g filter="url(#pegGlow)">
-  <circle cx="36" cy="56" r="5" fill="url(#pegG)"/><circle cx="60" cy="56" r="5" fill="url(#pegG)"/><circle cx="84" cy="56" r="5" fill="url(#pegG)"/>
+<!-- Row 3 (y=56): 3 pegs -->
+<g filter="url(#pDrop)">
+  <circle cx="38" cy="58" r="5.5" fill="url(#pegG)"/><circle cx="38" cy="58" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="62" cy="58" r="5.5" fill="url(#pegG)"/><circle cx="62" cy="58" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="86" cy="58" r="5.5" fill="url(#pegG)"/><circle cx="86" cy="58" r="5.5" fill="url(#pegShine)"/>
 </g>
-<!-- Row 4: 4 pegs -->
-<g filter="url(#pegGlow)">
-  <circle cx="24" cy="74" r="5" fill="url(#pegG)"/><circle cx="48" cy="74" r="5" fill="url(#pegG)"/><circle cx="72" cy="74" r="5" fill="url(#pegG)"/><circle cx="96" cy="74" r="5" fill="url(#pegG)"/>
-</g>
-
-<!-- Ball (falling, with trail) -->
-<ellipse cx="62" cy="60" rx="4" ry="6" fill="rgba(80,80,240,0.20)" filter="url(#ballGlow)"/>
-<ellipse cx="62" cy="52" rx="3" ry="4" fill="rgba(80,80,240,0.12)"/>
-<circle cx="62" cy="44" r="9" fill="url(#ballG)" filter="url(#ballGlow)"/>
-<circle cx="59" cy="41" r="3" fill="rgba(255,255,255,0.45)"/>
-
-<!-- Multiplier buckets at bottom -->
-<g font-family="Arial,sans-serif" font-size="8.5" font-weight="800" text-anchor="middle">
-  <!-- bucket backgrounds -->
-  <rect x="5"  y="92" width="19" height="22" rx="4" fill="#8040E0" opacity="0.85"/>
-  <rect x="26" y="96" width="16" height="18" rx="4" fill="#4060E0" opacity="0.80"/>
-  <rect x="44" y="98" width="16" height="16" rx="4" fill="#20A060" opacity="0.80"/>
-  <rect x="62" y="98" width="16" height="16" rx="4" fill="#20A060" opacity="0.80"/>
-  <rect x="80" y="96" width="16" height="18" rx="4" fill="#4060E0" opacity="0.80"/>
-  <rect x="98" y="92" width="17" height="22" rx="4" fill="#8040E0" opacity="0.85"/>
-  <!-- labels -->
-  <text x="14.5" y="107" fill="white">10x</text>
-  <text x="34"   y="109" fill="white">3x</text>
-  <text x="52"   y="109" fill="white">1x</text>
-  <text x="70"   y="109" fill="white">1x</text>
-  <text x="88"   y="109" fill="white">3x</text>
-  <text x="106.5" y="107" fill="white">10x</text>
+<!-- Row 4 (y=74): 4 pegs -->
+<g filter="url(#pDrop)">
+  <circle cx="26" cy="76" r="5.5" fill="url(#pegG)"/><circle cx="26" cy="76" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="50" cy="76" r="5.5" fill="url(#pegG)"/><circle cx="50" cy="76" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="74" cy="76" r="5.5" fill="url(#pegG)"/><circle cx="74" cy="76" r="5.5" fill="url(#pegShine)"/>
+  <circle cx="98" cy="76" r="5.5" fill="url(#pegG)"/><circle cx="98" cy="76" r="5.5" fill="url(#pegShine)"/>
 </g>
 
-<!-- Stars decoration -->
-<text x="5" y="18" font-size="11" fill="rgba(80,80,240,0.5)" font-family="serif">★</text>
-<text x="105" y="22" font-size="10" fill="rgba(80,80,240,0.4)" font-family="serif">★</text>
+<!-- Ball trail (fading) -->
+<circle cx="62" cy="62" r="5.5" fill="rgba(70,70,220,0.14)"/>
+<circle cx="62" cy="52" r="4.5" fill="rgba(70,70,220,0.10)"/>
+<circle cx="62" cy="43" r="3.5" fill="rgba(70,70,220,0.07)"/>
+<!-- Ball -->
+<circle cx="62" cy="34" r="9.5" fill="url(#ballG)" filter="url(#bDrop)"/>
+<circle cx="58.5" cy="30.5" r="3.5" fill="rgba(255,255,255,0.52)"/>
+<circle cx="62" cy="34" r="9.5" fill="none" stroke="rgba(100,100,220,0.35)" stroke-width="1"/>
+
+<!-- Multiplier buckets -->
+<g font-family="'Nunito',Arial,sans-serif" font-size="8" font-weight="800" text-anchor="middle">
+  <!-- 10x -->
+  <rect x="5"  y="95" width="20" height="26" rx="5" fill="#7028D8" filter="url(#bucketGlow)"/>
+  <rect x="5"  y="95" width="20" height="8" rx="5" fill="rgba(255,255,255,0.22)"/>
+  <text x="15" y="112" fill="white" font-size="7.5">10x</text>
+  <!-- 3x -->
+  <rect x="27" y="99" width="17" height="22" rx="4" fill="#3868E0"/>
+  <rect x="27" y="99" width="17" height="7" rx="4" fill="rgba(255,255,255,0.18)"/>
+  <text x="35.5" y="114" fill="white" font-size="7.5">3x</text>
+  <!-- 1x -->
+  <rect x="46" y="101" width="15" height="20" rx="4" fill="#20A068"/>
+  <rect x="46" y="101" width="15" height="6" rx="4" fill="rgba(255,255,255,0.18)"/>
+  <text x="53.5" y="115" fill="white" font-size="7.5">1x</text>
+  <!-- 1x -->
+  <rect x="63" y="101" width="15" height="20" rx="4" fill="#20A068"/>
+  <rect x="63" y="101" width="15" height="6" rx="4" fill="rgba(255,255,255,0.18)"/>
+  <text x="70.5" y="115" fill="white" font-size="7.5">1x</text>
+  <!-- 3x -->
+  <rect x="80" y="99" width="17" height="22" rx="4" fill="#3868E0"/>
+  <rect x="80" y="99" width="17" height="7" rx="4" fill="rgba(255,255,255,0.18)"/>
+  <text x="88.5" y="114" fill="white" font-size="7.5">3x</text>
+  <!-- 10x -->
+  <rect x="99" y="95" width="20" height="26" rx="5" fill="#7028D8" filter="url(#bucketGlow)"/>
+  <rect x="99" y="95" width="20" height="8" rx="5" fill="rgba(255,255,255,0.22)"/>
+  <text x="109" y="112" fill="white" font-size="7.5">10x</text>
+</g>
+
+<!-- Decorations -->
+<text x="5"  y="18" font-size="12" fill="rgba(70,70,220,0.55)" font-family="serif">★</text>
+<text x="108" y="22" font-size="10" fill="rgba(70,70,220,0.45)" font-family="serif">★</text>
 </svg>

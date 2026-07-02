@@ -183,6 +183,9 @@
    brand-new tl- prefixed classes, so no other tab/page,
    the nav bar, toasts or modals are affected.
    ════════════════════════════════════════════════════ */
+/* body always gets sky gradient so no black area on any page */
+body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed!important;min-height:100vh!important;}
+
 #page-games{
   background-image:url('textures/sky.svg');
   background-size:cover;
@@ -294,7 +297,7 @@
 /* ════════════════════════════════════════════════════
    SKY THEME — INFO PAGE (#page-home)
    ════════════════════════════════════════════════════ */
-#page-home{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-home{background-image:url('textures/sky.svg');background-size:100% auto;background-position:top center;background-repeat:no-repeat;background-color:#C0E4F8;}
 #page-home .home-content{padding:0 14px 28px;position:relative;z-index:1;}
 #page-home .hero{padding:calc(18px + env(safe-area-inset-top,0px)) 0 16px;}
 #page-home .hero-logo{background:rgba(255,255,255,0.85);border:2px solid rgba(255,255,255,0.7);box-shadow:0 4px 14px rgba(20,40,90,0.12);}
@@ -321,7 +324,7 @@
 /* ════════════════════════════════════════════════════
    SKY THEME — PROFILE PAGE (#page-inventory)
    ════════════════════════════════════════════════════ */
-#page-inventory{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-inventory{background-image:url('textures/sky.svg');background-size:100% auto;background-position:top center;background-repeat:no-repeat;background-color:#C0E4F8;}
 #page-inventory .profile-wrap{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
 #page-inventory .profile-top-card{background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.78);border-radius:24px;box-shadow:0 6px 20px rgba(20,40,90,0.12);}
 #page-inventory .profile-top-card::before,#page-inventory .profile-top-card::after{display:none;}
@@ -387,7 +390,7 @@
 /* ════════════════════════════════════════════════════
    SKY THEME — SHOP PAGE (#page-shop)
    ════════════════════════════════════════════════════ */
-#page-shop{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-shop{background-image:url('textures/sky.svg');background-size:100% auto;background-position:top center;background-repeat:no-repeat;background-color:#C0E4F8;}
 #page-shop .shop-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
 #page-shop .shop-title{font-family:'Caveat',cursive;font-size:30px;font-weight:700;letter-spacing:0;color:#1A2040;}
 #page-shop .shop-bal{background:rgba(255,255,255,0.90);border:1.5px solid rgba(255,210,40,0.45);color:#A87800;font-family:'Nunito',sans-serif;font-weight:800;}
@@ -407,7 +410,7 @@
    SKY THEME — HISTORY PAGE (#page-history) — dev-only,
    reachable via admin-panel debug toggle
    ════════════════════════════════════════════════════ */
-#page-history{background-image:url('textures/sky.svg');background-size:cover;background-position:top center;background-repeat:no-repeat;background-color:#90C8E8;}
+#page-history{background-image:url('textures/sky.svg');background-size:100% auto;background-position:top center;background-repeat:no-repeat;background-color:#C0E4F8;}
 #page-history .hist-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
 #page-history .hist-filter .hf{background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,255,255,0.85);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
 #page-history .hist-filter .hf.a{background:#1A2040;color:#fff;border-color:#1A2040;}
@@ -541,7 +544,7 @@ input:checked + .toggle-slider{background:#1A2040;}
 <!-- GAMES -->
 <div class="page active" id="page-games">
   <div class="games-content">
-    <div class="games-header"><div class="games-title">Где полудим?)</div><div class="coin-pill">🪙 <span id="r-bal">0</span></div></div>
+    <div class="games-header"><div class="games-title">Где полудим?)</div><div class="coin-pill"><img src="textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle;flex-shrink:0"> <span id="r-bal">0</span></div></div>
 
     <a class="game-card tl-roulette" href="european_roulette.html">
       <div class="tl-l">
@@ -616,12 +619,20 @@ input:checked + .toggle-slider{background:#1A2040;}
 <!-- HISTORY -->
 <div class="page" id="page-history">
   <div class="hist-content">
-    <div class="hist-filter">
+    <div class="hist-filter" style="grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:5px">
       <div class="hf a" onclick="setF(this,'all')">Все</div>
       <div class="hf" onclick="setF(this,'win')">🏆 Победы</div>
       <div class="hf" onclick="setF(this,'lose')">💀 Проигр.</div>
       <div class="hf" onclick="setF(this,'deposit')">💳 Пополн.</div>
+    </div>
+    <div class="hist-filter" style="grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
       <div class="hf" onclick="setF(this,'ref')">🤝 Рефер.</div>
+      <div class="hf" onclick="setF(this,'task')">✅ Задания</div>
+      <div class="hf" onclick="setF(this,'promo')">🎟 Промо</div>
+      <div class="hf" onclick="setF(this,'credit')">⬆️ Добавл.</div>
+    </div>
+    <div class="hist-filter" style="grid-template-columns:1fr;gap:5px;margin-bottom:10px">
+      <div class="hf" onclick="setF(this,'deduct')">⬇️ Списание</div>
     </div>
     <div class="hstats"><div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="s-won">0</div></div><div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="s-lost">0</div></div></div>
     <div id="hist-list"></div>
@@ -631,9 +642,9 @@ input:checked + .toggle-slider{background:#1A2040;}
 <!-- SHOP -->
 <div class="page" id="page-shop">
   <div class="shop-content">
-    <div class="shop-header"><div class="shop-title">МАГАЗИН</div><div style="display:flex;align-items:center;gap:8px"><div class="shop-bal">🪙 <span id="shop-bal">—</span></div><button onclick="openTopup()" style="background:var(--lime);border:none;border-radius:10px;color:#000;padding:7px 12px;font-family:var(--font-display);font-size:14px;cursor:pointer;">+ ТОП</button></div></div>
+    <div class="shop-header"><div class="shop-title">МАГАЗИН</div><div style="display:flex;align-items:center;gap:8px"><div class="shop-bal">🪙 <span id="shop-bal">—</span></div><button onclick="openTopup()" style="background:#1A2040;border:none;border-radius:10px;color:#fff;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(20,40,90,0.22);">+ ПОПОЛНИТЬ</button></div></div>
     <div class="hist-filter" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="hf a" onclick="shopTab('bot',this)">🤖 От бота</div><div class="hf" onclick="shopTab('owner',this)">👑 От владельца</div></div>
-    <div id="shop-bot"><div class="owner-note" style="border-color:rgba(255,59,85,.3);background:rgba(255,59,85,.07);color:rgba(255,200,200,.9);">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div><div id="bot-gifts-inner"><div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div></div></div>
+    <div id="shop-bot"><div class="owner-note" style="border-color:rgba(216,40,74,.25);background:rgba(255,230,230,0.75);color:#A01828;">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div><div id="bot-gifts-inner"><div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div></div></div>
     <div id="shop-owner" style="display:none"><div class="owner-note">👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>✅ <b>Можно конвертировать в звёзды</b>.<br><br>После покупки владелец получит уведомление.</div><div class="gift-grid" id="owner-gifts-grid"></div></div>
   </div>
 </div>
@@ -716,6 +727,7 @@ function updateUI(){
 
 let _navCount=4;
 function showPage(n,btn,i){
+  window.scrollTo({top:0,behavior:'instant'});
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');
@@ -769,6 +781,10 @@ async function renderHistory(){
   else if(curF==='win')items=histData.filter(i=>i.type==='win');
   else if(curF==='lose')items=histData.filter(i=>i.type==='lose');
   else if(curF==='deposit')items=histData.filter(i=>i.type==='deposit'||i.type==='admin_credit');
+  else if(curF==='task')items=histData.filter(i=>i.type==='task');
+  else if(curF==='promo')items=histData.filter(i=>i.type==='promo');
+  else if(curF==='credit')items=histData.filter(i=>i.type==='admin_credit');
+  else if(curF==='deduct')items=histData.filter(i=>i.type==='admin_deduct');
   else items=histData.filter(i=>i.type===curF);
   let won=0,lost=0;
   histData.forEach(i=>{if(HIST_POS_TYPES.includes(i.type))won+=Math.abs(i.amount);if(HIST_NEG_TYPES.includes(i.type))lost+=Math.abs(i.amount);});

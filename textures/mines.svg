@@ -1,92 +1,123 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
 <defs>
-  <linearGradient id="gemG" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#7ADEFC"/>
-    <stop offset="50%" stop-color="#28A8E0"/>
+  <linearGradient id="gemG" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%"  stop-color="#80DEFF"/>
+    <stop offset="40%" stop-color="#30A8E0"/>
     <stop offset="100%" stop-color="#1060A0"/>
   </linearGradient>
-  <radialGradient id="cellG" cx="30%" cy="30%" r="70%">
-    <stop offset="0%" stop-color="white"/>
-    <stop offset="100%" stop-color="#E8F4FF"/>
+  <radialGradient id="cellBg" cx="30%" cy="28%" r="75%">
+    <stop offset="0%"  stop-color="#FAFEFF"/>
+    <stop offset="100%" stop-color="#DCF0FF"/>
   </radialGradient>
-  <filter id="gShadow"><feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="rgba(0,60,140,0.25)"/></filter>
-  <filter id="bShadow"><feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="rgba(0,0,0,0.35)"/></filter>
+  <radialGradient id="bombBg" cx="30%" cy="28%" r="70%">
+    <stop offset="0%"  stop-color="#3A3A4E"/>
+    <stop offset="100%" stop-color="#1A1A2A"/>
+  </radialGradient>
+  <filter id="gemDrop"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,60,140,0.30)"/></filter>
+  <filter id="bDrop"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,0.40)"/></filter>
+  <filter id="cellShadow"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(20,60,120,0.14)"/></filter>
 </defs>
 
-<!-- 3×3 cells -->
-<!-- row 0 -->
-<rect x="3"  y="3"  width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<rect x="42" y="3"  width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<rect x="81" y="3"  width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<!-- row 1 -->
-<rect x="3"  y="42" width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<rect x="42" y="42" width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<rect x="81" y="42" width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<!-- row 2 -->
-<rect x="3"  y="81" width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<rect x="42" y="81" width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
-<rect x="81" y="81" width="36" height="36" rx="9" fill="url(#cellG)" stroke="#A8D0F0" stroke-width="1.5"/>
+<!-- Cell backgrounds 3x3 -->
+<rect x="3"  y="3"  width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="42" y="3"  width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="81" y="3"  width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="3"  y="42" width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="42" y="42" width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="81" y="42" width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="3"  y="81" width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="42" y="81" width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
+<rect x="81" y="81" width="36" height="36" rx="10" fill="url(#cellBg)" stroke="#A0D0F0" stroke-width="1.5" filter="url(#cellShadow)"/>
 
-<!-- Gem macro (draw at any cx,cy, size s) -->
-<!-- GEM at (21,21) -->
-<g filter="url(#gShadow)">
-  <polygon points="21,9 31,17 31,27 21,33 11,27 11,17" fill="url(#gemG)"/>
-  <polygon points="21,9 31,17 21,20" fill="rgba(255,255,255,0.38)"/>
-  <polygon points="11,17 21,20 21,33" fill="rgba(0,0,0,0.15)"/>
-  <polygon points="11,17 21,9 21,20" fill="rgba(255,255,255,0.22)"/>
+<!-- GEM helper macro via use pattern... drawn inline for each position -->
+<!-- Gem at (0,0) cx=21,cy=21 -->
+<g filter="url(#gemDrop)">
+  <polygon points="21,9 33,18 33,28 21,34 9,28 9,18" fill="url(#gemG)"/>
+  <polygon points="21,9 33,18 21,21"  fill="rgba(255,255,255,0.40)"/>
+  <polygon points="9,18 21,21 21,34"  fill="rgba(0,0,0,0.14)"/>
+  <polygon points="9,18 21,9 21,21"   fill="rgba(255,255,255,0.24)"/>
+  <polygon points="33,18 21,21 21,34" fill="rgba(0,0,0,0.10)"/>
+  <line x1="21" y1="9" x2="21" y2="34" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>
 </g>
-<!-- BOMB at (60,21) -->
-<g filter="url(#bShadow)">
-  <circle cx="60" cy="22" r="12" fill="#2A2A3A"/>
-  <circle cx="55.5" cy="17.5" r="3" fill="rgba(255,255,255,0.18)"/>
-  <!-- fuse -->
-  <path d="M60,10 Q64,6 67,8" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-  <!-- spark -->
-  <circle cx="67" cy="7.5" r="3.2" fill="#FF8800" opacity="0.9"/>
-  <circle cx="67" cy="7.5" r="1.8" fill="#FFE040"/>
+<!-- Bomb at (1,0) cx=60,cy=21 -->
+<g filter="url(#bDrop)">
+  <circle cx="60" cy="22" r="12.5" fill="url(#bombBg)"/>
+  <circle cx="55" cy="17" r="3.5"  fill="rgba(255,255,255,0.22)"/>
+  <path d="M60,9.5 Q65,5 68,7.5" fill="none" stroke="#909090" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="68.5" cy="7" r="3.5" fill="#FF8800"/>
+  <circle cx="68.5" cy="7" r="2"   fill="#FFE060"/>
+  <!-- spikes -->
+  <g stroke="#2A2A3E" stroke-width="1.8" stroke-linecap="round">
+    <line x1="60" y1="9" x2="60" y2="6"/>
+    <line x1="60" y1="35" x2="60" y2="38"/>
+    <line x1="47.5" y1="22" x2="44.5" y2="22"/>
+    <line x1="72.5" y1="22" x2="75.5" y2="22"/>
+    <line x1="51" y1="12.5" x2="49" y2="10.5"/>
+    <line x1="69" y1="31.5" x2="71" y2="33.5"/>
+    <line x1="69" y1="12.5" x2="71" y2="10.5"/>
+    <line x1="51" y1="31.5" x2="49" y2="33.5"/>
+  </g>
 </g>
-<!-- GEM at (99,21) -->
-<g filter="url(#gShadow)">
-  <polygon points="99,9 109,17 109,27 99,33 89,27 89,17" fill="url(#gemG)"/>
-  <polygon points="99,9 109,17 99,20" fill="rgba(255,255,255,0.38)"/>
-  <polygon points="89,17 99,20 99,33" fill="rgba(0,0,0,0.15)"/>
-  <polygon points="89,17 99,9 99,20" fill="rgba(255,255,255,0.22)"/>
+<!-- Gem at (2,0) cx=99,cy=21 -->
+<g filter="url(#gemDrop)">
+  <polygon points="99,9 111,18 111,28 99,34 87,28 87,18" fill="url(#gemG)"/>
+  <polygon points="99,9 111,18 99,21"  fill="rgba(255,255,255,0.40)"/>
+  <polygon points="87,18 99,21 99,34"  fill="rgba(0,0,0,0.14)"/>
+  <polygon points="87,18 99,9 99,21"   fill="rgba(255,255,255,0.24)"/>
 </g>
-<!-- BOMB at (21,60) -->
-<g filter="url(#bShadow)">
-  <circle cx="21" cy="61" r="12" fill="#2A2A3A"/>
-  <circle cx="16.5" cy="56.5" r="3" fill="rgba(255,255,255,0.18)"/>
-  <path d="M21,49 Q25,45 28,47" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="28" cy="46.5" r="3.2" fill="#FF8800" opacity="0.9"/>
-  <circle cx="28" cy="46.5" r="1.8" fill="#FFE040"/>
+<!-- Bomb at (0,1) cx=21,cy=60 -->
+<g filter="url(#bDrop)">
+  <circle cx="21" cy="61" r="12.5" fill="url(#bombBg)"/>
+  <circle cx="16" cy="56" r="3.5"  fill="rgba(255,255,255,0.22)"/>
+  <path d="M21,48.5 Q26,44 29,46.5" fill="none" stroke="#909090" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="29.5" cy="46" r="3.5" fill="#FF8800"/>
+  <circle cx="29.5" cy="46" r="2"   fill="#FFE060"/>
+  <g stroke="#2A2A3E" stroke-width="1.8" stroke-linecap="round">
+    <line x1="21" y1="48" x2="21" y2="45"/>
+    <line x1="21" y1="74" x2="21" y2="77"/>
+    <line x1="8.5" y1="61"  x2="5.5" y2="61"/>
+    <line x1="33.5" y1="61" x2="36.5" y2="61"/>
+    <line x1="12" y1="51.5" x2="10" y2="49.5"/>
+    <line x1="30" y1="70.5" x2="32" y2="72.5"/>
+    <line x1="30" y1="51.5" x2="32" y2="49.5"/>
+    <line x1="12" y1="70.5" x2="10" y2="72.5"/>
+  </g>
 </g>
-<!-- GEM at (60,60) -->
-<g filter="url(#gShadow)">
-  <polygon points="60,48 70,56 70,66 60,72 50,66 50,56" fill="url(#gemG)"/>
-  <polygon points="60,48 70,56 60,59" fill="rgba(255,255,255,0.38)"/>
-  <polygon points="50,56 60,59 60,72" fill="rgba(0,0,0,0.15)"/>
-  <polygon points="50,56 60,48 60,59" fill="rgba(255,255,255,0.22)"/>
+<!-- Gem at (1,1) cx=60,cy=60 -->
+<g filter="url(#gemDrop)">
+  <polygon points="60,48 72,57 72,67 60,73 48,67 48,57" fill="url(#gemG)"/>
+  <polygon points="60,48 72,57 60,60"  fill="rgba(255,255,255,0.40)"/>
+  <polygon points="48,57 60,60 60,73"  fill="rgba(0,0,0,0.14)"/>
+  <polygon points="48,57 60,48 60,60"  fill="rgba(255,255,255,0.24)"/>
 </g>
-<!-- QUESTION at (99,60) -->
-<text x="99" y="68" text-anchor="middle" font-size="24" font-weight="900" fill="#9040E0" font-family="Arial,sans-serif" opacity="0.85">?</text>
-<!-- QUESTION at (21,99) -->
-<text x="21" y="107" text-anchor="middle" font-size="24" font-weight="900" fill="#9040E0" font-family="Arial,sans-serif" opacity="0.85">?</text>
-<!-- GEM at (60,99) -->
-<g filter="url(#gShadow)">
-  <polygon points="60,87 70,95 70,105 60,111 50,105 50,95" fill="url(#gemG)"/>
-  <polygon points="60,87 70,95 60,98" fill="rgba(255,255,255,0.38)"/>
-  <polygon points="50,95 60,98 60,111" fill="rgba(0,0,0,0.15)"/>
-  <polygon points="50,95 60,87 60,98" fill="rgba(255,255,255,0.22)"/>
+<!-- Question at (2,1) -->
+<text x="99" y="68" text-anchor="middle" font-size="26" font-weight="900" fill="#8030D8" opacity="0.88" font-family="Arial,sans-serif">?</text>
+<!-- Question at (0,2) -->
+<text x="21" y="107" text-anchor="middle" font-size="26" font-weight="900" fill="#8030D8" opacity="0.88" font-family="Arial,sans-serif">?</text>
+<!-- Gem at (1,2) cx=60,cy=99 -->
+<g filter="url(#gemDrop)">
+  <polygon points="60,87 72,96 72,106 60,112 48,106 48,96" fill="url(#gemG)"/>
+  <polygon points="60,87 72,96 60,99"   fill="rgba(255,255,255,0.40)"/>
+  <polygon points="48,96 60,99 60,112"  fill="rgba(0,0,0,0.14)"/>
+  <polygon points="48,96 60,87 60,99"   fill="rgba(255,255,255,0.24)"/>
 </g>
-<!-- BOMB at (99,99) -->
-<g filter="url(#bShadow)">
-  <circle cx="99" cy="100" r="12" fill="#2A2A3A"/>
-  <circle cx="94.5" cy="95.5" r="3" fill="rgba(255,255,255,0.18)"/>
-  <path d="M99,88 Q103,84 106,86" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round"/>
-  <circle cx="106" cy="85.5" r="3.2" fill="#FF8800" opacity="0.9"/>
-  <circle cx="106" cy="85.5" r="1.8" fill="#FFE040"/>
+<!-- Bomb at (2,2) cx=99,cy=99 -->
+<g filter="url(#bDrop)">
+  <circle cx="99" cy="100" r="12.5" fill="url(#bombBg)"/>
+  <circle cx="94" cy="95"  r="3.5"  fill="rgba(255,255,255,0.22)"/>
+  <path d="M99,87.5 Q104,83 107,85.5" fill="none" stroke="#909090" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="107.5" cy="85" r="3.5" fill="#FF8800"/>
+  <circle cx="107.5" cy="85" r="2"   fill="#FFE060"/>
+  <g stroke="#2A2A3E" stroke-width="1.8" stroke-linecap="round">
+    <line x1="99" y1="87"  x2="99"  y2="84"/>
+    <line x1="99" y1="113" x2="99"  y2="116"/>
+    <line x1="86.5" y1="100" x2="83.5" y2="100"/>
+    <line x1="111.5" y1="100" x2="114.5" y2="100"/>
+    <line x1="90" y1="90.5" x2="88" y2="88.5"/>
+    <line x1="108" y1="109.5" x2="110" y2="111.5"/>
+  </g>
 </g>
-<!-- corner dots decoration -->
-<circle cx="4" cy="116" r="2" fill="rgba(60,140,220,0.3)"/>
-<circle cx="116" cy="4" r="2" fill="rgba(60,140,220,0.25)"/>
+<!-- Corner dots -->
+<circle cx="4" cy="116" r="2" fill="rgba(50,130,220,0.35)"/>
+<circle cx="116" cy="4"  r="2" fill="rgba(50,130,220,0.28)"/>
 </svg>

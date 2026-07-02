@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<defs>
+  <radialGradient id="coinFace" cx="38%" cy="32%" r="68%">
+    <stop offset="0%"  stop-color="#FFF080"/>
+    <stop offset="35%" stop-color="#FFD028"/>
+    <stop offset="70%" stop-color="#E8A800"/>
+    <stop offset="100%" stop-color="#B87800"/>
+  </radialGradient>
+  <radialGradient id="coinEdge" cx="50%" cy="50%" r="50%">
+    <stop offset="80%" stop-color="#C08800"/>
+    <stop offset="100%" stop-color="#A06800"/>
+  </radialGradient>
+  <radialGradient id="coinShine" cx="38%" cy="28%" r="45%">
+    <stop offset="0%"  stop-color="rgba(255,255,220,0.75)"/>
+    <stop offset="100%" stop-color="rgba(255,255,220,0)"/>
+  </radialGradient>
+  <filter id="coinShadow">
+    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(150,80,0,0.40)"/>
+  </filter>
+</defs>
+<!-- Drop shadow + outer edge ring -->
+<circle cx="32" cy="33" r="28" fill="url(#coinEdge)" filter="url(#coinShadow)"/>
+<!-- Coin face -->
+<circle cx="32" cy="32" r="28" fill="url(#coinFace)"/>
+<!-- Rim detail -->
+<circle cx="32" cy="32" r="28" fill="none" stroke="#D09800" stroke-width="1.5"/>
+<!-- Inner rim -->
+<circle cx="32" cy="32" r="23.5" fill="none" stroke="rgba(200,130,0,0.5)" stroke-width="1"/>
+<!-- ₮ symbol (coin face) -->
+<text x="32" y="39" text-anchor="middle" font-family="Georgia,serif" font-size="24" font-weight="900"
+  fill="#A07000" letter-spacing="-1">₮</text>
+<!-- Specular shine -->
+<circle cx="32" cy="32" r="28" fill="url(#coinShine)"/>
+<!-- Edge highlight arc top-left -->
+<path d="M 14 20 Q 18 10 32 8" fill="none" stroke="rgba(255,255,200,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
