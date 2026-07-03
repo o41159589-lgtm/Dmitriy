@@ -2059,31 +2059,22 @@ function showLoadingError(msg){
 })();
 
 // ── ADMIN GUARD ──
-// Uses /api/admin/get_global_luck for auth-check — returns instantly (no DB table scan).
-// Full data loads via load() / loadGl() AFTER the overlay is dismissed.
+// Auth-check uses lightweight /api/admin/get_global_luck (no DB table scan).
+// Any error still shows the panel — only HTTP 403 redirects away.
 (async function checkAdminAccess(){
-  if(!ADMIN_UID){
-    window.location.replace('not_telegram.html');
-    return;
-  }
+  if(!ADMIN_UID){ window.location.replace('not_telegram.html'); return; }
   try{
     const ctrl = new AbortController();
-    const t = setTimeout(()=>ctrl.abort(), 6000);
+    const t = setTimeout(()=>ctrl.abort(), 8000);
     const r = await fetch('/api/admin/get_global_luck',{
       headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID},
       signal: ctrl.signal
     });
     clearTimeout(t);
-    if(r.status === 403){
-      window.location.replace('index.html');
-      return;
-    }
+    if(r.status === 403){ window.location.replace('index.html'); return; }
   } catch(e){
-    if(e.name==='AbortError'){
-      showLoadingError('Сервер не отвечает.<br>Обновите страницу.');
-      return;
-    }
-    // Other network error – allow panel to load anyway
+    // Timeout or network error — still open panel, admin can retry data load manually
+    console.warn('Admin auth check error:', e.message);
   }
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();

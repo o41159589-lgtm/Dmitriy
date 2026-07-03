@@ -26,9 +26,9 @@
 <circle cx="32" cy="32" r="28" fill="none" stroke="#D09800" stroke-width="1.5"/>
 <!-- Inner rim -->
 <circle cx="32" cy="32" r="23.5" fill="none" stroke="rgba(200,130,0,0.5)" stroke-width="1"/>
-<!-- ₮ symbol (coin face) -->
+<!-- Number 1 on coin face -->
 <text x="32" y="39" text-anchor="middle" font-family="Georgia,serif" font-size="24" font-weight="900"
-  fill="#A07000" letter-spacing="-1">₮</text>
+  fill="#A07000" letter-spacing="-1">1</text>
 <!-- Specular shine -->
 <circle cx="32" cy="32" r="28" fill="url(#coinShine)"/>
 <!-- Edge highlight arc top-left -->
