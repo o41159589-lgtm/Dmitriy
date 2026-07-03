@@ -1,36 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
 <defs>
-  <radialGradient id="coinFace" cx="38%" cy="32%" r="68%">
-    <stop offset="0%"  stop-color="#FFF080"/>
-    <stop offset="35%" stop-color="#FFD028"/>
-    <stop offset="70%" stop-color="#E8A800"/>
+  <radialGradient id="cFace" cx="40%" cy="32%" r="68%">
+    <stop offset="0%"  stop-color="#FFF580"/>
+    <stop offset="40%" stop-color="#FFD428"/>
+    <stop offset="75%" stop-color="#E8A400"/>
     <stop offset="100%" stop-color="#B87800"/>
   </radialGradient>
-  <radialGradient id="coinEdge" cx="50%" cy="50%" r="50%">
-    <stop offset="80%" stop-color="#C08800"/>
+  <radialGradient id="cEdge" cx="50%" cy="50%" r="50%">
+    <stop offset="78%" stop-color="#C08800"/>
     <stop offset="100%" stop-color="#A06800"/>
   </radialGradient>
-  <radialGradient id="coinShine" cx="38%" cy="28%" r="45%">
-    <stop offset="0%"  stop-color="rgba(255,255,220,0.75)"/>
-    <stop offset="100%" stop-color="rgba(255,255,220,0)"/>
+  <radialGradient id="cShine" cx="36%" cy="26%" r="48%">
+    <stop offset="0%"  stop-color="rgba(255,255,230,0.80)"/>
+    <stop offset="100%" stop-color="rgba(255,255,230,0)"/>
   </radialGradient>
-  <filter id="coinShadow">
-    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(150,80,0,0.40)"/>
+  <filter id="cShadow">
+    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(140,70,0,0.45)"/>
   </filter>
 </defs>
-<!-- Drop shadow + outer edge ring -->
-<circle cx="32" cy="33" r="28" fill="url(#coinEdge)" filter="url(#coinShadow)"/>
-<!-- Coin face -->
-<circle cx="32" cy="32" r="28" fill="url(#coinFace)"/>
-<!-- Rim detail -->
-<circle cx="32" cy="32" r="28" fill="none" stroke="#D09800" stroke-width="1.5"/>
-<!-- Inner rim -->
-<circle cx="32" cy="32" r="23.5" fill="none" stroke="rgba(200,130,0,0.5)" stroke-width="1"/>
-<!-- Number 1 on coin face -->
-<text x="32" y="39" text-anchor="middle" font-family="Georgia,serif" font-size="24" font-weight="900"
-  fill="#A07000" letter-spacing="-1">1</text>
-<!-- Specular shine -->
-<circle cx="32" cy="32" r="28" fill="url(#coinShine)"/>
-<!-- Edge highlight arc top-left -->
-<path d="M 14 20 Q 18 10 32 8" fill="none" stroke="rgba(255,255,200,0.6)" stroke-width="2.5" stroke-linecap="round"/>
+<!-- Shadow -->
+<ellipse cx="32" cy="58" rx="22" ry="5" fill="rgba(100,50,0,0.20)"/>
+<!-- Edge ring (gives 3D depth) -->
+<circle cx="32" cy="34" r="28" fill="url(#cEdge)" filter="url(#cShadow)"/>
+<!-- Main face -->
+<circle cx="32" cy="32" r="28" fill="url(#cFace)"/>
+<!-- Outer rim line -->
+<circle cx="32" cy="32" r="28" fill="none" stroke="#C09800" stroke-width="1.5"/>
+<!-- Inner decorative rim -->
+<circle cx="32" cy="32" r="23.5" fill="none" stroke="rgba(180,130,0,0.45)" stroke-width="1"/>
+<!-- Dollar sign $ -->
+<!-- Vertical bar -->
+<line x1="32" y1="15" x2="32" y2="49" stroke="#A07000" stroke-width="3" stroke-linecap="round"/>
+<!-- Top arc of S -->
+<path d="M 40 22 Q 40 17 32 17 Q 24 17 24 22 Q 24 27 32 27 Q 40 27 40 33 Q 40 39 32 39 Q 24 39 24 34" 
+  fill="none" stroke="#9A6800" stroke-width="3.5" stroke-linecap="round"/>
+<!-- Shine overlay -->
+<circle cx="32" cy="32" r="28" fill="url(#cShine)"/>
+<!-- Top-left highlight arc -->
+<path d="M 14 20 Q 18 10 32 8" fill="none" stroke="rgba(255,255,210,0.65)" stroke-width="2.8" stroke-linecap="round"/>
 </svg>

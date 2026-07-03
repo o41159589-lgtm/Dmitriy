@@ -2059,23 +2059,25 @@ function showLoadingError(msg){
 })();
 
 // ── ADMIN GUARD ──
-// Auth-check uses lightweight /api/admin/get_global_luck (no DB table scan).
-// Any error still shows the panel — only HTTP 403 redirects away.
+// Auth: if UID exists → show panel (each API call has server-side 403 guard anyway).
+// Only redirect on confirmed HTTP 403 from a lightweight endpoint.
 (async function checkAdminAccess(){
   if(!ADMIN_UID){ window.location.replace('not_telegram.html'); return; }
+
+  // Try a quick auth check — but ALWAYS show panel on any non-403 outcome
+  let blocked = false;
   try{
     const ctrl = new AbortController();
-    const t = setTimeout(()=>ctrl.abort(), 8000);
+    setTimeout(()=>ctrl.abort(), 5000);
     const r = await fetch('/api/admin/get_global_luck',{
       headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID},
       signal: ctrl.signal
     });
-    clearTimeout(t);
-    if(r.status === 403){ window.location.replace('index.html'); return; }
-  } catch(e){
-    // Timeout or network error — still open panel, admin can retry data load manually
-    console.warn('Admin auth check error:', e.message);
-  }
+    if(r.status === 403) blocked = true;
+  } catch(e){ /* timeout or network error — proceed anyway */ }
+
+  if(blocked){ window.location.replace('index.html'); return; }
+
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();
   load();
