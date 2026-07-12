@@ -96,9 +96,9 @@ body::before{
 /* Result band */
 .res-band{
   display:flex;align-items:center;gap:14px;
-  background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);
-  border-radius:18px;padding:11px 22px;min-width:200px;justify-content:center;
-  box-shadow:0 4px 14px rgba(0,30,70,0.10);
+  background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.80);
+  border-radius:20px;padding:12px 24px;min-width:200px;justify-content:center;
+  box-shadow:0 5px 18px rgba(0,30,80,0.11);
 }
 .res-num{
   font-family:'Caveat',cursive;font-size:52px;font-weight:700;line-height:1;
@@ -159,20 +159,20 @@ body::before{
 }
 .bt-s{font-size:10px;color:var(--muted);margin-top:4px;font-family:'Nunito',sans-serif;font-weight:700;}
 .bt.r{border-color:rgba(216,40,74,.22);}
-.bt.r.sel{background:rgba(216,40,74,.12);border-color:rgba(216,40,74,.55);color:#D8284A;}
+.bt.r.sel{background:rgba(216,40,74,.14);border-color:rgba(216,40,74,.60);color:#C02035;box-shadow:0 0 0 2px rgba(216,40,74,.15);}
 .bt.bl{border-color:rgba(40,40,60,.14);}
-.bt.bl.sel{background:rgba(40,40,60,.08);border-color:rgba(40,40,60,.35);color:#2A2A3A;}
+.bt.bl.sel{background:rgba(40,40,60,.10);border-color:rgba(40,40,60,.40);color:#1A1A2E;box-shadow:0 0 0 2px rgba(40,40,60,.12);}
 .bt.g{border-color:rgba(26,154,80,.16);}
-.bt.g.sel{background:rgba(26,154,80,.10);border-color:rgba(26,154,80,.45);color:#1A9A50;}
+.bt.g.sel{background:rgba(26,154,80,.12);border-color:rgba(26,154,80,.55);color:#157840;box-shadow:0 0 0 2px rgba(26,154,80,.15);}
 .bt.o{border-color:rgba(0,0,0,.10);}
-.bt.o.sel{background:rgba(26,32,64,.08);border-color:rgba(26,32,64,.28);color:#1A2040;}
+.bt.o.sel{background:rgba(40,80,200,.08);border-color:rgba(40,80,200,.30);color:#2050B0;box-shadow:0 0 0 2px rgba(40,80,200,.12);}
 
 /* Spin button */
 .spin-btn{
   width:100%;padding:16px;
-  background:#1A2040;border:none;border-radius:16px;
+  background:linear-gradient(135deg,#4898E0 0%,#2060C0 100%);border:none;border-radius:16px;
   color:#fff;font-family:'Caveat',cursive;font-size:24px;font-weight:700;
-  cursor:pointer;box-shadow:0 4px 18px rgba(20,30,80,.28);
+  cursor:pointer;box-shadow:0 5px 18px rgba(40,80,200,0.30);
   transition:opacity .15s,transform .1s;letter-spacing:0;
 }
 .spin-btn:active{transform:scale(.98);}
@@ -202,7 +202,7 @@ body::before{
 <div class="bet-wrap">
   <div class="stag">Ставка</div>
   <div class="bet-row">
-    <span class="bet-lbl">🪙</span>
+    <span class="bet-lbl"><img src="../textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle"></span>
     <input class="bet-inp" id="bet-inp" type="number" min="1" value="10" inputmode="numeric">
   </div>
   <div class="qb-row">
