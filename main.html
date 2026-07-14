@@ -859,9 +859,16 @@ async function loadShopGifts(){
   try{const data=await get('/api/gifts');shopGifts=data.gifts||[];if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}else renderBotGifts();}catch(e){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Не удалось загрузить подарки</p></div>';}
   renderOwnerGifts();
 }
-function giftCard(gift,source){const limited=gift.is_limited&&gift.remaining_count!==null;const cls=limited?'gift-card limited':'gift-card';const emoji=gift.emoji||'🎁';const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';const gd=JSON.stringify({id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,is_limited:gift.is_limited||false}).replace(/"/g,'&quot;');return`<div class="${cls}" onclick="openBuyModal(${gd},'${source}')"><div class="gift-emoji-wrap"><span class="gift-emoji">${emoji}</span></div><div class="gift-name">${gift.name||'Подарок'}</div><div class="gift-price">⭐ ${gift.star_count}</div><div class="gift-stars">${gift.star_count*10} <img src=\"textures/coin.svg\" width=\"13\" height=\"13\" alt=\"\" style=\"vertical-align:middle\"> монет</div>${remaining}<button class="gift-buy-btn">КУПИТЬ</button></div>`;}
+function giftCard(gift,source){const limited=gift.is_limited&&gift.remaining_count!==null;const cls=limited?'gift-card limited':'gift-card';const emoji=gift.emoji||'🎁';const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';const displayCost=gift.coin_cost||(gift.star_count*10);const gd=JSON.stringify({id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,coin_cost:displayCost,is_limited:gift.is_limited||false}).replace(/"/g,'&quot;');return`<div class="${cls}" onclick="openBuyModal(${gd},'${source}')"><div class="gift-emoji-wrap"><span class="gift-emoji">${emoji}</span></div><div class="gift-name">${gift.name||'Подарок'}</div><div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> ${displayCost} монет</div>${remaining}<button class="gift-buy-btn">КУПИТЬ</button></div>`;}
 function renderBotGifts(){const inner=document.getElementById('bot-gifts-inner');if(inner)inner.innerHTML=`<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;}
-function renderOwnerGifts(){const g=document.getElementById('owner-gifts-grid');if(!shopGifts.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}g.innerHTML=shopGifts.map(g=>giftCard(g,'owner')).join('');}
+function renderOwnerGifts(){
+  const g=document.getElementById('owner-gifts-grid');
+  // Static special item — Random NFT
+  const staticGifts=[{id:'random_nft',emoji:'🎲',name:'Рандомный НФТ',star_count:400,coin_cost:4000,is_limited:false,is_static:true}];
+  const allOwner=[...staticGifts,...shopGifts];
+  if(!allOwner.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}
+  g.innerHTML=allOwner.map(gift=>giftCard(gift,'owner')).join('');
+}
 function openBuyModal(gift,source){pendingGift=gift;pendingSource=source;document.getElementById('m-icon').textContent=gift.emoji;document.getElementById('m-name').textContent=gift.name||gift.emoji;document.getElementById('m-price').textContent=gift.star_count;document.getElementById('m-msg').value='';document.getElementById('m-anon').checked=false;document.getElementById('buy-error').classList.remove('show');setRecipient('self',document.querySelector('.rc-btn'));document.getElementById('buy-modal').classList.add('open');}
 function closeBuyModal(e){if(!e||e.target.id==='buy-modal')document.getElementById('buy-modal').classList.remove('open');}
 function setRecipient(mode,el){recipientMode=mode;document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('m-recipient-wrap').style.display=mode==='other'?'block':'none';}
@@ -870,13 +877,13 @@ async function confirmPurchase(){
   if(!pendingGift)return;
   const errEl=document.getElementById('buy-error');errEl.classList.remove('show');
   const bal=userData?.balance||0;
-  if(bal<pendingGift.star_count*10){errEl.textContent='Недостаточно монет!';errEl.classList.add('show');return;}
+  const costCoins=pendingGift.coin_cost||(pendingGift.star_count*10);if(bal<costCoins){errEl.textContent='Недостаточно монет!';errEl.classList.add('show');return;}
   const anon=document.getElementById('m-anon').checked;
   const msg=document.getElementById('m-msg').value.trim();
   let recipientId=UID;
   if(recipientMode==='other'){const rid=parseInt(document.getElementById('m-recipient').value)||0;if(!rid){errEl.textContent='Введите ID получателя';errEl.classList.add('show');return;}recipientId=rid;}
   const btn=document.getElementById('m-confirm');btn.disabled=true;btn.textContent='Покупаем...';
-  const res=await post('/api/gift/buy',{user_id:UID,gift_id:pendingGift.id||'',star_count:pendingGift.star_count,coin_cost:pendingGift.star_count*10,source:pendingSource,recipient_id:recipientId,anonymous:anon,message:msg||null,sender_name:anon?null:FIRST_NAME,gift_name:pendingGift.name||pendingGift.emoji,gift_emoji:pendingGift.emoji}).catch(()=>null);
+  const res=await post('/api/gift/buy',{user_id:UID,gift_id:pendingGift.id||'',star_count:pendingGift.star_count,coin_cost:costCoins,source:pendingSource,recipient_id:recipientId,anonymous:anon,message:msg||null,sender_name:anon?null:FIRST_NAME,gift_name:pendingGift.name||pendingGift.emoji,gift_emoji:pendingGift.emoji}).catch(()=>null);
   btn.disabled=false;btn.textContent='КУПИТЬ ⭐';
   if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
   if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
