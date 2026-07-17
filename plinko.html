@@ -51,116 +51,33 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .drop-btn:disabled{opacity:.35;cursor:not-allowed;}
 
 
-/* ═══════════════════════════════════════════════════
-   TOPLUCK SKY THEME — shared overrides for game pages
-═══════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap');
-
-:root{
-  --bg:#C0E4F8;--bg2:#F4F8FF;--bg3:#E8F3FF;
-  --card:rgba(255,255,255,0.90);--card-hover:rgba(255,255,255,0.97);
-  --border:rgba(20,40,90,0.10);--border2:rgba(20,40,90,0.16);
-  --white:#1A2040;--text:#1A2040;--muted:#7A8AAA;--muted2:#9AABCC;
-  --gold:#B88000;--green:#1A9A50;--red:#D02840;
-  --font-display:'Caveat',cursive;
-  --fd:'Caveat',cursive;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif;
-}
-html,body{
-  background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;
-  min-height:100%;color:#1A2040;
-}
-body::before{
-  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:url('../textures/sky.svg');
-  background-size:100% auto;background-position:top center;background-repeat:no-repeat;
-}
+:root{--bg:#C0E4F8;--bg2:#F4F8FF;--card:rgba(255,255,255,0.90);--border:rgba(20,40,90,0.10);--border2:rgba(20,40,90,0.16);--white:#1A2040;--text:#1A2040;--muted:#7A8AAA;--muted2:#9AABCC;--gold:#B88000;--green:#1A9A50;--red:#D02840;--font-display:'Caveat',cursive;--fd:'Caveat',cursive;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif;}
+html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;min-height:100%;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('../textures/sky.svg');background-size:100% auto;background-position:top center;background-repeat:no-repeat;}
 .page{position:relative;z-index:1;}
-/* Topbar */
-.topbar{
-  background:rgba(255,255,255,0.93)!important;
-  box-shadow:0 2px 14px rgba(0,30,80,0.11)!important;
-  border-bottom:1px solid rgba(0,0,0,0.06)!important;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-}
+.topbar{background:rgba(255,255,255,0.93)!important;box-shadow:0 2px 14px rgba(0,30,80,0.11)!important;border-bottom:1px solid rgba(0,0,0,0.06)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
 .fp-back{background:rgba(20,40,90,0.06)!important;border:1.5px solid rgba(20,40,90,0.12)!important;color:#1A2040!important;}
 .fp-title{font-family:'Caveat',cursive!important;font-size:23px!important;font-weight:700!important;color:#1A2040!important;letter-spacing:0!important;font-style:normal!important;}
 .bal-chip{background:rgba(255,255,255,0.96)!important;border:2px solid #FFD028!important;color:#A07800!important;font-family:'Nunito',sans-serif!important;font-weight:800!important;}
-/* Toast */
 .toast{background:rgba(255,255,255,0.97)!important;border:1.5px solid rgba(20,40,90,0.10)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;box-shadow:0 6px 24px rgba(0,30,80,0.15)!important;}
 .toast.ok{color:#1A9A50!important;border-color:rgba(26,154,80,0.30)!important;}
 .toast.err{color:#D02840!important;border-color:rgba(208,40,64,0.30)!important;}
-.toast.info{color:#1060A0!important;border-color:rgba(16,96,160,0.22)!important;}
-/* Cards */
-.setup-card,.game-area,.result-card,.lobby-card,.bj-card{
-  background:rgba(255,255,255,0.92)!important;
-  border:2px solid rgba(255,255,255,0.80)!important;
-  border-radius:22px!important;
-  box-shadow:0 5px 20px rgba(0,30,80,0.11)!important;
-}
-/* Section labels */
+.toast.info{color:#2060B0!important;border-color:rgba(32,96,176,0.22)!important;}
+.setup-card{background:rgba(255,255,255,0.92)!important;border:2px solid rgba(255,255,255,0.80)!important;border-radius:22px!important;box-shadow:0 5px 20px rgba(0,30,80,0.11)!important;}
 .stag{font-family:'Nunito',sans-serif!important;font-size:11px!important;font-weight:800!important;color:#7A8AAA!important;letter-spacing:1.2px!important;text-transform:uppercase!important;font-style:normal!important;}
-/* Inputs */
 .bet-inp{background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(20,40,90,0.13)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:800!important;}
 .bet-inp:focus{border-color:rgba(40,100,220,0.40)!important;}
-/* Quick bet buttons */
 .qb{background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.12)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:700!important;border-radius:10px!important;}
-/* Multipliers */
-.mp{background:rgba(232,244,255,0.85)!important;border:1.5px solid rgba(40,120,220,0.18)!important;border-radius:12px!important;}
-.mp-k{color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;}
-.mp-v{color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:800!important;}
-.ls,.live-stats .ls{background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(20,40,90,0.10)!important;border-radius:14px!important;}
+.ls{background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(20,40,90,0.10)!important;border-radius:14px!important;padding:10px 8px!important;}
 .ls-l{color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;font-size:10px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:0.5px!important;}
 .ls-v{font-family:'Nunito',sans-serif!important;font-size:16px!important;font-weight:800!important;color:#1A2040!important;}
-/* Primary action buttons — blue gradient */
-.start-btn,.spin-btn,.deal-btn,.play-btn,.place-btn,.go-btn,.join-btn,.cashout-btn{
-  font-family:'Caveat',cursive!important;font-size:24px!important;font-weight:700!important;
-  letter-spacing:0!important;font-style:normal!important;
-  border-radius:18px!important;border:none!important;color:#fff!important;
-  cursor:pointer!important;transition:transform .12s,opacity .15s!important;
-}
-.start-btn,.spin-btn,.deal-btn,.play-btn,.place-btn,.go-btn,.join-btn{
-  background:linear-gradient(135deg,#4898E0 0%,#2060C0 100%)!important;
-  box-shadow:0 5px 18px rgba(40,80,200,0.30)!important;
-}
-.cashout-btn{
-  background:linear-gradient(135deg,#20C060 0%,#148040 100%)!important;
-  box-shadow:0 5px 18px rgba(20,140,60,0.32)!important;
-}
-.start-btn:active,.spin-btn:active,.deal-btn:active,.play-btn:active,.place-btn:active{transform:scale(.97)!important;}
-.cashout-btn:disabled,.start-btn:disabled{opacity:.4!important;}
-/* Secondary / cancel buttons */
-.again-btn,.back-btn,.hit-btn,.stand-btn,.double-btn{
-  background:rgba(255,255,255,0.92)!important;
-  border:2px solid rgba(20,40,90,0.14)!important;border-radius:18px!important;
-  color:#1A2040!important;font-family:'Caveat',cursive!important;
-  font-size:22px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;
-  box-shadow:0 2px 10px rgba(0,30,80,0.08)!important;cursor:pointer!important;
-}
-/* Result */
-.res-title,.r-title{font-family:'Caveat',cursive!important;font-size:38px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;}
-.res-sub,.r-amount{font-family:'Nunito',sans-serif!important;font-size:14px!important;}
-.res-amt,.r-amount{font-family:'Nunito',sans-serif!important;font-size:28px!important;font-weight:900!important;color:#1A2040!important;}
-.res-close,.again-btn{background:rgba(255,255,255,0.92)!important;border:2px solid rgba(20,40,90,0.14)!important;border-radius:18px!important;color:#1A2040!important;font-family:'Caveat',cursive!important;font-size:22px!important;font-weight:700!important;letter-spacing:0!important;cursor:pointer!important;width:100%!important;padding:13px!important;}
-/* Back link */
-a[href*="main.html"]{
-  display:block!important;text-decoration:none!important;text-align:center!important;
-  margin-top:10px!important;padding:12px!important;
-  background:rgba(255,255,255,0.85)!important;
-  border:1.5px solid rgba(20,40,90,0.12)!important;border-radius:16px!important;
-  color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;
-  font-size:13px!important;font-weight:700!important;
-}
-
-/* Plinko specific */
-.plinko-wrap,.plinko-canvas-wrap{{background:rgba(255,255,255,0.92)!important;border-radius:22px!important;border:2px solid rgba(255,255,255,0.80)!important;box-shadow:0 5px 20px rgba(0,30,80,0.11)!important;}}
-canvas#plinko-canvas{{border-radius:16px!important;}}
-.risk-btn{{background:rgba(232,244,255,0.85)!important;border:1.5px solid rgba(40,120,220,0.18)!important;border-radius:10px!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:700!important;}}
-.risk-btn.active{{background:linear-gradient(135deg,#4898E0,#2060C0)!important;border-color:transparent!important;color:#fff!important;box-shadow:0 3px 10px rgba(40,80,200,0.25)!important;}}
-.row-btn{{background:rgba(232,244,255,0.85)!important;border:1.5px solid rgba(40,120,220,0.18)!important;border-radius:10px!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:700!important;}}
-.row-btn.active{{background:linear-gradient(135deg,#4898E0,#2060C0)!important;border-color:transparent!important;color:#fff!important;}}
-.mult-low{{color:#1A9A50!important;}}
-.mult-med{{color:#A07800!important;}}
-.mult-high{{color:#D02840!important;}}
+.drop-btn{background:linear-gradient(135deg,#4898E0 0%,#2060C0 100%)!important;color:#fff!important;font-family:'Caveat',cursive!important;font-size:26px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;border-radius:18px!important;border:none!important;box-shadow:0 5px 18px rgba(40,80,200,0.30)!important;}
+.drop-btn:active{transform:scale(.97)!important;}
+.drop-btn:disabled{opacity:.4!important;}
+a[href*="main.html"]{display:block!important;text-decoration:none!important;text-align:center!important;margin-top:10px!important;padding:12px!important;background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.12)!important;border-radius:16px!important;color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;font-size:13px!important;font-weight:700!important;}
+/* Plinko canvas wrapper */
+.plinko-wrap,#plinko-wrap{background:rgba(255,255,255,0.92)!important;border:2px solid rgba(255,255,255,0.80)!important;border-radius:22px!important;box-shadow:0 5px 20px rgba(0,30,80,0.11)!important;}
 
 </style>
 </head>

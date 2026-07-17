@@ -96,121 +96,63 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .game-area.on{display:block;}
 
 
-/* ═══════════════════════════════════════════════════
-   TOPLUCK SKY THEME — shared overrides for game pages
-═══════════════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap');
-
-:root{
-  --bg:#C0E4F8;--bg2:#F4F8FF;--bg3:#E8F3FF;
-  --card:rgba(255,255,255,0.90);--card-hover:rgba(255,255,255,0.97);
-  --border:rgba(20,40,90,0.10);--border2:rgba(20,40,90,0.16);
-  --white:#1A2040;--text:#1A2040;--muted:#7A8AAA;--muted2:#9AABCC;
-  --gold:#B88000;--green:#1A9A50;--red:#D02840;
-  --font-display:'Caveat',cursive;
-  --fd:'Caveat',cursive;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif;
-}
-html,body{
-  background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;
-  min-height:100%;color:#1A2040;
-}
-body::before{
-  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:url('../textures/sky.svg');
-  background-size:100% auto;background-position:top center;background-repeat:no-repeat;
-}
-.page{position:relative;z-index:1;}
+:root{--bg:#C0E4F8;--bg2:#F4F8FF;--card:rgba(255,255,255,0.90);--border:rgba(20,40,90,0.10);--border2:rgba(20,40,90,0.16);--white:#1A2040;--text:#1A2040;--muted:#7A8AAA;--muted2:#9AABCC;--gold:#B88000;--green:#1A9A50;--red:#D02840;--gray1:#445080;--gray2:#8090B0;--font-display:'Caveat',cursive;--fd:'Caveat',cursive;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif;}
+html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;min-height:100%;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('../textures/sky.svg');background-size:100% auto;background-position:top center;background-repeat:no-repeat;}
+.lbg{display:none!important;}
+.page,.page-wrap{position:relative;z-index:1;}
 /* Topbar */
-.topbar{
-  background:rgba(255,255,255,0.93)!important;
-  box-shadow:0 2px 14px rgba(0,30,80,0.11)!important;
-  border-bottom:1px solid rgba(0,0,0,0.06)!important;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-}
+.topbar{background:rgba(255,255,255,0.93)!important;box-shadow:0 2px 14px rgba(0,30,80,0.11)!important;border-bottom:1px solid rgba(0,0,0,0.06)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
 .fp-back{background:rgba(20,40,90,0.06)!important;border:1.5px solid rgba(20,40,90,0.12)!important;color:#1A2040!important;}
 .fp-title{font-family:'Caveat',cursive!important;font-size:23px!important;font-weight:700!important;color:#1A2040!important;letter-spacing:0!important;font-style:normal!important;}
 .bal-chip{background:rgba(255,255,255,0.96)!important;border:2px solid #FFD028!important;color:#A07800!important;font-family:'Nunito',sans-serif!important;font-weight:800!important;}
-/* Toast */
 .toast{background:rgba(255,255,255,0.97)!important;border:1.5px solid rgba(20,40,90,0.10)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;box-shadow:0 6px 24px rgba(0,30,80,0.15)!important;}
-.toast.ok{color:#1A9A50!important;border-color:rgba(26,154,80,0.30)!important;}
-.toast.err{color:#D02840!important;border-color:rgba(208,40,64,0.30)!important;}
-.toast.info{color:#1060A0!important;border-color:rgba(16,96,160,0.22)!important;}
-/* Cards */
-.setup-card,.game-area,.result-card,.lobby-card,.bj-card{
-  background:rgba(255,255,255,0.92)!important;
-  border:2px solid rgba(255,255,255,0.80)!important;
-  border-radius:22px!important;
-  box-shadow:0 5px 20px rgba(0,30,80,0.11)!important;
-}
-/* Section labels */
-.stag{font-family:'Nunito',sans-serif!important;font-size:11px!important;font-weight:800!important;color:#7A8AAA!important;letter-spacing:1.2px!important;text-transform:uppercase!important;font-style:normal!important;}
-/* Inputs */
+.toast.ok,.ok{color:#1A9A50!important;border-color:rgba(26,154,80,0.30)!important;}
+.toast.err,.err{color:#D02840!important;border-color:rgba(208,40,64,0.30)!important;}
+/* Setup card */
+.setup-card{background:rgba(255,255,255,0.92)!important;border:2px solid rgba(255,255,255,0.80)!important;border-radius:22px!important;box-shadow:0 5px 20px rgba(0,30,80,0.11)!important;}
+.sc-lbl{font-family:'Nunito',sans-serif!important;font-size:11px!important;color:#7A8AAA!important;letter-spacing:1.2px!important;font-weight:800!important;}
 .bet-inp{background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(20,40,90,0.13)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:800!important;}
 .bet-inp:focus{border-color:rgba(40,100,220,0.40)!important;}
-/* Quick bet buttons */
 .qb{background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.12)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:700!important;border-radius:10px!important;}
-/* Multipliers */
-.mp{background:rgba(232,244,255,0.85)!important;border:1.5px solid rgba(40,120,220,0.18)!important;border-radius:12px!important;}
-.mp-k{color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;}
-.mp-v{color:#1A2040!important;font-family:'Nunito',sans-serif!important;font-weight:800!important;}
-.ls,.live-stats .ls{background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(20,40,90,0.10)!important;border-radius:14px!important;}
+.main-btn{background:linear-gradient(135deg,#4898E0,#2060C0)!important;color:#fff!important;font-family:'Caveat',cursive!important;font-size:24px!important;letter-spacing:0!important;font-style:normal!important;border-radius:18px!important;box-shadow:0 5px 18px rgba(40,80,200,0.30)!important;}
+.cashout-btn{background:linear-gradient(135deg,#20C060,#148040)!important;color:#fff!important;box-shadow:0 5px 18px rgba(20,140,60,0.32)!important;animation:none!important;}
+/* Live stats */
+.live-stats{gap:8px!important;margin-bottom:14px!important;}
+.ls{background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(20,40,90,0.10)!important;border-radius:14px!important;padding:10px 8px!important;}
 .ls-l{color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;font-size:10px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:0.5px!important;}
 .ls-v{font-family:'Nunito',sans-serif!important;font-size:16px!important;font-weight:800!important;color:#1A2040!important;}
-/* Primary action buttons — blue gradient */
-.start-btn,.spin-btn,.deal-btn,.play-btn,.place-btn,.go-btn,.join-btn,.cashout-btn{
-  font-family:'Caveat',cursive!important;font-size:24px!important;font-weight:700!important;
-  letter-spacing:0!important;font-style:normal!important;
-  border-radius:18px!important;border:none!important;color:#fff!important;
-  cursor:pointer!important;transition:transform .12s,opacity .15s!important;
-}
-.start-btn,.spin-btn,.deal-btn,.play-btn,.place-btn,.go-btn,.join-btn{
-  background:linear-gradient(135deg,#4898E0 0%,#2060C0 100%)!important;
-  box-shadow:0 5px 18px rgba(40,80,200,0.30)!important;
-}
-.cashout-btn{
-  background:linear-gradient(135deg,#20C060 0%,#148040 100%)!important;
-  box-shadow:0 5px 18px rgba(20,140,60,0.32)!important;
-}
-.start-btn:active,.spin-btn:active,.deal-btn:active,.play-btn:active,.place-btn:active{transform:scale(.97)!important;}
-.cashout-btn:disabled,.start-btn:disabled{opacity:.4!important;}
-/* Secondary / cancel buttons */
-.again-btn,.back-btn,.hit-btn,.stand-btn,.double-btn{
-  background:rgba(255,255,255,0.92)!important;
-  border:2px solid rgba(20,40,90,0.14)!important;border-radius:18px!important;
-  color:#1A2040!important;font-family:'Caveat',cursive!important;
-  font-size:22px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;
-  box-shadow:0 2px 10px rgba(0,30,80,0.08)!important;cursor:pointer!important;
-}
-/* Result */
-.res-title,.r-title{font-family:'Caveat',cursive!important;font-size:38px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;}
-.res-sub,.r-amount{font-family:'Nunito',sans-serif!important;font-size:14px!important;}
-.res-amt,.r-amount{font-family:'Nunito',sans-serif!important;font-size:28px!important;font-weight:900!important;color:#1A2040!important;}
-.res-close,.again-btn{background:rgba(255,255,255,0.92)!important;border:2px solid rgba(20,40,90,0.14)!important;border-radius:18px!important;color:#1A2040!important;font-family:'Caveat',cursive!important;font-size:22px!important;font-weight:700!important;letter-spacing:0!important;cursor:pointer!important;width:100%!important;padding:13px!important;}
-/* Back link */
-a[href*="main.html"]{
-  display:block!important;text-decoration:none!important;text-align:center!important;
-  margin-top:10px!important;padding:12px!important;
-  background:rgba(255,255,255,0.85)!important;
-  border:1.5px solid rgba(20,40,90,0.12)!important;border-radius:16px!important;
-  color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;
-  font-size:13px!important;font-weight:700!important;
-}
-
-/* Blackjack specific */
-.bj-table{{background:rgba(255,255,255,0.92)!important;border-radius:22px!important;border:2px solid rgba(255,255,255,0.80)!important;box-shadow:0 5px 20px rgba(0,30,80,0.11)!important;}}
-.bj-section{{background:rgba(232,244,255,0.70)!important;border-radius:14px!important;border:1.5px solid rgba(40,120,220,0.15)!important;}}
-.bj-label{{font-family:'Nunito',sans-serif!important;color:#7A8AAA!important;font-size:11px!important;font-weight:800!important;letter-spacing:1px!important;text-transform:uppercase!important;}}
-.bj-score{{font-family:'Nunito',sans-serif!important;font-weight:900!important;color:#1A2040!important;}}
-.card-face{{background:#fff!important;border:1.5px solid rgba(20,40,90,0.12)!important;border-radius:10px!important;box-shadow:0 3px 12px rgba(0,30,80,0.12)!important;}}
-.card-back{{background:linear-gradient(135deg,#7040D8,#4020A0)!important;border:1.5px solid rgba(100,60,200,0.3)!important;border-radius:10px!important;}}
-.cv{{color:#D02840!important;}}
-.cs{{color:#1A2040!important;}}
-.hit-btn{{background:linear-gradient(135deg,#4898E0,#2060C0)!important;color:#fff!important;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}}
-.stand-btn{{background:linear-gradient(135deg,#20C060,#148040)!important;color:#fff!important;box-shadow:0 4px 14px rgba(20,140,60,0.28)!important;}}
-.double-btn{{background:linear-gradient(135deg,#F0A020,#C07000)!important;color:#fff!important;box-shadow:0 4px 14px rgba(200,120,0,0.28)!important;}}
-.cb{{background:rgba(255,255,255,0.88)!important;border:1.5px solid rgba(20,40,90,0.11)!important;border-radius:12px!important;box-shadow:0 2px 8px rgba(0,30,80,0.08)!important;}}
-.cbs{{display:flex!important;gap:8px!important;}}
-.r-title.push{{color:#A07800!important;}}
+/* Blackjack table — light felt */
+.bj-table{background:linear-gradient(160deg,#E0F5E8,#C8EDD8)!important;border:2px solid rgba(30,140,60,0.25)!important;border-radius:22px!important;box-shadow:0 5px 20px rgba(20,100,40,0.14)!important;}
+.bj-lbl{font-family:'Nunito',sans-serif!important;font-size:10px!important;color:rgba(30,80,50,0.55)!important;letter-spacing:1.5px!important;text-transform:uppercase!important;}
+.bj-score{font-family:'Nunito',sans-serif!important;font-size:20px!important;font-weight:800!important;color:#1A2040!important;}
+.bust{color:#D02840!important;} .bj,.bj-score.bj{color:#B88000!important;} .good{color:#1A9A50!important;}
+/* Cards */
+.card-face{background:#fff!important;border:1.5px solid rgba(20,40,90,0.12)!important;border-radius:10px!important;box-shadow:0 3px 12px rgba(0,30,80,0.13)!important;}
+.red,.cv.red,.cs.red{color:#D02840!important;}
+.cv{font-size:14px;font-weight:900;line-height:1;color:#1A2040;}
+.cs{font-size:17px;line-height:1;color:#1A2040;}
+.card-back{background:linear-gradient(135deg,#7040D8,#4020A0)!important;border:1.5px solid rgba(100,60,200,0.30)!important;border-radius:10px!important;}
+/* Balance banner */
+.bal-banner{background:rgba(255,220,40,0.10)!important;border:1.5px solid rgba(200,150,0,0.28)!important;border-radius:18px!important;}
+.bb-lbl{color:rgba(160,110,0,0.55)!important;font-family:'Nunito',sans-serif!important;}
+.bb-val{color:#A07800!important;font-family:'Nunito',sans-serif!important;}
+/* Action buttons */
+.act-row{gap:8px!important;}
+.act-btn{border-radius:16px!important;font-family:'Caveat',cursive!important;font-size:20px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;border:none!important;}
+.btn-hit{background:linear-gradient(135deg,#4898E0,#2060C0)!important;color:#fff!important;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+.btn-stand{background:linear-gradient(135deg,#20C060,#148040)!important;color:#fff!important;box-shadow:0 4px 14px rgba(20,140,60,0.28)!important;border:none!important;}
+.btn-double{background:linear-gradient(135deg,#F0A020,#C07000)!important;color:#fff!important;box-shadow:0 4px 14px rgba(200,120,0,0.28)!important;border:none!important;}
+/* Result overlay */
+.result-ov{background:rgba(20,40,90,0.45)!important;backdrop-filter:blur(10px)!important;}
+.result-card{background:rgba(248,252,255,0.98)!important;border:2px solid rgba(255,255,255,0.90)!important;border-radius:28px!important;box-shadow:0 -8px 40px rgba(0,30,80,0.20)!important;}
+.r-title{font-family:'Caveat',cursive!important;font-size:40px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;}
+.r-sub{color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;}
+.r-amount{font-family:'Nunito',sans-serif!important;font-size:30px!important;font-weight:900!important;}
+.win{color:#1A9A50!important;} .lose{color:#D02840!important;} .push{color:#B88000!important;}
+.r-close{background:rgba(255,255,255,0.92)!important;border:2px solid rgba(20,40,90,0.14)!important;border-radius:18px!important;color:#1A2040!important;font-family:'Caveat',cursive!important;font-size:22px!important;font-weight:700!important;letter-spacing:0!important;font-style:normal!important;}
+a[href*="main.html"]{display:block!important;text-decoration:none!important;text-align:center!important;margin-top:10px!important;padding:12px!important;background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.12)!important;border-radius:16px!important;color:#7A8AAA!important;font-family:'Nunito',sans-serif!important;font-size:13px!important;font-weight:700!important;}
 
 </style>
 </head>
@@ -220,7 +162,7 @@ a[href*="main.html"]{
 <div class="topbar">
   <button class="fp-back" onclick="history.back()">&#8249;</button>
   <div class="fp-title">&#x1F0CF; БЛЭКДЖЕК</div>
-  <div class="bal-chip"><img src="../textures/coin.svg" width="20" height="20" alt="" style="vertical-align:middle;margin-right:2px"> <span id="r-bal">—</span></div>
+  <div class="bal-chip">&#x1FA99; <span id="r-bal">&#8212;</span></div>
 </div>
 <div class="page-wrap">
   <div class="bal-banner">
