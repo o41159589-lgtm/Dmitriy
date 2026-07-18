@@ -312,6 +312,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <div class="tab"   onclick="switchTab('commands',this)">🛠 Команды</div>
   <div class="tab"   onclick="switchTab('devmode',this)">🔬 Dev</div>
   <div class="tab"   onclick="switchTab('logs',this)">📋 Логи</div>
+  <div class="tab"   onclick="switchTab('activity',this)">🎮 Активность</div>
 </div>
 
 <!-- USERS -->
@@ -787,6 +788,36 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     white-space:pre-wrap;
   ">
     <span style="color:#555"># Ожидаем действий администратора...</span>
+  </div>
+</div>
+
+<!-- ══════════ ACTIVITY TAB ══════════ -->
+<div class="tab-pane" id="tab-activity">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
+    <div class="rev-title" style="margin-bottom:0">🎮 АКТИВНОСТЬ ИГРОКОВ</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <select id="act-limit" style="background:var(--card-bg);border:1px solid var(--card-br);border-radius:8px;padding:5px 8px;color:var(--text-main);font-size:12px;cursor:pointer" onchange="loadActivity()">
+        <option value="50">50 записей</option>
+        <option value="100" selected>100 записей</option>
+        <option value="250">250 записей</option>
+        <option value="500">500 записей</option>
+      </select>
+      <div id="act-type" style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="abtn set" onclick="setActFilter('all',this)" style="font-size:10px;padding:4px 8px;background:var(--blue-faint);border-color:var(--blue)">Все</button>
+        <button class="abtn" onclick="setActFilter('win',this)" style="font-size:10px;padding:4px 8px">🏆</button>
+        <button class="abtn" onclick="setActFilter('lose',this)" style="font-size:10px;padding:4px 8px">💀</button>
+        <button class="abtn" onclick="setActFilter('deposit',this)" style="font-size:10px;padding:4px 8px">💳</button>
+        <button class="abtn" onclick="setActFilter('task',this)" style="font-size:10px;padding:4px 8px">✅</button>
+        <button class="abtn" onclick="setActFilter('promo',this)" style="font-size:10px;padding:4px 8px">🎟</button>
+        <button class="abtn" onclick="setActFilter('admin_credit',this)" style="font-size:10px;padding:4px 8px">⬆️</button>
+        <button class="abtn" onclick="setActFilter('admin_deduct',this)" style="font-size:10px;padding:4px 8px">⬇️</button>
+      </div>
+      <button class="abtn set" onclick="loadActivity()" style="font-size:11px;padding:5px 10px">↻ Обновить</button>
+    </div>
+  </div>
+  <div id="act-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+  <div id="act-list" style="display:flex;flex-direction:column;gap:5px;max-height:60vh;overflow-y:auto">
+    <div style="text-align:center;padding:20px;color:var(--muted)">⏳ Нажмите «Обновить» для загрузки</div>
   </div>
 </div>
 
@@ -2062,27 +2093,21 @@ function showLoadingError(msg){
 // Auth: if UID exists → show panel (each API call has server-side 403 guard anyway).
 // Only redirect on confirmed HTTP 403 from a lightweight endpoint.
 (async function checkAdminAccess(){
+  // 1. No UID → not in Telegram
   if(!ADMIN_UID){ window.location.replace('not_telegram.html'); return; }
-
-  // Try a quick auth check — but ALWAYS show panel on any non-403 outcome
-  let blocked = false;
-  try{
-    const ctrl = new AbortController();
-    setTimeout(()=>ctrl.abort(), 5000);
-    const r = await fetch('/api/admin/get_global_luck',{
-      headers:{'X-Admin-Uid': ADMIN_UID,'X-Admin-Key': ADMIN_UID},
-      signal: ctrl.signal
-    });
-    if(r.status === 403) blocked = true;
-  } catch(e){ /* timeout or network error — proceed anyway */ }
-
-  if(blocked){ window.location.replace('index.html'); return; }
-
+  // 2. Show panel immediately, then verify in background
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();
   load();
   loadGl();
   setInterval(load, 30000);
+  // 3. Background auth check – redirect only on confirmed 403
+  try{
+    const r = await fetch('/api/admin/get_global_luck',{
+      headers:{'X-Admin-Uid':ADMIN_UID,'X-Admin-Key':ADMIN_UID}
+    });
+    if(r.status===403) window.location.replace('index.html');
+  }catch(e){}
 })();
 
 const td = new Date().toISOString().split('T')[0];
@@ -2138,6 +2163,96 @@ async function saveNgCoeff(){
     s.textContent = r.ok ? '&#x2705; Применено: '+_ngCoeff.toFixed(2) : '&#x274C; '+r.error;
     setTimeout(()=>s.textContent='',3000);
   }catch(e){s.style.color='var(--red)';s.textContent='&#x274C; Ошибка';}
+}
+
+
+// ══════════════════════════════════════════
+// ACTIVITY LOG  (replaces Telegram group spam)
+// ══════════════════════════════════════════
+let _actFilter = 'all';
+let _actRaw = [];
+
+const ACT_ICONS = {win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',
+  gift_sent:'🎁',gift_received:'🎁',admin_credit:'⬆️',admin_deduct:'⬇️',
+  promo:'🎟',task:'✅',admin_luck:'🍀'};
+const ACT_TITLES = {win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',
+  gift_sent:'Подарок отпр.',gift_received:'Подарок получ.',
+  admin_credit:'Начисление',admin_deduct:'Списание',promo:'Промокод',task:'Задание',admin_luck:'Изм.удачи'};
+const ACT_POS = new Set(['win','deposit','ref','gift_received','admin_credit','promo','task']);
+
+function setActFilter(f, btn) {
+  _actFilter = f;
+  document.querySelectorAll('#act-type .abtn').forEach(b => {
+    b.style.background = '';
+    b.style.borderColor = '';
+  });
+  if (btn) {
+    btn.style.background = 'var(--blue-faint)';
+    btn.style.borderColor = 'var(--blue)';
+  }
+  renderActivity();
+}
+
+async function loadActivity() {
+  const listEl = document.getElementById('act-list');
+  const statsEl = document.getElementById('act-stats');
+  const limit = document.getElementById('act-limit')?.value || 100;
+  if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">⏳ Загружаем...</div>';
+  try {
+    const r = await api(`/api/admin/activity?limit=${limit}`);
+    _actRaw = r.activity || [];
+    renderActivity();
+  } catch(e) {
+    if (listEl) listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">❌ ${esc(String(e.message||e))}</div>`;
+  }
+}
+
+function renderActivity() {
+  const listEl = document.getElementById('act-list');
+  const statsEl = document.getElementById('act-stats');
+  if (!listEl) return;
+
+  const items = _actFilter === 'all' ? _actRaw : _actRaw.filter(i => i.type === _actFilter);
+
+  // Stats
+  const wins = _actRaw.filter(i=>i.type==='win').length;
+  const loses = _actRaw.filter(i=>i.type==='lose').length;
+  const deps = _actRaw.filter(i=>i.type==='deposit').length;
+  const totalIn = _actRaw.filter(i=>ACT_POS.has(i.type)).reduce((a,i)=>a+Math.abs(i.amount),0);
+  const totalOut = _actRaw.filter(i=>!ACT_POS.has(i.type)).reduce((a,i)=>a+Math.abs(i.amount),0);
+  if (statsEl) statsEl.innerHTML = [
+    `<div style="background:rgba(45,198,83,.1);border:1px solid rgba(45,198,83,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--green)">🏆 ${wins} побед</div>`,
+    `<div style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--red)">💀 ${loses} проигр.</div>`,
+    `<div style="background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--blue)">💳 ${deps} пополн.</div>`,
+    `<div style="background:rgba(255,255,255,.06);border:1px solid var(--card-br);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--muted)">📥 +${totalIn} / 📤 -${totalOut} 🪙</div>`,
+  ].join('');
+
+  if (!items.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Записей нет</div>';
+    return;
+  }
+
+  listEl.innerHTML = items.map(i => {
+    const d = new Date((i.created_at||0)*1000);
+    const dt = d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+             + ' ' + d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const pos = ACT_POS.has(i.type);
+    const col = pos ? 'var(--green)' : 'var(--red)';
+    const icon = ACT_ICONS[i.type] || '•';
+    const title = ACT_TITLES[i.type] || i.type;
+    const who = esc(i.first_name || ('ID:' + i.user_id));
+    const uname = i.username ? ` @${esc(i.username)}` : '';
+    const detail = i.detail ? ` · ${esc(String(i.detail))}` : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card-bg);border:1px solid var(--card-br);border-radius:10px;font-size:12px" onclick="jumpToUser(${i.user_id})">
+      <span style="font-size:16px;flex-shrink:0">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <span style="color:var(--text-main);font-weight:600">${who}</span><span style="color:var(--muted)">${uname}</span>
+        <span style="color:var(--muted);margin-left:4px">${title}${detail}</span>
+      </div>
+      <span style="color:${col};font-weight:700;white-space:nowrap">${pos?'+':'-'}${Math.abs(i.amount)}</span>
+      <span style="color:var(--muted);white-space:nowrap;font-size:10px">${dt}</span>
+    </div>`;
+  }).join('');
 }
 
 </script>

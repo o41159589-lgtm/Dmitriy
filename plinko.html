@@ -171,43 +171,68 @@ function pegPos(row,col){
 function drawBoard(){
   if(!cW||!cH)return;
   ctx.clearRect(0,0,cW,cH);
-  ctx.fillStyle='#080812';ctx.fillRect(0,0,cW,cH);
+  // Sky-theme background: light blue gradient
+  const bgG=ctx.createLinearGradient(0,0,0,cH);
+  bgG.addColorStop(0,'#E8F4FF');bgG.addColorStop(1,'#C8E8FF');
+  ctx.fillStyle=bgG;ctx.fillRect(0,0,cW,cH);
+  // Subtle grid lines
+  ctx.strokeStyle='rgba(100,160,220,0.10)';ctx.lineWidth=0.5;
+  for(let y=0;y<cH;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cW,y);ctx.stroke();}
+  // Pegs: 3D golden balls
   for(let r=0;r<ROWS;r++){
     for(let col=0;col<=r+1;col++){
       const p=pegPos(r,col);
-      ctx.save();ctx.shadowColor='rgba(200,200,255,.3)';ctx.shadowBlur=5;
+      // Outer shadow ring
+      ctx.save();ctx.shadowColor='rgba(160,100,0,0.45)';ctx.shadowBlur=4;ctx.shadowOffsetY=2;
       ctx.beginPath();ctx.arc(p.x,p.y,pegR,0,Math.PI*2);
-      ctx.fillStyle='#2A2845';ctx.fill();ctx.restore();
-      ctx.beginPath();ctx.arc(p.x,p.y,pegR*.6,0,Math.PI*2);
-      const pg=ctx.createRadialGradient(p.x-1,p.y-1,0,p.x,p.y,pegR*.6);
-      pg.addColorStop(0,'#BBAAEE');pg.addColorStop(1,'#5548AA');
-      ctx.fillStyle=pg;ctx.fill();
+      const pegOuter=ctx.createRadialGradient(p.x-pegR*.25,p.y-pegR*.25,0,p.x,p.y,pegR);
+      pegOuter.addColorStop(0,'#FFF5A0');pegOuter.addColorStop(0.35,'#FFD428');pegOuter.addColorStop(0.75,'#E0A000');pegOuter.addColorStop(1,'#B07800');
+      ctx.fillStyle=pegOuter;ctx.fill();ctx.restore();
+      // Peg rim
+      ctx.beginPath();ctx.arc(p.x,p.y,pegR,0,Math.PI*2);
+      ctx.strokeStyle='rgba(180,110,0,0.40)';ctx.lineWidth=0.8;ctx.stroke();
+      // Shine spot
+      ctx.beginPath();ctx.arc(p.x-pegR*.28,p.y-pegR*.30,pegR*.32,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,220,0.75)';ctx.fill();
     }
   }
+  // Multiplier buckets
   const sy=cH-slotH,sw=cW/NSLOTS;
   for(let i=0;i<NSLOTS;i++){
     const sx=i*sw,m=MULTS[i],col=multColor(m),fl=slotFlash[i]||0;
     ctx.save();
-    if(fl>0){ctx.shadowColor=col;ctx.shadowBlur=18*fl;}
-    ctx.fillStyle=fl>0?col:col+'22';ctx.strokeStyle=fl>0?col:col+'55';ctx.lineWidth=1.5;
+    if(fl>0){ctx.shadowColor=col;ctx.shadowBlur=20*fl;}
+    // Bucket background
+    ctx.fillStyle=fl>0?col:col+'EE';
+    ctx.strokeStyle=fl>0?'rgba(255,255,255,0.60)':col;
+    ctx.lineWidth=1;
     ctx.beginPath();ctx.roundRect(sx+2,sy+3,sw-4,slotH-6,5);ctx.fill();ctx.stroke();
+    // Top shine strip
+    ctx.fillStyle='rgba(255,255,255,0.28)';
+    ctx.beginPath();ctx.roundRect(sx+2,sy+3,sw-4,(slotH-6)*0.38,5);ctx.fill();
     ctx.restore();
+    // Label
     ctx.fillStyle=fl>0?'#000':'#fff';
-    ctx.font=`bold ${sw>26?10:8}px 'JetBrains Mono',monospace`;
+    ctx.font=`bold ${sw>26?10:8}px 'Nunito',sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(m===0?'0':m+'x',sx+sw/2,sy+slotH/2);
   }
   ctx.textAlign='start';
+  // Balls + trails
   for(const b of balls){
     for(let i=0;i<b.trail.length;i++){
-      const a=(i/b.trail.length)*.25,sz=ballR*(i/b.trail.length)*.55;
+      const a=(i/b.trail.length)*.22,sz=ballR*(i/b.trail.length)*.5;
       ctx.beginPath();ctx.arc(b.trail[i].x,b.trail[i].y,Math.max(.5,sz),0,Math.PI*2);
-      ctx.fillStyle=`rgba(170,140,255,${a})`;ctx.fill();
+      ctx.fillStyle=`rgba(100,60,220,${a})`;ctx.fill();
     }
-    ctx.save();ctx.shadowColor='rgba(200,180,255,.6)';ctx.shadowBlur=8;
-    const bg=ctx.createRadialGradient(b.x-1.5,b.y-1.5,1,b.x,b.y,ballR);
-    bg.addColorStop(0,'#DDD0FF');bg.addColorStop(1,'#6030C0');
-    ctx.beginPath();ctx.arc(b.x,b.y,ballR,0,Math.PI*2);ctx.fillStyle=bg;ctx.fill();ctx.restore();
+    ctx.save();ctx.shadowColor='rgba(80,50,220,0.55)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;
+    const bg=ctx.createRadialGradient(b.x-ballR*.3,b.y-ballR*.3,ballR*.1,b.x,b.y,ballR);
+    bg.addColorStop(0,'#C8EEFF');bg.addColorStop(0.35,'#7060E8');bg.addColorStop(0.75,'#4030C8');bg.addColorStop(1,'#1E10A0');
+    ctx.beginPath();ctx.arc(b.x,b.y,ballR,0,Math.PI*2);ctx.fillStyle=bg;ctx.fill();
+    // Ball shine
+    ctx.beginPath();ctx.arc(b.x-ballR*.28,b.y-ballR*.30,ballR*.30,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.55)';ctx.fill();
+    ctx.restore();
   }
 }
 

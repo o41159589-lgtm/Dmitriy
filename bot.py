@@ -1396,6 +1396,28 @@ async def serve_html(f):
     if p.exists(): return web.Response(text=p.read_text("utf-8"), content_type="text/html", charset="utf-8")
     return web.Response(text="Not found", status=404)
 async def serve_app(req):   return await serve_html("index.html")
+async def api_admin_activity(req):
+    """Recent game activity across all users — replaces Telegram group log spam."""
+    if not _is_admin(req):
+        return web.json_response({'error': 'forbidden'}, status=403)
+    try:
+        limit = int(req.rel_url.query.get('limit', 100))
+        limit = max(10, min(500, limit))
+        async with aiosqlite.connect(DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            rows = await db.execute_fetchall(
+                """SELECT h.id, h.user_id, h.type, h.amount, h.detail, h.created_at,
+                          u.first_name, u.username
+                   FROM history h
+                   LEFT JOIN users u ON u.user_id = h.user_id
+                   ORDER BY h.created_at DESC LIMIT ?""",
+                (limit,)
+            )
+        return web.json_response({'activity': [dict(r) for r in rows]})
+    except Exception as e:
+        return web.json_response({'error': str(e)}, status=500)
+
+
 async def serve_admin(req): return await serve_html("admin_panel.html")
 async def health(req):      return web.Response(text="OK")
 _STATIC_EXTS = {".css",".png",".jpg",".jpeg",".js",".svg",".html",".ico",".webp"}
@@ -2076,6 +2098,7 @@ async def start_web():
     app.router.add_post("/api/tower/start",        api_tower_start)
     app.router.add_post("/api/tower/step",         api_tower_step)
     app.router.add_post("/api/tower/cashout",      api_tower_cashout)
+    app.router.add_get ("/api/admin/activity",     api_admin_activity)
     app.router.add_get ("/api/admin/users",        api_admin_users)
     app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)
     app.router.add_post("/api/admin/set_luck",     api_admin_set_luck)

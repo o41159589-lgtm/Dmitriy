@@ -27,7 +27,7 @@
 /* Hide toast when not active */
 .toast:not(.show){opacity:0!important;pointer-events:none!important;background:transparent!important;border-color:transparent!important;}
 .toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s!important;}
-.page{display:none;animation:fadeIn .2s ease both;position:relative;z-index:1;padding-bottom:calc(var(--nav-h) + 20px);}
+.page{display:none;animation:fadeIn .2s ease both;position:relative;z-index:1;}
 .page.active{display:block;}
 /* Fix black bar — safe area padding for sticky topbar in shared.css */
 .topbar{padding-top:calc(12px + env(safe-area-inset-top,0px)) !important;}
@@ -185,6 +185,8 @@
    ════════════════════════════════════════════════════ */
 /* body always gets sky gradient so no black area on any page */
 html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed!important;}
+body{padding-bottom:calc(var(--nav-h) + 16px)!important;}
+.page{min-height:0!important;padding-bottom:0!important;}
 
 #page-games{
   background-image:url('textures/sky.svg');
@@ -459,61 +461,12 @@ input:checked + .toggle-slider{background:#1A2040;}
 .ov p[style]{color:#8090B0!important;}
 
 
-/* ═══ STICKY APP HEADER ═══ */
-.app-header{
-  position:sticky;top:0;z-index:100;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;
-  padding-top:calc(10px + env(safe-area-inset-top,0px));
-  background:rgba(255,255,255,0.94);
-  backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
-  border-bottom:1px solid rgba(255,255,255,0.70);
-  box-shadow:0 2px 14px rgba(0,30,80,0.11);
-}
-.app-header-logo{
-  display:flex;align-items:center;gap:9px;
-}
-.app-header-icon{
-  width:32px;height:32px;border-radius:10px;
-  background:linear-gradient(135deg,#4898E0,#2060C0);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;box-shadow:0 3px 10px rgba(40,80,200,0.28);
-  flex-shrink:0;
-}
-.app-header-name{
-  font-family:'Caveat',cursive;font-size:22px;font-weight:700;
-  color:#1A2040;letter-spacing:0;font-style:normal;line-height:1;
-}
-.app-header-tag{
-  font-family:'Nunito',sans-serif;font-size:10px;font-weight:700;
-  color:#7A8AAA;letter-spacing:0.5px;text-transform:uppercase;
-  margin-top:1px;
-}
-.app-header-bal{
-  display:flex;align-items:center;gap:5px;
-  background:rgba(255,255,255,0.95);border:2px solid #FFD028;
-  border-radius:16px;padding:6px 12px;
-  font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;color:#A07800;
-}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 <div class="liquid-bg"></div>
 
-<header class="app-header">
-  <div class="app-header-logo">
-    <div class="app-header-icon">🍀</div>
-    <div>
-      <div class="app-header-name">TopLuck</div>
-      <div class="app-header-tag">Испытай удачу</div>
-    </div>
-  </div>
-  <div class="app-header-bal">
-    <img src="textures/coin.svg" width="20" height="20" alt="" style="vertical-align:middle;flex-shrink:0">
-    <span id="header-bal">0</span>
-  </div>
-</header>
 
 <!-- HOME -->
 <div class="page" id="page-home">
@@ -772,7 +725,7 @@ function updateUI(){
   _s('prof-name',userData.first_name||FIRST_NAME||'Игрок');
   _s('prof-uname',(userData.username||USERNAME)?'@'+(userData.username||USERNAME):'');
   _s('prof-bal',bal);_s('prof-spins',userData.spins??0);_s('prof-wins',userData.wins??0);_s('prof-won',userData.total_won??0);
-  _s('r-bal',bal);_s('shop-bal',bal);_s('header-bal',bal);
+  _s('r-bal',bal);_s('shop-bal',bal);
   updateLevelUI(userData.xp||0,userData.level||0);
 }
 
