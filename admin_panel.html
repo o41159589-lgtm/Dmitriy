@@ -2093,21 +2093,13 @@ function showLoadingError(msg){
 // Auth: if UID exists → show panel (each API call has server-side 403 guard anyway).
 // Only redirect on confirmed HTTP 403 from a lightweight endpoint.
 (async function checkAdminAccess(){
-  // 1. No UID → not in Telegram
   if(!ADMIN_UID){ window.location.replace('not_telegram.html'); return; }
-  // 2. Show panel immediately, then verify in background
+  // Dismiss overlay and start loading immediately — auth confirmed server-side on every API call
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();
   load();
   loadGl();
   setInterval(load, 30000);
-  // 3. Background auth check – redirect only on confirmed 403
-  try{
-    const r = await fetch('/api/admin/get_global_luck',{
-      headers:{'X-Admin-Uid':ADMIN_UID,'X-Admin-Key':ADMIN_UID}
-    });
-    if(r.status===403) window.location.replace('index.html');
-  }catch(e){}
 })();
 
 const td = new Date().toISOString().split('T')[0];

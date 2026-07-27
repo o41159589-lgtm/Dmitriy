@@ -30,6 +30,7 @@ ADMIN_URL   = os.getenv("ADMIN_URL", "")
 PORT        = int(os.getenv("PORT", 8080))
 ADMIN_IDS   = [int(x) for x in os.getenv("ADMIN_IDS","").split(",") if x.strip()]
 DEV_IDS     = [int(x) for x in os.getenv("DEV_IDS","").split(",") if x.strip()]
+BOT_USERNAME = os.getenv("BOT_USERNAME", "")   # e.g. "TopLuckBot" (no @)
 
 LOG_GROUP_ID       = int(os.getenv("LOG_GROUP_ID", 0))
 LOG_THREAD_USERS   = int(os.getenv("LOG_THREAD_USERS",   1))
@@ -1418,6 +1419,11 @@ async def api_admin_activity(req):
         return web.json_response({'error': str(e)}, status=500)
 
 
+async def api_bot_info(req):
+    """Public endpoint: returns bot username for referral links etc."""
+    return web.json_response({"username": BOT_USERNAME})
+
+
 async def serve_admin(req): return await serve_html("admin_panel.html")
 async def health(req):      return web.Response(text="OK")
 _STATIC_EXTS = {".css",".png",".jpg",".jpeg",".js",".svg",".html",".ico",".webp"}
@@ -2098,6 +2104,7 @@ async def start_web():
     app.router.add_post("/api/tower/start",        api_tower_start)
     app.router.add_post("/api/tower/step",         api_tower_step)
     app.router.add_post("/api/tower/cashout",      api_tower_cashout)
+    app.router.add_get ("/api/bot_info",           api_bot_info)
     app.router.add_get ("/api/admin/activity",     api_admin_activity)
     app.router.add_get ("/api/admin/users",        api_admin_users)
     app.router.add_post("/api/admin/set_balance",  api_admin_set_balance)

@@ -5,74 +5,151 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{background:#141414;color:#F0F0F0;font-family:'Exo 2',sans-serif;min-height:100vh;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.splash{display:flex;flex-direction:column;align-items:center;position:relative;z-index:2;animation:splIn .45s cubic-bezier(.4,0,.2,1) both;}
-@keyframes splIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
-.pepe-area{width:190px;height:190px;position:relative;margin-bottom:24px;display:flex;align-items:center;justify-content:center;}
-#lottie-pepe{width:100%;height:100%;}
-#pepe-fallback{display:none;font-size:100px;position:absolute;inset:0;align-items:center;justify-content:center;}
-.brand{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:7px;color:#fff;margin-bottom:5px;line-height:1;}
-.tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.22);letter-spacing:3px;margin-bottom:44px;}
-.bar-wrap{width:210px;}
-.bar-track{width:100%;height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;position:relative;}
-.bar-fill{height:100%;width:0%;border-radius:2px;transition:width .1s linear;background:#fff;}
-.bar-shim{position:absolute;top:0;left:-60%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:shim 1.4s ease-in-out infinite;}
-@keyframes shim{to{left:140%;}}
-.bar-txt{font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.2);font-size:10px;text-align:center;margin-top:10px;letter-spacing:2px;}
-.ver{position:fixed;bottom:20px;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.08);letter-spacing:2px;}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Nunito',sans-serif;
+}
+/* Sky SVG background */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url('textures/sky.svg');
+  background-size:100% auto;background-position:top center;background-repeat:no-repeat;
+}
+.splash{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;
+}
+/* Animated logo */
+.logo-wrap{
+  width:100px;height:100px;border-radius:28px;
+  background:rgba(255,255,255,0.92);
+  border:2.5px solid rgba(255,255,255,0.80);
+  box-shadow:0 10px 40px rgba(40,80,200,0.20),0 2px 0 rgba(255,255,255,0.60) inset;
+  display:flex;align-items:center;justify-content:center;
+  font-size:54px;
+  margin-bottom:22px;
+  animation:logoIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes logoIn{from{transform:scale(0.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+.logo-name{
+  font-family:'Caveat',cursive;font-size:42px;font-weight:700;color:#1A2040;
+  letter-spacing:0;font-style:normal;
+  animation:fadeUp .45s .15s ease both;margin-bottom:6px;
+}
+.logo-tag{
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
+  color:#7A8AAA;letter-spacing:1px;text-transform:uppercase;
+  animation:fadeUp .45s .25s ease both;margin-bottom:32px;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+/* Progress bar */
+.bar-wrap{
+  width:180px;height:5px;border-radius:3px;
+  background:rgba(255,255,255,0.40);overflow:hidden;
+  animation:fadeUp .4s .35s ease both;
+}
+.bar{
+  height:100%;border-radius:3px;
+  background:linear-gradient(90deg,#4898E0,#2060C0);
+  width:0%;
+  transition:width .3s linear;
+  box-shadow:0 0 10px rgba(40,80,200,0.50);
+}
+.bar-lbl{
+  margin-top:10px;font-size:11px;font-weight:700;color:#7A8AAA;
+  letter-spacing:0.5px;animation:fadeUp .4s .4s ease both;
+  min-height:14px;text-align:center;
+}
+/* Floating coins decoration */
+.coin{
+  position:fixed;pointer-events:none;z-index:0;opacity:0;
+  animation:coinFloat 4s ease-in-out infinite;
+}
+.coin img{width:32px;height:32px;filter:drop-shadow(0 3px 8px rgba(180,120,0,0.30));}
+.coin:nth-child(1){left:8%;bottom:20%;animation-delay:0s;}
+.coin:nth-child(2){right:10%;bottom:35%;animation-delay:1.2s;}
+.coin:nth-child(3){left:18%;bottom:50%;animation-delay:2.4s;}
+.coin:nth-child(4){right:20%;bottom:60%;animation-delay:0.6s;}
+@keyframes coinFloat{
+  0%{opacity:0;transform:translateY(0) rotate(0deg);}
+  20%{opacity:0.55;}
+  80%{opacity:0.55;}
+  100%{opacity:0;transform:translateY(-60px) rotate(20deg);}
+}
 </style>
 </head>
 <body>
+<div class="coin"><img src="textures/coin.svg" alt=""></div>
+<div class="coin"><img src="textures/coin.svg" alt=""></div>
+<div class="coin"><img src="textures/coin.svg" alt=""></div>
+<div class="coin"><img src="textures/coin.svg" alt=""></div>
 <div class="splash">
-  <div class="pepe-area">
-    <div id="lottie-pepe"></div>
-    <div id="pepe-fallback">🐸</div>
-  </div>
-  <div class="brand">TOPLUCK</div>
-  <div class="tag">// испытай удачу //</div>
-  <div class="bar-wrap">
-    <div class="bar-track">
-      <div class="bar-fill" id="bfill"></div>
-      <div class="bar-shim"></div>
-    </div>
-    <div class="bar-txt" id="btxt">loading...</div>
-  </div>
+  <div class="logo-wrap">🍀</div>
+  <div class="logo-name">TopLuck</div>
+  <div class="logo-tag">Испытай удачу</div>
+  <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+  <div class="bar-lbl" id="bar-lbl">Загружаем...</div>
 </div>
-<div class="ver">v3.0</div>
 <script>
-(function(){try{const d=localStorage.getItem('__tl_dev_uid__');if(!d)return;const uid=parseInt(d);if(!uid)return;const tg=window.Telegram?.WebApp;if(!tg)return;if(!tg.initDataUnsafe)tg.initDataUnsafe={};if(!tg.initDataUnsafe.user)tg.initDataUnsafe.user={};tg.initDataUnsafe.user.id=uid;}catch(_){}})();
+// ── DEV IMPERSONATION ──
+(function(){
+  try{
+    const _devUid=localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid) return;
+    const _uid=parseInt(_devUid);
+    if(!_uid) return;
+    const tg=window.Telegram?.WebApp;
+    if(!tg) return;
+    if(!tg.initDataUnsafe)      tg.initDataUnsafe={};
+    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user={};
+    tg.initDataUnsafe.user.id=_uid;
+  }catch(_){}
+})();
+
 const tgApp=window.Telegram?.WebApp;
 if(tgApp){tgApp.expand();tgApp.ready();}
-const _u=tgApp?.initDataUnsafe?.user;
-const _real=tgApp?.initData&&tgApp.initData.length>0;
-if(_real){try{localStorage.removeItem('__tl_dev_uid__');localStorage.removeItem('__tl_dev_debug__');}catch(_){}}
-if(!_u||!_u.id)window.location.replace('not_telegram.html');
-try{if(_u?.id)sessionStorage.setItem('__tl_uid__',String(_u.id));}catch(_){}
-try{
-  lottie.loadAnimation({
-    container:document.getElementById('lottie-pepe'),
-    renderer:'svg',loop:true,autoplay:true,
-    path:'AnimatedSticker.tgs'
-  });
-}catch(e){
-  document.getElementById('lottie-pepe').style.display='none';
-  document.getElementById('pepe-fallback').style.display='flex';
+
+const _tgUser=tgApp?.initDataUnsafe?.user;
+const _hasRealInitData=tgApp?.initData&&tgApp.initData.length>0;
+if(_hasRealInitData){
+  try{localStorage.removeItem('__tl_dev_uid__');localStorage.removeItem('__tl_dev_debug__');}catch(_){}
 }
-const fill=document.getElementById('bfill');
-const txt=document.getElementById('btxt');
-const msgs=['connecting...','verifying...','loading assets...','почти готово...','welcome!'];
-let pct=0,mi=0;
+if(!_tgUser||!_tgUser.id) window.location.replace('not_telegram.html');
+try{const _activeUid=_tgUser?.id;if(_activeUid)sessionStorage.setItem('__tl_uid__',String(_activeUid));}catch(_){}
+
+// Particles
+const pc=document.getElementById('particles');
+const cols=['#FFFFFF','#E0E0E0','#9B5DFF','#00E5FF','#FF2D6B'];
+for(let i=0;i<35;i++){
+  const p=document.createElement('div');
+  p.className='p';
+  const s=1+Math.random()*3;
+  p.style.cssText=`left:${Math.random()*100}%;width:${s}px;height:${s}px;background:${cols[i%cols.length]};--d:${3+Math.random()*5}s;--dl:${Math.random()*6}s`;
+  pc.appendChild(p);
+}
+
+// Loader sequence
+const bar=document.getElementById('lbar');
+const txt=document.getElementById('ltxt');
+const msgs=['connecting','loading assets','shuffling deck','checking luck','welcome!'];
+let pct=0,msgI=0;
 const iv=setInterval(()=>{
-  pct=Math.min(100,pct+Math.random()*11+4);
-  fill.style.width=pct+'%';
-  const m=Math.floor(pct/22);
-  if(m<msgs.length&&m>mi){mi=m;txt.textContent=msgs[m];}
-  if(pct>=100){clearInterval(iv);txt.textContent='ready!';setTimeout(()=>{window.location.href='main.html';},380);}
-},170);
+  pct+=Math.random()*14+5;
+  if(pct>=100){pct=100;clearInterval(iv);}
+  bar.style.width=pct+'%';
+  const mIdx=Math.floor(pct/22);
+  if(mIdx<msgs.length&&mIdx>msgI){msgI=mIdx;txt.textContent=msgs[mIdx];}
+  if(pct>=100) setTimeout(()=>{window.location.href='main.html';},400);
+},150);
 </script>
 </body>
+</html>
 </html>
