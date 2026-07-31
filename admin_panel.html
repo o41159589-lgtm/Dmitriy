@@ -2093,13 +2093,17 @@ function showLoadingError(msg){
 // Auth: if UID exists → show panel (each API call has server-side 403 guard anyway).
 // Only redirect on confirmed HTTP 403 from a lightweight endpoint.
 (async function checkAdminAccess(){
+  // Wait up to 1.5s for Telegram SDK to populate user data
+  for(let i=0;i<15;i++){
+    if(tg?.initDataUnsafe?.user?.id) break;
+    await new Promise(r=>setTimeout(r,100));
+  }
+  ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString()||'';
   if(!ADMIN_UID){ window.location.replace('not_telegram.html'); return; }
-  // Dismiss overlay and start loading immediately — auth confirmed server-side on every API call
   if(window._clearLoadBar) window._clearLoadBar();
   hideLoadingOverlay();
-  load();
-  loadGl();
-  setInterval(load, 30000);
+  load(); loadGl();
+  setInterval(load,30000);
 })();
 
 const td = new Date().toISOString().split('T')[0];
