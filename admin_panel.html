@@ -1702,6 +1702,7 @@ async function loadUHist(uid, filter, btn){
     listEl.innerHTML='<div style="padding:8px;text-align:center;color:var(--red)">Ошибка загрузки</div>';
   }
 }
+async function loadUserRefs(uid){
   const listEl = document.getElementById('refs-list-'+uid);
   if(!listEl) return;
   listEl.innerHTML = '⏳ Загружаем...';
