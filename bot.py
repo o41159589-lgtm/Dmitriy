@@ -117,9 +117,26 @@ ROULETTE_NUMBERS = [
 #  LOGGING HELPERS
 # ════════════════════════════════════════
 
+GLOG_CATEGORY_NAMES = {
+    LOG_THREAD_USERS:        "users",
+    LOG_THREAD_GAMES:        "games",
+    LOG_THREAD_WITHDRAW:     "withdraw",
+    LOG_THREAD_WITHDRAW_BOT: "withdraw_bot",
+    LOG_THREAD_DEPOSIT:      "deposit",
+    LOG_THREAD_BROADCAST:    "broadcast",
+    LOG_THREAD_ADMIN:        "admin",
+    LOG_THREAD_BACKUP:       "backup",
+}
+
 async def log(thread_id: int, text: str, reply_markup=None, incognito: bool = False):
-    """Send message to log group thread. incognito=True skips logging."""
-    if incognito or not LOG_GROUP_ID or not thread_id:
+    """Send message to log group thread + store a copy in DB for the admin panel. incognito=True skips everything."""
+    if incognito or not thread_id:
+        return
+    try:
+        await db.add_glog(thread_id, GLOG_CATEGORY_NAMES.get(thread_id, str(thread_id)), text)
+    except Exception as e:
+        logger.warning(f"glog store error (thread {thread_id}): {e}")
+    if not LOG_GROUP_ID:
         return
     try:
         await bot.send_message(
@@ -1744,6 +1761,55 @@ async def api_admin_set_mines_luck(req):
             f"Коэффициент мин → {coeff}", incognito=False))
     return web.json_response({"ok": True, "coeff": coeff})
 
+# ── BLACKJACK LUCK ──
+async def api_admin_get_blackjack_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    return web.json_response({"coeff": await db.get_blackjack_luck_coeff()})
+
+async def api_admin_set_blackjack_luck(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json(); coeff = float(data.get("coeff", 1.0))
+    incognito = bool(data.get("incognito", False))
+    await db.set_blackjack_luck_coeff(coeff)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_BLACKJACK_LUCK", 0, "Все игроки",
+            f"Коэффициент блэкджека → {coeff}", incognito=False))
+    return web.json_response({"ok": True, "coeff": coeff})
+
+# ── PLINKO MULTIPLIERS (15-slot ladder, public + admin) ──
+async def api_plinko_mults(req):
+    return web.json_response({"mults": await db.get_plinko_mults()})
+
+async def api_admin_set_plinko_mults(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    data = await req.json()
+    vals = data.get("mults", [])
+    if not isinstance(vals, list) or len(vals) != 15:
+        return web.json_response({"error":"expected 15 values"}, status=400)
+    incognito = bool(data.get("incognito", False))
+    await db.set_plinko_mults(vals)
+    if not incognito:
+        try:
+            uid = int(req.headers.get("X-Admin-Uid","0"))
+            u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
+        except: aname = "Admin"; uid = 0
+        fire_log(log_admin_action(uid, aname, "SET_PLINKO_MULTS", 0, "Все игроки",
+            f"Множители Plinko → {vals}", incognito=False))
+    return web.json_response({"ok": True, "mults": await db.get_plinko_mults()})
+
+# ── GROUP LOGS (in-panel copy of the Telegram log group) ──
+async def api_admin_glogs(req):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    category = req.rel_url.query.get("category", "all")
+    limit = max(1, min(2000, int(req.rel_url.query.get("limit", 300))))
+    rows = await db.get_glogs(category, limit)
+    counts = await db.get_glog_counts()
+    return web.json_response({"items": rows, "counts": counts})
+
 # ── PUBLIC: mines settings (для игровой страницы без авторизации) ──
 async def api_mines_settings_public(req):
     return web.json_response({
@@ -1996,32 +2062,8 @@ async def api_notify_not_telegram(req: web.Request):
 
 
 
-# ── New-games luck coefficient (Blackjack, Aviator, Rocket, Plinko) ──
-_new_games_luck_coeff: float = 1.0
-
-async def api_admin_get_game_luck(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    return web.json_response({"coeff": _new_games_luck_coeff})
-
-async def api_admin_set_game_luck(req):
-    global _new_games_luck_coeff
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json()
-    coeff = max(0.0, min(3.0, float(data.get("coeff", 1.0))))
-    _new_games_luck_coeff = coeff
-    incognito = bool(data.get("incognito", False))
-    if not incognito:
-        try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
-            u = await db.get_user(uid)
-            aname = u.get("first_name","Admin") if u else "Admin"
-        except: aname="Admin"; uid=0
-        fire_log(log_admin_action(uid, aname, "SET_GAME_LUCK", 0, "Новые игры",
-            f"Коэффициент удачи новых игр → {coeff}", incognito=False))
-    return web.json_response({"ok": True, "coeff": coeff})
-
 # ════════════════════════════════════════
-#  GENERIC GAME API (Blackjack, Rocket, Plinko)
+#  GENERIC GAME API (Blackjack, Plinko)
 # ════════════════════════════════════════
 async def api_game_play(req: web.Request):
     try:
@@ -2046,7 +2088,8 @@ async def api_game_play(req: web.Request):
     # Apply luck (same system as other games)
     try:
         luck     = await db.get_luck(uid)
-        global_k = await db.get_global_luck_coeff() * _new_games_luck_coeff
+        game_coeff = await db.get_blackjack_luck_coeff() if game == "Блэкджек" else 1.0
+        global_k = await db.get_global_luck_coeff() * game_coeff
         if luck == 100:
             won = True   # Always win
         elif luck == 0:
@@ -2139,8 +2182,11 @@ async def start_web():
     # Not-Telegram visitor notification
     app.router.add_post("/api/notify_not_telegram",    api_notify_not_telegram)
     app.router.add_post("/api/game/play",              api_game_play)
-    app.router.add_get ("/api/admin/game_luck",         api_admin_get_game_luck)
-    app.router.add_post("/api/admin/game_luck",         api_admin_set_game_luck)
+    app.router.add_get ("/api/admin/blackjack_luck", api_admin_get_blackjack_luck)
+    app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
+    app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
+    app.router.add_post("/api/admin/plinko_mults",   api_admin_set_plinko_mults)
+    app.router.add_get ("/api/admin/glogs",          api_admin_glogs)
     # Tasks (public)
     app.router.add_get ("/api/tasks",                  api_tasks)
     app.router.add_post("/api/tasks/complete",         api_task_complete)

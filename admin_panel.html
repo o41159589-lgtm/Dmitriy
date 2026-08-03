@@ -313,6 +313,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <div class="tab"   onclick="switchTab('devmode',this)">🔬 Dev</div>
   <div class="tab"   onclick="switchTab('logs',this)">📋 Логи</div>
   <div class="tab"   onclick="switchTab('activity',this)">🎮 Активность</div>
+  <div class="tab"   onclick="switchTab('group',this)">👥 Группа</div>
 </div>
 
 <!-- USERS -->
@@ -553,10 +554,42 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
-</div>
+  <!-- Blackjack luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🃏 БЛЭКДЖЕК — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Блэкджека. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="bj-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="bj-slider" min="0" max="200" value="100" oninput="onBjSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setBjCoeff(0)">0.0</div>
+        <div class="pb" onclick="setBjCoeff(0.5)">0.5</div>
+        <div class="pb" onclick="setBjCoeff(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveBjCoeff()">💾 Сохранить (только блэкджек)</button>
+    </div>
+    <div id="bj-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
 
-<!-- TASKS -->
-<div class="tab-pane" id="tab-tasks">
+  <!-- Plinko multipliers — 15 editable slots -->
+  <div class="settings-block">
+    <div class="settings-title">🟣 PLINKO — КОЭФФИЦИЕНТЫ (15 слотов)</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Значения множителей в каждом слоте, слева направо (края — крайние слоты).<br/>
+      <span style="color:var(--muted);font-size:10px">Массив симметричен по умолчанию: 20/10/5/2.5/2/1.5/1.2/0/1.2/1.5/2/2.5/5/10/20</span>
+    </p>
+    <div id="plinko-mults-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px"></div>
+    <button class="abtn set" style="width:100%;padding:11px" onclick="savePlinkoMults()">💾 Сохранить множители Plinko</button>
+    <div id="plinko-mults-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
+  </div>
+
+</div>
   <div class="rev-card" style="margin-bottom:10px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div class="rev-title" style="margin-bottom:0">✅ УПРАВЛЕНИЕ ЗАДАНИЯМИ</div>
@@ -701,32 +734,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="dev-recent-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
   </div>
 
-  <!-- Luck for new games -->
-  <div class="settings-block">
-    <div class="settings-title">&#x1F3B2; НОВЫЕ ИГРЫ — УДАЧА</div>
-    <p style="color:var(--muted2);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Коэффициент применяется к Блэкджеку, Самолётику, Ракете, Plinko через единый endpoint.<br>
-      <b style="color:var(--green)">1.0</b> — честная игра &middot; <b style="color:var(--red)">0.0</b> — казино всегда в плюсе
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted2)">Коэффициент:</span>
-        <span id="ng-val" style="font-family:var(--font-mono);font-size:20px;color:var(--gold);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="ng-slider" min="0" max="200" value="100"
-        oninput="onNgSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setNgCoeff(0)">0.0 &mdash; Всегда проиг.</div>
-        <div class="pb" onclick="setNgCoeff(0.7)">0.7 &mdash; Казино в плюсе</div>
-        <div class="pb" onclick="setNgCoeff(1.0)">1.0 &mdash; Честно</div>
-        <div class="pb" onclick="setNgCoeff(1.3)">1.3 &mdash; Игрок в плюсе</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveNgCoeff()">&#x1F4BE; Применить к новым играм</button>
-    </div>
-    <div id="ng-status" style="text-align:center;font-size:12px;color:var(--muted2);min-height:18px"></div>
-  </div>
-
 </div>
 
 <!-- ══════════════════════════════════════
@@ -821,6 +828,30 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   </div>
 </div>
 
+<!-- ══════════ GROUP TAB (in-panel copy of Telegram log group, no freeze) ══════════ -->
+<div class="tab-pane" id="tab-group">
+  <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:10px">
+    Полная копия групповых логов прямо в панели — все категории сразу, без открытия Telegram и без фриза при скролле.
+  </p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+    <div id="glog-cats" style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="abtn set" onclick="setGlogCat('all',this)" style="font-size:10px;padding:5px 9px;background:var(--blue-faint);border-color:var(--blue)">Все <span id="gc-all">0</span></button>
+      <button class="abtn" onclick="setGlogCat('users',this)" style="font-size:10px;padding:5px 9px">👤 Игроки <span id="gc-users">0</span></button>
+      <button class="abtn" onclick="setGlogCat('games',this)" style="font-size:10px;padding:5px 9px">🎮 Игры <span id="gc-games">0</span></button>
+      <button class="abtn" onclick="setGlogCat('deposit',this)" style="font-size:10px;padding:5px 9px">💳 Депозиты <span id="gc-deposit">0</span></button>
+      <button class="abtn" onclick="setGlogCat('withdraw',this)" style="font-size:10px;padding:5px 9px">📦 Выводы <span id="gc-withdraw">0</span></button>
+      <button class="abtn" onclick="setGlogCat('withdraw_bot',this)" style="font-size:10px;padding:5px 9px">🤖 Выводы (бот) <span id="gc-withdraw_bot">0</span></button>
+      <button class="abtn" onclick="setGlogCat('admin',this)" style="font-size:10px;padding:5px 9px">🛠 Админ <span id="gc-admin">0</span></button>
+      <button class="abtn" onclick="setGlogCat('broadcast',this)" style="font-size:10px;padding:5px 9px">📢 Рассылка <span id="gc-broadcast">0</span></button>
+      <button class="abtn" onclick="setGlogCat('backup',this)" style="font-size:10px;padding:5px 9px">💾 Бэкап <span id="gc-backup">0</span></button>
+    </div>
+    <button class="abtn set" onclick="loadGlogs()" style="font-size:11px;padding:6px 10px">↻ Обновить</button>
+  </div>
+  <div id="glog-list" style="display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow-y:auto">
+    <div style="text-align:center;padding:20px;color:var(--muted)">⏳ Нажмите «Обновить» для загрузки</div>
+  </div>
+</div>
+
 <script>
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
@@ -849,6 +880,7 @@ function switchTab(name,btn){
   if(name==='promo') loadPromos();
   if(name==='logs') renderLogs();
   if(name==='tasks') loadAdminTasks();
+  if(name==='group') loadGlogs();
 }
 
 // ══════════════════════════════
@@ -1884,6 +1916,7 @@ let glCoeff = 1.0;
 let euroCoeff = 1.0;
 let minesCoeff = 1.0;
 let towerLuckCoeff = 1.0;
+let bjCoeff = 1.0;
 let minesMaxMult = 25.0;
 let towerMaxFloors = 10;
 
@@ -1986,6 +2019,55 @@ async function saveTowerLuck(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
+// Blackjack — independent
+function onBjSlider(v){
+  bjCoeff = parseInt(v)/100;
+  const el = document.getElementById('bj-val');
+  el.textContent = bjCoeff.toFixed(2); el.style.color = _colorCoeff(bjCoeff);
+}
+function setBjCoeff(v){
+  bjCoeff = v;
+  document.getElementById('bj-val').textContent = v.toFixed(2);
+  document.getElementById('bj-slider').value = Math.round(v*100);
+  document.getElementById('bj-val').style.color = _colorCoeff(v);
+}
+async function saveBjCoeff(){
+  const st = document.getElementById('bj-status');
+  try{
+    await api('/api/admin/blackjack_luck','POST',{coeff:bjCoeff});
+    st.textContent = `✅ Блэкджек сохранён: ${bjCoeff.toFixed(2)}`; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка сохранения','err'); }
+}
+
+// Plinko multipliers — 15 editable slots
+let plinkoMults = [20,10,5,2.5,2,1.5,1.2,0,1.2,1.5,2,2.5,5,10,20];
+function renderPlinkoMultsGrid(){
+  const grid = document.getElementById('plinko-mults-grid');
+  if(!grid) return;
+  grid.innerHTML = plinkoMults.map((v,i)=>`
+    <input type="number" step="0.1" min="0" value="${v}" data-idx="${i}"
+      onchange="plinkoMults[${i}]=parseFloat(this.value)||0"
+      style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:8px;
+      padding:8px 4px;color:var(--text);font-size:12px;text-align:center;font-family:var(--font-mono)"/>
+  `).join('');
+}
+async function loadPlinkoMults(){
+  try{
+    const d = await api('/api/plinko_mults');
+    if(Array.isArray(d.mults) && d.mults.length===15) plinkoMults = d.mults;
+  } catch{}
+  renderPlinkoMultsGrid();
+}
+async function savePlinkoMults(){
+  const st = document.getElementById('plinko-mults-status');
+  try{
+    await api('/api/admin/plinko_mults','POST',{mults:plinkoMults});
+    st.textContent = '✅ Множители Plinko сохранены'; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ st.textContent='❌ Ошибка'; st.style.color='var(--red)'; }
+}
+
 async function loadGl(){
   const load = async(url, key, slEl, valEl, color) => {
     try{
@@ -2000,6 +2082,8 @@ async function loadGl(){
   euroCoeff       = await load('/api/admin/euro_luck', 'coeff', document.getElementById('euro-slider'), document.getElementById('euro-val'));
   minesCoeff      = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
   towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
+  bjCoeff         = await load('/api/admin/blackjack_luck', 'coeff', document.getElementById('bj-slider'), document.getElementById('bj-val'));
+  await loadPlinkoMults();
   try{
     const d = await api('/api/admin/mines_max_mult');
     minesMaxMult = d.max_mult ?? d.value ?? 25;
@@ -2254,6 +2338,55 @@ function renderActivity() {
       </div>
       <span style="color:${col};font-weight:700;white-space:nowrap">${pos?'+':'-'}${Math.abs(i.amount)}</span>
       <span style="color:var(--muted);white-space:nowrap;font-size:10px">${dt}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// GROUP LOGS  (in-panel copy of the Telegram log group — no freeze)
+// ══════════════════════════════════════════
+let _glogCat = 'all';
+let _glogRaw = [];
+
+function setGlogCat(cat, btn){
+  _glogCat = cat;
+  document.querySelectorAll('#glog-cats .abtn').forEach(b=>{ b.style.background=''; b.style.borderColor=''; });
+  if(btn){ btn.style.background='var(--blue-faint)'; btn.style.borderColor='var(--blue)'; }
+  loadGlogs();
+}
+
+async function loadGlogs(){
+  const listEl = document.getElementById('glog-list');
+  if(listEl) listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">⏳ Загружаем...</div>';
+  try{
+    const r = await api(`/api/admin/glogs?category=${encodeURIComponent(_glogCat)}&limit=1000`);
+    _glogRaw = r.items || [];
+    const counts = r.counts || {};
+    const total = Object.values(counts).reduce((a,b)=>a+b,0);
+    const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+    set('gc-all', total);
+    ['users','games','deposit','withdraw','withdraw_bot','admin','broadcast','backup'].forEach(c=>set('gc-'+c, counts[c]||0));
+    renderGlogs();
+  }catch(e){
+    if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">❌ ${esc(String(e.message||e))}</div>`;
+  }
+}
+
+function renderGlogs(){
+  const listEl = document.getElementById('glog-list');
+  if(!listEl) return;
+  if(!_glogRaw.length){
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Записей нет</div>';
+    return;
+  }
+  listEl.innerHTML = _glogRaw.map(i=>{
+    const dt = new Date((i.created_at||0)*1000).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return `<div style="padding:10px 12px;background:var(--card-bg);border:1px solid var(--card-br);border-radius:10px;font-size:12px;line-height:1.6">
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
+        <span style="color:var(--blue);font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px">${esc(i.category||'')}</span>
+        <span style="color:var(--muted);font-size:10px;white-space:nowrap">${dt}</span>
+      </div>
+      <div style="color:var(--text-main)">${i.text||''}</div>
     </div>`;
   }).join('');
 }
