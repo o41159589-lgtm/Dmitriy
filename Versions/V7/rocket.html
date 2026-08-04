@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Ракета — TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})();</script>
+
+<link rel="stylesheet" href="shared.css">
+<style>
+html,body{background:var(--bg);padding-bottom:0;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="lbg"></div>
+
+<div class="topbar">
+  <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
+  <div class="fp-title">РАКЕТА</div>
+  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+</div>
+
+<div class="page-wrap">
+  <!-- STAGE -->
+  <div class="rocket-stage" id="stage">
+    <div class="stars" id="stars"></div>
+    <canvas id="trail-canvas"></canvas>
+
+    <div class="mult-display">
+      <div class="mult-val" id="mult-display">1.00×</div>
+      <div class="mult-status" id="mult-status">WAITING</div>
+    </div>
+
+    <div class="rocket-wrap" id="rocket-wrap" style="bottom:30px;left:calc(50% - 18px)">
+      <div class="exhaust-glow"></div>
+      <div class="exhaust" id="exhaust" style="display:none"></div>
+      <svg class="rocket-svg" width="36" height="52" viewBox="0 0 36 52">
+        <ellipse cx="18" cy="24" rx="10" ry="18" fill="#E0E0E0"/>
+        <path d="M8 30 L0 46 L18 40 L36 46 L28 30 Z" fill="#AAAAAA"/>
+        <ellipse cx="18" cy="22" rx="6" ry="10" fill="#3B82F6" opacity=".7"/>
+        <circle cx="18" cy="20" r="4" fill="#60A5FA" opacity=".9"/>
+        <path d="M0 46 L8 36 Z" fill="#888" stroke="#888" stroke-width="1"/>
+        <path d="M36 46 L28 36 Z" fill="#888" stroke="#888" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- HISTORY CHIPS -->
+  <div class="hist-row" id="hist-row"></div>
+
+  <!-- CONTROLS -->
+  <div class="controls-card">
+    <div class="bet-row">
+      <input class="bet-inp" id="bet-inp" type="number" value="50" min="1"/>
+    </div>
+    <div class="qb-row">
+      <div class="qb" onclick="setBet(10)">10</div>
+      <div class="qb" onclick="setBet(25)">25</div>
+      <div class="qb" onclick="setBet(50)">50</div>
+      <div class="qb" onclick="setBet(100)">100</div>
+      <div class="qb" onclick="setBet(250)">250</div>
+      <div class="qb" onclick="halfBet()">½</div>
+      <div class="qb" onclick="doubleBet()">×2</div>
+    </div>
+    <div class="ac-row">
+      <span class="ac-lbl">Авто-кешаут:</span>
+      <input class="ac-inp" id="ac-inp" type="number" value="" placeholder="—" min="1.1" step="0.1"/>
+      <span class="ac-hint">× (пусто = выкл)</span>
+    </div>
+  </div>
+
+  <div class="live-stats">
+    <div class="ls"><div class="ls-l">Ставка</div><div class="ls-v" id="st-bet">—</div></div>
+    <div class="ls"><div class="ls-l">Текущий</div><div class="ls-v" style="color:var(--green)" id="st-curr">—</div></div>
+    <div class="ls"><div class="ls-l">Кешаут</div><div class="ls-v" style="color:var(--gold)" id="st-cashout">—</div></div>
+  </div>
+
+  <button class="launch-btn" id="main-btn" onclick="mainAction()">🚀 ЗАПУСТИТЬ</button>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+if(!tg?.initDataUnsafe?.user?.id) window.location.replace('not_telegram.html');
+const UID = tg?.initDataUnsafe?.user?.id || 0;
+
+let balance = 0, currentBet = 0, gamePhase = 'idle';
+// idle | running | crashed | cashed
+let crashPoint = 1, currentMult = 1, animFrame = null, startTime = null;
+let cashedOut = false, autoCashout = 0;
+let trailPoints = [], rocketX = 0, rocketY = 0;
+const history = [];
+
+const canvas = document.getElementById('trail-canvas');
+const ctx = canvas.getContext('2d');
+
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+async function loadUser(){
+  const u = await fetch(`/api/user/${UID}`).then(r=>r.json()).catch(()=>null);
+  if(!u) return;
+  balance = u.balance ?? 0;
+  document.getElementById('r-bal').textContent = balance;
+}
+function setBet(v){ document.getElementById('bet-inp').value = v; }
+function halfBet(){ const v=parseInt(document.getElementById('bet-inp').value)||0; document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2)); }
+function doubleBet(){ const v=parseInt(document.getElementById('bet-inp').value)||0; document.getElementById('bet-inp').value=v*2; }
+
+// Generate crash point: exponential distribution weighted low
+function genCrash(){
+  // ~30% chance < 1.5x, ~50% chance < 3x, rare big values
+  const r = Math.random();
+  if(r < 0.03) return 1.00; // 3% instant
+  const crash = 1 / (1 - r * 0.97);
+  return Math.min(crash, 100);
+}
+
+function resizeCanvas(){
+  const stage = document.getElementById('stage');
+  canvas.width = stage.offsetWidth;
+  canvas.height = stage.offsetHeight;
+}
+
+function drawTrail(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(trailPoints.length < 2) return;
+  ctx.beginPath();
+  ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+  for(let i=1;i<trailPoints.length;i++){
+    ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+  }
+  ctx.strokeStyle = gamePhase==='crashed' ? 'rgba(239,68,68,0.6)' : 'rgba(59,130,246,0.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Glow
+  ctx.beginPath();
+  ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+  for(let i=1;i<trailPoints.length;i++) ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+  ctx.strokeStyle = gamePhase==='crashed' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+}
+
+function multToPos(mult){
+  const stageH = canvas.height || 260;
+  const stageW = canvas.width || 360;
+  const progress = Math.min((mult - 1) / (crashPoint - 1), 1);
+  const x = 30 + progress * (stageW - 80);
+  const y = stageH - 30 - progress * (stageH - 80);
+  return {x, y};
+}
+
+function animate(ts){
+  if(!startTime) startTime = ts;
+  const elapsed = (ts - startTime) / 1000;
+  // Exponential growth: mult = e^(elapsed * growth_rate)
+  const growthRate = 0.08;
+  currentMult = Math.pow(Math.E, elapsed * growthRate * crashPoint);
+  currentMult = Math.min(currentMult, crashPoint * 1.001);
+  currentMult = Math.round(currentMult * 100) / 100;
+
+  // Update display
+  const mEl = document.getElementById('mult-display');
+  mEl.textContent = currentMult.toFixed(2) + '×';
+  mEl.className = 'mult-val safe';
+  document.getElementById('st-curr').textContent = currentMult.toFixed(2) + '×';
+
+  // Move rocket
+  const pos = multToPos(currentMult);
+  const rocket = document.getElementById('rocket-wrap');
+  const stageH = canvas.height || 260;
+  rocket.style.bottom = (stageH - pos.y - 26) + 'px';
+  rocket.style.left = (pos.x - 18) + 'px';
+  trailPoints.push({x:pos.x, y:pos.y});
+  if(trailPoints.length > 200) trailPoints.shift();
+  drawTrail();
+
+  // Check auto cashout
+  const ac = parseFloat(document.getElementById('ac-inp').value);
+  if(ac >= 1.01 && currentMult >= ac && !cashedOut){ doCashout(); return; }
+
+  // Check crash
+  if(currentMult >= crashPoint){ doCrash(); return; }
+  animFrame = requestAnimationFrame(animate);
+}
+
+async function mainAction(){
+  if(gamePhase === 'idle'){ launchRocket(); }
+  else if(gamePhase === 'running'){ doCashout(); }
+}
+
+async function launchRocket(){
+  const bet = parseInt(document.getElementById('bet-inp').value)||0;
+  if(bet < 1){ toast('Введите ставку','err'); return; }
+  if(bet > balance){ toast('Недостаточно монет','err'); return; }
+  currentBet = bet; cashedOut = false;
+  crashPoint = genCrash();
+  trailPoints = []; startTime = null;
+  gamePhase = 'running';
+
+  resizeCanvas();
+  document.getElementById('exhaust').style.display = '';
+  document.getElementById('mult-status').textContent = 'ПОЛЁТ...';
+  document.getElementById('st-bet').textContent = currentBet;
+  document.getElementById('st-curr').textContent = '1.00×';
+  document.getElementById('st-cashout').textContent = '—';
+
+  // Move rocket to start
+  const rocket = document.getElementById('rocket-wrap');
+  rocket.style.bottom = '30px';
+  rocket.style.left = 'calc(50% - 18px)';
+
+  const btn = document.getElementById('main-btn');
+  btn.textContent = '💰 КЕШАУТ';
+  btn.className = 'launch-btn cashout-btn';
+
+  animFrame = requestAnimationFrame(animate);
+}
+
+function doCrash(){
+  if(window._rocketTimeout){clearTimeout(window._rocketTimeout);window._rocketTimeout=null;}
+  if(animFrame) cancelAnimationFrame(animFrame);
+  gamePhase = 'crashed';
+  document.getElementById('exhaust').style.display = 'none';
+  const mEl = document.getElementById('mult-display');
+  mEl.textContent = crashPoint.toFixed(2) + '×';
+  mEl.className = 'mult-val crashed';
+  document.getElementById('mult-status').textContent = '💥 CRASHED';
+
+  if(!cashedOut){
+    history.unshift({mult:crashPoint.toFixed(2), won:false});
+    renderHistory();
+    // Submit loss
+    fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:UID,game:'Ракета',bet:currentBet,won:false,detail:`Ракета: крэш ${crashPoint.toFixed(2)}×`})
+    }).then(r=>r.json()).then(res=>{
+      if(res?.new_balance != null){ balance=res.new_balance; document.getElementById('r-bal').textContent=balance; }
+    }).catch(()=>{});
+    toast(`💥 Крэш на ${crashPoint.toFixed(2)}× — потеряно ${currentBet}🪙`,'err');
+  }
+
+  const btn = document.getElementById('main-btn');
+  btn.textContent = '🚀 ЗАПУСТИТЬ СНОВА';
+  btn.className = 'launch-btn';
+  gamePhase = 'idle';
+}
+
+async function doCashout(){
+  if(gamePhase !== 'running' || cashedOut) return;
+  cashedOut = true;
+  const mult = currentMult;
+  const won = Math.round(currentBet * mult);
+  const profit = won - currentBet;
+
+  document.getElementById('st-cashout').textContent = mult.toFixed(2) + '×';
+
+  const res = await fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({user_id:UID,game:'Ракета',bet:currentBet,won:true,multiplier:mult,detail:`Ракета: кешаут ${mult.toFixed(2)}× (+${profit}🪙)`})
+  }).then(r=>r.json()).catch(()=>null);
+
+  if(res?.new_balance != null){ balance=res.new_balance; document.getElementById('r-bal').textContent=balance; }
+  history.unshift({mult:mult.toFixed(2), won:true});
+  renderHistory();
+  toast(`💰 Кешаут ${mult.toFixed(2)}× · +${profit}🪙`,'ok');
+}
+
+function renderHistory(){
+  const row = document.getElementById('hist-row');
+  row.innerHTML = history.slice(0,12).map(h=>
+    `<div class="hr-chip ${h.won?'win':'crash'}">${h.mult}×</div>`
+  ).join('');
+}
+
+// Stars
+function initStars(){
+  const s = document.getElementById('stars');
+  for(let i=0;i<40;i++){
+    const d = document.createElement('div');
+    d.className = 'star';
+    const sz = Math.random()*2+1;
+    d.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*3}s;--dl:${Math.random()*3}s`;
+    s.appendChild(d);
+  }
+}
+initStars();
+loadUser();
+</script>
+</body>
+</html>

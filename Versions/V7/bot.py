@@ -159,7 +159,7 @@ async def log_new_user(uid: int, first_name: str, username: str, balance: int):
     uname = f"@{_html.escape(username)}" if username else "нет"
     await log(LOG_THREAD_USERS,
         f"👤 <b>Новый игрок</b>\n"
-        f"ID пользователя: {uid}\n"
+        f"#id{uid}\n"
         f"Имя: <b>{safe_name}</b> ({uname})\n"
         f"Стартовый баланс: {balance} 🪙\n"
         f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
@@ -169,7 +169,7 @@ async def log_game(uid: int, name: str, game: str, bet: int, result: str, gain: 
     safe_name = _html.escape(name or "")
     await log(LOG_THREAD_GAMES,
         f"{emoji} <b>{result}</b> — {game}\n"
-        f"ID пользователя: {uid} #game_{game.lower().replace(' ','_')}\n"
+        f"#id{uid} #game_{game.lower().replace(' ','_')}\n"
         f"Игрок: <b>{safe_name}</b>\n"
         f"Ставка: {bet} 🪙 | Выигрыш: {gain} 🪙\n"
         f"Баланс: {balance} 🪙")
@@ -178,7 +178,7 @@ async def log_deposit(uid: int, name: str, amount: int, balance: int, method: st
     safe_name = _html.escape(name or ""); safe_method = _html.escape(method or "")
     await log(LOG_THREAD_DEPOSIT,
         f"💳 <b>Пополнение баланса</b>\n"
-        f"ID пользователя: {uid} #deposit\n"
+        f"#id{uid} #deposit\n"
         f"Игрок: <b>{safe_name}</b>\n"
         f"Сумма: +{amount} 🪙 (через {safe_method})\n"
         f"Новый баланс: {balance} 🪙\n"
@@ -190,7 +190,7 @@ async def log_admin_action(admin_id: int, admin_name: str, action: str, target_u
     safe_details = _html.escape(details or "")
     await log(LOG_THREAD_ADMIN,
         f"🛠 <b>Действие администратора</b>\n"
-        f"#admin ID пользователя: {target_uid}\n"
+        f"#admin #id{target_uid}\n"
         f"Админ: <b>{safe_aname}</b> (ID: {admin_id})\n"
         f"Действие: {action}\n"
         f"Цель: <b>{safe_tname}</b> (ID: {target_uid})\n"
@@ -208,7 +208,7 @@ async def log_withdraw_request(uid: int, name: str, gift_name: str, price: int,
     uname_info = "Аноним 🎭" if anonymous else f"{name} (ID: {uid})"
     await log(LOG_THREAD_WITHDRAW,
         f"📦 <b>Запрос на вывод подарка</b>\n"
-        f"ID пользователя: {uid} #withdraw #gift\n"
+        f"#id{uid} #withdraw #gift\n"
         f"Покупатель: <b>{uname_info}</b>\n"
         f"Подарок: <b>{gift_name}</b>\n"
         f"Стоимость: {price} ⭐\n"
@@ -224,7 +224,7 @@ async def log_bot_gift(uid: int, name: str, gift_name: str, gift_emoji: str, pri
     recip_info = f"себе (ID: {uid})" if recipient_id == uid else f"ID: <code>{recipient_id}</code>"
     await log(LOG_THREAD_WITHDRAW_BOT,
         f"🤖 <b>Подарок от бота отправлен</b>\n"
-        f"ID пользователя: {uid} #bot_gift\n"
+        f"#id{uid} #bot_gift\n"
         f"Отправитель: <b>{uname_info}</b>\n"
         f"Подарок: {gift_emoji} <b>{gift_name}</b>\n"
         f"Стоимость: {price} ⭐\n"

@@ -333,16 +333,10 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
         ) as cur:
             tower_wins = (await cur.fetchone())[0] or 0
 
-        # Выводы подарков (реальные деньги, потраченные казино на подарки игрокам)
-        async with db_conn.execute(
-            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type='gift_sent' AND created_at>=? AND created_at<=?",
-            (from_ts, to_ts)
-        ) as cur:
-            withdrawals = (await cur.fetchone())[0] or 0
-
-        # Реальный доход казино = сколько купили монет за звёзды − сколько выплатили подарками за звёзды.
-        # (Внутриигровые выигрыши/проигрыши виртуальные и не считаются доходом, пока не выведены подарком.)
-        total_revenue = deposits - withdrawals
+        total_revenue = (gta_commission
+                         + (euro_losses - euro_wins)
+                         + (mines_losses - mines_wins)
+                         + (tower_losses - tower_wins))
 
         return {
             "gta_commission": gta_commission,
@@ -356,7 +350,6 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
             "tower_wins":     tower_wins,
             "tower_profit":   tower_losses - tower_wins,
             "deposits":       deposits,
-            "withdrawals":    withdrawals,
             "total_revenue":  total_revenue,
             "from_ts": from_ts,
             "to_ts":   to_ts,

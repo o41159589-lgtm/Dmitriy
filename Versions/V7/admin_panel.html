@@ -590,9 +590,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   </div>
 
 </div>
-
-<!-- TASKS -->
-<div class="tab-pane" id="tab-tasks">
   <div class="rev-card" style="margin-bottom:10px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div class="rev-title" style="margin-bottom:0">✅ УПРАВЛЕНИЕ ЗАДАНИЯМИ</div>
@@ -803,12 +800,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
 <!-- ══════════ ACTIVITY TAB ══════════ -->
 <div class="tab-pane" id="tab-activity">
-  <div class="rev-title" style="margin-bottom:4px">🎮 АКТИВНОСТЬ ИГРОКОВ</div>
-  <p style="color:var(--muted);font-size:12px;line-height:1.5;margin-bottom:10px">
-    Живая лента событий по игрокам: выигрыши/проигрыши в играх, пополнения, выполненные задания, промокоды, начисления/списания от админа. Отличается от вкладки «Группа» тем, что это отфильтрованная и агрегированная статистика по каждому игроку, а не сырая копия групповых логов.
-  </p>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
-    <div style="width:1px"></div>
+    <div class="rev-title" style="margin-bottom:0">🎮 АКТИВНОСТЬ ИГРОКОВ</div>
     <div style="display:flex;gap:6px;align-items:center">
       <select id="act-limit" style="background:var(--card-bg);border:1px solid var(--card-br);border-radius:8px;padding:5px 8px;color:var(--text-main);font-size:12px;cursor:pointer" onchange="loadActivity()">
         <option value="50">50 записей</option>
@@ -843,20 +836,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
     <div id="glog-cats" style="display:flex;gap:4px;flex-wrap:wrap">
       <button class="abtn set" onclick="setGlogCat('all',this)" style="font-size:10px;padding:5px 9px;background:var(--blue-faint);border-color:var(--blue)">Все <span id="gc-all">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('users',this)" style="font-size:10px;padding:5px 9px">👤 Игроки <span id="gc-users">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('games',this)" style="font-size:10px;padding:5px 9px">🎮 Игры <span id="gc-games">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('deposit',this)" style="font-size:10px;padding:5px 9px">💳 Депозиты <span id="gc-deposit">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('withdraw',this)" style="font-size:10px;padding:5px 9px">📦 Выводы <span id="gc-withdraw">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('withdraw_bot',this)" style="font-size:10px;padding:5px 9px">🤖 Выводы (бот) <span id="gc-withdraw_bot">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('admin',this)" style="font-size:10px;padding:5px 9px">🛠 Админ <span id="gc-admin">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('broadcast',this)" style="font-size:10px;padding:5px 9px">📢 Рассылка <span id="gc-broadcast">0</span></button>
-      <button class="abtn set" onclick="setGlogCat('backup',this)" style="font-size:10px;padding:5px 9px">💾 Бэкап <span id="gc-backup">0</span></button>
+      <button class="abtn" onclick="setGlogCat('users',this)" style="font-size:10px;padding:5px 9px">👤 Игроки <span id="gc-users">0</span></button>
+      <button class="abtn" onclick="setGlogCat('games',this)" style="font-size:10px;padding:5px 9px">🎮 Игры <span id="gc-games">0</span></button>
+      <button class="abtn" onclick="setGlogCat('deposit',this)" style="font-size:10px;padding:5px 9px">💳 Депозиты <span id="gc-deposit">0</span></button>
+      <button class="abtn" onclick="setGlogCat('withdraw',this)" style="font-size:10px;padding:5px 9px">📦 Выводы <span id="gc-withdraw">0</span></button>
+      <button class="abtn" onclick="setGlogCat('withdraw_bot',this)" style="font-size:10px;padding:5px 9px">🤖 Выводы (бот) <span id="gc-withdraw_bot">0</span></button>
+      <button class="abtn" onclick="setGlogCat('admin',this)" style="font-size:10px;padding:5px 9px">🛠 Админ <span id="gc-admin">0</span></button>
+      <button class="abtn" onclick="setGlogCat('broadcast',this)" style="font-size:10px;padding:5px 9px">📢 Рассылка <span id="gc-broadcast">0</span></button>
+      <button class="abtn" onclick="setGlogCat('backup',this)" style="font-size:10px;padding:5px 9px">💾 Бэкап <span id="gc-backup">0</span></button>
     </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <input type="text" id="glog-uid-filter" placeholder="Фильтр по ID..." inputmode="numeric"
-        style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:6px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;width:120px" oninput="renderGlogs()"/>
-      <button class="abtn set" onclick="loadGlogs()" style="font-size:11px;padding:6px 10px">↻ Обновить</button>
-    </div>
+    <button class="abtn set" onclick="loadGlogs()" style="font-size:11px;padding:6px 10px">↻ Обновить</button>
   </div>
   <div id="glog-list" style="display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow-y:auto">
     <div style="text-align:center;padding:20px;color:var(--muted)">⏳ Нажмите «Обновить» для загрузки</div>
@@ -1906,16 +1895,15 @@ async function loadRev(){
     const tp=d.tower_losses-d.tower_wins;
     grid.innerHTML=`
       <div class="ri"><div class="ri-l">🏙 GTA комиссии</div><div class="ri-v g">+${d.gta_commission}</div></div>
-      <div class="ri"><div class="ri-l">🎰 Европ. (виртуально)</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
-      <div class="ri"><div class="ri-l">💣 Мины (виртуально)</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
-      <div class="ri"><div class="ri-l">🗼 Башня (виртуально)</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
-      <div class="ri"><div class="ri-l">📉 Проиграно игр. (виртуально)</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
-      <div class="ri"><div class="ri-l">📈 Выплачено игр. (виртуально)</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
-      <div class="ri"><div class="ri-l">💳 Куплено монет (⭐)</div><div class="ri-v gold">+${d.deposits}</div></div>
-      <div class="ri"><div class="ri-l">🎁 Выведено подарками</div><div class="ri-v r">-${d.withdrawals||0}</div></div>
+      <div class="ri"><div class="ri-l">🎰 Европ. профит</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
+      <div class="ri"><div class="ri-l">💣 Мины профит</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
+      <div class="ri"><div class="ri-l">🗼 Башня профит</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
+      <div class="ri"><div class="ri-l">📉 Проиграно игр.</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
+      <div class="ri"><div class="ri-l">📈 Выплачено игр.</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
+      <div class="ri"><div class="ri-l">💳 Пополнения</div><div class="ri-v gold">${d.deposits}</div></div>
       <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${users.length}</div></div>
       <div class="rev-total">
-        <div class="rt-l">Итого реальный доход (⭐ купили − ⭐ выплатили подарками)</div>
+        <div class="rt-l">Итого доход казино</div>
         <div class="rt-v" style="color:${d.total_revenue>=0?'var(--gold)':'var(--red)'}">
           ${d.total_revenue>=0?'+':''}${d.total_revenue} 🪙
         </div>
@@ -2387,16 +2375,11 @@ async function loadGlogs(){
 function renderGlogs(){
   const listEl = document.getElementById('glog-list');
   if(!listEl) return;
-  const filterVal = (document.getElementById('glog-uid-filter')?.value||'').trim();
-  let items = _glogRaw;
-  if(filterVal){
-    items = items.filter(i => (i.text||'').includes(filterVal));
-  }
-  if(!items.length){
-    listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted)">${filterVal?'Ничего не найдено по ID «'+esc(filterVal)+'»':'Записей нет'}</div>`;
+  if(!_glogRaw.length){
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Записей нет</div>';
     return;
   }
-  listEl.innerHTML = items.map(i=>{
+  listEl.innerHTML = _glogRaw.map(i=>{
     const dt = new Date((i.created_at||0)*1000).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     return `<div style="padding:10px 12px;background:var(--card-bg);border:1px solid var(--card-br);border-radius:10px;font-size:12px;line-height:1.6">
       <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">

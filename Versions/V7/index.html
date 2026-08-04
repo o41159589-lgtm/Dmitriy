@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Nunito',sans-serif;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url('textures/sky.svg');
+  background-size:100% auto;background-position:top center;background-repeat:no-repeat;
+}
+.splash{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;
+}
+.logo-wrap{
+  width:96px;height:96px;border-radius:26px;
+  background:rgba(255,255,255,0.92);
+  border:2px solid rgba(255,255,255,0.80);
+  box-shadow:0 10px 36px rgba(40,80,200,0.18),0 2px 0 rgba(255,255,255,0.60) inset;
+  display:flex;align-items:center;justify-content:center;
+  font-size:50px;margin-bottom:20px;
+  animation:logoIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes logoIn{from{transform:scale(0.5);opacity:0;}}
+.logo-name{
+  font-family:'Caveat',cursive;font-size:40px;font-weight:700;
+  color:#1A2040;letter-spacing:0;font-style:normal;
+  animation:fadeUp .4s .12s ease both;margin-bottom:5px;
+}
+.logo-tag{
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
+  color:#7A8AAA;letter-spacing:1px;text-transform:uppercase;
+  animation:fadeUp .4s .22s ease both;margin-bottom:30px;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}}
+.bar-wrap{
+  width:180px;height:5px;border-radius:3px;
+  background:rgba(255,255,255,0.40);overflow:hidden;
+  animation:fadeUp .4s .32s ease both;
+}
+.bar{
+  height:100%;border-radius:3px;width:0%;
+  background:linear-gradient(90deg,#4898E0,#2060C0);
+  transition:width .08s linear;
+  box-shadow:0 0 10px rgba(40,80,200,0.50);
+}
+.bar-lbl{
+  margin-top:10px;font-size:11px;font-weight:700;color:#7A8AAA;
+  letter-spacing:0.5px;text-align:center;
+  animation:fadeUp .4s .38s ease both;min-height:14px;
+}
+/* Floating coins */
+.coin{position:fixed;pointer-events:none;z-index:0;opacity:0;animation:coinFloat 4s ease-in-out infinite;}
+.coin img{width:30px;height:30px;filter:drop-shadow(0 3px 6px rgba(180,120,0,0.30));}
+.c1{left:8%;bottom:18%;animation-delay:0s;}
+.c2{right:10%;bottom:32%;animation-delay:1.3s;}
+.c3{left:16%;bottom:52%;animation-delay:2.5s;}
+.c4{right:18%;bottom:62%;animation-delay:0.7s;}
+@keyframes coinFloat{
+  0%{opacity:0;transform:translateY(0) rotate(0deg);}
+  20%{opacity:0.50;}80%{opacity:0.50;}
+  100%{opacity:0;transform:translateY(-55px) rotate(18deg);}
+}
+</style>
+</head>
+<body>
+<div class="coin c1"><img src="textures/coin.svg" alt=""></div>
+<div class="coin c2"><img src="textures/coin.svg" alt=""></div>
+<div class="coin c3"><img src="textures/coin.svg" alt=""></div>
+<div class="coin c4"><img src="textures/coin.svg" alt=""></div>
+
+<div class="splash">
+  <div class="logo-wrap">
+    <img src="logo.png" alt="TopLuck" width="62" height="62" style="object-fit:contain" onerror="this.style.display='none';this.parentNode.innerHTML='🍀'">
+  </div>
+  <div class="logo-name">TopLuck</div>
+  <div class="logo-tag">Испытай удачу</div>
+  <div class="bar-wrap"><div class="bar" id="lbar"></div></div>
+  <div class="bar-lbl" id="ltxt">Загружаем...</div>
+</div>
+
+<script>
+// ── DEV IMPERSONATION (original logic preserved) ──
+(function(){
+  try{
+    const _devUid=localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid)return;
+    const _uid=parseInt(_devUid);if(!_uid)return;
+    const tg=window.Telegram?.WebApp;if(!tg)return;
+    if(!tg.initDataUnsafe)tg.initDataUnsafe={};
+    if(!tg.initDataUnsafe.user)tg.initDataUnsafe.user={};
+    tg.initDataUnsafe.user.id=_uid;
+  }catch(_){}
+})();
+
+const tgApp=window.Telegram?.WebApp;
+if(tgApp){tgApp.expand();tgApp.ready();}
+
+const _tgUser=tgApp?.initDataUnsafe?.user;
+const _hasRealInitData=tgApp?.initData&&tgApp.initData.length>0;
+if(_hasRealInitData){
+  try{localStorage.removeItem('__tl_dev_uid__');localStorage.removeItem('__tl_dev_debug__');}catch(_){}
+}
+if(!_tgUser||!_tgUser.id) window.location.replace('not_telegram.html');
+try{if(_tgUser?.id)sessionStorage.setItem('__tl_uid__',String(_tgUser.id));}catch(_){}
+
+// ── Loader animation → redirect to main.html ──
+const bar=document.getElementById('lbar');
+const txt=document.getElementById('ltxt');
+const msgs=['Загружаем...','Готовим игры...','Почти готово...','Добро пожаловать!'];
+let pct=0,msgI=0;
+const iv=setInterval(()=>{
+  pct+=Math.random()*14+5;
+  if(pct>=100){pct=100;clearInterval(iv);}
+  if(bar) bar.style.width=pct+'%';
+  const mIdx=Math.min(Math.floor(pct/26),msgs.length-1);
+  if(mIdx>msgI){msgI=mIdx;if(txt)txt.textContent=msgs[mIdx];}
+  if(pct>=100) setTimeout(()=>{ window.location.href='main.html'; },350);
+},150);
+</script>
+</body>
+</html>

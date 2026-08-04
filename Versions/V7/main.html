@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+(function(){
+  try{
+    const _devUid=localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid)return;
+    const _uid=parseInt(_devUid);if(!_uid)return;
+    const tg=window.Telegram?.WebApp;if(!tg)return;
+    if(!tg.initDataUnsafe)tg.initDataUnsafe={};
+    if(!tg.initDataUnsafe.user)tg.initDataUnsafe.user={};
+    tg.initDataUnsafe.user.id=_uid;
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--safe-top:env(safe-area-inset-top,0px);}
+/* Hide toast when not active */
+.toast:not(.show){opacity:0!important;pointer-events:none!important;background:transparent!important;border-color:transparent!important;}
+.toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s!important;}
+.page{display:none;animation:fadeIn .2s ease both;position:relative;z-index:1;}
+.page.active{display:block;}
+/* Fix black bar — safe area padding for sticky topbar in shared.css */
+.topbar{padding-top:calc(12px + env(safe-area-inset-top,0px)) !important;}
+/* Nav sits above bottom safe area */
+.nav{bottom:calc(10px + env(safe-area-inset-bottom,0px)) !important;}
+
+/* Cards */
+.bj-card{background:linear-gradient(135deg,#0D0D0D,#181818);border:1px solid rgba(255,255,255,.1);align-items:center;}
+.plinko-card{background:linear-gradient(135deg,#0D0010,#180020);border:1px solid rgba(139,92,246,.2);align-items:center;}
+.badge-white{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);}
+.badge-blue{background:rgba(59,130,246,.2);color:#93C5FD;border:1px solid rgba(59,130,246,.3);}
+.badge-purple{background:rgba(139,92,246,.2);color:#C4B5FD;border:1px solid rgba(139,92,246,.3);}
+
+/* HOME */
+.home-content{padding:0 14px 24px;}
+.hero{padding:20px 0 16px;display:flex;align-items:center;gap:14px;}
+.hero-logo{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 20px rgba(255,255,255,0.08);}
+.hero-logo img{width:38px;height:38px;object-fit:contain;}
+.hero h1{font-family:var(--font-display);font-size:34px;letter-spacing:2px;color:var(--white);text-shadow:0 0 30px rgba(200,255,0,0.4);margin-bottom:2px;}
+.hero p{font-size:13px;color:var(--muted2);font-weight:500;}
+.about-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;position:relative;}
+.about-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,255,0,0.2),transparent);pointer-events:none;}
+.about-card-head{padding:12px 16px;font-family:var(--font-mono);font-size:11px;color:var(--white);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid rgba(200,255,0,0.08);}
+.about-links{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.about-links p{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:12px;}
+.about-link{display:flex;align-items:center;gap:12px;border-radius:14px;padding:12px 14px;margin-bottom:8px;text-decoration:none;color:var(--text);border:1px solid;transition:opacity .15s;}
+.about-link:last-child{margin-bottom:0;}
+.about-link.cyan{background:rgba(0,229,255,0.06);border-color:rgba(0,229,255,0.18);}
+.about-link.purple{background:rgba(155,93,255,0.06);border-color:rgba(155,93,255,0.18);}
+.about-link.green{background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.18);}
+.about-link:active{opacity:.75;}
+.about-link-icon{font-size:22px;}
+.about-link-title{font-weight:700;font-size:14px;margin-bottom:2px;}
+.about-link-sub{font-size:11px;color:var(--muted2);}
+.about-person{border-top:1px solid rgba(255,255,255,0.04);}
+.about-person:first-child{border-top:none;}
+.ap-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;}
+.ap-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+.ap-title{flex:1;font-weight:700;font-size:14px;}
+.ap-arr{color:var(--muted2);font-size:18px;transition:transform .2s;}
+.ap-arr.open{transform:rotate(90deg);}
+.ap-content{padding:4px 16px 14px 52px;font-size:13px;line-height:1.7;color:rgba(240,239,255,.7);}
+.ap-content p{margin-bottom:5px;}
+.ap-content a{color:var(--white);text-decoration:none;}
+
+/* PROFILE */
+.profile-wrap{padding:14px 14px 24px;}
+.profile-top-card{position:relative;overflow:hidden;background:var(--glass-bg);border:1px solid rgba(200,255,0,0.12);border-radius:var(--r);padding:28px 20px 22px;text-align:center;margin-bottom:12px;}
+.profile-top-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,255,0,0.35),transparent);}
+.profile-top-card::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(200,255,0,0.05) 0%,transparent 70%);}
+.prof-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#6030EE);border:2px solid rgba(200,255,0,0.25);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:32px;color:#fff;margin:0 auto 12px;box-shadow:0 0 30px rgba(155,93,255,0.35);background-size:cover;background-position:center;position:relative;z-index:1;}
+.prof-name{font-family:var(--font-display);font-size:24px;color:var(--text);letter-spacing:1px;margin-bottom:2px;position:relative;z-index:1;}
+.prof-username{font-size:13px;color:var(--white);font-weight:600;position:relative;z-index:1;}
+.prof-bal-row{background:rgba(255,214,0,0.06);border:1px solid rgba(255,214,0,0.2);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.prof-bal-lbl{font-size:11px;color:rgba(255,214,0,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-family:var(--font-mono);}
+.prof-bal-val{font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--gold);}
+.prof-topup-btn{padding:10px 16px;background:var(--white);border:none;border-radius:12px;color:#000;font-family:var(--font-display);font-size:16px;cursor:pointer;letter-spacing:.5px;box-shadow:0 0 16px rgba(200,255,0,0.3);}
+/* XP bar — orange fill */
+.prof-xp-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;}
+.prof-xp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.prof-xp-label{font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:1.5px;}
+.prof-xp-level{font-family:var(--font-display);font-size:28px;color:var(--white);}
+.prof-xp-track{height:7px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;}
+.prof-xp-fill{height:100%;background:linear-gradient(90deg,#E8630A,#FF9500);border-radius:4px;width:0%;transition:width .6s ease;box-shadow:0 0 10px rgba(255,120,0,0.6);}
+.prof-xp-sub{display:flex;justify-content:space-between;margin-top:5px;}
+.prof-xp-sub span{font-size:10px;color:var(--muted2);font-family:var(--font-mono);}
+.prof-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.prof-stat{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:12px 8px;text-align:center;}
+.prof-stat-val{font-family:var(--font-mono);font-size:17px;color:var(--white);font-weight:700;}
+.prof-stat-lbl{font-size:10px;color:var(--muted2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+.prof-menu-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;}
+.prof-menu-row{display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;transition:background .12s;border-bottom:1px solid rgba(255,255,255,.04);}
+.prof-menu-row:last-child{border-bottom:none;}
+.prof-menu-row:active{background:rgba(255,255,255,0.04);}
+.prof-menu-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.prof-menu-label{flex:1;font-size:15px;font-weight:600;color:var(--text);}
+.prof-menu-right{font-size:13px;color:var(--muted2);font-weight:600;margin-right:3px;font-family:var(--font-mono);}
+.prof-menu-arr{font-size:18px;color:var(--muted2);line-height:1;}
+.prof-invite-btn{width:100%;padding:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:var(--r);color:var(--white);font-family:var(--font-display);font-size:18px;letter-spacing:1px;cursor:pointer;margin-bottom:12px;transition:background .15s,transform .1s;}
+.prof-invite-btn:active{transform:scale(.98);background:rgba(255,255,255,0.14);}
+.sub-panel-back{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.sub-panel-back button{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:7px 12px;color:var(--white);font-size:18px;cursor:pointer;font-weight:700;}
+.sub-panel-title{font-family:var(--font-display);font-size:18px;color:var(--white);letter-spacing:1px;}
+.promo-input-wrap{background:rgba(255,214,0,0.05);border:1px solid rgba(255,214,0,0.2);border-radius:var(--r);padding:16px;margin-bottom:10px;}
+.promo-row{display:flex;gap:8px;}
+.promo-input{flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:11px 14px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-transform:uppercase;}
+.promo-input:focus{border-color:rgba(200,255,0,0.5);}
+.promo-ok{padding:11px 16px;background:var(--white);border:none;border-radius:12px;color:#000;font-family:var(--font-display);font-size:16px;cursor:pointer;white-space:nowrap;}
+.promo-result{text-align:center;font-size:13px;font-weight:600;min-height:16px;margin-top:10px;}
+.ref-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--r);margin-bottom:12px;}
+.ref-card-body{padding:14px 16px;}
+.ref-link-btn{margin-top:12px;width:100%;padding:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:var(--white);font-weight:700;font-size:13px;cursor:pointer;}
+
+/* GAMES */
+.games-content{padding:14px 14px 0;}
+.games-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.games-title{font-family:var(--font-display);font-size:24px;color:var(--text);letter-spacing:1px;}
+.coin-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,214,0,0.1);border:1px solid rgba(255,214,0,0.2);border-radius:12px;padding:8px 14px;font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--gold);}
+.game-card{display:flex;align-items:flex-end;border-radius:22px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .12s,box-shadow .15s;position:relative;min-height:140px;text-decoration:none;}
+.game-card:active{transform:scale(.985);}
+.banner-card{background-size:cover;background-position:center top;border:1px solid rgba(255,255,255,0.1);min-height:160px;}
+.gc-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.1) 55%,transparent 100%);border-radius:inherit;}
+.gta-card{background:linear-gradient(135deg,#0D0D0D,#1A1A1A);border:1px solid rgba(255,255,255,.1);align-items:center;}
+.gc-text{flex:1;padding:16px 18px;position:relative;z-index:2;}
+.gc-badge{display:inline-block;margin-bottom:7px;padding:3px 9px;border-radius:6px;font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.badge-red{background:rgba(239,68,68,.25);color:#ff6b6b;border:1px solid rgba(239,68,68,.3);}
+.badge-brown{background:rgba(180,100,30,.3);color:#fbbf6a;border:1px solid rgba(200,120,40,.4);}
+.badge-cyan{background:rgba(6,182,212,.2);color:#67e8f9;border:1px solid rgba(6,182,212,.3);}
+.gc-name{font-family:var(--font-display);font-size:28px;color:#fff;letter-spacing:.5px;margin-bottom:5px;line-height:1;text-shadow:0 2px 12px rgba(0,0,0,.8);}
+.gc-desc{font-size:12px;color:rgba(255,255,255,.65);line-height:1.5;}
+.gc-art{width:100px;flex-shrink:0;display:flex;align-items:center;justify-content:center;align-self:stretch;position:relative;z-index:2;}
+.gc-art-emoji{font-size:60px;line-height:1;filter:drop-shadow(0 4px 16px rgba(0,0,0,.5));transform:rotate(-8deg);animation:float-emoji 3s ease-in-out infinite;}
+@keyframes float-emoji{0%,100%{transform:rotate(-8deg) translateY(0);}50%{transform:rotate(-5deg) translateY(-5px);}}
+
+/* HISTORY */
+.hist-content{padding:14px;}
+/* SHOP */
+.shop-content{padding:14px;}
+.shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.shop-title{font-family:var(--font-display);font-size:22px;color:var(--text);letter-spacing:1px;}
+.shop-bal{display:flex;align-items:center;gap:5px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:7px 12px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:200;display:none;align-items:flex-end;}
+.ov.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid rgba(200,255,0,0.12);border-radius:24px 24px 0 0;padding:20px 18px 36px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(200,255,0,0.1);}
+.error-msg{background:rgba(255,59,85,.08);border:1px solid rgba(255,59,85,.25);border-radius:12px;padding:10px 13px;color:var(--red);font-size:13px;margin-bottom:12px;display:none;}
+.error-msg.show{display:block;}
+.bal-card{background:rgba(255,214,0,0.06);border:1px solid rgba(255,214,0,0.18);border-radius:var(--r);padding:18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.bal-card-num{font-family:var(--font-mono);font-size:30px;font-weight:700;color:var(--gold);}
+.bal-card-lbl{font-size:11px;color:rgba(255,214,0,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-family:var(--font-mono);}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.sc{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:14px 12px;text-align:center;}
+.sc-ico{font-size:22px;margin-bottom:6px;}
+.sc-lbl{font-size:11px;color:var(--muted2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+.sc-val{font-family:var(--font-mono);font-size:18px;color:var(--text);font-weight:700;}
+.topup-btn{width:100%;padding:14px;margin-bottom:12px;background:var(--white);border:none;border-radius:var(--r);color:#000;font-family:var(--font-display);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 24px rgba(200,255,0,.3);transition:opacity .15s,transform .1s;}
+.topup-btn:active{transform:scale(.98);opacity:.9;}
+.task-item{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.task-item.done{border-color:rgba(0,255,136,0.25);}
+.task-icon{width:40px;height:40px;border-radius:12px;background:rgba(200,255,0,0.08);border:1px solid rgba(200,255,0,0.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.task-icon.done{background:rgba(0,255,136,0.1);border-color:rgba(0,255,136,0.2);}
+.task-body{flex:1;}
+.task-title{font-weight:700;font-size:14px;margin-bottom:2px;}
+.task-desc{font-size:11px;color:var(--muted2);}
+.task-right{text-align:right;flex-shrink:0;}
+.task-reward{font-family:var(--font-mono);font-size:13px;color:var(--white);font-weight:700;}
+.task-btn{margin-top:5px;padding:5px 10px;background:var(--lime);border:none;border-radius:8px;color:#000;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-display);}
+.ref-hi{display:flex;align-items:center;gap:12px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;padding:12px 14px;margin-bottom:8px;}
+#dev-debug-badge{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:rgba(255,59,85,0.12);border:1px solid rgba(255,59,85,0.35);border-radius:8px;padding:3px 10px;font-size:10px;color:var(--red);font-family:var(--font-mono);letter-spacing:1px;z-index:200;pointer-events:none;backdrop-filter:blur(10px);}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — applies ONLY to #page-games (Игры tab).
+   Every selector below is scoped to #page-games or uses
+   brand-new tl- prefixed classes, so no other tab/page,
+   the nav bar, toasts or modals are affected.
+   ════════════════════════════════════════════════════ */
+/* body always gets sky gradient so no black area on any page */
+html{background:#C2E8F8!important;}
+body{background:transparent!important;}
+.page{min-height:0!important;}
+
+#page-games{
+  background-image:url('textures/sky.svg');
+  background-size:cover;
+  background-position:top center;
+  background-repeat:no-repeat;
+  background-color:transparent;
+}
+#page-games .games-content{padding:0 14px 6px;}
+#page-games .games-header{padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:14px;margin-bottom:0;}
+#page-games .games-title{
+  font-family:'Caveat',cursive;font-style:normal;
+  font-size:40px;
+  font-weight:700;
+  color:#1A2040;
+  letter-spacing:0;
+  line-height:1.05;
+}
+#page-games .coin-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,0.96);
+  border:2px solid #FFD028;
+  border-radius:22px;
+  padding:8px 16px;
+  font-family:'Nunito',sans-serif;
+  font-size:17px;font-weight:900;
+  color:#1A2040;
+  box-shadow:0 3px 12px rgba(0,30,70,0.10);
+}
+#page-games .game-card{
+  display:flex;align-items:stretch;
+  border-radius:24px;overflow:hidden;
+  margin-bottom:14px;cursor:pointer;
+  transition:transform .12s,box-shadow .15s;
+  min-height:140px;text-decoration:none;
+  border:none;background-size:cover;background-position:center;
+  box-shadow:0 5px 18px rgba(0,30,70,0.14),inset 0 1px 0 rgba(255,255,255,0.7);
+  position:relative;
+}
+#page-games .game-card:active{transform:scale(.975);}
+#page-games .tl-l{flex:1;padding:18px 0 18px 20px;display:flex;flex-direction:column;justify-content:center;min-width:0;}
+#page-games .tl-r{width:118px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:10px 12px;position:relative;}
+#page-games .tl-name{font-family:'Caveat',cursive;font-style:normal;font-size:40px;font-weight:700;line-height:1;margin-bottom:6px;}
+#page-games .tl-desc{font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:700;line-height:1.45;max-width:170px;}
+#page-games .tl-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;margin-bottom:6px;}
+#page-games .tl-badge.violet{background:rgba(140,60,240,0.14);color:#6820A8;border:1.5px solid rgba(140,60,240,0.32);}
+#page-games .tl-badge.rose{background:rgba(240,60,80,0.11);color:#A01830;border:1.5px solid rgba(240,60,80,0.28);}
+#page-games .tl-roulette{background:linear-gradient(135deg,#FFECF0,#FFD8E4);}
+#page-games .tl-roulette .tl-name{color:#C83858;}
+#page-games .tl-roulette .tl-desc{color:rgba(70,10,30,0.68);}
+#page-games .tl-mines{background:linear-gradient(135deg,#E8F4FF,#D0E8FF);}
+#page-games .tl-mines .tl-name{color:#2868B8;}
+#page-games .tl-mines .tl-desc{color:rgba(15,40,80,0.68);}
+#page-games .tl-tower{background:linear-gradient(135deg,#F0FFE4,#DFFFC2);}
+#page-games .tl-tower .tl-name{color:#489818;}
+#page-games .tl-tower .tl-desc{color:rgba(20,50,8,0.65);}
+#page-games .tl-gta{background:linear-gradient(135deg,#FFF4E0,#FFDFA0);}
+#page-games .tl-gta .tl-name{color:#B86810;}
+#page-games .tl-gta .tl-desc{color:rgba(70,35,5,0.65);}
+#page-games .tl-bj{background:linear-gradient(135deg,#EDE8FF,#DDD0FF);}
+#page-games .tl-bj .tl-name{color:#5828A8;}
+#page-games .tl-bj .tl-desc{color:rgba(35,15,65,0.65);}
+#page-games .tl-plinko{background:linear-gradient(135deg,#E0F8FF,#C4EEFF);}
+#page-games .tl-plinko .tl-name{color:#1068A0;}
+#page-games .tl-plinko .tl-desc{color:rgba(5,35,65,0.65);}
+#page-games .tl-emoji{font-size:68px;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15));display:block;}
+#page-games .tl-emoji.tilt-r{transform:rotate(6deg);}
+#page-games .tl-emoji.tilt-l{transform:rotate(-6deg);}
+#page-games .tl-star{position:absolute;pointer-events:none;user-select:none;font-style:normal;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — NAV BAR
+   .nav / .nav-btn / .nav-ind are sitewide elements used
+   only in this file (telegram_mini_app.html is a separate
+   unused legacy file with its own <style> block) — restyling
+   them here is exactly what was requested for the bottom bar.
+   ════════════════════════════════════════════════════ */
+.nav{
+  background:rgba(255,255,255,0.96);
+  border:1.5px solid rgba(255,255,255,0.85);
+  box-shadow:0 6px 22px rgba(20,40,90,0.16),inset 0 1px 0 rgba(255,255,255,0.6);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.nav-btn{
+  color:#9AA6C0;
+  font-family:'Nunito',sans-serif;
+  font-size:9.5px;font-weight:800;letter-spacing:.3px;
+  gap:4px;
+}
+.nav-btn svg{display:none;}
+.nav-btn .nb-badge{width:30px;height:30px;display:block;transition:transform .15s;}
+.nav-btn.active{color:#1A2040;}
+.nav-btn.active .nb-badge{transform:translateY(-1px) scale(1.05);}
+.nav-ind{background:#FF6FA0;box-shadow:0 0 10px rgba(255,111,160,.65);height:3px;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — TOAST (sitewide popup notification)
+   ════════════════════════════════════════════════════ */
+.toast{
+  background:rgba(255,255,255,0.97);
+  border:1.5px solid rgba(20,40,90,0.10);
+  color:#1A2040;
+  font-family:'Nunito',sans-serif;font-weight:700;
+  box-shadow:0 8px 26px rgba(20,40,90,0.16);
+}
+.toast.ok{color:#1A9A50;border-color:rgba(26,154,80,.3);}
+.toast.err{color:#D8284A;border-color:rgba(216,40,74,.3);}
+.toast.info{color:#445080;border-color:rgba(68,80,128,.2);}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — INFO PAGE (#page-home)
+   ════════════════════════════════════════════════════ */
+#page-home{}
+#page-home .home-content{padding:0 14px 28px;position:relative;z-index:1;}
+#page-home .hero{padding:calc(18px + env(safe-area-inset-top,0px)) 0 16px;}
+#page-home .hero-logo{background:rgba(255,255,255,0.85);border:2px solid rgba(255,255,255,0.7);box-shadow:0 4px 14px rgba(20,40,90,0.12);}
+#page-home .hero h1{font-family:'Caveat',cursive;font-style:normal;font-size:38px;font-weight:700;letter-spacing:0;color:#1A2040;text-shadow:none;}
+#page-home .hero p{font-family:'Nunito',sans-serif;font-size:13px;color:#445080;font-weight:700;}
+#page-home .about-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:22px;box-shadow:0 5px 18px rgba(20,40,90,0.10);}
+#page-home .about-card::before{display:none;}
+#page-home .about-card-head{font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:#8090B0;letter-spacing:1.2px;background:rgba(68,80,128,0.05);border-bottom:1px solid rgba(20,40,90,0.07);}
+#page-home .about-links{border-bottom:1px solid rgba(20,40,90,0.06);}
+#page-home .about-links p{font-family:'Nunito',sans-serif;color:#445080;font-weight:600;}
+#page-home .about-links p b{color:#1A2040;}
+#page-home .about-link{color:#1A2040;}
+#page-home .about-link.cyan{background:rgba(0,170,220,0.08);border-color:rgba(0,170,220,0.24);}
+#page-home .about-link.purple{background:rgba(140,80,255,0.08);border-color:rgba(140,80,255,0.24);}
+#page-home .about-link.green{background:rgba(20,180,100,0.08);border-color:rgba(20,180,100,0.24);}
+#page-home .about-link-title{color:#1A2040;}
+#page-home .about-link-sub{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-home .about-person{border-top:1px solid rgba(20,40,90,0.06);}
+#page-home .ap-title{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-home .ap-arr{color:#A8B4CC;}
+#page-home .ap-content{color:#445080;font-family:'Nunito',sans-serif;}
+#page-home .ap-content a{color:#1860C8;font-weight:700;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — PROFILE PAGE (#page-inventory)
+   ════════════════════════════════════════════════════ */
+#page-inventory{}
+#page-inventory .profile-wrap{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
+#page-inventory .profile-top-card{background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.78);border-radius:24px;box-shadow:0 6px 20px rgba(20,40,90,0.12);}
+#page-inventory .profile-top-card::before,#page-inventory .profile-top-card::after{display:none;}
+#page-inventory .prof-avatar{border:3px solid rgba(255,255,255,0.85);box-shadow:0 6px 18px rgba(80,60,200,0.30);}
+#page-inventory .prof-name{font-family:'Caveat',cursive;font-style:normal;font-size:30px;font-weight:700;letter-spacing:0;color:#1A2040;}
+#page-inventory .prof-username{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+#page-inventory .prof-bal-row{background:rgba(255,255,255,0.90);border:2px solid rgba(255,210,40,0.45);border-radius:20px;}
+#page-inventory .prof-bal-lbl{color:#B89000;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-inventory .prof-bal-val{font-family:'Nunito',sans-serif;color:#A87800;font-weight:900;font-size:24px;}
+#page-inventory .prof-topup-btn{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+#page-inventory .prof-xp-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:20px;}
+#page-inventory .prof-xp-label{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-inventory .prof-xp-level{font-family:'Caveat',cursive;font-style:normal;font-size:30px;color:#1A2040;}
+#page-inventory .prof-xp-track{background:rgba(20,40,90,0.08);}
+#page-inventory .prof-xp-sub span{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+#page-inventory .prof-stat{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:16px;}
+#page-inventory .prof-stat-val{font-family:'Nunito',sans-serif;color:#1A2040;font-weight:900;}
+#page-inventory .prof-stat-lbl{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .prof-menu-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:20px;}
+#page-inventory .prof-menu-row{border-bottom:1px solid rgba(20,40,90,0.06);}
+#page-inventory .prof-menu-row:active{background:rgba(20,40,90,0.04);}
+#page-inventory .prof-menu-label{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;}
+#page-inventory .prof-menu-right{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .prof-menu-arr{color:#C0CADC;}
+#page-inventory .prof-invite-btn{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.78);color:#1A2040;font-family:'Caveat',cursive;font-style:normal;font-size:20px;font-weight:700;letter-spacing:0;box-shadow:0 5px 16px rgba(20,40,90,0.10);}
+#page-inventory .sub-panel-back button{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.78);color:#1A2040;}
+#page-inventory .sub-panel-title{font-family:'Caveat',cursive;font-style:normal;font-size:24px;font-weight:700;color:#1A2040;letter-spacing:0;}
+#page-inventory .promo-input-wrap{background:rgba(255,210,40,0.10);border:2px solid rgba(255,210,40,0.35);border-radius:20px;}
+#page-inventory .promo-input{background:rgba(255,255,255,0.85);border:1.5px solid rgba(20,40,90,0.15);color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .promo-ok{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 2px 8px rgba(40,80,200,0.22)!important;}
+#page-inventory .ref-card{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:20px;}
+#page-inventory .ref-link-btn{background:rgba(20,40,90,0.06);border:1.5px solid rgba(20,40,90,0.14);color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .task-item{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:18px;}
+#page-inventory .task-item.done{border-color:rgba(26,154,80,0.35);}
+#page-inventory .task-icon{background:rgba(68,80,160,0.08);border:1.5px solid rgba(68,80,160,0.15);}
+#page-inventory .task-icon.done{background:rgba(26,154,80,0.12);border-color:rgba(26,154,80,0.28);}
+#page-inventory .task-title{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .task-desc{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .task-reward{font-family:'Nunito',sans-serif;color:#1A2040;font-weight:800;}
+#page-inventory .task-btn{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;box-shadow:0 2px 8px rgba(40,80,200,0.22)!important;}
+#page-inventory .ref-hi{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);}
+
+/* shared row/list components reused by BOTH profile sub-panels and history page */
+#page-inventory .irow{border-bottom:1px solid rgba(20,40,90,0.07);}
+#page-inventory .irow-l{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .irow-r{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .inv-item,#page-history .hi,#page-inventory .hi{
+  background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);
+  box-shadow:0 2px 8px rgba(20,40,90,0.06);
+}
+#page-inventory .inv-icon{background:rgba(68,80,160,0.07);border:1.5px solid rgba(68,80,160,0.14);}
+#page-inventory .inv-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-inventory .inv-meta{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-inventory .inv-qty{color:#445080;font-family:'Nunito',sans-serif;}
+#page-history .hi-t,#page-inventory .hi-t{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-history .hi-s,#page-inventory .hi-s{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-history .hi-a.p,#page-inventory .hi-a.p{color:#1A9A50;}
+#page-history .hi-a.n,#page-inventory .hi-a.n{color:#D8284A;}
+
+/* empty-state placeholder, reused on Profile sub-panels and History */
+#page-inventory .empty,#page-history .empty{color:#8090B0;font-family:'Nunito',sans-serif;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — SHOP PAGE (#page-shop)
+   ════════════════════════════════════════════════════ */
+#page-shop{}
+#page-shop .shop-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
+#page-shop .shop-title{font-family:'Caveat',cursive;font-style:normal;font-size:30px;font-weight:700;letter-spacing:0;color:#1A2040;}
+#page-shop .shop-bal{background:rgba(255,255,255,0.90);border:1.5px solid rgba(255,210,40,0.45);color:#A87800;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-shop .hist-filter .hf{background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,255,255,0.85);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-shop .hist-filter .hf.a{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(40,80,200,0.25);}
+#page-shop .owner-note{background:rgba(255,255,255,0.78);border:1.5px solid rgba(20,40,90,0.10);color:#445080;font-family:'Nunito',sans-serif;border-radius:18px;}
+#page-shop .gift-card{background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.80);box-shadow:0 4px 14px rgba(20,40,90,0.09);border-radius:20px;}
+#page-shop .gift-card:hover{border-color:rgba(68,80,160,0.26);}
+#page-shop .gift-emoji-wrap{background:rgba(68,80,160,0.06);border:1.5px solid rgba(68,80,160,0.13);}
+#page-shop .gift-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+#page-shop .gift-price{color:#A07800!important;font-family:'Nunito',sans-serif!important;font-weight:700!important;font-size:13px!important;}
+#page-shop .gift-stars{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-shop .gift-buy-btn{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 2px 8px rgba(40,80,200,0.22)!important;}
+#page-shop .gift-loading{color:#8090B0;font-family:'Nunito',sans-serif;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — HISTORY PAGE (#page-history) — dev-only,
+   reachable via admin-panel debug toggle
+   ════════════════════════════════════════════════════ */
+#page-history{}
+#page-history .hist-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px 24px;position:relative;z-index:1;}
+#page-history .hist-filter .hf{background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,255,255,0.85);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+#page-history .hist-filter .hf.a{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;border-color:transparent;}
+#page-history .hs{background:rgba(255,255,255,0.90);border:2px solid rgba(255,255,255,0.75);border-radius:16px;}
+#page-history .hs-l{color:#8090B0;font-family:'Nunito',sans-serif;}
+#page-history .hs-v.gr{color:#1A9A50;}
+#page-history .hs-v.re{color:#D8284A;}
+
+/* ════════════════════════════════════════════════════
+   SKY THEME — MODALS (Buy gift / Topup) — top-level
+   overlays triggered only from Profile & Shop, not nested
+   inside any .page, so styled globally here is correct.
+   ════════════════════════════════════════════════════ */
+.ov{background:rgba(20,30,60,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.modal{
+  background:rgba(244,248,255,0.98);
+  border:2px solid rgba(255,255,255,0.9);
+  border-radius:24px 24px 0 0;
+  box-shadow:0 -8px 36px rgba(20,40,90,0.18);
+}
+.mh{background:rgba(20,40,90,0.14);}
+.mt{font-family:'Caveat',cursive;font-style:normal;font-size:26px;font-weight:700;letter-spacing:0;color:#1A2040;}
+.error-msg{background:rgba(216,40,74,0.08);border:1.5px solid rgba(216,40,74,0.28);color:#D8284A;font-family:'Nunito',sans-serif;}
+.form-label{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.form-input{background:rgba(20,40,90,0.05);border:1.5px solid rgba(20,40,90,0.14);color:#1A2040;font-family:'Nunito',sans-serif;}
+.form-input:focus{border-color:rgba(60,90,200,0.45);}
+.toggle-label{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;}
+.toggle-slider{background:rgba(20,40,90,0.10);}
+.toggle-slider::before{background:#fff;box-shadow:0 1px 3px rgba(20,40,90,0.3);}
+input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0);}
+.rc-btn{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.rc-btn.active{background:rgba(20,40,90,0.10);border-color:rgba(20,40,90,0.22);color:#1A2040;}
+.mqb{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);color:#8090B0;font-family:'Nunito',sans-serif;}
+.btn-cancel{background:rgba(20,40,90,0.06);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.btn-confirm{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+.modal-gift-preview{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);}
+.mg-icon{background:rgba(68,80,160,0.07);border:1.5px solid rgba(68,80,160,0.14);}
+.mg-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+.mg-price{color:#A87800;font-family:'Nunito',sans-serif;font-weight:700;}
+.ta{background:rgba(20,40,90,0.04);border:1.5px solid rgba(20,40,90,0.12);}
+.ta.sel{background:rgba(20,40,90,0.08);border-color:rgba(20,40,90,0.24);}
+.ta-c{color:#A87800;font-family:'Nunito',sans-serif;font-weight:800;}
+.ta-s{color:#8090B0;font-family:'Nunito',sans-serif;}
+.ta-confirm{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+#ta-custom{background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.14)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;}
+.ov p[style]{color:#8090B0!important;}
+
+
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="liquid-bg"></div>
+
+
+<!-- HOME -->
+<div class="page" id="page-home">
+  <div class="home-content">
+    <div class="hero">
+      <div class="hero-logo"><img src="logo.png" alt="TopLuck" onerror="this.parentNode.innerHTML='🍀'"></div>
+      <div><h1>TOPLUCK</h1><p>Испытай удачу вместе с нами!</p></div>
+    </div>
+    <div class="about-card">
+      <div class="about-card-head">// О TOPLUCK</div>
+      <div class="about-links">
+        <p><b>TOPLUCK</b> — платформа для игр в Telegram 🍀<br>Испытай удачу в рулетке, минах, башне и ГТА-режиме!</p>
+        <a href="https://t.me/TopLuckScrins" target="_blank" class="about-link cyan"><span class="about-link-icon">📢</span><div><div class="about-link-title">Канал с выдачами</div><div class="about-link-sub">@TopLuckScrins — новости и призы</div></div></a>
+        <a href="https://t.me/Smishekchannel" target="_blank" class="about-link purple"><span class="about-link-icon">✨</span><div><div class="about-link-title">Интересный канал</div><div class="about-link-sub">@Smishekchannel — все проекты владельца</div></div></a>
+        <a href="https://t.me/Supp0rt_R0bot" target="_blank" class="about-link green"><span class="about-link-icon">🛟</span><div><div class="about-link-title">Поддержка</div><div class="about-link-sub">@Supp0rt_R0bot — нашли баг? пишите!</div></div></a>
+      </div>
+      <div class="about-person" onclick="togglePerson('owner')"><div class="ap-head"><span class="ap-icon">👑</span><div class="ap-title">Владелец проекта</div><span class="ap-arr" id="arr-owner">›</span></div></div>
+      <div class="ap-content" id="cnt-owner" style="display:none"><p>Привет! Я <b>Smishek</b> — владелец TOPLUCK. Все мои проекты: <a href="https://t.me/smishik_bio" target="_blank">@smishik_bio</a>.</p><p>💬 Связь: <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p></div>
+      <div class="about-person" onclick="togglePerson('dev')"><div class="ap-head"><span class="ap-icon">🧑‍💻</span><div class="ap-title">Разработчик бота</div><span class="ap-arr" id="arr-dev">›</span></div></div>
+      <div class="ap-content" id="cnt-dev" style="display:none"><p>Привет! Я <b>Артем</b> — разработчик этого бота.</p><p>Мои проекты: <a href="https://t.me/PythonPr0gramist" target="_blank">@PythonPr0gramist</a></p><p>💬 <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p></div>
+      <div class="about-person" onclick="togglePerson('tech')"><div class="ap-head"><span class="ap-icon">🏗</span><div class="ap-title">Технарь</div><span class="ap-arr" id="arr-tech">›</span></div></div>
+      <div class="ap-content" id="cnt-tech" style="display:none"><p>Привет! Я — <b>Никита</b>. Занимаюсь настройкой серверов TOPLUCK.</p><p>🌐 <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p></div>
+      <div class="about-person" style="border-bottom:none" onclick="togglePerson('sponsor')"><div class="ap-head"><span class="ap-icon">💎</span><div class="ap-title">Спонсор</div><span class="ap-arr" id="arr-sponsor">›</span></div></div>
+      <div class="ap-content" id="cnt-sponsor" style="display:none;border-bottom:none"><p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p></div>
+    </div>
+    <div class="about-card" style="margin-bottom:0">
+      <div class="about-card-head">// ПРАВИЛА ИГР</div>
+      <div class="about-person" onclick="togglePerson('r-roulette')"><div class="ap-head"><span class="ap-icon">🎡</span><div class="ap-title">Европейская рулетка</div><span class="ap-arr" id="arr-r-roulette">›</span></div></div>
+      <div class="ap-content" id="cnt-r-roulette" style="display:none"><p>Поставь монеты на цвет, чётность или число. Колесо 0–36.</p><p>🔴 Красное/Чёрное — <b>×2</b> | 🟢 Зеро — <b>×14</b></p><p>Чётное/Нечётное — <b>×2</b> | Дюжина — <b>×3</b></p></div>
+      <div class="about-person" onclick="togglePerson('r-gta')"><div class="ap-head"><span class="ap-icon">🏎️</span><div class="ap-title">ГТА Рулетка</div><span class="ap-arr" id="arr-r-gta">›</span></div></div>
+      <div class="ap-content" id="cnt-r-gta" style="display:none"><p>Общий банк — победитель выбирается случайно. Чем больше ставка — тем выше шанс.</p><p>Комиссия <b>3–8%</b> от выигрыша.</p></div>
+      <div class="about-person" onclick="togglePerson('r-mines')"><div class="ap-head"><span class="ap-icon">💣</span><div class="ap-title">Мины</div><span class="ap-arr" id="arr-r-mines">›</span></div></div>
+      <div class="ap-content" id="cnt-r-mines" style="display:none"><p>Поле 5×5. Открывай алмазы, избегай мин. Кешаут в любой момент!</p><p>Больше мин → выше множитель за каждый алмаз.</p></div>
+      <div class="about-person" onclick="togglePerson('r-tower')"><div class="ap-head"><span class="ap-icon">🗼</span><div class="ap-title">Башня</div><span class="ap-arr" id="arr-r-tower">›</span></div></div>
+      <div class="ap-content" id="cnt-r-tower" style="display:none"><p>Поднимайся по этажам — на каждом 1 бомба из 3 клеток. Кешаут в любой момент.</p></div>
+      <div class="about-person" onclick="togglePerson('r-plinko')"><div class="ap-head"><span class="ap-icon">🟣</span><div class="ap-title">Plinko</div><span class="ap-arr" id="arr-r-plinko">›</span></div></div>
+      <div class="ap-content" id="cnt-r-plinko" style="display:none"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/5/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
+      <div class="about-person" onclick="togglePerson('r-blackjack')" style="border-bottom:none"><div class="ap-head"><span class="ap-icon">🃏</span><div class="ap-title">Блэкджек</div><span class="ap-arr" id="arr-r-blackjack">›</span></div></div>
+      <div class="ap-content" id="cnt-r-blackjack" style="display:none;border-bottom:none"><p>Классический 21. Набери сумму карт ближе к 21, не превысив её — и обыграй дилера.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="page" id="page-inventory">
+  <div class="profile-wrap">
+    <div class="profile-top-card">
+      <div class="prof-avatar" id="prof-avatar">?</div>
+      <div class="prof-name" id="prof-name">—</div>
+      <div class="prof-username" id="prof-uname"></div>
+    </div>
+    <div class="prof-bal-row">
+      <div><div class="prof-bal-lbl">Баланс</div><div class="prof-bal-val"><img src="textures/coin.svg" width="18" height="18" alt="" style="vertical-align:middle;margin-right:2px"> <span id="prof-bal">—</span></div></div>
+      <button class="prof-topup-btn" onclick="openTopup()">+ ПОПОЛНИТЬ</button>
+    </div>
+    <div class="prof-xp-card">
+      <div class="prof-xp-header"><span class="prof-xp-label">// УРОВЕНЬ</span><span class="prof-xp-level" id="prof-level">0</span></div>
+      <div class="prof-xp-track"><div class="prof-xp-fill" id="prof-xp-bar"></div></div>
+      <div class="prof-xp-sub"><span>XP: <span id="prof-xp">0</span></span><span>до ур. <span id="prof-xp-next">100</span></span></div>
+    </div>
+    <div class="prof-stats-row">
+      <div class="prof-stat"><div class="prof-stat-val" id="prof-spins">—</div><div class="prof-stat-lbl">Игр</div></div>
+      <div class="prof-stat"><div class="prof-stat-val" id="prof-wins">—</div><div class="prof-stat-lbl">Побед</div></div>
+      <div class="prof-stat"><div class="prof-stat-val" id="prof-won">—</div><div class="prof-stat-lbl">Выиграно</div></div>
+    </div>
+    <div class="prof-menu-card">
+      <div class="prof-menu-row" onclick="openTopup()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#E8C000,#FFD600)">⭐</div><div class="prof-menu-label">Пополнить звёзды</div><span class="prof-menu-arr">›</span></div>
+      <div class="prof-menu-row" onclick="showGiftsPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#005533,#00C878)">🎁</div><div class="prof-menu-label">Мои подарки</div><span class="prof-menu-arr">›</span></div>
+      <div class="prof-menu-row" onclick="showRefPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#3300AA,#9B5DFF)">👥</div><div class="prof-menu-label">Реф. система</div><span class="prof-menu-right" id="prof-refs">0</span><span class="prof-menu-arr">›</span></div>
+      <div class="prof-menu-row" onclick="showTasksPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#446600,#C8FF00)">✅</div><div class="prof-menu-label">Задания</div><span class="prof-menu-right" id="prof-tasks-done" style="color:var(--green)"></span><span class="prof-menu-arr">›</span></div>
+      <div class="prof-menu-row" onclick="showPromoPanel()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#660022,#FF2D6B)">🎟</div><div class="prof-menu-label">Промокод</div><span class="prof-menu-arr">›</span></div>
+    </div>
+    <button class="prof-invite-btn" onclick="copyRef()">🔗 ПРИГЛАСИТЬ ДРУЗЕЙ</button>
+    <div id="prof-gifts-panel" style="display:none"><div class="sub-panel-back"><button onclick="hideGiftsPanel()">‹</button><span class="sub-panel-title">МОИ ПОДАРКИ</span></div><div id="prof-gifts-list"><div class="empty"><span class="empty-i">📭</span><p>Подарков нет</p></div></div></div>
+    <div id="prof-ref-panel" style="display:none"><div class="sub-panel-back"><button onclick="hideRefPanel()">‹</button><span class="sub-panel-title">РЕФЕРАЛЫ</span></div><div class="ref-card"><div class="ref-card-body"><div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div><div class="irow"><span class="irow-l">Приглашено</span><span class="irow-r" id="ref-count-big">0</span></div><button class="ref-link-btn" onclick="copyRef()">🔗 Скопировать реф. ссылку</button></div></div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:1.5px;margin:12px 0 8px">// КТО И КОГДА ПЕРЕШЁЛ</div><div id="ref-history-list"><div class="empty"><span class="empty-i">📭</span><p>Рефералов пока нет</p></div></div></div>
+    <div id="prof-promo-panel" style="display:none"><div class="sub-panel-back"><button onclick="hidePromoPanel()">‹</button><span class="sub-panel-title">ПРОМОКОД</span></div><div class="promo-input-wrap"><div class="promo-row"><input id="promo-inp" type="text" class="promo-input" placeholder="ВВЕДИ КОД..." oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')activatePromo()"/><button class="promo-ok" onclick="activatePromo()">OK</button></div><div id="promo-result" class="promo-result"></div></div></div>
+    <div id="prof-tasks-panel" style="display:none"><div class="sub-panel-back"><button onclick="hideTasksPanel()">‹</button><span class="sub-panel-title">ЗАДАНИЯ</span></div><div id="tasks-list"><div class="empty"><span class="empty-i">⏳</span><p>Загружаем задания...</p></div></div></div>
+  </div>
+</div>
+
+<!-- GAMES -->
+<div class="page active" id="page-games">
+  <div class="games-content">
+    <div class="games-header"><div class="games-title">Где полудим?)</div><div class="coin-pill"><img src="textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle;flex-shrink:0"> <span id="r-bal">0</span></div></div>
+
+    <a class="game-card tl-roulette" href="european_roulette.html">
+      <div class="tl-l">
+        <em class="tl-star" style="top:10px;right:6px;font-size:15px;opacity:.7">⭐</em>
+        <div class="tl-name">РУЛЕТКА</div>
+        <div class="tl-desc">Крути колесо, ставь на красное/чёрное — до ×36!</div>
+      </div>
+      <div class="tl-r">
+        <img src="textures/wheel.svg" width="100" height="100" alt="" style="transform:rotate(8deg);filter:drop-shadow(0 4px 10px rgba(200,60,160,0.3));">
+        <em class="tl-star" style="bottom:8px;right:8px;font-size:12px;opacity:.6">⭐</em>
+      </div>
+    </a>
+
+    <a class="game-card tl-mines" href="mines.html">
+      <div class="tl-l">
+        <em class="tl-star" style="top:12px;right:6px;font-size:13px;color:rgba(50,120,220,0.5)">✦</em>
+        <div class="tl-name">MINES</div>
+        <div class="tl-desc">Откопай алмазы, не попадись на мины и делай иксы!</div>
+        <em class="tl-star" style="bottom:10px;left:0;font-size:12px;color:rgba(50,120,220,0.4)">✦</em>
+      </div>
+      <div class="tl-r">
+        <img src="textures/mines.svg" width="100" height="100" alt="" style="filter:drop-shadow(0 3px 8px rgba(0,40,100,0.12));">
+      </div>
+    </a>
+
+    <a class="game-card tl-tower" href="tower.html">
+      <div class="tl-l">
+        <em class="tl-star" style="top:10px;right:6px;font-size:15px;opacity:.65">⭐</em>
+        <div class="tl-name">БАШНЯ</div>
+        <div class="tl-desc">Поднимайся по этажам — каждый шаг умножает выигрыш!</div>
+      </div>
+      <div class="tl-r" style="align-items:flex-end;padding-bottom:0">
+        <img src="textures/tower.svg" width="96" height="144" alt="" style="filter:drop-shadow(0 4px 10px rgba(80,40,0,0.18));margin-bottom:-2px;">
+      </div>
+    </a>
+
+    <a class="game-card tl-gta" href="gta_roulette.html">
+      <div class="tl-l">
+        <div class="tl-badge violet">ХАЙСТАВКИ</div>
+        <div class="tl-name">ГТА РУЛЕТКА</div>
+        <div class="tl-desc">Общий банк — чем больше ставка, тем выше шанс</div>
+      </div>
+      <div class="tl-r">
+        <img src="textures/gta.svg" width="114" height="78" alt="" style="filter:drop-shadow(0 4px 12px rgba(200,0,40,0.22));transform:rotate(-4deg);">
+      </div>
+    </a>
+
+    <a class="game-card tl-bj" href="blackjack.html">
+      <div class="tl-l">
+        <div class="tl-badge rose">КАРТЫ</div>
+        <div class="tl-name">БЛЭКДЖЕК</div>
+        <div class="tl-desc">Побей дилера не перебрав 21 — классика казино</div>
+      </div>
+      <div class="tl-r">
+        <img src="textures/blackjack.svg" width="104" height="104" alt="" style="filter:drop-shadow(0 4px 12px rgba(60,0,120,0.20));transform:rotate(4deg);">
+      </div>
+    </a>
+
+    <a class="game-card tl-plinko" href="plinko.html">
+      <div class="tl-l">
+        <div class="tl-name">PLINKO</div>
+        <div class="tl-desc">Брось шар — он сам найдёт путь к множителю</div>
+      </div>
+      <div class="tl-r">
+        <img src="textures/plinko.svg" width="104" height="112" alt="" style="filter:drop-shadow(0 3px 10px rgba(40,40,200,0.18));">
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div class="hist-content">
+    <div class="hist-filter" style="grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:5px">
+      <div class="hf a" onclick="setF(this,'all')">Все</div>
+      <div class="hf" onclick="setF(this,'win')">🏆 Победы</div>
+      <div class="hf" onclick="setF(this,'lose')">💀 Проигр.</div>
+      <div class="hf" onclick="setF(this,'deposit')">💳 Пополн.</div>
+    </div>
+    <div class="hist-filter" style="grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
+      <div class="hf" onclick="setF(this,'ref')">🤝 Рефер.</div>
+      <div class="hf" onclick="setF(this,'task')">✅ Задания</div>
+      <div class="hf" onclick="setF(this,'promo')">🎟 Промо</div>
+      <div class="hf" onclick="setF(this,'credit')">⬆️ Добавл.</div>
+    </div>
+    <div class="hist-filter" style="grid-template-columns:1fr;gap:5px;margin-bottom:10px">
+      <div class="hf" onclick="setF(this,'deduct')">⬇️ Списание</div>
+    </div>
+    <div class="hstats"><div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="s-won">0</div></div><div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="s-lost">0</div></div></div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- SHOP -->
+<div class="page" id="page-shop">
+  <div class="shop-content">
+    <div class="shop-header"><div class="shop-title">МАГАЗИН</div><div style="display:flex;align-items:center;gap:8px"><div class="shop-bal"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="shop-bal">—</span></div><button onclick="openTopup()" style="background:linear-gradient(135deg,#4898E0,#2060C0);border:none;border-radius:10px;color:#fff;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(40,80,200,0.25);">+ ПОПОЛНИТЬ</button></div></div>
+    <div class="hist-filter" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="hf a" onclick="shopTab('bot',this)">🤖 От бота</div><div class="hf" onclick="shopTab('owner',this)">👑 От владельца</div></div>
+    <div id="shop-bot"><div class="owner-note" style="border-color:rgba(216,40,74,.25);background:rgba(255,230,230,0.75);color:#A01828;">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div><div id="bot-gifts-inner"><div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div></div></div>
+    <div id="shop-owner" style="display:none"><div class="owner-note">👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>✅ <b>Можно конвертировать в звёзды</b>.<br><br>После покупки владелец получит уведомление.</div><div class="gift-grid" id="owner-gifts-grid"></div></div>
+  </div>
+</div>
+
+<!-- BUY MODAL -->
+<div class="ov" id="buy-modal" onclick="closeBuyModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">КУПИТЬ ПОДАРОК</div><div class="error-msg" id="buy-error"></div><div class="modal-gift-preview"><div class="mg-icon" id="m-icon">🎁</div><div><div class="mg-name" id="m-name">—</div><div class="mg-price"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="m-price">—</span> монет</div></div></div><div class="form-group"><label class="form-label">Кому:</label><div class="rc-btns"><div class="rc-btn active" onclick="setRecipient('self',this)">🙋 Себе</div><div class="rc-btn" onclick="setRecipient('other',this)">👤 По ID</div></div><div id="m-recipient-wrap" style="display:none;margin-top:6px"><input class="form-input" id="m-recipient" type="number" placeholder="Telegram ID получателя" inputmode="numeric"></div></div><div class="toggle-row"><span class="toggle-label">🎭 Анонимно</span><label class="toggle"><input type="checkbox" id="m-anon"><span class="toggle-slider"></span></label></div><div class="form-group"><label class="form-label">Подпись (необязательно):</label><textarea class="form-input" id="m-msg" rows="2" placeholder="Текст подписи..."></textarea><div class="msg-quick"><div class="mqb" onclick="document.getElementById('m-msg').value=''">Без подписи</div><div class="mqb" onclick="setAutoMsg()">Авто 🤖</div></div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeBuyModal()">Отмена</button><button class="btn-confirm" id="m-confirm" onclick="confirmPurchase()">КУПИТЬ ⭐</button></div></div></div>
+
+<!-- TOPUP MODAL -->
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)"><div class="modal"><div class="mh"></div><div class="mt">💳 ПОПОЛНЕНИЕ</div><p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p><div class="ta-grid"><div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span><input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()" style="flex:1;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-align:center;"/><span style="color:var(--gold)">⭐</span></div><button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button></div></div>
+
+<!-- NAV -->
+<nav class="nav" id="main-nav">
+  <div class="nav-ind" id="nav-ind" style="width:25%;left:50%"></div>
+  <button class="nav-btn" onclick="showPage('home',this,0)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#4FAEEA"/><circle cx="18" cy="11.6" r="2.3" fill="#fff"/><rect x="15.7" y="16" width="4.6" height="11.4" rx="2.3" fill="#fff"/></svg>ИНФО</button>
+  <button class="nav-btn" onclick="showPage('inventory',this,1)"><svg class="nb-badge" viewBox="0 0 36 36"><defs><clipPath id="nbClipProf"><circle cx="18" cy="18" r="17"/></clipPath></defs><circle cx="18" cy="18" r="17" fill="#4CC97A"/><g clip-path="url(#nbClipProf)" fill="#fff"><circle cx="18" cy="15" r="5.6"/><ellipse cx="18" cy="31.5" rx="11.5" ry="9"/></g></svg>ПРОФИЛЬ</button>
+  <button class="nav-btn active" onclick="showPage('games',this,2)"><svg class="nb-badge" viewBox="0 0 36 36"><rect x="1" y="1" width="34" height="34" rx="12" fill="#FFB020"/><rect x="8" y="14" width="20" height="12" rx="6" fill="#fff"/><rect x="12.2" y="18.7" width="4.4" height="1.8" rx="0.9" fill="#FFB020"/><rect x="13.8" y="17.1" width="1.8" height="4.4" rx="0.9" fill="#FFB020"/><circle cx="23" cy="18" r="1.5" fill="#FFB020"/><circle cx="25.6" cy="20.6" r="1.5" fill="#FFB020"/></svg>ИГРЫ</button>
+  <button class="nav-btn" onclick="showPage('shop',this,3)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</button>
+  <button class="nav-btn" id="nav-btn-history" style="display:none" onclick="showPage('history',this,4)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#9B6BFF"/><circle cx="18" cy="18" r="9" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M18 12.5v6l3.8 2.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>ИСТОРИЯ</button>
+</nav>
+
+<script>
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+// Show close button (×) on main — acts like dismissing the app
+if(tg?.BackButton){
+  tg.BackButton.hide();
+}
+if(tg?.MainButton){
+  tg.MainButton.hide();
+}
+if(!tg?.initDataUnsafe?.user?.id)window.location.replace('not_telegram.html');
+
+const UID=tg?.initDataUnsafe?.user?.id||0;
+let USERNAME=tg?.initDataUnsafe?.user?.username||'';
+let FIRST_NAME=tg?.initDataUnsafe?.user?.first_name||'Игрок';
+const _IS_DEV_MODE=!!localStorage.getItem('__tl_dev_uid__');
+if(_IS_DEV_MODE){USERNAME='';FIRST_NAME='';}
+
+// Bot username — fetched dynamically from /api/bot_info, fallback to hardcoded
+let BOT_USERNAME='TopLuckBot';
+let REF=`https://t.me/${BOT_USERNAME}?start=ref_${UID}`;
+
+async function fetchBotInfo(){
+  try{
+    const r=await fetch('/api/bot_info').then(r=>r.json());
+    if(r?.username){BOT_USERNAME=r.username.replace('@','');REF=`https://t.me/${BOT_USERNAME}?start=ref_${UID}`;}
+  }catch(e){}
+}
+
+let userData=null,histData=[],curF='all',topupAmt=50;
+let pendingGift=null,pendingSource='bot',recipientMode='self';
+let shopGifts=[],shopLoaded=false;
+
+function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return r.json();}
+
+async function initUser(){
+  if(!UID)return;
+  try{
+    if(_IS_DEV_MODE){userData=await get(`/api/user/${UID}`).catch(()=>null);}
+    else{userData=await post('/api/ensure_user',{user_id:UID,username:USERNAME,first_name:FIRST_NAME});}
+  }catch(e){userData=await get(`/api/user/${UID}`).catch(()=>null);}
+  updateUI();
+}
+async function loadUser(){if(!UID)return;userData=await get(`/api/user/${UID}`).catch(()=>null);updateUI();}
+function updateUI(){
+  if(!userData)return;
+  const bal=userData.balance??0;
+  const _s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  const photoUrl=_IS_DEV_MODE?'':(tg?.initDataUnsafe?.user?.photo_url||'');
+  const avatarEl=document.getElementById('prof-avatar');
+  if(avatarEl){if(photoUrl){avatarEl.style.backgroundImage=`url(${photoUrl})`;avatarEl.style.backgroundSize='cover';avatarEl.style.backgroundPosition='center';avatarEl.textContent='';}else{avatarEl.textContent=(FIRST_NAME||'?')[0].toUpperCase();}}
+  _s('prof-name',userData.first_name||FIRST_NAME||'Игрок');
+  _s('prof-uname',(userData.username||USERNAME)?'@'+(userData.username||USERNAME):'');
+  _s('prof-bal',bal);_s('prof-spins',userData.spins??0);_s('prof-wins',userData.wins??0);_s('prof-won',userData.total_won??0);
+  _s('r-bal',bal);_s('shop-bal',bal);
+  updateLevelUI(userData.xp||0,userData.level||0);
+}
+
+let _navCount=4;
+function showPage(n,btn,i){
+  window.scrollTo({top:0,behavior:'instant'});
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  btn.classList.add('active');
+  const pct=100/_navCount;
+  document.getElementById('nav-ind').style.width=pct+'%';
+  document.getElementById('nav-ind').style.left=(i*pct)+'%';
+  if(n==='history')renderHistory();
+  if(n==='inventory')loadInventory();
+  if(n==='shop'&&!shopLoaded)loadShopGifts();
+  if(n==='games')loadUser();
+}
+
+(function initDevDebug(){
+  try{
+    const isDebug=localStorage.getItem('__tl_dev_debug__')==='1';
+    if(!isDebug)return;
+    const histBtn=document.getElementById('nav-btn-history');if(histBtn)histBtn.style.display='';
+    _navCount=5;
+    const pct=100/5,indEl=document.getElementById('nav-ind');
+    if(indEl){indEl.style.width=pct+'%';indEl.style.left=(2*pct)+'%';}
+    const badge=document.createElement('div');badge.id='dev-debug-badge';badge.textContent='🔬 DEV DEBUG';document.body.appendChild(badge);
+  }catch(e){}
+})();
+
+function copyRef(){
+  // Use Telegram's API to share/copy to avoid DynamicProxy error on Android
+  const link=REF;
+  if(tg?.shareText){try{tg.shareText(link);return;}catch(e){}}
+  if(typeof ClipboardItem!=='undefined'&&navigator.clipboard?.write){
+    navigator.clipboard.writeText(link).then(()=>toast('Ссылка скопирована!','ok')).catch(()=>fallbackCopyRef(link));
+  }else{fallbackCopyRef(link);}
+}
+function fallbackCopyRef(link){
+  try{
+    const ta=document.createElement('textarea');ta.value=link;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    toast('Ссылка скопирована!','ok');
+  }catch(e){toast(link,'info');}
+}
+
+const HIST_POS_TYPES=['win','deposit','ref','gift_received','admin_credit'];
+const HIST_NEG_TYPES=['lose','gift_sent','admin_deduct'];
+const HIST_TASK_TYPE='task';
+
+async function renderHistory(){
+  histData=await get(`/api/history/${UID}`).catch(()=>[]);
+  let items;
+  if(curF==='all')items=histData;
+  else if(curF==='win')items=histData.filter(i=>i.type==='win');
+  else if(curF==='lose')items=histData.filter(i=>i.type==='lose');
+  else if(curF==='deposit')items=histData.filter(i=>i.type==='deposit'||i.type==='admin_credit');
+  else if(curF==='task')items=histData.filter(i=>i.type==='task');
+  else if(curF==='promo')items=histData.filter(i=>i.type==='promo');
+  else if(curF==='credit')items=histData.filter(i=>i.type==='admin_credit');
+  else if(curF==='deduct')items=histData.filter(i=>i.type==='admin_deduct');
+  else items=histData.filter(i=>i.type===curF);
+  let won=0,lost=0;
+  histData.forEach(i=>{if(HIST_POS_TYPES.includes(i.type))won+=Math.abs(i.amount);if(HIST_NEG_TYPES.includes(i.type))lost+=Math.abs(i.amount);});
+  document.getElementById('s-won').textContent=won;document.getElementById('s-lost').textContent=lost;
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟',task:'📋'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод',task:'Задание'};
+  const list=document.getElementById('hist-list');
+  if(!items.length){list.innerHTML='<div class="empty"><span class="empty-i">📭</span><p>История пуста</p></div>';return;}
+  list.innerHTML=items.map(i=>{
+    const d=new Date(i.created_at*1000);
+    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos=HIST_POS_TYPES.includes(i.type);const amt=Math.abs(i.amount);
+    return`<div class="hi"><div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div><div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div><div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${amt}</div></div>`;
+  }).join('');
+}
+function setF(el,f){document.querySelectorAll('.hf').forEach(b=>b.classList.remove('a'));el.classList.add('a');curF=f;renderHistory();}
+
+const _profCards=()=>['.profile-top-card','.prof-bal-row','.prof-xp-card','.prof-stats-row','.prof-menu-card','.prof-invite-btn'].map(s=>document.querySelector(s)).filter(Boolean);
+function _showSubPanel(id){_profCards().forEach(el=>el.style.display='none');['prof-gifts-panel','prof-ref-panel','prof-promo-panel','prof-tasks-panel'].forEach(p=>{const el=document.getElementById(p);if(el)el.style.display='none';});const el=document.getElementById(id);if(el)el.style.display='block';}
+function _hideSubPanels(){_profCards().forEach(el=>el.style.display='');['prof-gifts-panel','prof-ref-panel','prof-promo-panel','prof-tasks-panel'].forEach(p=>{const el=document.getElementById(p);if(el)el.style.display='none';});}
+function showGiftsPanel(){_showSubPanel('prof-gifts-panel');loadGifts();}
+function hideGiftsPanel(){_hideSubPanels();}
+function showRefPanel(){_showSubPanel('prof-ref-panel');loadRefHistory();}
+function hideRefPanel(){_hideSubPanels();}
+function showPromoPanel(){_showSubPanel('prof-promo-panel');setTimeout(()=>{const el=document.getElementById('promo-inp');if(el)el.focus();},150);}
+function hidePromoPanel(){_hideSubPanels();}
+function showTasksPanel(){_showSubPanel('prof-tasks-panel');loadTasks();}
+function hideTasksPanel(){_hideSubPanels();}
+
+function xpForLevel(lvl){return lvl*(lvl+1)*50;}
+function updateLevelUI(xp,level){
+  const _s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  _s('prof-level',level);_s('prof-xp',xp);
+  const nextXp=xpForLevel(level+1);_s('prof-xp-next',nextXp);
+  const prevXp=xpForLevel(level);
+  const pct=nextXp>prevXp?Math.round((xp-prevXp)/(nextXp-prevXp)*100):100;
+  const bar=document.getElementById('prof-xp-bar');if(bar)bar.style.width=Math.min(100,pct)+'%';
+}
+
+let _tasksCache=null;
+async function loadTasks(){
+  const listEl=document.getElementById('tasks-list');if(!listEl)return;
+  listEl.innerHTML='<div class="empty"><span class="empty-i">⏳</span><p>Загружаем...</p></div>';
+  try{
+    const r=await get(`/api/tasks?user_id=${UID}`);const tasks=r.tasks||[];_tasksCache=tasks;
+    const done=tasks.filter(t=>t.completed).length;
+    const dEl=document.getElementById('prof-tasks-done');if(dEl)dEl.textContent=done?`${done}/${tasks.length}`:'';
+    if(!tasks.length){listEl.innerHTML='<div class="empty"><span class="empty-i">📋</span><p>Заданий пока нет</p></div>';return;}
+    const ICONS={channel:'📢',group:'👥',bot:'🤖',spend:'🎰',deposit:'💳'};
+    listEl.innerHTML=tasks.map(t=>`<div class="task-item ${t.completed?'done':''}"><div class="task-icon ${t.completed?'done':''}">${t.completed?'✅':(ICONS[t.type]||'📋')}</div><div class="task-body"><div class="task-title" style="color:${t.completed?'var(--muted2)':'var(--text)'}">${t.title}</div><div class="task-desc">${t.description||''}</div></div><div class="task-right"><div class="task-reward"><img src=\"textures/coin.svg\" width=\"14\" height=\"14\" alt=\"\" style=\"vertical-align:middle\"> +${t.reward}</div>${!t.completed?`<button class="task-btn" onclick="doTask(${t.id},'${t.type}','${t.target||''}')">Выполнить</button>`:'<div style="font-size:11px;color:var(--green);margin-top:3px">Готово ✓</div>'}</div></div>`).join('');
+  }catch(e){listEl.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Ошибка загрузки</p></div>';}
+}
+async function doTask(taskId,type,target){if(target&&(type==='channel'||type==='group'||type==='bot')){const url=target.startsWith('http')?target:`https://t.me/${target.replace('@','')}`;tg?.openTelegramLink?tg.openTelegramLink(url):window.open(url,'_blank');setTimeout(()=>claimTask(taskId),2000);}else claimTask(taskId);}
+async function claimTask(taskId){try{const r=await fetch('/api/tasks/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:UID,task_id:taskId})}).then(r=>r.json());if(r.ok){toast(`✅ +${r.reward} монет за задание!`,'ok');if(userData){userData.balance=r.new_balance;updateUI();}await loadTasks();}else toast(r.error||'Ошибка','err');}catch(e){toast('Ошибка','err');}}
+
+async function loadRefHistory(){
+  const listEl=document.getElementById('ref-history-list');if(!listEl||!UID)return;
+  listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted2);font-size:13px">⏳ Загружаем...</div>';
+  try{
+    const r=await get(`/api/user/${UID}/refs`).catch(()=>({refs:[],count:0}));
+    const refs=r.refs||[];
+    const cntEl=document.getElementById('ref-count-big');if(cntEl)cntEl.textContent=r.count||0;
+    const pEl=document.getElementById('prof-refs');if(pEl)pEl.textContent=r.count||0;
+    if(!refs.length){listEl.innerHTML='<div class="empty"><span class="empty-i">👥</span><p>Рефералов пока нет</p></div>';return;}
+    listEl.innerHTML=refs.map(ref=>{const d=new Date((ref.created_at||0)*1000);const who=(ref.detail||'').replace('Реферал:','').trim()||'Неизвестный';const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});return`<div class="hi"><div class="hi-ic ref">🤝</div><div class="hi-b"><div class="hi-t">${who.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><div class="hi-s">${dt}</div></div><div class="hi-a p">+${ref.amount}</div></div>`;}).join('');
+  }catch(e){listEl.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Ошибка загрузки</p></div>';}
+}
+
+function shopTab(tab,el){document.querySelectorAll('[onclick^="shopTab"]').forEach(t=>t.classList.remove('a'));el.classList.add('a');document.getElementById('shop-bot').style.display=tab==='bot'?'':'none';document.getElementById('shop-owner').style.display=tab==='owner'?'':'none';}
+async function loadShopGifts(){
+  shopLoaded=true;const botInner=document.getElementById('bot-gifts-inner');
+  try{const data=await get('/api/gifts');shopGifts=data.gifts||[];if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}else renderBotGifts();}catch(e){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Не удалось загрузить подарки</p></div>';}
+  renderOwnerGifts();
+}
+function giftCard(gift,source){const limited=gift.is_limited&&gift.remaining_count!==null;const cls=limited?'gift-card limited':'gift-card';const emoji=gift.emoji||'🎁';const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';const displayCost=gift.coin_cost||(gift.star_count*10);const gd=JSON.stringify({id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,coin_cost:displayCost,is_limited:gift.is_limited||false}).replace(/"/g,'&quot;');return`<div class="${cls}" onclick="openBuyModal(${gd},'${source}')"><div class="gift-emoji-wrap"><span class="gift-emoji">${emoji}</span></div><div class="gift-name">${gift.name||'Подарок'}</div><div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> ${displayCost} монет</div>${remaining}<button class="gift-buy-btn">КУПИТЬ</button></div>`;}
+function renderBotGifts(){const inner=document.getElementById('bot-gifts-inner');if(inner)inner.innerHTML=`<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;}
+function renderOwnerGifts(){
+  const g=document.getElementById('owner-gifts-grid');
+  // Static special item — Random NFT
+  const staticGifts=[{id:'random_nft',emoji:'🎲',name:'Рандомный НФТ',star_count:400,coin_cost:4000,is_limited:false,is_static:true}];
+  const allOwner=[...staticGifts,...shopGifts];
+  if(!allOwner.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}
+  g.innerHTML=allOwner.map(gift=>giftCard(gift,'owner')).join('');
+}
+function openBuyModal(gift,source){pendingGift=gift;pendingSource=source;document.getElementById('m-icon').textContent=gift.emoji;document.getElementById('m-name').textContent=gift.name||gift.emoji;document.getElementById('m-price').textContent=gift.star_count;document.getElementById('m-msg').value='';document.getElementById('m-anon').checked=false;document.getElementById('buy-error').classList.remove('show');setRecipient('self',document.querySelector('.rc-btn'));document.getElementById('buy-modal').classList.add('open');}
+function closeBuyModal(e){if(!e||e.target.id==='buy-modal')document.getElementById('buy-modal').classList.remove('open');}
+function setRecipient(mode,el){recipientMode=mode;document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('m-recipient-wrap').style.display=mode==='other'?'block':'none';}
+function setAutoMsg(){document.getElementById('m-msg').value=`🎁 Подарок от ${FIRST_NAME}!`;}
+async function confirmPurchase(){
+  if(!pendingGift)return;
+  const errEl=document.getElementById('buy-error');errEl.classList.remove('show');
+  const bal=userData?.balance||0;
+  const costCoins=pendingGift.coin_cost||(pendingGift.star_count*10);if(bal<costCoins){errEl.textContent='Недостаточно монет!';errEl.classList.add('show');return;}
+  const anon=document.getElementById('m-anon').checked;
+  const msg=document.getElementById('m-msg').value.trim();
+  let recipientId=UID;
+  if(recipientMode==='other'){const rid=parseInt(document.getElementById('m-recipient').value)||0;if(!rid){errEl.textContent='Введите ID получателя';errEl.classList.add('show');return;}recipientId=rid;}
+  const btn=document.getElementById('m-confirm');btn.disabled=true;btn.textContent='Покупаем...';
+  const res=await post('/api/gift/buy',{user_id:UID,gift_id:pendingGift.id||'',star_count:pendingGift.star_count,coin_cost:costCoins,source:pendingSource,recipient_id:recipientId,anonymous:anon,message:msg||null,sender_name:anon?null:FIRST_NAME,gift_name:pendingGift.name||pendingGift.emoji,gift_emoji:pendingGift.emoji}).catch(()=>null);
+  btn.disabled=false;btn.textContent='КУПИТЬ ⭐';
+  if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
+  if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
+  document.getElementById('buy-modal').classList.remove('open');
+  if(pendingSource==='bot'){toast('🎁 Подарок отправлен!','ok');}
+  else{toast('📨 Заявка отправлена владельцу!','ok');setTimeout(()=>{if(tg?.openTelegramLink)tg.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=gift_request`);},1500);}
+  if(userData)userData.balance=res.new_balance??(userData.balance-pendingGift.star_count*10);updateUI();
+}
+
+function openTopup(){document.getElementById('ov-topup').classList.add('open');}
+function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
+function selAmt(el,v){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');topupAmt=v;document.getElementById('ta-custom').value='';document.getElementById('ta-amt').textContent=v;}
+function onCustomInput(){const v=parseInt(document.getElementById('ta-custom').value)||0;if(v>=1){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));topupAmt=v;document.getElementById('ta-amt').textContent=v;}}
+async function confirmTopup(){
+  if(!UID){toast('Войдите через Telegram','err');return;}
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;if(custom>=1)topupAmt=custom;
+  if(topupAmt<1){toast('Введите сумму','err');return;}
+  document.getElementById('ov-topup').classList.remove('open');
+  const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
+  if(res?.ok)toast('Инвойс отправлен в чат с ботом!','ok');else toast('Откройте чат с ботом для оплаты','info');
+}
+function togglePerson(id){const cnt=document.getElementById('cnt-'+id);const arr=document.getElementById('arr-'+id);if(!cnt)return;const open=cnt.style.display==='block';cnt.style.display=open?'none':'block';if(arr)arr.classList.toggle('open',!open);}
+async function loadInventory(){if(!UID)return;updateUI();try{const r=await get(`/api/user/${UID}/refs`).catch(()=>({count:0}));const cnt=r.count||0;const el=document.getElementById('prof-refs');if(el)el.textContent=cnt;const el2=document.getElementById('ref-count-big');if(el2)el2.textContent=cnt;}catch(e){}}
+async function loadGifts(){
+  if(!UID)return;
+  const hist=await get(`/api/history/${UID}`).catch(()=>[]);
+  const gifts=hist.filter(h=>h.type==='gift_received'||h.type==='gift');
+  const list=document.getElementById('prof-gifts-list');if(!list)return;
+  if(!gifts.length){list.innerHTML='<div class="empty"><span class="empty-i">📭</span><p>Подарков нет.<br>Купи в Магазине!</p></div>';return;}
+  const grouped={};gifts.forEach(g=>{const k=g.detail||'Подарок';if(!grouped[k])grouped[k]={name:k,count:0,date:g.created_at};grouped[k].count++;});
+  list.innerHTML=Object.values(grouped).map(item=>`<div class="inv-item"><div class="inv-icon">🎁</div><div style="flex:1"><div class="inv-name">${item.name}</div><div class="inv-meta">Получен ${new Date(item.date*1000).toLocaleDateString('ru',{day:'numeric',month:'short'})}</div></div><div class="inv-qty">×${item.count}</div></div>`).join('');
+}
+async function activatePromo(){
+  const code=(document.getElementById('promo-inp').value||'').trim().toUpperCase();
+  const res_el=document.getElementById('promo-result');
+  if(!code){res_el.textContent='Введи код промокода';res_el.style.color='var(--muted2)';return;}
+  if(!UID){res_el.textContent='Нужен Telegram';res_el.style.color='var(--red)';return;}
+  res_el.textContent='⏳ Проверяем...';res_el.style.color='var(--muted2)';
+  try{
+    const r=await post('/api/promo/activate',{user_id:UID,code});
+    if(r.error){res_el.textContent='❌ '+r.error;res_el.style.color='var(--red)';return;}
+    const amt=r.reward;res_el.textContent=`${amt>=0?'✅':'⚠️'} ${amt>=0?'+':''}${amt} 🪙 — промокод активирован!`;res_el.style.color=amt>=0?'var(--green)':'var(--red)';
+    document.getElementById('promo-inp').value='';toast(`🎟 ${amt>=0?'+':''}${amt} 🪙 — промокод применён!`,amt>=0?'ok':'err');
+    if(userData){userData.balance=r.new_balance;updateUI();}
+  }catch(e){res_el.textContent='❌ Ошибка соединения';res_el.style.color='var(--red)';}
+}
+function playSound(){}window.playSound=playSound;
+
+window.addEventListener('load',async()=>{
+  // Start fetching bot info immediately (async, no await — fallback already set)
+  fetchBotInfo();
+  const urlParams=new URLSearchParams(window.location.search);
+  const tabParam=urlParams.get('tab')||'games';
+  const tabIndex={home:0,inventory:1,games:2,shop:3};
+  const idx=tabIndex[tabParam]??2;
+  const btn=document.querySelector(`[onclick*="'${tabParam}'"]`);
+  if(btn)showPage(tabParam,btn,idx);else showPage('games',document.querySelectorAll('.nav-btn')[2],2);
+  await initUser();
+  setInterval(loadUser,15000);
+});
+</script>
+</body>
+</html>
