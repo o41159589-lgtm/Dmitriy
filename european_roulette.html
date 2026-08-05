@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Европейская рулетка — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -125,7 +126,7 @@ body::before{
 /* ── BET SECTION ── */
 .bet-wrap{padding:14px;position:relative;z-index:1;}
 .stag{font-style:normal;
-  font-family:'Nunito',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.8px;font-size:11px;font-size:18px;font-weight:700;
+  font-family:'Nunito',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.8px;font-size:18px;font-weight:700;
   color:var(--muted);margin-bottom:10px;
 }
 .bet-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
@@ -157,7 +158,7 @@ body::before{
   background:rgba(255,255,255,0.80);color:var(--text);
   font-family:'Nunito',sans-serif;transition:all .15s;user-select:none;
 }
-.bt-s{font-size:10px;color:var(--muted);margin-top:4px;font-family:'Nunito',sans-serif;font-weight:700;}
+.bt-s{font-size:10px;color:var(--muted);margin-top:5px;font-family:'Nunito',sans-serif;font-weight:700;opacity:.75;display:block;}
 .bt.r{border-color:rgba(216,40,74,.22);}
 .bt.r.sel{background:rgba(216,40,74,.14);border-color:rgba(216,40,74,.60);color:#C02035;box-shadow:0 0 0 2px rgba(216,40,74,.15);}
 .bt.bl{border-color:rgba(40,40,60,.14);}
@@ -266,6 +267,7 @@ async function initUser(){
     if(localStorage.getItem('__tl_dev_uid__'))userData=await get(`/api/user/${UID}`).catch(()=>null);
     else{const o=tg.initDataUnsafe.user;userData=await post('/api/ensure_user',{user_id:UID,username:o?.username||'',first_name:o?.first_name||''});}
   }catch(e){userData=await get(`/api/user/${UID}`).catch(()=>null);}
+  if(TL_guardBanned(userData))return;
   if(userData)document.getElementById('r-bal').textContent=userData.balance??0;
 }
 
@@ -373,24 +375,28 @@ async function spinEuro(){
   function ease(t){return 1-Math.pow(1-t,4.5);}
 
   function frame(now){
-    const elapsed=now-t0,t=Math.min(1,elapsed/DUR);
-    const wA=startA+(finalA-startA)*ease(t);
-
-    // During spin: show live sector
-    const liveIdx=sectorUnderPointer(wA);
-    const live=NUMS[liveIdx];
     const numEl=document.getElementById('res-num');
-    numEl.textContent=live.n;
-    numEl.className='res-num '+live.c;
-    const ico=live.c==='green'?'🟢':live.c==='red'?'🔴':'⚫';
-    if(t<.93)document.getElementById('res-lbl').innerHTML=`${ico}<br>`;
+    try{
+      const elapsed=now-t0,t=Math.min(1,elapsed/DUR);
+      const wA=startA+(finalA-startA)*ease(t);
 
-    drawWheel(wA,t>=.93?targetIdx:-1);
+      // During spin: show live sector
+      const liveIdx=sectorUnderPointer(wA);
+      const live=NUMS[liveIdx];
+      numEl.textContent=live.n;
+      numEl.className='res-num '+live.c;
+      const ico=live.c==='green'?'🟢':live.c==='red'?'🔴':'⚫';
+      if(t<.93)document.getElementById('res-lbl').innerHTML=`${ico}<br>`;
 
-    if(t<1){animReq=requestAnimationFrame(frame);return;}
+      drawWheel(wA,t>=.93?targetIdx:-1);
 
-    // Done
-    wheelAngle=wA%(PI2);animReq=null;
+      if(t<1){animReq=requestAnimationFrame(frame);return;}
+      wheelAngle=wA%(PI2);
+    }catch(e){
+      // Recover from any transient render glitch instead of freezing the wheel silently
+      wheelAngle=finalA%(Math.PI*2);
+    }
+    animReq=null;
     drawWheel(wheelAngle,targetIdx);
     const ico2=res.result_c==='green'?'🟢':res.result_c==='red'?'🔴':'⚫';
     const cname=res.result_c==='green'?'Зеро':res.result_c==='red'?'Красное':'Чёрное';

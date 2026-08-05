@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Мины — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
 <style>
 
@@ -418,7 +419,7 @@ let userData=null,gameActive=false,currentBet=50,currentBombs=3,revealed=[],curr
 function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),2800);}
 async function get(url){return fetch(url).then(r=>r.json());}
 async function post(url,d){return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(r=>r.json());}
-async function loadUser(){const u=await get(`/api/user/${UID}`).catch(()=>null);if(!u)return;userData=u;document.getElementById('r-bal').textContent=u.balance??0;}
+async function loadUser(){const u=await get(`/api/user/${UID}`).catch(()=>null);if(!u)return;if(TL_guardBanned(u))return;userData=u;document.getElementById('r-bal').textContent=u.balance??0;}
 function setBet(v){document.getElementById('bet-inp').value=v;}
 function setBetMax(){document.getElementById('bet-inp').value=userData?.balance||0;}
 function setBetHalf(){document.getElementById('bet-inp').value=Math.max(10,Math.floor((parseInt(document.getElementById('bet-inp').value)||50)/2));}

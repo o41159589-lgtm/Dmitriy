@@ -388,22 +388,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 <!-- SETTINGS -->
 <div class="tab-pane" id="tab-settings">
 
-  <!-- Incognito mode -->
-  <div class="settings-block" id="incognito-block" style="display:none">
-    <div class="settings-title">🥷 РЕЖИМ ИНКОГНИТО</div>
-    <div class="incognito-toggle">
-      <div>
-        <div class="it-label">Режим инкогнито</div>
-        <div class="it-sub">Действия не логируются в группу логов</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)"/>
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div id="incognito-status" style="font-size:12px;color:var(--muted);text-align:center"></div>
-  </div>
-
   <!-- Global luck → applies to ALL modes at once -->
   <div class="settings-block">
     <div class="settings-title">🌐 ГЛОБАЛЬНЫЙ КОЭФФИЦИЕНТ УДАЧИ</div>
@@ -499,6 +483,47 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-luck-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
+  <!-- Blackjack luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🃏 БЛЭКДЖЕК — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Блэкджека. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="bj-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="bj-slider" min="0" max="200" value="100" oninput="onBjSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setBjCoeff(0)">0.0</div>
+        <div class="pb" onclick="setBjCoeff(0.5)">0.5</div>
+        <div class="pb" onclick="setBjCoeff(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveBjCoeff()">💾 Сохранить (только блэкджек)</button>
+    </div>
+    <div id="bj-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- ═══ Everything below is NOT a luck coefficient ═══ -->
+
+  <!-- Incognito mode -->
+  <div class="settings-block" id="incognito-block" style="display:none">
+    <div class="settings-title">🥷 РЕЖИМ ИНКОГНИТО</div>
+    <div class="incognito-toggle">
+      <div>
+        <div class="it-label">Режим инкогнито</div>
+        <div class="it-sub">Действия не логируются в группу логов</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div id="incognito-status" style="font-size:12px;color:var(--muted);text-align:center"></div>
+  </div>
+
   <!-- Mines max multiplier -->
   <div class="settings-block">
     <div class="settings-title">💎 МИНЫ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
@@ -554,29 +579,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
-  <!-- Blackjack luck — INDEPENDENT -->
-  <div class="settings-block">
-    <div class="settings-title">🃏 БЛЭКДЖЕК — УДАЧА</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Только для Блэкджека. <b style="color:var(--text)">Не влияет на другие режимы.</b>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="bj-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="bj-slider" min="0" max="200" value="100" oninput="onBjSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setBjCoeff(0)">0.0</div>
-        <div class="pb" onclick="setBjCoeff(0.5)">0.5</div>
-        <div class="pb" onclick="setBjCoeff(1.0)">1.0 — Честно</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveBjCoeff()">💾 Сохранить (только блэкджек)</button>
-    </div>
-    <div id="bj-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
-
   <!-- Plinko multipliers — 15 editable slots -->
   <div class="settings-block">
     <div class="settings-title">🟣 PLINKO — КОЭФФИЦИЕНТЫ (15 слотов)</div>
@@ -584,7 +586,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       Значения множителей в каждом слоте, слева направо (края — крайние слоты).<br/>
       <span style="color:var(--muted);font-size:10px">Массив симметричен по умолчанию: 20/10/5/2.5/2/1.5/1.2/0/1.2/1.5/2/2.5/5/10/20</span>
     </p>
-    <div id="plinko-mults-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px"></div>
+    <div id="plinko-mults-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px"></div>
     <button class="abtn set" style="width:100%;padding:11px" onclick="savePlinkoMults()">💾 Сохранить множители Plinko</button>
     <div id="plinko-mults-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
   </div>

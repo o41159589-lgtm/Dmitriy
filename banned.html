@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck — Доступ заблокирован</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+html,body{background:var(--bg);padding-bottom:0;}
+.ban-icon{width:88px;height:88px;border-radius:50%;background:rgba(220,40,60,0.12);
+  border:1.5px solid rgba(220,40,60,0.35);display:flex;align-items:center;justify-content:center;
+  font-size:40px;margin:0 auto 20px;}
+.headline{color:#E0304C;}
+.reason-box{background:rgba(220,40,60,0.08);border:1px solid rgba(220,40,60,0.25);
+  border-radius:14px;padding:14px 16px;margin:16px 0;text-align:left;}
+.reason-lbl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px;}
+.reason-val{font-size:14px;color:var(--text);line-height:1.5;}
+.support-btn{display:block;width:100%;margin-top:18px;padding:14px;border-radius:14px;
+  background:linear-gradient(135deg,#4898E0 0%,#2060C0 100%);color:#fff;text-align:center;
+  text-decoration:none;font-weight:700;font-size:15px;}
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+
+<div class="card">
+  <div class="logo-mini">
+    <div class="logo-mini-icon">🍀</div>
+    <span class="logo-mini-text">TOPLUCK</span>
+  </div>
+
+  <div class="ban-icon">⛔</div>
+
+  <div class="headline">ДОСТУП ЗАБЛОКИРОВАН</div>
+  <p class="sub">Ваш аккаунт заблокирован администрацией TopLuck Casino. Использование приложения недоступно.</p>
+
+  <div class="reason-box">
+    <div class="reason-lbl">Причина блокировки</div>
+    <div class="reason-val" id="ban-reason">—</div>
+  </div>
+
+  <p class="sub">Если считаете это ошибкой — обратитесь в поддержку.</p>
+  <a class="support-btn" id="support-link" href="https://t.me/Smishek" target="_blank">💬 Написать в поддержку</a>
+</div>
+
+<script>
+(function(){
+  const tg = window.Telegram?.WebApp;
+  if(tg){ tg.ready(); tg.expand(); }
+  const params = new URLSearchParams(location.search);
+  const reason = params.get('reason');
+  document.getElementById('ban-reason').textContent = reason && reason.trim() ? reason : 'Не указана';
+})();
+</script>
+</body>
+</html>

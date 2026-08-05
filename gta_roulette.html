@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ГТА Рулетка — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
 <style>
 
@@ -222,7 +223,7 @@ let spinAnim=null,angleOff=0,lastStatus=null;
 function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),2800);}
 async function get(url){return fetch(url).then(r=>r.json());}
 async function post(url,d){return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(r=>r.json());}
-async function loadUser(){const u=await get(`/api/user/${UID}`).catch(()=>null);if(!u)return;userData=u;document.getElementById('r-bal').textContent=u.balance??0;}
+async function loadUser(){const u=await get(`/api/user/${UID}`).catch(()=>null);if(!u)return;if(TL_guardBanned(u))return;userData=u;document.getElementById('r-bal').textContent=u.balance??0;}
 async function initUser(){
   if(!UID)return;
   try{
@@ -379,12 +380,16 @@ function spinAndStop(players,total,finalAngle,onDone){
   const DUR=6200,t0=performance.now();
   function ease(t){return 1-Math.pow(1-t,5);}
   function frame(now){
-    const t=Math.min((now-t0)/DUR,1);
-    angleOff=START+(TARGET-START)*ease(t);
-    drawWheel(players,total,null,angleOff);
-    updateWinnerSpot(players,total,angleOff);
-    if(t<1){spinAnim=requestAnimationFrame(frame);}
-    else{angleOff=TARGET%PI2;spinAnim=null;drawWheel(players,total,null,angleOff);updateWinnerSpot(players,total,angleOff);if(onDone)onDone();}
+    try{
+      const t=Math.min((now-t0)/DUR,1);
+      angleOff=START+(TARGET-START)*ease(t);
+      drawWheel(players,total,null,angleOff);
+      updateWinnerSpot(players,total,angleOff);
+      if(t<1){spinAnim=requestAnimationFrame(frame);return;}
+    }catch(e){
+      angleOff=TARGET%PI2;
+    }
+    angleOff=TARGET%PI2;spinAnim=null;drawWheel(players,total,null,angleOff);updateWinnerSpot(players,total,angleOff);if(onDone)onDone();
   }
   spinAnim=requestAnimationFrame(frame);
 }

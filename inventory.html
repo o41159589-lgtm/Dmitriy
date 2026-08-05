@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Инвентарь — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
 <script>
 (function(){
   try{
@@ -159,6 +160,7 @@ async function loadUser(){
   if(!UID)return;
   userData = await get(`/api/user/${UID}`).catch(()=>null);
   if(!userData)return;
+  if(TL_guardBanned(userData))return;
   document.getElementById('r-bal').textContent   = userData.balance??0;
   document.getElementById('stat-spins').textContent = userData.spins??0;
   document.getElementById('stat-wins').textContent  = userData.wins??0;

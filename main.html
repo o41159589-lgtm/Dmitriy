@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
 <script>
 (function(){
   try{
@@ -67,9 +68,12 @@
 .ap-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;}
 .ap-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
 .ap-title{flex:1;font-weight:700;font-size:14px;}
-.ap-arr{color:var(--muted2);font-size:18px;transition:transform .2s;}
+.ap-arr{color:var(--muted2);font-size:18px;transition:transform .25s cubic-bezier(.4,0,.2,1);}
 .ap-arr.open{transform:rotate(90deg);}
-.ap-content{padding:4px 16px 14px 52px;font-size:13px;line-height:1.7;color:rgba(240,239,255,.7);}
+.ap-content{padding:0 16px 0 52px;font-size:13px;line-height:1.7;color:rgba(240,239,255,.7);
+  max-height:0;opacity:0;overflow:hidden;
+  transition:max-height .32s cubic-bezier(.4,0,.2,1),opacity .24s ease,padding .32s cubic-bezier(.4,0,.2,1);}
+.ap-content.open{max-height:400px;opacity:1;padding:4px 16px 14px 52px;}
 .ap-content p{margin-bottom:5px;}
 .ap-content a{color:var(--white);text-decoration:none;}
 
@@ -231,7 +235,7 @@ body{background:transparent!important;}
 #page-games .tl-r{width:118px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:10px 12px;position:relative;}
 #page-games .tl-name{font-family:'Caveat',cursive;font-style:normal;font-size:40px;font-weight:700;line-height:1;margin-bottom:6px;}
 #page-games .tl-desc{font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:700;line-height:1.45;max-width:170px;}
-#page-games .tl-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;margin-bottom:6px;}
+#page-games .tl-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;margin-bottom:6px;letter-spacing:.2px;}
 #page-games .tl-badge.violet{background:rgba(140,60,240,0.14);color:#6820A8;border:1.5px solid rgba(140,60,240,0.32);}
 #page-games .tl-badge.rose{background:rgba(240,60,80,0.11);color:#A01830;border:1.5px solid rgba(240,60,80,0.28);}
 #page-games .tl-roulette{background:linear-gradient(135deg,#FFECF0,#FFD8E4);}
@@ -484,28 +488,28 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
         <a href="https://t.me/Supp0rt_R0bot" target="_blank" class="about-link green"><span class="about-link-icon">🛟</span><div><div class="about-link-title">Поддержка</div><div class="about-link-sub">@Supp0rt_R0bot — нашли баг? пишите!</div></div></a>
       </div>
       <div class="about-person" onclick="togglePerson('owner')"><div class="ap-head"><span class="ap-icon">👑</span><div class="ap-title">Владелец проекта</div><span class="ap-arr" id="arr-owner">›</span></div></div>
-      <div class="ap-content" id="cnt-owner" style="display:none"><p>Привет! Я <b>Smishek</b> — владелец TOPLUCK. Все мои проекты: <a href="https://t.me/smishik_bio" target="_blank">@smishik_bio</a>.</p><p>💬 Связь: <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p></div>
+      <div class="ap-content" id="cnt-owner"><p>Привет! Я <b>Smishek</b> — владелец TOPLUCK. Все мои проекты: <a href="https://t.me/smishik_bio" target="_blank">@smishik_bio</a>.</p><p>💬 Связь: <a href="https://t.me/Smishek" target="_blank">@Smishek</a></p></div>
       <div class="about-person" onclick="togglePerson('dev')"><div class="ap-head"><span class="ap-icon">🧑‍💻</span><div class="ap-title">Разработчик бота</div><span class="ap-arr" id="arr-dev">›</span></div></div>
-      <div class="ap-content" id="cnt-dev" style="display:none"><p>Привет! Я <b>Артем</b> — разработчик этого бота.</p><p>Мои проекты: <a href="https://t.me/PythonPr0gramist" target="_blank">@PythonPr0gramist</a></p><p>💬 <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p></div>
+      <div class="ap-content" id="cnt-dev"><p>Привет! Я <b>Артем</b> — разработчик этого бота.</p><p>Мои проекты: <a href="https://t.me/PythonPr0gramist" target="_blank">@PythonPr0gramist</a></p><p>💬 <a href="https://t.me/ArtemKirss" target="_blank">@ArtemKirss</a></p></div>
       <div class="about-person" onclick="togglePerson('tech')"><div class="ap-head"><span class="ap-icon">🏗</span><div class="ap-title">Технарь</div><span class="ap-arr" id="arr-tech">›</span></div></div>
-      <div class="ap-content" id="cnt-tech" style="display:none"><p>Привет! Я — <b>Никита</b>. Занимаюсь настройкой серверов TOPLUCK.</p><p>🌐 <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p></div>
+      <div class="ap-content" id="cnt-tech"><p>Привет! Я — <b>Никита</b>. Занимаюсь настройкой серверов TOPLUCK.</p><p>🌐 <a href="https://t.me/Depression_Off1cial" target="_blank">@Depression_Off1cial</a></p></div>
       <div class="about-person" style="border-bottom:none" onclick="togglePerson('sponsor')"><div class="ap-head"><span class="ap-icon">💎</span><div class="ap-title">Спонсор</div><span class="ap-arr" id="arr-sponsor">›</span></div></div>
-      <div class="ap-content" id="cnt-sponsor" style="display:none;border-bottom:none"><p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p></div>
+      <div class="ap-content" id="cnt-sponsor" style="border-bottom:none"><p>Огромная благодарность нашему спонсору — <b>Дмитрий Бек</b> 🙏</p></div>
     </div>
     <div class="about-card" style="margin-bottom:0">
       <div class="about-card-head">// ПРАВИЛА ИГР</div>
       <div class="about-person" onclick="togglePerson('r-roulette')"><div class="ap-head"><span class="ap-icon">🎡</span><div class="ap-title">Европейская рулетка</div><span class="ap-arr" id="arr-r-roulette">›</span></div></div>
-      <div class="ap-content" id="cnt-r-roulette" style="display:none"><p>Поставь монеты на цвет, чётность или число. Колесо 0–36.</p><p>🔴 Красное/Чёрное — <b>×2</b> | 🟢 Зеро — <b>×14</b></p><p>Чётное/Нечётное — <b>×2</b> | Дюжина — <b>×3</b></p></div>
+      <div class="ap-content" id="cnt-r-roulette"><p>Поставь монеты на цвет, чётность или число. Колесо 0–36.</p><p>🔴 Красное/Чёрное — <b>×2</b> | 🟢 Зеро — <b>×14</b></p><p>Чётное/Нечётное — <b>×2</b> | Дюжина — <b>×3</b></p></div>
       <div class="about-person" onclick="togglePerson('r-gta')"><div class="ap-head"><span class="ap-icon">🏎️</span><div class="ap-title">ГТА Рулетка</div><span class="ap-arr" id="arr-r-gta">›</span></div></div>
-      <div class="ap-content" id="cnt-r-gta" style="display:none"><p>Общий банк — победитель выбирается случайно. Чем больше ставка — тем выше шанс.</p><p>Комиссия <b>3–8%</b> от выигрыша.</p></div>
+      <div class="ap-content" id="cnt-r-gta"><p>Общий банк — победитель выбирается случайно. Чем больше ставка — тем выше шанс.</p><p>Комиссия <b>3–8%</b> от выигрыша.</p></div>
       <div class="about-person" onclick="togglePerson('r-mines')"><div class="ap-head"><span class="ap-icon">💣</span><div class="ap-title">Мины</div><span class="ap-arr" id="arr-r-mines">›</span></div></div>
-      <div class="ap-content" id="cnt-r-mines" style="display:none"><p>Поле 5×5. Открывай алмазы, избегай мин. Кешаут в любой момент!</p><p>Больше мин → выше множитель за каждый алмаз.</p></div>
+      <div class="ap-content" id="cnt-r-mines"><p>Поле 5×5. Открывай алмазы, избегай мин. Кешаут в любой момент!</p><p>Больше мин → выше множитель за каждый алмаз.</p></div>
       <div class="about-person" onclick="togglePerson('r-tower')"><div class="ap-head"><span class="ap-icon">🗼</span><div class="ap-title">Башня</div><span class="ap-arr" id="arr-r-tower">›</span></div></div>
-      <div class="ap-content" id="cnt-r-tower" style="display:none"><p>Поднимайся по этажам — на каждом 1 бомба из 3 клеток. Кешаут в любой момент.</p></div>
+      <div class="ap-content" id="cnt-r-tower"><p>Поднимайся по этажам — на каждом 1 бомба из 3 клеток. Кешаут в любой момент.</p></div>
       <div class="about-person" onclick="togglePerson('r-plinko')"><div class="ap-head"><span class="ap-icon">🟣</span><div class="ap-title">Plinko</div><span class="ap-arr" id="arr-r-plinko">›</span></div></div>
-      <div class="ap-content" id="cnt-r-plinko" style="display:none"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/5/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
+      <div class="ap-content" id="cnt-r-plinko"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/5/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
       <div class="about-person" onclick="togglePerson('r-blackjack')" style="border-bottom:none"><div class="ap-head"><span class="ap-icon">🃏</span><div class="ap-title">Блэкджек</div><span class="ap-arr" id="arr-r-blackjack">›</span></div></div>
-      <div class="ap-content" id="cnt-r-blackjack" style="display:none;border-bottom:none"><p>Классический 21. Набери сумму карт ближе к 21, не превысив её — и обыграй дилера.</p></div>
+      <div class="ap-content" id="cnt-r-blackjack" style="border-bottom:none"><p>Классический 21. Набери сумму карт ближе к 21, не превысив её — и обыграй дилера.</p></div>
     </div>
   </div>
 </div>
@@ -589,7 +593,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
 
     <a class="game-card tl-gta" href="gta_roulette.html">
       <div class="tl-l">
-        <div class="tl-badge violet">ХАЙСТАВКИ</div>
+        <div class="tl-badge violet">ХАЙ</div>
         <div class="tl-name">ГТА РУЛЕТКА</div>
         <div class="tl-desc">Общий банк — чем больше ставка, тем выше шанс</div>
       </div>
@@ -640,7 +644,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
     <div class="hist-filter" style="grid-template-columns:1fr;gap:5px;margin-bottom:10px">
       <div class="hf" onclick="setF(this,'deduct')">⬇️ Списание</div>
     </div>
-    <div class="hstats"><div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="s-won">0</div></div><div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="s-lost">0</div></div></div>
+    <div class="hstats" id="hstats"></div>
     <div id="hist-list"></div>
   </div>
 </div>
@@ -714,9 +718,10 @@ async function initUser(){
     if(_IS_DEV_MODE){userData=await get(`/api/user/${UID}`).catch(()=>null);}
     else{userData=await post('/api/ensure_user',{user_id:UID,username:USERNAME,first_name:FIRST_NAME});}
   }catch(e){userData=await get(`/api/user/${UID}`).catch(()=>null);}
+  if(TL_guardBanned(userData))return;
   updateUI();
 }
-async function loadUser(){if(!UID)return;userData=await get(`/api/user/${UID}`).catch(()=>null);updateUI();}
+async function loadUser(){if(!UID)return;userData=await get(`/api/user/${UID}`).catch(()=>null);if(TL_guardBanned(userData))return;updateUI();}
 function updateUI(){
   if(!userData)return;
   const bal=userData.balance??0;
@@ -792,11 +797,23 @@ async function renderHistory(){
   else if(curF==='credit')items=histData.filter(i=>i.type==='admin_credit');
   else if(curF==='deduct')items=histData.filter(i=>i.type==='admin_deduct');
   else items=histData.filter(i=>i.type===curF);
-  let won=0,lost=0;
-  histData.forEach(i=>{if(HIST_POS_TYPES.includes(i.type))won+=Math.abs(i.amount);if(HIST_NEG_TYPES.includes(i.type))lost+=Math.abs(i.amount);});
-  document.getElementById('s-won').textContent=won;document.getElementById('s-lost').textContent=lost;
+
+  const statsEl=document.getElementById('hstats');
+  const sumOf=(arr)=>arr.reduce((s,i)=>s+Math.abs(i.amount),0);
+  if(curF==='all'){
+    const won=sumOf(histData.filter(i=>HIST_POS_TYPES.includes(i.type)));
+    const lost=sumOf(histData.filter(i=>HIST_NEG_TYPES.includes(i.type)));
+    statsEl.innerHTML=`<div class="hs"><div class="hs-l">Заработано</div><div class="hs-v gr">${won}</div></div><div class="hs"><div class="hs-l">Потрачено</div><div class="hs-v re">${lost}</div></div>`;
+  } else {
+    const total=sumOf(items);
+    const label={win:'Заработано на играх',lose:'Потрачено на играх',deposit:'Пополнено монет',task:'Получено за задания',
+      promo:'Получено по промокодам',ref:'Получено с рефералов',credit:'Начислено админом',deduct:'Списано админом'}[curF] || 'Итого';
+    const cls=HIST_NEG_TYPES.includes(curF)?'re':'gr';
+    statsEl.innerHTML=`<div class="hs" style="grid-column:1/-1"><div class="hs-l">${label}</div><div class="hs-v ${cls}">${total}</div></div>`;
+  }
+
   const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟',task:'📋'};
-  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод',task:'Задание'};
+  const TITLES={win:'Заработал',lose:'Потратил',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод',task:'Задание'};
   const list=document.getElementById('hist-list');
   if(!items.length){list.innerHTML='<div class="empty"><span class="empty-i">📭</span><p>История пуста</p></div>';return;}
   list.innerHTML=items.map(i=>{
@@ -911,7 +928,7 @@ async function confirmTopup(){
   const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
   if(res?.ok)toast('Инвойс отправлен в чат с ботом!','ok');else toast('Откройте чат с ботом для оплаты','info');
 }
-function togglePerson(id){const cnt=document.getElementById('cnt-'+id);const arr=document.getElementById('arr-'+id);if(!cnt)return;const open=cnt.style.display==='block';cnt.style.display=open?'none':'block';if(arr)arr.classList.toggle('open',!open);}
+function togglePerson(id){const cnt=document.getElementById('cnt-'+id);const arr=document.getElementById('arr-'+id);if(!cnt)return;const open=cnt.classList.contains('open');cnt.classList.toggle('open',!open);if(arr)arr.classList.toggle('open',!open);}
 async function loadInventory(){if(!UID)return;updateUI();try{const r=await get(`/api/user/${UID}/refs`).catch(()=>({count:0}));const cnt=r.count||0;const el=document.getElementById('prof-refs');if(el)el.textContent=cnt;const el2=document.getElementById('ref-count-big');if(el2)el2.textContent=cnt;}catch(e){}}
 async function loadGifts(){
   if(!UID)return;
