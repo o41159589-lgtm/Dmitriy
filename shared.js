@@ -10,3 +10,18 @@ function TL_guardBanned(user){
   }
   return false;
 }
+
+// Polls the server every `intervalMs` while the user is on a game/other page.
+// If they get banned mid-session (even without doing anything), they're bounced
+// to main.html first — which itself detects the ban and forwards to banned.html.
+// This avoids duplicating the reason-lookup/redirect logic on every single page.
+function TL_startBanPoll(uid, intervalMs){
+  if(!uid) return;
+  intervalMs = intervalMs || 8000;
+  setInterval(async ()=>{
+    try{
+      const u = await fetch('/api/user/'+uid).then(r=>r.json());
+      if(u && u.banned){ location.replace('main.html'); }
+    }catch(e){ /* ignore transient network errors */ }
+  }, intervalMs);
+}

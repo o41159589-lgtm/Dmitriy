@@ -152,6 +152,7 @@ body::before{
 .btypes{display:grid;gap:8px;margin-bottom:10px;}
 .btypes.c3{grid-template-columns:repeat(3,1fr);}
 .btypes.c2{grid-template-columns:repeat(2,1fr);}
+.btypes.c1{grid-template-columns:1fr;}
 .bt{
   border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;
   font-size:13px;font-weight:800;border:1.5px solid;
@@ -204,7 +205,7 @@ body::before{
   <div class="stag">Ставка</div>
   <div class="bet-row">
     <span class="bet-lbl"><img src="../textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle"></span>
-    <input class="bet-inp" id="bet-inp" type="number" min="1" value="10" inputmode="numeric">
+    <input class="bet-inp" id="bet-inp" type="number" min="1" value="10" inputmode="numeric" oninput="updateBetSummary()">
   </div>
   <div class="qb-row">
     <div class="qb" onclick="sb(10)">10</div><div class="qb" onclick="sb(25)">25</div>
@@ -212,6 +213,7 @@ body::before{
     <div class="qb" onclick="sbAll()">MAX</div><div class="qb" onclick="sbHalf()">½</div>
   </div>
   <div class="stag">Тип ставки</div>
+  <div style="font-size:11px;color:var(--muted);margin:-6px 0 10px;font-family:'Nunito',sans-serif;">Можно выбрать сразу несколько типов — например «Чёрное» + «Чётное» + «1–18»</div>
   <div class="btypes c3" style="margin-bottom:8px">
     <div class="bt r" data-bet="red" onclick="selBet(this)">🔴 Красное<div class="bt-s">×2</div></div>
     <div class="bt bl" data-bet="black" onclick="selBet(this)">⚫ Чёрное<div class="bt-s">×2</div></div>
@@ -225,10 +227,20 @@ body::before{
     <div class="bt o" data-bet="low" onclick="selBet(this)">1–18<div class="bt-s">×2</div></div>
     <div class="bt o" data-bet="high" onclick="selBet(this)">19–36<div class="bt-s">×2</div></div>
   </div>
-  <div class="btypes c2" style="margin-bottom:16px">
+  <div class="btypes c2" style="margin-bottom:8px">
     <div class="bt o" data-bet="dozen1" onclick="selBet(this)">1–12<div class="bt-s">×3</div></div>
     <div class="bt o" data-bet="dozen2" onclick="selBet(this)">13–24<div class="bt-s">×3</div></div>
   </div>
+  <div class="btypes c1" style="margin-bottom:8px">
+    <div class="bt o" data-bet="dozen3" onclick="selBet(this)">25–36<div class="bt-s">×3</div></div>
+  </div>
+  <div class="stag" style="margin-top:4px">Колонны</div>
+  <div class="btypes c3" style="margin-bottom:16px">
+    <div class="bt o" data-bet="col1" onclick="selBet(this)">Колонна 1<div class="bt-s">×3</div></div>
+    <div class="bt o" data-bet="col2" onclick="selBet(this)">Колонна 2<div class="bt-s">×3</div></div>
+    <div class="bt o" data-bet="col3" onclick="selBet(this)">Колонна 3<div class="bt-s">×3</div></div>
+  </div>
+  <div id="bet-summary" style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px;font-family:'Nunito',sans-serif;font-weight:700;min-height:16px"></div>
   <button class="spin-btn" id="spin-btn" onclick="spinEuro()">🎡 КРУТИТЬ</button>
 </div>
 <div style="height:30px"></div>
@@ -238,6 +250,7 @@ const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');}
 const UID=tg?.initDataUnsafe?.user?.id||0;
+TL_startBanPoll(UID);
 
 const NUMS=[
   {n:0,c:'green'},{n:32,c:'red'},{n:15,c:'black'},{n:19,c:'red'},{n:4,c:'black'},
@@ -250,11 +263,14 @@ const NUMS=[
   {n:3,c:'red'},{n:26,c:'black'}
 ];
 const N=NUMS.length,SLICE=Math.PI*2/N;
+const BET_LABELS={red:'Красное',black:'Чёрное',green:'Зеро',even:'Чётное',odd:'Нечётное',
+  low:'1–18',high:'19–36',dozen1:'1–12',dozen2:'13–24',dozen3:'25–36',
+  col1:'Колонна 1',col2:'Колонна 2',col3:'Колонна 3'};
 const canvas=document.getElementById('wc');
 const ctx=canvas.getContext('2d');
 const W=272,cx=W/2,cy=W/2,R=W/2-2;
 
-let userData=null,selBetType=null,spinning=false;
+let userData=null,selectedBets=new Set(),spinning=false;
 let wheelAngle=0,idleReq=null,animReq=null,hist=[];
 
 function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),2800);}
@@ -335,17 +351,35 @@ function addHist(n,c){
   hist.unshift({n,c});if(hist.length>16)hist=hist.slice(0,16);
   document.getElementById('hist').innerHTML=hist.map(h=>`<div class="hp ${h.c}">${h.n}</div>`).join('');
 }
-function selBet(el){document.querySelectorAll('.bt').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');selBetType=el.dataset.bet;}
-function sb(v){document.getElementById('bet-inp').value=v;}
-function sbAll(){sb(userData?.balance||0);}
-function sbHalf(){sb(Math.max(1,Math.floor((userData?.balance||0)/2)));}
+function selBet(el){
+  el.classList.toggle('sel');
+  const t=el.dataset.bet;
+  if(el.classList.contains('sel'))selectedBets.add(t);else selectedBets.delete(t);
+  updateBetSummary();
+}
+function updateBetSummary(){
+  const el=document.getElementById('bet-summary');
+  if(!el)return;
+  const n=selectedBets.size;
+  if(n===0){el.textContent='';return;}
+  const per=parseInt(document.getElementById('bet-inp').value)||0;
+  el.textContent=`Выбрано типов: ${n} · Общая ставка: ${per*n} 🪙`;
+}
+function sb(v){document.getElementById('bet-inp').value=v;updateBetSummary();}
+function sbAll(){const n=Math.max(1,selectedBets.size);sb(Math.max(1,Math.floor((userData?.balance||0)/n)));}
+function sbHalf(){const n=Math.max(1,selectedBets.size);sb(Math.max(1,Math.floor((userData?.balance||0)/2/n)));}
 
 async function spinEuro(){
   if(spinning)return;
-  if(!selBetType){toast('Выберите тип ставки!','err');return;}
-  const bet=parseInt(document.getElementById('bet-inp').value)||0;
-  if(bet<1){toast('Введите ставку!','err');return;}
-  if(bet>(userData?.balance||0)){toast('Недостаточно монет!','err');return;}
+  if(selectedBets.size===0){toast('Выберите тип ставки!','err');return;}
+  const per=parseInt(document.getElementById('bet-inp').value)||0;
+  if(per<1){toast('Введите ставку!','err');return;}
+  const bets=[...selectedBets].map(type=>({type,amount:per}));
+  const totalCost=per*bets.length;
+  if(totalCost>(userData?.balance||0)){toast('Недостаточно монет!','err');return;}
+
+  // Jump to the wheel first so a fast bottom→top scroll can't collide with the spin animation
+  window.scrollTo({top:0,behavior:'smooth'});
 
   spinning=true;stopIdle();
   if(animReq){cancelAnimationFrame(animReq);animReq=null;}
@@ -354,7 +388,7 @@ async function spinEuro(){
   document.getElementById('res-num').style.color='var(--muted)';
   document.getElementById('res-lbl').innerHTML='🎰 Крутится...';
 
-  const res=await post('/api/spin',{user_id:UID,bet,bet_type:selBetType}).catch(()=>null);
+  const res=await post('/api/spin',{user_id:UID,bets}).catch(()=>null);
   if(!res||res.error){
     toast(res?.error||'Ошибка сервера','err');
     spinning=false;document.getElementById('spin-btn').disabled=false;startIdle();return;
@@ -401,11 +435,13 @@ async function spinEuro(){
     const ico2=res.result_c==='green'?'🟢':res.result_c==='red'?'🔴':'⚫';
     const cname=res.result_c==='green'?'Зеро':res.result_c==='red'?'Красное':'Чёрное';
     numEl.textContent=res.result_n;numEl.className='res-num '+res.result_c;
+    const wonTypes=(res.bets||[]).filter(b=>b.won).map(b=>BET_LABELS[b.type]||b.type);
     if(res.won){
-      document.getElementById('res-lbl').innerHTML=`${ico2}<br><b style="color:var(--green)">+${res.gain} 🪙</b>`;
-      toast(`${ico2} ${res.result_n} — +${res.gain} 🪙`,'ok');
+      const sub=wonTypes.length?wonTypes.join(', '):'';
+      document.getElementById('res-lbl').innerHTML=`${ico2} ${sub}<br><b style="color:var(--green)">+${res.profit} 🪙</b>`;
+      toast(`${ico2} ${res.result_n} — +${res.profit} 🪙`,'ok');
     }else{
-      document.getElementById('res-lbl').innerHTML=`${ico2} ${cname}<br><b style="color:var(--red)">-${bet} 🪙</b>`;
+      document.getElementById('res-lbl').innerHTML=`${ico2} ${cname}<br><b style="color:var(--red)">${res.profit} 🪙</b>`;
       toast(`${ico2} ${res.result_n} ${cname} — проигрыш`,'err');
     }
     if(userData)userData.balance=res.new_balance;

@@ -220,6 +220,7 @@ if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href=
 
 if(!tg?.initDataUnsafe?.user?.id)window.location.replace('not_telegram.html');
 const UID=tg?.initDataUnsafe?.user?.id||0;
+TL_startBanPoll(UID);
 
 let bal=0,bet=0,deck=[],ph=[],dh=[],active=false,doubled=false,userLuck=50;
 const SUITS=[String.fromCharCode(9824),String.fromCharCode(9829),String.fromCharCode(9830),String.fromCharCode(9827)];

@@ -137,6 +137,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 const UID = tg?.initDataUnsafe?.user?.id || 0;
+TL_startBanPoll(UID);
 
 let userData = null;
 let historyData = [];

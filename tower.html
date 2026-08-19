@@ -317,6 +317,7 @@ const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');}
 const UID=tg?.initDataUnsafe?.user?.id||0;
+TL_startBanPoll(UID);
 const CELLS=3,MAX_FLOORS=10,HOUSE=0.97;
 
 function floorMult(f){if(f<=0)return 1;const raw=1+f*.28-f*(f-1)*.01;return parseFloat((HOUSE*Math.max(1,raw)).toFixed(2));}

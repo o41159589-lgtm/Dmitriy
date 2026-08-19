@@ -281,6 +281,7 @@ input:checked+.toggle-slider::before{transform:translateX(20px);background:#000;
 const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 const UID = tg?.initDataUnsafe?.user?.id || 0;
+TL_startBanPoll(UID);
 // В dev-режиме tg.initDataUnsafe содержит данные администратора, не пользователя.
 // FIRST_NAME будет переопределён после загрузки userData из базы.
 const _IS_DEV_MODE_SHOP = !!localStorage.getItem('__tl_dev_uid__');

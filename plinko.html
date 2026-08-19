@@ -113,6 +113,7 @@ const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');}
 const UID=tg?.initDataUnsafe?.user?.id||0;
+TL_startBanPoll(UID);
 
 let MULTS=[20,10,5,2.5,2,1.5,1.2,0,1.2,1.5,2,2.5,5,10,20];
 let NSLOTS=MULTS.length;

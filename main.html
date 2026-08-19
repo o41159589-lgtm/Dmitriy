@@ -499,17 +499,17 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
     <div class="about-card" style="margin-bottom:0">
       <div class="about-card-head">// ПРАВИЛА ИГР</div>
       <div class="about-person" onclick="togglePerson('r-roulette')"><div class="ap-head"><span class="ap-icon">🎡</span><div class="ap-title">Европейская рулетка</div><span class="ap-arr" id="arr-r-roulette">›</span></div></div>
-      <div class="ap-content" id="cnt-r-roulette"><p>Поставь монеты на цвет, чётность или число. Колесо 0–36.</p><p>🔴 Красное/Чёрное — <b>×2</b> | 🟢 Зеро — <b>×14</b></p><p>Чётное/Нечётное — <b>×2</b> | Дюжина — <b>×3</b></p></div>
-      <div class="about-person" onclick="togglePerson('r-gta')"><div class="ap-head"><span class="ap-icon">🏎️</span><div class="ap-title">ГТА Рулетка</div><span class="ap-arr" id="arr-r-gta">›</span></div></div>
-      <div class="ap-content" id="cnt-r-gta"><p>Общий банк — победитель выбирается случайно. Чем больше ставка — тем выше шанс.</p><p>Комиссия <b>3–8%</b> от выигрыша.</p></div>
+      <div class="ap-content" id="cnt-r-roulette"><p>Поставь монеты на цвет, чётность, число или несколько типов ставок сразу. Колесо 0–36.</p><p>🔴 Красное/Чёрное — <b>×2</b> | 🟢 Зеро — <b>×14</b></p><p>Чётное/Нечётное, 1–18/19–36 — <b>×2</b> | Дюжина/Колонна — <b>×3</b></p></div>
       <div class="about-person" onclick="togglePerson('r-mines')"><div class="ap-head"><span class="ap-icon">💣</span><div class="ap-title">Мины</div><span class="ap-arr" id="arr-r-mines">›</span></div></div>
       <div class="ap-content" id="cnt-r-mines"><p>Поле 5×5. Открывай алмазы, избегай мин. Кешаут в любой момент!</p><p>Больше мин → выше множитель за каждый алмаз.</p></div>
       <div class="about-person" onclick="togglePerson('r-tower')"><div class="ap-head"><span class="ap-icon">🗼</span><div class="ap-title">Башня</div><span class="ap-arr" id="arr-r-tower">›</span></div></div>
       <div class="ap-content" id="cnt-r-tower"><p>Поднимайся по этажам — на каждом 1 бомба из 3 клеток. Кешаут в любой момент.</p></div>
-      <div class="about-person" onclick="togglePerson('r-plinko')"><div class="ap-head"><span class="ap-icon">🟣</span><div class="ap-title">Plinko</div><span class="ap-arr" id="arr-r-plinko">›</span></div></div>
-      <div class="ap-content" id="cnt-r-plinko"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/5/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
-      <div class="about-person" onclick="togglePerson('r-blackjack')" style="border-bottom:none"><div class="ap-head"><span class="ap-icon">🃏</span><div class="ap-title">Блэкджек</div><span class="ap-arr" id="arr-r-blackjack">›</span></div></div>
-      <div class="ap-content" id="cnt-r-blackjack" style="border-bottom:none"><p>Классический 21. Набери сумму карт ближе к 21, не превысив её — и обыграй дилера.</p></div>
+      <div class="about-person" onclick="togglePerson('r-gta')"><div class="ap-head"><span class="ap-icon">🏎️</span><div class="ap-title">ГТА Рулетка</div><span class="ap-arr" id="arr-r-gta">›</span></div></div>
+      <div class="ap-content" id="cnt-r-gta"><p>Общий банк — победитель выбирается случайно. Чем больше ставка — тем выше шанс.</p><p>Комиссия <b>3–8%</b> от выигрыша.</p></div>
+      <div class="about-person" onclick="togglePerson('r-blackjack')"><div class="ap-head"><span class="ap-icon">🃏</span><div class="ap-title">Блэкджек</div><span class="ap-arr" id="arr-r-blackjack">›</span></div></div>
+      <div class="ap-content" id="cnt-r-blackjack"><p>Классический 21. Набери сумму карт ближе к 21, не превысив её — и обыграй дилера.</p></div>
+      <div class="about-person" onclick="togglePerson('r-plinko')" style="border-bottom:none"><div class="ap-head"><span class="ap-icon">🟣</span><div class="ap-title">Plinko</div><span class="ap-arr" id="arr-r-plinko">›</span></div></div>
+      <div class="ap-content" id="cnt-r-plinko" style="border-bottom:none"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/5/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
     </div>
   </div>
 </div>
@@ -688,6 +688,7 @@ if(tg?.MainButton){
 if(!tg?.initDataUnsafe?.user?.id)window.location.replace('not_telegram.html');
 
 const UID=tg?.initDataUnsafe?.user?.id||0;
+setInterval(()=>{ if(UID) loadUser(); }, 8000);
 let USERNAME=tg?.initDataUnsafe?.user?.username||'';
 let FIRST_NAME=tg?.initDataUnsafe?.user?.first_name||'Игрок';
 const _IS_DEV_MODE=!!localStorage.getItem('__tl_dev_uid__');

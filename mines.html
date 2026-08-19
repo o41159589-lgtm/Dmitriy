@@ -414,6 +414,7 @@ const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');}
 const UID=tg?.initDataUnsafe?.user?.id||0;
+TL_startBanPoll(UID);
 let userData=null,gameActive=false,currentBet=50,currentBombs=3,revealed=[],currentMult=1,currentWin=0,maxMult=25;
 
 function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),2800);}

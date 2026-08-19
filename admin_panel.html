@@ -2062,8 +2062,8 @@ function renderPlinkoMultsGrid(){
   grid.innerHTML = plinkoMults.map((v,i)=>`
     <input type="number" step="0.1" min="0" value="${v}" data-idx="${i}"
       onchange="plinkoMults[${i}]=parseFloat(this.value)||0"
-      style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:8px;
-      padding:8px 4px;color:var(--text);font-size:12px;text-align:center;font-family:var(--font-mono)"/>
+      style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:6px;
+      width:30px;padding:6px 2px;color:var(--text);font-size:11px;text-align:center;font-family:var(--font-mono);margin:0 auto;display:block"/>
   `).join('');
 }
 async function loadPlinkoMults(){

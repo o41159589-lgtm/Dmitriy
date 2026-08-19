@@ -529,7 +529,7 @@ async def cmd_ban(message: Message):
 
     u = await db.get_user(uid)
     name = u.get("first_name","?") if u else "?"
-    await db.set_banned(uid, True)
+    await db.set_banned(uid, True, reason)
     await message.answer(f"⛔ Пользователь <b>{name}</b> (ID: {uid}) заблокирован.\nПричина: {reason}", parse_mode="HTML")
 
     try:
@@ -836,75 +836,112 @@ async def api_gift_buy(req: web.Request):
 
         return web.json_response({"ok":True,"new_balance":new_bal})
 
+EURO_MULT = {"red":2,"black":2,"green":14,"even":2,"odd":2,"low":2,"high":2,
+             "dozen1":3,"dozen2":3,"dozen3":3,"col1":3,"col2":3,"col3":3}
+EURO_COL1 = {n for n in range(1,37) if n % 3 == 1}
+EURO_COL2 = {n for n in range(1,37) if n % 3 == 2}
+EURO_COL3 = {n for n in range(1,37) if n % 3 == 0}
+
+def _euro_check(n, c, bt):
+    if bt == "red":    return c == "red"
+    if bt == "black":  return c == "black"
+    if bt == "green":  return c == "green"
+    if bt == "even":   return n != 0 and n % 2 == 0
+    if bt == "odd":    return n % 2 == 1
+    if bt == "low":    return 1 <= n <= 18
+    if bt == "high":   return 19 <= n <= 36
+    if bt == "dozen1": return 1 <= n <= 12
+    if bt == "dozen2": return 13 <= n <= 24
+    if bt == "dozen3": return 25 <= n <= 36
+    if bt == "col1":   return n in EURO_COL1
+    if bt == "col2":   return n in EURO_COL2
+    if bt == "col3":   return n in EURO_COL3
+    return False
+
 async def api_spin(req: web.Request):
     data = await req.json()
-    uid, bet_amt, bet_type = int(data.get("user_id",0)), int(data.get("bet",0)), data.get("bet_type","")
+    uid = int(data.get("user_id", 0))
+
+    # bets: [{type, amount}, ...] — supports multiple simultaneous bet types.
+    # Falls back to the old single bet/bet_type shape for backward compatibility.
+    raw_bets = data.get("bets")
+    if not raw_bets:
+        raw_bets = [{"type": data.get("bet_type",""), "amount": int(data.get("bet",0))}]
+    bets = []
+    for b in raw_bets:
+        bt, amt = b.get("type",""), int(b.get("amount",0))
+        if bt in EURO_MULT and amt > 0:
+            bets.append({"type": bt, "amount": amt})
+    if not bets:
+        return web.json_response({"error":"Выберите тип ставки!"}, status=400)
+
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"user not found"}, status=404)
     if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
-    if bet_amt <= 0 or bet_amt > u["balance"]: return web.json_response({"error":"invalid bet"}, status=400)
+    total_cost = sum(b["amount"] for b in bets)
+    if total_cost <= 0 or total_cost > u["balance"]: return web.json_response({"error":"invalid bet"}, status=400)
+
     luck, global_k = await db.get_luck(uid), await db.get_global_luck_coeff()
     euro_k = await db.get_euro_luck_coeff()
-    # Combined: global * euro-specific coefficient
     effective_global_k = global_k * euro_k
 
-    def check(n,c,bt):
-        if bt=="red": return c=="red"
-        if bt=="black": return c=="black"
-        if bt=="green": return c=="green"
-        if bt=="even": return n!=0 and n%2==0
-        if bt=="odd": return n%2==1
-        if bt=="low": return 1<=n<=18
-        if bt=="high": return 19<=n<=36
-        if bt=="dozen1": return 1<=n<=12
-        if bt=="dozen2": return 13<=n<=24
-        return False
+    def net_profit(n, c):
+        return sum((b["amount"] * EURO_MULT[b["type"]] - b["amount"]) if _euro_check(n,c,b["type"]) else -b["amount"]
+                   for b in bets)
 
-    wins  = [(n,co) for n,co in ROULETTE_NUMBERS if check(n,co,bet_type)]
-    loses = [(n,co) for n,co in ROULETTE_NUMBERS if not check(n,co,bet_type)]
+    favorable   = [(n,c) for n,c in ROULETTE_NUMBERS if net_profit(n,c) > 0]
+    unfavorable = [(n,c) for n,c in ROULETTE_NUMBERS if net_profit(n,c) <= 0]
 
     if luck == 100:
-        rn, rc = random.choice(wins) if wins else random.choice(ROULETTE_NUMBERS)
+        rn, rc = random.choice(favorable) if favorable else random.choice(ROULETTE_NUMBERS)
     elif luck == 0:
-        rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
+        rn, rc = random.choice(unfavorable) if unfavorable else random.choice(ROULETTE_NUMBERS)
     elif luck == -1:
         if effective_global_k >= 1.0 or random.random() < effective_global_k:
             rn, rc = random.choice(ROULETTE_NUMBERS)
         else:
-            rn, rc = random.choice(loses) if loses else random.choice(ROULETTE_NUMBERS)
+            rn, rc = random.choice(unfavorable) if unfavorable else random.choice(ROULETTE_NUMBERS)
     else:
         effective = min(100, int(luck * effective_global_k))
         will_win = random.randint(0, 99) < effective
-        if will_win and wins: rn, rc = random.choice(wins)
-        elif loses:           rn, rc = random.choice(loses)
-        else:                 rn, rc = random.choice(ROULETTE_NUMBERS)
+        if will_win and favorable: rn, rc = random.choice(favorable)
+        elif unfavorable:          rn, rc = random.choice(unfavorable)
+        else:                      rn, rc = random.choice(ROULETTE_NUMBERS)
 
-    MULT = {"red":2,"black":2,"green":14,"even":2,"odd":2,"low":2,"high":2,"dozen1":3,"dozen2":3}
-    won  = check(rn, rc, bet_type)
-    mult = MULT.get(bet_type, 2)
     ridx = next(i for i,(n,c) in enumerate(ROULETTE_NUMBERS) if n==rn and c==rc)
-    gain = 0
-    if won:
-        gain = bet_amt * mult
-        profit = gain - bet_amt
-        new_bal = await db.add_to_balance(uid, gain - bet_amt)
-        await db.add_history(uid, "win", gain, f"Европ. рулетка: {rn} {rc}, x{mult}")
-        await db.update_spin_stats(uid, True, gain, 0)
-        asyncio.create_task(db.add_xp(uid, max(1, (gain - bet_amt) // 10)))
-        # win notification disabled
+
+    per_bet, total_gain = [], 0
+    for b in bets:
+        bwon = _euro_check(rn, rc, b["type"])
+        bgain = b["amount"] * EURO_MULT[b["type"]] if bwon else 0
+        total_gain += bgain
+        per_bet.append({"type": b["type"], "amount": b["amount"], "won": bwon, "gain": bgain})
+
+    profit = total_gain - total_cost
+    won = profit > 0
+    new_bal = await db.add_to_balance(uid, profit)
+
+    types_str = "+".join(b["type"] for b in bets)
+    if profit >= 0:
+        await db.add_history(uid, "win", total_gain, f"Европ. рулетка: {rn} {rc} ({types_str})")
+        await db.update_spin_stats(uid, True, total_gain, 0)
+        asyncio.create_task(db.add_xp(uid, max(1, profit // 10) if profit>0 else 1))
     else:
-        new_bal = await db.add_to_balance(uid, -bet_amt)
-        await db.add_history(uid, "lose", bet_amt, f"Европ. рулетка: {rn} {rc}")
-        await db.update_spin_stats(uid, False, 0, bet_amt)
-        asyncio.create_task(_passive_ref_income(uid, bet_amt))
-        asyncio.create_task(db.add_xp(uid, max(1, bet_amt // 100)))
+        await db.add_history(uid, "lose", total_cost - total_gain, f"Европ. рулетка: {rn} {rc} ({types_str})")
+        await db.update_spin_stats(uid, False, total_gain, total_cost - total_gain)
+        asyncio.create_task(_passive_ref_income(uid, total_cost - total_gain))
+        asyncio.create_task(db.add_xp(uid, max(1, total_cost // 100)))
 
     u2 = await db.get_user(uid)
     name = u2.get("first_name","?") if u2 else "?"
-    fire_log(log_game(uid, name, "Европейская рулетка", bet_amt,
-                      "Выигрыш" if won else "Проигрыш", gain, new_bal))
+    fire_log(log_game(uid, name, "Европейская рулетка", total_cost,
+                      "Выигрыш" if won else "Проигрыш", total_gain, new_bal))
 
-    return web.json_response({"result_n":rn,"result_c":rc,"result_index":ridx,"won":won,"gain":gain,"new_balance":new_bal})
+    return web.json_response({
+        "result_n": rn, "result_c": rc, "result_index": ridx,
+        "won": won, "gain": total_gain, "cost": total_cost, "profit": profit,
+        "bets": per_bet, "new_balance": new_bal,
+    })
 
 async def _enrich_bets(bets):
     enriched = []
@@ -1363,7 +1400,7 @@ async def api_admin_ban(req):
     if uid <= 0: return web.json_response({"error":"invalid uid"}, status=400)
     banned = bool(data.get("banned", True)); incognito = bool(data.get("incognito", False))
     reason = str(data.get("reason","—"))
-    await db.set_banned(uid, banned)
+    await db.set_banned(uid, banned, reason)
     try:
         if banned:
             await bot.send_message(uid, f"⛔ <b>Вы заблокированы в TopLuck Casino.</b>\nПричина: {_html.escape(reason)}\nОбратитесь к администратору если считаете это ошибкой.", parse_mode="HTML")
