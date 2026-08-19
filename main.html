@@ -73,7 +73,7 @@
 .ap-content{padding:0 16px 0 52px;font-size:13px;line-height:1.7;color:rgba(240,239,255,.7);
   max-height:0;opacity:0;overflow:hidden;
   transition:max-height .32s cubic-bezier(.4,0,.2,1),opacity .24s ease,padding .32s cubic-bezier(.4,0,.2,1);}
-.ap-content.open{max-height:400px;opacity:1;padding:4px 16px 14px 52px;}
+.ap-content.open{max-height:700px;opacity:1;padding:4px 16px 14px 52px;}
 .ap-content p{margin-bottom:5px;}
 .ap-content a{color:var(--white);text-decoration:none;}
 
@@ -499,17 +499,42 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
     <div class="about-card" style="margin-bottom:0">
       <div class="about-card-head">// ПРАВИЛА ИГР</div>
       <div class="about-person" onclick="togglePerson('r-roulette')"><div class="ap-head"><span class="ap-icon">🎡</span><div class="ap-title">Европейская рулетка</div><span class="ap-arr" id="arr-r-roulette">›</span></div></div>
-      <div class="ap-content" id="cnt-r-roulette"><p>Поставь монеты на цвет, чётность, число или несколько типов ставок сразу. Колесо 0–36.</p><p>🔴 Красное/Чёрное — <b>×2</b> | 🟢 Зеро — <b>×14</b></p><p>Чётное/Нечётное, 1–18/19–36 — <b>×2</b> | Дюжина/Колонна — <b>×3</b></p></div>
+      <div class="ap-content" id="cnt-r-roulette">
+        <p>Классическое колесо 0–36. Ставь монеты сразу на несколько типов — например «Чёрное» + «Чётное» + «1–18» одновременно, каждая ставка считается независимо.</p>
+        <p>🔴 Красное / ⚫ Чёрное — <b>×2</b> · 🟢 Зеро (только 0) — <b>×14</b></p>
+        <p>Чётное / Нечётное, 1–18 / 19–36 — <b>×2</b></p>
+        <p>Дюжина (1–12, 13–24 или 25–36) — <b>×3</b></p>
+        <p>Колонна — <b>×3</b>. На столе числа идут тремя вертикальными рядами по 12: Колонна 1 — 1,4,7…34; Колонна 2 — 2,5,8…35; Колонна 3 — 3,6,9…36.</p>
+      </div>
       <div class="about-person" onclick="togglePerson('r-mines')"><div class="ap-head"><span class="ap-icon">💣</span><div class="ap-title">Мины</div><span class="ap-arr" id="arr-r-mines">›</span></div></div>
-      <div class="ap-content" id="cnt-r-mines"><p>Поле 5×5. Открывай алмазы, избегай мин. Кешаут в любой момент!</p><p>Больше мин → выше множитель за каждый алмаз.</p></div>
+      <div class="ap-content" id="cnt-r-mines">
+        <p>Поле 5×5 (25 клеток). Перед стартом выбираешь, сколько мин спрятано — от 1 до 24.</p>
+        <p>Открываешь клетки одну за другой: попался алмаз 💎 — множитель растёт, попалась мина 💣 — раунд окончен, ставка сгорает.</p>
+        <p>Забрать выигрыш (кешаут) можно после любого открытого алмаза — чем больше мин выбрано и чем больше клеток открыто, тем выше множитель.</p>
+      </div>
       <div class="about-person" onclick="togglePerson('r-tower')"><div class="ap-head"><span class="ap-icon">🗼</span><div class="ap-title">Башня</div><span class="ap-arr" id="arr-r-tower">›</span></div></div>
-      <div class="ap-content" id="cnt-r-tower"><p>Поднимайся по этажам — на каждом 1 бомба из 3 клеток. Кешаут в любой момент.</p></div>
+      <div class="ap-content" id="cnt-r-tower">
+        <p>Поднимаешься по этажам башни. На каждом этаже 3 клетки, в одной из них спрятана бомба.</p>
+        <p>Выбрал безопасную клетку — множитель растёт, поднимаешься на этаж выше. Попал на бомбу — ставка сгорает.</p>
+        <p>Кешаут доступен на любом этаже — не обязательно доходить до самого верха.</p>
+      </div>
       <div class="about-person" onclick="togglePerson('r-gta')"><div class="ap-head"><span class="ap-icon">🏎️</span><div class="ap-title">ГТА Рулетка</div><span class="ap-arr" id="arr-r-gta">›</span></div></div>
-      <div class="ap-content" id="cnt-r-gta"><p>Общий банк — победитель выбирается случайно. Чем больше ставка — тем выше шанс.</p><p>Комиссия <b>3–8%</b> от выигрыша.</p></div>
+      <div class="ap-content" id="cnt-r-gta">
+        <p>Общий банк на всех игроков лобби. Каждый ставит монеты — победитель выбирается случайно, но чем больше твоя ставка относительно общего банка, тем выше шанс выиграть весь банк.</p>
+        <p>С выигрыша списывается комиссия казино <b>3–8%</b>.</p>
+      </div>
       <div class="about-person" onclick="togglePerson('r-blackjack')"><div class="ap-head"><span class="ap-icon">🃏</span><div class="ap-title">Блэкджек</div><span class="ap-arr" id="arr-r-blackjack">›</span></div></div>
-      <div class="ap-content" id="cnt-r-blackjack"><p>Классический 21. Набери сумму карт ближе к 21, не превысив её — и обыграй дилера.</p></div>
+      <div class="ap-content" id="cnt-r-blackjack">
+        <p>Классический 21 против дилера. Набери сумму карт как можно ближе к 21, не превысив её.</p>
+        <p>Туз считается за 1 или 11 (что выгоднее), картинки — за 10. Перебор (больше 21) — мгновенный проигрыш, даже если у дилера тоже перебор дальше по раздаче.</p>
+        <p>Блэкджек (21 с первых двух карт) обычно выплачивается по повышенному множителю.</p>
+      </div>
       <div class="about-person" onclick="togglePerson('r-plinko')" style="border-bottom:none"><div class="ap-head"><span class="ap-icon">🟣</span><div class="ap-title">Plinko</div><span class="ap-arr" id="arr-r-plinko">›</span></div></div>
-      <div class="ap-content" id="cnt-r-plinko" style="border-bottom:none"><p>Брось шар — он падает через колышки в слот с множителем. Края дают больше!</p><p>Множители: 20/10/5/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p></div>
+      <div class="ap-content" id="cnt-r-plinko" style="border-bottom:none">
+        <p>Брось шар — он падает вниз сквозь ряды колышков и случайно отскакивает влево-вправо, приземляясь в один из 15 слотов внизу.</p>
+        <p>Слоты по краям дают самый большой множитель, ближе к центру — меньше, а прямо по центру можно попасть на <b style="color:var(--red)">×0</b>.</p>
+        <p>Множители слева направо: 20/10/5/2.5/2/1.5/1.2/<b style="color:var(--red)">0</b>/1.2/1.5/2/2.5/5/10/20</p>
+      </div>
     </div>
   </div>
 </div>
