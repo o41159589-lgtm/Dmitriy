@@ -728,10 +728,13 @@ async def api_get_gifts(req: web.Request):
         result = await bot.get_available_gifts()
         gifts_list = []
         for gift in result.gifts:
+            st = gift.sticker
             gifts_list.append({
                 "id": gift.id,
-                "emoji": gift.sticker.emoji if gift.sticker else "🎁",
-                "sticker_file_id": gift.sticker.file_id if gift.sticker else None,
+                "emoji": st.emoji if st else "🎁",
+                "sticker_file_id": st.file_id if st else None,
+                "sticker_is_animated": bool(st.is_animated) if st else False,  # .tgs (Lottie)
+                "sticker_is_video":    bool(st.is_video) if st else False,     # .webm
                 "star_count": gift.star_count,
                 "total_count": gift.total_count,
                 "remaining_count": gift.remaining_count,
@@ -751,7 +754,13 @@ async def api_sticker(req: web.Request):
         f = await bot.get_file(file_id)
         buf = await bot.download_file(f.file_path)
         data = buf.read() if hasattr(buf, "read") else buf
-        resp = web.Response(body=data, content_type="application/octet-stream")
+        path = (f.file_path or "").lower()
+        if path.endswith(".webm"):        ctype = "video/webm"
+        elif path.endswith(".webp"):      ctype = "image/webp"
+        elif path.endswith((".png",)):    ctype = "image/png"
+        elif path.endswith((".jpg",".jpeg")): ctype = "image/jpeg"
+        else:                             ctype = "application/octet-stream"  # .tgs (gzipped Lottie)
+        resp = web.Response(body=data, content_type=ctype)
         resp.headers["Cache-Control"] = "public, max-age=604800, immutable"
         return resp
     except Exception as e:

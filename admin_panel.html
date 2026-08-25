@@ -16,6 +16,7 @@
   --glass-bg:rgba(255,255,255,0.04);--glass-border:rgba(255,255,255,0.08);--glass-blur:22px;
   /* legacy aliases for old JS references */
   --gold2:#D97706;--accent:var(--red);
+  --card-bg:var(--card);--card-br:var(--border2);--text-main:var(--text);--blue-faint:rgba(59,130,246,0.14);
   --font-display:'Bebas Neue',sans-serif;
   --font-ui:'Exo 2',sans-serif;
   --font-mono:'JetBrains Mono',monospace;
@@ -855,8 +856,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="abtn set" onclick="setGlogCat('backup',this)" style="font-size:10px;padding:5px 9px">💾 Бэкап <span id="gc-backup">0</span></button>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
-      <input type="text" id="glog-uid-filter" placeholder="Фильтр по ID..." inputmode="numeric"
-        style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:6px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;width:120px" oninput="renderGlogs()"/>
+      <div style="position:relative">
+        <input type="text" id="glog-uid-filter" placeholder="🔍 Поиск: ID, текст, тип..." inputmode="text"
+          style="background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:9px;padding:6px 26px 6px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;width:170px" oninput="renderGlogs()"/>
+        <span onclick="document.getElementById('glog-uid-filter').value='';renderGlogs()"
+          style="position:absolute;right:7px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-size:13px">✕</span>
+      </div>
       <button class="abtn set" onclick="loadGlogs()" style="font-size:11px;padding:6px 10px">↻ Обновить</button>
     </div>
   </div>
@@ -2386,23 +2391,33 @@ async function loadGlogs(){
   }
 }
 
+const GLOG_CAT_COLOR = {
+  users:'#3B82F6', games:'#8B5CF6', deposit:'#22C55E', withdraw:'#F59E0B',
+  withdraw_bot:'#F59E0B', admin:'#EF4444', broadcast:'#06B6D4', backup:'#777777'
+};
+const GLOG_CAT_LABEL = {
+  users:'👤 Игроки', games:'🎮 Игры', deposit:'💳 Депозит', withdraw:'📦 Вывод',
+  withdraw_bot:'🤖 Вывод (бот)', admin:'🛠 Админ', broadcast:'📢 Рассылка', backup:'💾 Бэкап'
+};
 function renderGlogs(){
   const listEl = document.getElementById('glog-list');
   if(!listEl) return;
-  const filterVal = (document.getElementById('glog-uid-filter')?.value||'').trim();
+  const filterVal = (document.getElementById('glog-uid-filter')?.value||'').trim().toLowerCase();
   let items = _glogRaw;
   if(filterVal){
-    items = items.filter(i => (i.text||'').includes(filterVal));
+    items = items.filter(i => (i.text||'').toLowerCase().includes(filterVal) || (i.category||'').toLowerCase().includes(filterVal));
   }
   if(!items.length){
-    listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted)">${filterVal?'Ничего не найдено по ID «'+esc(filterVal)+'»':'Записей нет'}</div>`;
+    listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted)">${filterVal?'Ничего не найдено по «'+esc(filterVal)+'»':'Записей нет'}</div>`;
     return;
   }
   listEl.innerHTML = items.map(i=>{
     const dt = new Date((i.created_at||0)*1000).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    return `<div style="padding:10px 12px;background:var(--card-bg);border:1px solid var(--card-br);border-radius:10px;font-size:12px;line-height:1.6">
+    const color = GLOG_CAT_COLOR[i.category] || 'var(--muted)';
+    const label = GLOG_CAT_LABEL[i.category] || esc(i.category||'');
+    return `<div style="padding:10px 12px;background:var(--card-bg);border:1px solid var(--card-br);border-left:3px solid ${color};border-radius:10px;font-size:12px;line-height:1.6">
       <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
-        <span style="color:var(--blue);font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px">${esc(i.category||'')}</span>
+        <span style="color:${color};font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;font-weight:700">${label}</span>
         <span style="color:var(--muted);font-size:10px;white-space:nowrap">${dt}</span>
       </div>
       <div style="color:var(--text-main)">${i.text||''}</div>

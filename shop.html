@@ -361,20 +361,38 @@ function makeSparkles(stage, color){
   });
 }
 
-// ── Real animated Telegram gift stickers (.tgs) ──
-const _stickerJsonCache = new Map();   // file_id -> parsed Lottie JSON
+// ── Real animated Telegram gift stickers (video .webm / Lottie .tgs / static .webp) ──
+const _stickerJsonCache = new Map();   // file_id -> parsed Lottie JSON (tgs only)
 const _stickerFailCache = new Set();   // file_id that failed once — don't retry
-async function renderGiftSticker(container, fileId){
-  if(!fileId || _stickerFailCache.has(fileId) || typeof pako==='undefined' || typeof lottie==='undefined') return false;
+async function renderGiftSticker(container, fileId, isVideo, isAnimated){
+  if(!fileId || _stickerFailCache.has(fileId)) return false;
   try{
-    let json = _stickerJsonCache.get(fileId);
-    if(!json){
-      const buf = await fetch('/api/sticker/'+fileId).then(r=>{ if(!r.ok) throw new Error('sticker fetch failed'); return r.arrayBuffer(); });
-      const text = pako.inflate(new Uint8Array(buf), {to:'string'});
-      json = JSON.parse(text);
-      _stickerJsonCache.set(fileId, json);
+    const url = '/api/sticker/'+fileId;
+    if(isVideo){
+      const v = document.createElement('video');
+      v.src = url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
+      v.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+      await new Promise((res,rej)=>{ v.onloadeddata=res; v.onerror=rej; setTimeout(rej,4000); });
+      container.appendChild(v);
+      return true;
     }
-    lottie.loadAnimation({container, renderer:'svg', loop:true, autoplay:true, animationData:json});
+    if(isAnimated){
+      if(typeof pako==='undefined' || typeof lottie==='undefined') return false;
+      let json = _stickerJsonCache.get(fileId);
+      if(!json){
+        const buf = await fetch(url).then(r=>{ if(!r.ok) throw new Error('sticker fetch failed'); return r.arrayBuffer(); });
+        json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
+        _stickerJsonCache.set(fileId, json);
+      }
+      lottie.loadAnimation({container, renderer:'svg', loop:true, autoplay:true, animationData:json});
+      return true;
+    }
+    // Static sticker (.webp) — browsers render webp natively, no decoding needed
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; setTimeout(rej,4000); });
+    container.appendChild(img);
     return true;
   }catch(e){
     _stickerFailCache.add(fileId);
@@ -401,6 +419,8 @@ function buildGiftCard(gift, source, idx){
     {id:gift.id||'',emoji:gift.emoji||'🎁',
      name:gift.name||(gift.emoji||'🎁'),
      sticker_file_id:gift.sticker_file_id||null,
+     sticker_is_video:gift.sticker_is_video||false,
+     sticker_is_animated:gift.sticker_is_animated||false,
      star_count:gift.star_count,is_limited:gift.is_limited||false},
     source);
 
@@ -440,7 +460,7 @@ function buildGiftCard(gift, source, idx){
     const lottieBox = document.createElement('div');
     lottieBox.className = 'gift-lottie';
     wrap.appendChild(lottieBox);
-    renderGiftSticker(lottieBox, gift.sticker_file_id).then(ok=>{
+    renderGiftSticker(lottieBox, gift.sticker_file_id, gift.sticker_is_video, gift.sticker_is_animated).then(ok=>{
       if(ok){ em.style.display='none'; lottieBox.style.display='block'; }
     });
   }
@@ -476,7 +496,7 @@ function buildGiftCard(gift, source, idx){
         : 'Отправляет лично владелец. Можно конвертировать в звёзды Telegram.'
     }</div>
     <button class="gift-buy-btn ${isBotSrc?'':'purple-btn'}" onclick="event.stopPropagation();
-      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${(gift.emoji||"🎁").replace(/'/g,"\\'") }',sticker_file_id:${JSON.stringify(gift.sticker_file_id||null)},star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
+      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${(gift.emoji||"🎁").replace(/'/g,"\\'") }',sticker_file_id:${JSON.stringify(gift.sticker_file_id||null)},sticker_is_video:${!!gift.sticker_is_video},sticker_is_animated:${!!gift.sticker_is_animated},star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
       ${isBotSrc ? '🎁 Купить подарок' : '👑 Заказать у владельца'}
     </button>`;
 
@@ -520,7 +540,7 @@ function openBuyModal(gift, source){
   modalLottie.style.display = 'none';
   modalLottie.innerHTML = '';
   if(gift.sticker_file_id){
-    renderGiftSticker(modalLottie, gift.sticker_file_id).then(ok=>{
+    renderGiftSticker(modalLottie, gift.sticker_file_id, gift.sticker_is_video, gift.sticker_is_animated).then(ok=>{
       if(ok){ document.getElementById('modal-icon').style.display='none'; modalLottie.style.display='block'; }
     });
   }
