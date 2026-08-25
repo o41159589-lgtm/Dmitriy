@@ -6,6 +6,8 @@
 <title>Магазин — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="shared.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 <script>
 (function(){
   try{
@@ -76,8 +78,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .gift-card-sm{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:20px;padding:16px 12px 14px;text-align:center;cursor:pointer;transition:transform .12s,border-color .15s;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;}
 .gift-card-sm:active{transform:scale(.96);}
 .gift-card-sm:hover{border-color:rgba(255,255,255,.2);}
-.gift-emoji-wrap{width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;}
+.gift-emoji-wrap{width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;position:relative;}
 .gift-emoji{font-size:40px;line-height:1;}
+.gift-emoji-big{font-size:40px;line-height:1;}
+.gift-lottie{position:absolute;inset:4px;display:none;}
 .gift-name{font-weight:700;font-size:13px;color:var(--text);margin-bottom:6px;}
 .gift-price{display:inline-flex;align-items:center;gap:4px;background:rgba(255,214,0,.1);border:1px solid rgba(255,214,0,.2);border-radius:8px;padding:5px 10px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--gold);margin-bottom:10px;}
 .gift-stars{font-size:10px;color:var(--muted2);margin-bottom:8px;}
@@ -198,8 +202,9 @@ input:checked+.toggle-slider::before{transform:translateX(20px);background:#000;
     <div class="error-msg" id="buy-error"></div>
 
     <div class="modal-preview">
-      <div class="mp-stage" id="mp-stage-bg">
+      <div class="mp-stage" id="mp-stage-bg" style="position:relative">
         <span id="modal-icon">🎁</span>
+        <div id="modal-lottie" class="gift-lottie" style="inset:8px"></div>
       </div>
       <div>
         <div class="mp-name" id="modal-name">—</div>
@@ -356,6 +361,27 @@ function makeSparkles(stage, color){
   });
 }
 
+// ── Real animated Telegram gift stickers (.tgs) ──
+const _stickerJsonCache = new Map();   // file_id -> parsed Lottie JSON
+const _stickerFailCache = new Set();   // file_id that failed once — don't retry
+async function renderGiftSticker(container, fileId){
+  if(!fileId || _stickerFailCache.has(fileId) || typeof pako==='undefined' || typeof lottie==='undefined') return false;
+  try{
+    let json = _stickerJsonCache.get(fileId);
+    if(!json){
+      const buf = await fetch('/api/sticker/'+fileId).then(r=>{ if(!r.ok) throw new Error('sticker fetch failed'); return r.arrayBuffer(); });
+      const text = pako.inflate(new Uint8Array(buf), {to:'string'});
+      json = JSON.parse(text);
+      _stickerJsonCache.set(fileId, json);
+    }
+    lottie.loadAnimation({container, renderer:'svg', loop:true, autoplay:true, animationData:json});
+    return true;
+  }catch(e){
+    _stickerFailCache.add(fileId);
+    return false;
+  }
+}
+
 // ── Build a big gift card ──
 function buildGiftCard(gift, source, idx){
   const theme = THEMES[idx % THEMES.length];
@@ -374,6 +400,7 @@ function buildGiftCard(gift, source, idx){
   card.onclick = () => openBuyModal(
     {id:gift.id||'',emoji:gift.emoji||'🎁',
      name:gift.name||(gift.emoji||'🎁'),
+     sticker_file_id:gift.sticker_file_id||null,
      star_count:gift.star_count,is_limited:gift.is_limited||false},
     source);
 
@@ -407,6 +434,16 @@ function buildGiftCard(gift, source, idx){
   // Stagger start of float per card for natural feel
   em.style.animationDelay = `${(idx % 4) * 0.4}s, ${(idx % 3) * 0.5}s`;
   wrap.appendChild(em);
+
+  // Real animated Telegram sticker (.tgs), if available — replaces the emoji once loaded
+  if(gift.sticker_file_id){
+    const lottieBox = document.createElement('div');
+    lottieBox.className = 'gift-lottie';
+    wrap.appendChild(lottieBox);
+    renderGiftSticker(lottieBox, gift.sticker_file_id).then(ok=>{
+      if(ok){ em.style.display='none'; lottieBox.style.display='block'; }
+    });
+  }
   stage.appendChild(wrap);
 
   // Sparkles
@@ -439,7 +476,7 @@ function buildGiftCard(gift, source, idx){
         : 'Отправляет лично владелец. Можно конвертировать в звёзды Telegram.'
     }</div>
     <button class="gift-buy-btn ${isBotSrc?'':'purple-btn'}" onclick="event.stopPropagation();
-      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${(gift.emoji||"🎁").replace(/'/g,"\\'") }',star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
+      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${(gift.emoji||"🎁").replace(/'/g,"\\'") }',sticker_file_id:${JSON.stringify(gift.sticker_file_id||null)},star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
       ${isBotSrc ? '🎁 Купить подарок' : '👑 Заказать у владельца'}
     </button>`;
 
@@ -478,6 +515,15 @@ async function loadGifts(){
 function openBuyModal(gift, source){
   pendingGift = gift; currentSrc = source;
   document.getElementById('modal-icon').textContent      = gift.emoji;
+  document.getElementById('modal-icon').style.display    = '';
+  const modalLottie = document.getElementById('modal-lottie');
+  modalLottie.style.display = 'none';
+  modalLottie.innerHTML = '';
+  if(gift.sticker_file_id){
+    renderGiftSticker(modalLottie, gift.sticker_file_id).then(ok=>{
+      if(ok){ document.getElementById('modal-icon').style.display='none'; modalLottie.style.display='block'; }
+    });
+  }
   document.getElementById('modal-name').textContent      = gift.emoji + ' ' + (gift.name && gift.name !== gift.emoji ? gift.name : '');
   document.getElementById('modal-price').textContent     = (gift.star_count * 10) + ' 🪙 (⭐' + gift.star_count + ')';
   document.getElementById('mp-stage-bg').style.background =

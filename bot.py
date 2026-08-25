@@ -731,6 +731,7 @@ async def api_get_gifts(req: web.Request):
             gifts_list.append({
                 "id": gift.id,
                 "emoji": gift.sticker.emoji if gift.sticker else "🎁",
+                "sticker_file_id": gift.sticker.file_id if gift.sticker else None,
                 "star_count": gift.star_count,
                 "total_count": gift.total_count,
                 "remaining_count": gift.remaining_count,
@@ -741,6 +742,21 @@ async def api_get_gifts(req: web.Request):
     except Exception as e:
         logger.error(f"get_available_gifts: {e}")
         return web.json_response({"error": str(e), "gifts": []}, status=500)
+
+# Proxies a Telegram sticker file (.tgs — gzipped Lottie JSON) to the browser.
+# Keeps the bot token server-side; the frontend just fetches /api/sticker/{file_id}.
+async def api_sticker(req: web.Request):
+    file_id = req.match_info["file_id"]
+    try:
+        f = await bot.get_file(file_id)
+        buf = await bot.download_file(f.file_path)
+        data = buf.read() if hasattr(buf, "read") else buf
+        resp = web.Response(body=data, content_type="application/octet-stream")
+        resp.headers["Cache-Control"] = "public, max-age=604800, immutable"
+        return resp
+    except Exception as e:
+        logger.warning(f"sticker proxy error ({file_id}): {e}")
+        return web.json_response({"error": str(e)}, status=404)
 
 async def api_gift_buy(req: web.Request):
     data         = await req.json()
@@ -2171,6 +2187,7 @@ async def start_web():
     app.router.add_get ("/api/history/{uid}",      api_history)
     app.router.add_get ("/api/invoice",            api_invoice)
     app.router.add_get ("/api/gifts",              api_get_gifts)
+    app.router.add_get ("/api/sticker/{file_id}",   api_sticker)
     app.router.add_post("/api/spin",               api_spin)
     app.router.add_get ("/api/gta/lobby",          api_gta_lobby)
     app.router.add_post("/api/gta/bet",            api_gta_bet)
