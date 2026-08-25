@@ -85,7 +85,8 @@ body::before{
   backdrop-filter:blur(8px);
 }
 .wheel-frame{position:relative;width:272px;height:272px;}
-#wc{position:absolute;inset:0;border-radius:50%;filter:drop-shadow(0 8px 24px rgba(0,30,70,0.20));}
+#wc{position:absolute;inset:0;border-radius:50%;filter:drop-shadow(0 8px 24px rgba(0,30,70,0.20));
+  will-change:transform;transform:translateZ(0);backface-visibility:hidden;}
 .w-ptr{
   position:absolute;top:-2px;left:50%;transform:translateX(-50%);
   width:0;height:0;
@@ -380,10 +381,6 @@ async function spinEuro(){
 
   // Jump to the wheel first so a fast bottom→top scroll can't collide with the spin animation
   window.scrollTo({top:0,behavior:'smooth'});
-  // Lock scrolling for the whole spin: on mobile, fast scrolling starves canvas repaint
-  // (the wheel visually freezes/looks idle even though it's still spinning internally)
-  document.body.style.overflow='hidden';
-  document.documentElement.style.overflow='hidden';
 
   spinning=true;stopIdle();
   if(animReq){cancelAnimationFrame(animReq);animReq=null;}
@@ -396,8 +393,6 @@ async function spinEuro(){
   if(!res||res.error){
     toast(res?.error||'Ошибка сервера','err');
     spinning=false;document.getElementById('spin-btn').disabled=false;startIdle();
-    document.body.style.overflow='';
-    document.documentElement.style.overflow='';
     return;
   }
 
@@ -455,8 +450,6 @@ async function spinEuro(){
     document.getElementById('r-bal').textContent=res.new_balance??0;
     addHist(res.result_n,res.result_c);
     spinning=false;document.getElementById('spin-btn').disabled=false;
-    document.body.style.overflow='';
-    document.documentElement.style.overflow='';
     setTimeout(()=>{
       document.getElementById('res-lbl').innerHTML=`${ico2}<br>${cname}`;
       startIdle();

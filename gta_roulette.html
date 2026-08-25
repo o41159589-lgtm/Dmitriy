@@ -47,7 +47,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 
 /* Wheel */
 .wheel-wrap{position:relative;display:flex;align-items:center;justify-content:center;}
-#gc{display:block;border-radius:50%;}
+#gc{display:block;border-radius:50%;will-change:transform;transform:translateZ(0);backface-visibility:hidden;}
 /* Gold pointer — same as European */
 .g-ptr{position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:22px solid var(--gold);filter:drop-shadow(0 0 8px rgba(255,214,0,.9));z-index:10;}
 
