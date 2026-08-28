@@ -279,6 +279,7 @@ body{background:transparent!important;}
   font-family:'Nunito',sans-serif;
   font-size:9.5px;font-weight:800;letter-spacing:.3px;
   gap:4px;
+  text-decoration:none;cursor:pointer;
 }
 .nav-btn svg{display:none;}
 .nav-btn .nb-badge{width:30px;height:30px;display:block;transition:transform .15s;}
@@ -673,17 +674,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
 </div>
 
 <!-- SHOP -->
-<div class="page" id="page-shop">
-  <div class="shop-content">
-    <div class="shop-header"><div class="shop-title">МАГАЗИН</div><div style="display:flex;align-items:center;gap:8px"><div class="shop-bal"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="shop-bal">—</span></div><button onclick="openTopup()" style="background:linear-gradient(135deg,#4898E0,#2060C0);border:none;border-radius:10px;color:#fff;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(40,80,200,0.25);">+ ПОПОЛНИТЬ</button></div></div>
-    <div class="hist-filter" style="grid-template-columns:1fr 1fr;margin-bottom:12px"><div class="hf a" onclick="shopTab('bot',this)">🤖 От бота</div><div class="hf" onclick="shopTab('owner',this)">👑 От владельца</div></div>
-    <div id="shop-bot"><div class="owner-note" style="border-color:rgba(216,40,74,.25);background:rgba(255,230,230,0.75);color:#A01828;">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div><div id="bot-gifts-inner"><div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div></div></div>
-    <div id="shop-owner" style="display:none"><div class="owner-note">👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>✅ <b>Можно конвертировать в звёзды</b>.<br><br>После покупки владелец получит уведомление.</div><div class="gift-grid" id="owner-gifts-grid"></div></div>
-  </div>
-</div>
-
-<!-- BUY MODAL -->
-<div class="ov" id="buy-modal" onclick="closeBuyModal(event)"><div class="modal" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">КУПИТЬ ПОДАРОК</div><div class="error-msg" id="buy-error"></div><div class="modal-gift-preview"><div class="mg-icon" id="m-icon">🎁</div><div><div class="mg-name" id="m-name">—</div><div class="mg-price"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="m-price">—</span> монет</div></div></div><div class="form-group"><label class="form-label">Кому:</label><div class="rc-btns"><div class="rc-btn active" onclick="setRecipient('self',this)">🙋 Себе</div><div class="rc-btn" onclick="setRecipient('other',this)">👤 По ID</div></div><div id="m-recipient-wrap" style="display:none;margin-top:6px"><input class="form-input" id="m-recipient" type="number" placeholder="Telegram ID получателя" inputmode="numeric"></div></div><div class="toggle-row"><span class="toggle-label">🎭 Анонимно</span><label class="toggle"><input type="checkbox" id="m-anon"><span class="toggle-slider"></span></label></div><div class="form-group"><label class="form-label">Подпись (необязательно):</label><textarea class="form-input" id="m-msg" rows="2" placeholder="Текст подписи..."></textarea><div class="msg-quick"><div class="mqb" onclick="document.getElementById('m-msg').value=''">Без подписи</div><div class="mqb" onclick="setAutoMsg()">Авто 🤖</div></div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeBuyModal()">Отмена</button><button class="btn-confirm" id="m-confirm" onclick="confirmPurchase()">КУПИТЬ ⭐</button></div></div></div>
+<!-- Shop moved to its own page: shop.html (was previously duplicated inline here) -->
 
 <!-- TOPUP MODAL -->
 <div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)"><div class="modal"><div class="mh"></div><div class="mt">💳 ПОПОЛНЕНИЕ</div><p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p><div class="ta-grid"><div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span><input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()" style="flex:1;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-align:center;"/><span style="color:var(--gold)">⭐</span></div><button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button></div></div>
@@ -694,7 +685,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
   <button class="nav-btn" onclick="showPage('home',this,0)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#4FAEEA"/><circle cx="18" cy="11.6" r="2.3" fill="#fff"/><rect x="15.7" y="16" width="4.6" height="11.4" rx="2.3" fill="#fff"/></svg>ИНФО</button>
   <button class="nav-btn" onclick="showPage('inventory',this,1)"><svg class="nb-badge" viewBox="0 0 36 36"><defs><clipPath id="nbClipProf"><circle cx="18" cy="18" r="17"/></clipPath></defs><circle cx="18" cy="18" r="17" fill="#4CC97A"/><g clip-path="url(#nbClipProf)" fill="#fff"><circle cx="18" cy="15" r="5.6"/><ellipse cx="18" cy="31.5" rx="11.5" ry="9"/></g></svg>ПРОФИЛЬ</button>
   <button class="nav-btn active" onclick="showPage('games',this,2)"><svg class="nb-badge" viewBox="0 0 36 36"><rect x="1" y="1" width="34" height="34" rx="12" fill="#FFB020"/><rect x="8" y="14" width="20" height="12" rx="6" fill="#fff"/><rect x="12.2" y="18.7" width="4.4" height="1.8" rx="0.9" fill="#FFB020"/><rect x="13.8" y="17.1" width="1.8" height="4.4" rx="0.9" fill="#FFB020"/><circle cx="23" cy="18" r="1.5" fill="#FFB020"/><circle cx="25.6" cy="20.6" r="1.5" fill="#FFB020"/></svg>ИГРЫ</button>
-  <button class="nav-btn" onclick="showPage('shop',this,3)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</button>
+  <a class="nav-btn" href="shop.html"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</a>
   <button class="nav-btn" id="nav-btn-history" style="display:none" onclick="showPage('history',this,4)"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#9B6BFF"/><circle cx="18" cy="18" r="9" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M18 12.5v6l3.8 2.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>ИСТОРИЯ</button>
 </nav>
 
@@ -729,8 +720,6 @@ async function fetchBotInfo(){
 }
 
 let userData=null,histData=[],curF='all',topupAmt=50;
-let pendingGift=null,pendingSource='bot',recipientMode='self';
-let shopGifts=[],shopLoaded=false;
 
 function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
 async function get(url){const r=await fetch(url);return r.json();}
@@ -772,7 +761,6 @@ function showPage(n,btn,i){
   document.getElementById('nav-ind').style.left=(i*pct)+'%';
   if(n==='history')renderHistory();
   if(n==='inventory')loadInventory();
-  if(n==='shop'&&!shopLoaded)loadShopGifts();
   if(n==='games')loadUser();
 }
 
@@ -900,46 +888,6 @@ async function loadRefHistory(){
   }catch(e){listEl.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Ошибка загрузки</p></div>';}
 }
 
-function shopTab(tab,el){document.querySelectorAll('[onclick^="shopTab"]').forEach(t=>t.classList.remove('a'));el.classList.add('a');document.getElementById('shop-bot').style.display=tab==='bot'?'':'none';document.getElementById('shop-owner').style.display=tab==='owner'?'':'none';}
-async function loadShopGifts(){
-  shopLoaded=true;const botInner=document.getElementById('bot-gifts-inner');
-  try{const data=await get('/api/gifts');shopGifts=data.gifts||[];if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}else renderBotGifts();}catch(e){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Не удалось загрузить подарки</p></div>';}
-  renderOwnerGifts();
-}
-function giftCard(gift,source){const limited=gift.is_limited&&gift.remaining_count!==null;const cls=limited?'gift-card limited':'gift-card';const emoji=gift.emoji||'🎁';const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';const displayCost=gift.coin_cost||(gift.star_count*10);const gd=JSON.stringify({id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,coin_cost:displayCost,is_limited:gift.is_limited||false}).replace(/"/g,'&quot;');return`<div class="${cls}" onclick="openBuyModal(${gd},'${source}')"><div class="gift-emoji-wrap"><span class="gift-emoji">${emoji}</span></div><div class="gift-name">${gift.name||'Подарок'}</div><div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> ${displayCost} монет</div>${remaining}<button class="gift-buy-btn">КУПИТЬ</button></div>`;}
-function renderBotGifts(){const inner=document.getElementById('bot-gifts-inner');if(inner)inner.innerHTML=`<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;}
-function renderOwnerGifts(){
-  const g=document.getElementById('owner-gifts-grid');
-  // Static special item — Random NFT
-  const staticGifts=[{id:'random_nft',emoji:'🎲',name:'Рандомный НФТ',star_count:400,coin_cost:4000,is_limited:false,is_static:true}];
-  const allOwner=[...staticGifts,...shopGifts];
-  if(!allOwner.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}
-  g.innerHTML=allOwner.map(gift=>giftCard(gift,'owner')).join('');
-}
-function openBuyModal(gift,source){pendingGift=gift;pendingSource=source;document.getElementById('m-icon').textContent=gift.emoji;document.getElementById('m-name').textContent=gift.name||gift.emoji;document.getElementById('m-price').textContent=gift.star_count;document.getElementById('m-msg').value='';document.getElementById('m-anon').checked=false;document.getElementById('buy-error').classList.remove('show');setRecipient('self',document.querySelector('.rc-btn'));document.getElementById('buy-modal').classList.add('open');}
-function closeBuyModal(e){if(!e||e.target.id==='buy-modal')document.getElementById('buy-modal').classList.remove('open');}
-function setRecipient(mode,el){recipientMode=mode;document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('m-recipient-wrap').style.display=mode==='other'?'block':'none';}
-function setAutoMsg(){document.getElementById('m-msg').value=`🎁 Подарок от ${FIRST_NAME}!`;}
-async function confirmPurchase(){
-  if(!pendingGift)return;
-  const errEl=document.getElementById('buy-error');errEl.classList.remove('show');
-  const bal=userData?.balance||0;
-  const costCoins=pendingGift.coin_cost||(pendingGift.star_count*10);if(bal<costCoins){errEl.textContent='Недостаточно монет!';errEl.classList.add('show');return;}
-  const anon=document.getElementById('m-anon').checked;
-  const msg=document.getElementById('m-msg').value.trim();
-  let recipientId=UID;
-  if(recipientMode==='other'){const rid=parseInt(document.getElementById('m-recipient').value)||0;if(!rid){errEl.textContent='Введите ID получателя';errEl.classList.add('show');return;}recipientId=rid;}
-  const btn=document.getElementById('m-confirm');btn.disabled=true;btn.textContent='Покупаем...';
-  const res=await post('/api/gift/buy',{user_id:UID,gift_id:pendingGift.id||'',star_count:pendingGift.star_count,coin_cost:costCoins,source:pendingSource,recipient_id:recipientId,anonymous:anon,message:msg||null,sender_name:anon?null:FIRST_NAME,gift_name:pendingGift.name||pendingGift.emoji,gift_emoji:pendingGift.emoji}).catch(()=>null);
-  btn.disabled=false;btn.textContent='КУПИТЬ ⭐';
-  if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
-  if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
-  document.getElementById('buy-modal').classList.remove('open');
-  if(pendingSource==='bot'){toast('🎁 Подарок отправлен!','ok');}
-  else{toast('📨 Заявка отправлена владельцу!','ok');setTimeout(()=>{if(tg?.openTelegramLink)tg.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=gift_request`);},1500);}
-  if(userData)userData.balance=res.new_balance??(userData.balance-pendingGift.star_count*10);updateUI();
-}
-
 function openTopup(){document.getElementById('ov-topup').classList.add('open');}
 function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
 function selAmt(el,v){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');topupAmt=v;document.getElementById('ta-custom').value='';document.getElementById('ta-amt').textContent=v;}
@@ -980,11 +928,12 @@ async function activatePromo(){
 function playSound(){}window.playSound=playSound;
 
 window.addEventListener('load',async()=>{
-  // Start fetching bot info immediately (async, no await — fallback already set)
-  fetchBotInfo();
   const urlParams=new URLSearchParams(window.location.search);
   const tabParam=urlParams.get('tab')||'games';
-  const tabIndex={home:0,inventory:1,games:2,shop:3};
+  if(tabParam==='shop'){location.replace('shop.html');return;}
+  // Start fetching bot info immediately (async, no await — fallback already set)
+  fetchBotInfo();
+  const tabIndex={home:0,inventory:1,games:2};
   const idx=tabIndex[tabParam]??2;
   const btn=document.querySelector(`[onclick*="'${tabParam}'"]`);
   if(btn)showPage(tabParam,btn,idx);else showPage('games',document.querySelectorAll('.nav-btn')[2],2);
