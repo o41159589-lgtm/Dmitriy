@@ -6,8 +6,8 @@
 <title>Магазин — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="shared.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" onerror="console.error('[TopLuck] pako failed to load — animated .tgs gifts will fall back to emoji')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js" onerror="console.error('[TopLuck] lottie-web failed to load — animated .tgs gifts will fall back to emoji')"></script>
 <script>
 (function(){
   try{
@@ -365,22 +365,26 @@ function makeSparkles(stage, color){
 const _stickerJsonCache = new Map();   // file_id -> parsed Lottie JSON (tgs only)
 const _stickerFailCache = new Set();   // file_id that failed once — don't retry
 async function renderGiftSticker(container, fileId, isVideo, isAnimated){
-  if(!fileId || _stickerFailCache.has(fileId)) return false;
+  if(!fileId){ console.warn('[TopLuck] gift has no sticker_file_id — check /api/gifts response'); return false; }
+  if(_stickerFailCache.has(fileId)) return false;
   try{
     const url = '/api/sticker/'+fileId;
     if(isVideo){
       const v = document.createElement('video');
       v.src = url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
       v.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-      await new Promise((res,rej)=>{ v.onloadeddata=res; v.onerror=rej; setTimeout(rej,4000); });
+      await new Promise((res,rej)=>{ v.onloadeddata=res; v.onerror=()=>rej(new Error('video load error')); setTimeout(()=>rej(new Error('video load timeout')),4000); });
       container.appendChild(v);
       return true;
     }
     if(isAnimated){
-      if(typeof pako==='undefined' || typeof lottie==='undefined') return false;
+      if(typeof pako==='undefined'){ console.error('[TopLuck] pako is not defined — CDN script did not load'); return false; }
+      if(typeof lottie==='undefined'){ console.error('[TopLuck] lottie is not defined — CDN script did not load'); return false; }
       let json = _stickerJsonCache.get(fileId);
       if(!json){
-        const buf = await fetch(url).then(r=>{ if(!r.ok) throw new Error('sticker fetch failed'); return r.arrayBuffer(); });
+        const r = await fetch(url);
+        if(!r.ok) throw new Error('sticker fetch failed: HTTP '+r.status);
+        const buf = await r.arrayBuffer();
         json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
         _stickerJsonCache.set(fileId, json);
       }
@@ -391,10 +395,11 @@ async function renderGiftSticker(container, fileId, isVideo, isAnimated){
     const img = document.createElement('img');
     img.src = url;
     img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-    await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; setTimeout(rej,4000); });
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('image load error')); setTimeout(()=>rej(new Error('image load timeout')),4000); });
     container.appendChild(img);
     return true;
   }catch(e){
+    console.error('[TopLuck] gift sticker render failed for file_id='+fileId, e);
     _stickerFailCache.add(fileId);
     return false;
   }
@@ -508,6 +513,10 @@ async function loadGifts(){
   try{
     const data = await get('/api/gifts');
     const gifts = data.gifts || [];
+    console.log('[TopLuck] /api/gifts response:', gifts.length, 'gifts. Example:', gifts[0]);
+    if(gifts.length && !gifts[0].sticker_file_id){
+      console.warn('[TopLuck] gifts have no sticker_file_id — server may be running an old bot.py, restart it');
+    }
 
     const botList   = document.getElementById('bot-gifts');
     const ownerList = document.getElementById('owner-gifts');
