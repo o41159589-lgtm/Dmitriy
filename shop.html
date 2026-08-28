@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Магазин9 — TopLuck</title>
+<title>Магазин — TopLuck</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="shared.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" onerror="console.error('[TopLuck] pako failed to load — animated .tgs gifts will fall back to emoji')"></script>
@@ -27,7 +27,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
 :root{--bg:#141414;--bg2:#1C1C1C;--bg3:#111125;--lime:#FFFFFF;--lime2:#E0E0E0;--pink:#FF2D6B;--cyan:#6BAAB8;--purple:#9977CC;--gold:#D9AC5A;--gold2:#E8C000;--green:#5DD98C;--red:#E07878;--blue:#00C8FF;--text:#F0EFFF;--muted:#848484;--muted2:#636363;--glass-bg:rgba(255,255,255,0.035);--glass-border:rgba(255,255,255,0.09);--border:rgba(255,255,255,0.12);--nav-h:70px;--font-display:'Bebas Neue',sans-serif;--font-ui:'Exo 2',sans-serif;--font-mono:'JetBrains Mono',monospace;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:16px;min-height:100vh;overflow-x:hidden;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:16px;overflow-x:hidden;padding-bottom:var(--nav-h);}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;}
 .liquid-bg{position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 55% 35% at 10% 5%,rgba(155,93,255,0.08) 0%,transparent 65%),radial-gradient(ellipse 40% 45% at 90% 90%,rgba(0,229,255,0.06) 0%,transparent 65%);}
 .toast{position:fixed;top:14px;left:14px;right:14px;z-index:500;background:rgba(12,12,28,0.95);border:1px solid var(--glass-border);backdrop-filter:blur(20px);border-radius:16px;padding:13px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);transition:transform .3s cubic-bezier(.4,0,.2,1);}
@@ -36,6 +36,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .toast.err{color:var(--red);border-color:rgba(224,120,120,.25);}
 .toast.info{color:var(--cyan);border-color:rgba(0,229,255,0.3);}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;position:sticky;top:0;z-index:50;background:rgba(6,6,15,0.88);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.08);}
+.nav{position:fixed;bottom:10px;left:10px;right:10px;height:56px;background:rgba(18,18,18,0.96);border:1px solid rgba(255,255,255,.1);border-radius:22px;backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.03);display:flex;z-index:100;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;text-decoration:none;color:var(--muted2);cursor:pointer;font-family:var(--font-ui);font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:color .2s;border-radius:22px;min-height:44px;}
+.nav-btn.active{color:var(--pink);}
+.nav-btn svg{width:22px;height:22px;}
 .fp-back{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:22px;cursor:pointer;font-weight:700;}
 .fp-title{font-family:var(--font-display);font-size:20px;color:var(--white);letter-spacing:1px;}
 .bal-chip{display:flex;align-items:center;gap:5px;background:rgba(255,214,0,0.1);border:1px solid rgba(255,214,0,0.25);border-radius:12px;padding:7px 12px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);}
@@ -81,7 +85,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .gift-emoji-wrap{width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;position:relative;}
 .gift-emoji{font-size:40px;line-height:1;}
 .gift-emoji-big{font-size:40px;line-height:1;}
-.gift-lottie{position:absolute;inset:4px;display:none;}
+.gift-lottie{position:absolute;inset:4px;display:none;overflow:hidden;width:calc(100% - 8px);height:calc(100% - 8px);}
+.gift-lottie svg,.gift-lottie video,.gift-lottie img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain;display:block;}
+.mp-stage{width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:16px;font-size:40px;}
 .gift-name{font-weight:700;font-size:13px;color:var(--text);margin-bottom:6px;}
 .gift-price{display:inline-flex;align-items:center;gap:4px;background:rgba(255,214,0,.1);border:1px solid rgba(255,214,0,.2);border-radius:8px;padding:5px 10px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--gold);margin-bottom:10px;}
 .gift-stars{font-size:10px;color:var(--muted2);margin-bottom:8px;}
@@ -717,5 +723,13 @@ async function confirmTopup(){
 loadUser();
 loadGifts();
 </script>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-btn" href="main.html?tab=home"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#4FAEEA"/><circle cx="18" cy="11.6" r="2.3" fill="#fff"/><rect x="15.7" y="16" width="4.6" height="11.4" rx="2.3" fill="#fff"/></svg>ИНФО</a>
+  <a class="nav-btn" href="main.html?tab=inventory"><svg viewBox="0 0 36 36"><defs><clipPath id="nbClipProf"><circle cx="18" cy="18" r="17"/></clipPath></defs><circle cx="18" cy="18" r="17" fill="#4CC97A"/><g clip-path="url(#nbClipProf)" fill="#fff"><circle cx="18" cy="15" r="5.6"/><ellipse cx="18" cy="31.5" rx="11.5" ry="9"/></g></svg>ПРОФИЛЬ</a>
+  <a class="nav-btn" href="main.html?tab=games"><svg viewBox="0 0 36 36"><rect x="1" y="1" width="34" height="34" rx="12" fill="#FFB020"/><rect x="8" y="14" width="20" height="12" rx="6" fill="#fff"/><rect x="12.2" y="18.7" width="4.4" height="1.8" rx="0.9" fill="#FFB020"/><rect x="13.8" y="17.1" width="1.8" height="4.4" rx="0.9" fill="#FFB020"/><circle cx="23" cy="18" r="1.5" fill="#FFB020"/><circle cx="25.6" cy="20.6" r="1.5" fill="#FFB020"/></svg>ИГРЫ</a>
+  <a class="nav-btn active" href="shop.html"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</a>
+</nav>
 </body>
 </html>
