@@ -139,6 +139,22 @@ input:checked+.toggle-slider::before{transform:translateX(20px);background:#000;
 <div class="toast" id="toast"></div>
 <div class="liquid-bg"></div>
 
+<!-- On-page debug console -->
+<button onclick="toggleDebugPanel()" style="position:fixed;bottom:14px;right:14px;z-index:998;
+  width:38px;height:38px;border-radius:50%;background:rgba(20,20,30,.85);border:1px solid rgba(255,255,255,.18);
+  color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;">🐞</button>
+<div id="dbg-panel" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.92);
+  flex-direction:column;padding:12px;box-sizing:border-box;font-family:monospace;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#fff">
+    <b>🐞 Логи магазина</b>
+    <div style="display:flex;gap:8px">
+      <button id="dbg-copy-btn" onclick="copyDebugLog()" style="background:rgba(255,255,255,.12);border:none;color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;">📋 Копировать</button>
+      <button onclick="toggleDebugPanel()" style="background:rgba(255,255,255,.12);border:none;color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;">✕ Закрыть</button>
+    </div>
+  </div>
+  <pre id="dbg-body" style="flex:1;overflow:auto;color:#7CFC7C;font-size:11px;white-space:pre-wrap;margin:0;line-height:1.5;"></pre>
+</div>
+
 <div class="topbar">
   <button class="fp-back" onclick="history.back()">‹</button>
   <div style="display:flex;align-items:center;gap:8px">
@@ -314,10 +330,44 @@ function toast(m,t='info'){
   el.textContent=m;el.className='toast '+t;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),2800);
 }
-async function get(url){const r=await fetch(url);return r.json();}
+// ── On-page debug console (visible in Telegram WebView too, no DevTools needed) ──
+const _dbgLog = [];
+function _dbg(kind, url, extra){
+  const line = `[${new Date().toLocaleTimeString('ru-RU')}] ${kind} ${url}${extra?' — '+extra:''}`;
+  _dbgLog.push(line);
+  if(_dbgLog.length>200)_dbgLog.shift();
+  const el = document.getElementById('dbg-body');
+  if(el && el.style.display!=='none'){ el.textContent = _dbgLog.join('\n'); el.scrollTop = el.scrollHeight; }
+}
+function toggleDebugPanel(){
+  const el = document.getElementById('dbg-panel');
+  const body = document.getElementById('dbg-body');
+  const show = el.style.display==='none';
+  el.style.display = show?'flex':'none';
+  if(show){ body.textContent = _dbgLog.join('\n'); body.scrollTop = body.scrollHeight; }
+}
+function copyDebugLog(){
+  navigator.clipboard?.writeText(_dbgLog.join('\n')).then(()=>{
+    const b = document.getElementById('dbg-copy-btn');
+    if(b){ const t=b.textContent; b.textContent='✅ Скопировано'; setTimeout(()=>b.textContent=t,1500); }
+  });
+}
+
+async function get(url){
+  try{
+    const r = await fetch(url);
+    _dbg('GET', url, 'HTTP '+r.status);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  }catch(e){ _dbg('GET', url, '❌ '+e.message); throw e; }
+}
 async function post(url,d){
-  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
-  return r.json();
+  try{
+    const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+    _dbg('POST', url, 'HTTP '+r.status);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  }catch(e){ _dbg('POST', url, '❌ '+e.message); throw e; }
 }
 
 async function loadUser(){
@@ -365,21 +415,23 @@ function makeSparkles(stage, color){
 const _stickerJsonCache = new Map();   // file_id -> parsed Lottie JSON (tgs only)
 const _stickerFailCache = new Set();   // file_id that failed once — don't retry
 async function renderGiftSticker(container, fileId, isVideo, isAnimated){
-  if(!fileId){ console.warn('[TopLuck] gift has no sticker_file_id — check /api/gifts response'); return false; }
+  if(!fileId){ _dbg('STICKER','(none)','⚠️ gift has no sticker_file_id'); console.warn('[TopLuck] gift has no sticker_file_id — check /api/gifts response'); return false; }
   if(_stickerFailCache.has(fileId)) return false;
   try{
     const url = '/api/sticker/'+fileId;
+    _dbg('STICKER', url, isVideo?'video':isAnimated?'tgs':'webp');
     if(isVideo){
       const v = document.createElement('video');
       v.src = url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
       v.style.cssText = 'width:100%;height:100%;object-fit:contain;';
       await new Promise((res,rej)=>{ v.onloadeddata=res; v.onerror=()=>rej(new Error('video load error')); setTimeout(()=>rej(new Error('video load timeout')),4000); });
       container.appendChild(v);
+      _dbg('STICKER', url, '✅ video rendered');
       return true;
     }
     if(isAnimated){
-      if(typeof pako==='undefined'){ console.error('[TopLuck] pako is not defined — CDN script did not load'); return false; }
-      if(typeof lottie==='undefined'){ console.error('[TopLuck] lottie is not defined — CDN script did not load'); return false; }
+      if(typeof pako==='undefined'){ _dbg('STICKER',url,'❌ pako not loaded'); console.error('[TopLuck] pako is not defined — CDN script did not load'); return false; }
+      if(typeof lottie==='undefined'){ _dbg('STICKER',url,'❌ lottie not loaded'); console.error('[TopLuck] lottie is not defined — CDN script did not load'); return false; }
       let json = _stickerJsonCache.get(fileId);
       if(!json){
         const r = await fetch(url);
@@ -389,6 +441,7 @@ async function renderGiftSticker(container, fileId, isVideo, isAnimated){
         _stickerJsonCache.set(fileId, json);
       }
       lottie.loadAnimation({container, renderer:'svg', loop:true, autoplay:true, animationData:json});
+      _dbg('STICKER', url, '✅ tgs rendered');
       return true;
     }
     // Static sticker (.webp) — browsers render webp natively, no decoding needed
@@ -397,8 +450,10 @@ async function renderGiftSticker(container, fileId, isVideo, isAnimated){
     img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
     await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('image load error')); setTimeout(()=>rej(new Error('image load timeout')),4000); });
     container.appendChild(img);
+    _dbg('STICKER', url, '✅ webp rendered');
     return true;
   }catch(e){
+    _dbg('STICKER', '/api/sticker/'+fileId, '❌ '+e.message);
     console.error('[TopLuck] gift sticker render failed for file_id='+fileId, e);
     _stickerFailCache.add(fileId);
     return false;
