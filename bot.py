@@ -372,7 +372,7 @@ async def cmd_start(message: Message):
         safe_name = _html.escape(user.first_name or "Игрок")
         is_new = not existed
         greeting = (
-            f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
+            f"🎉 <b>Добро пожаловать в TopLuck Casino777!</b>\n\n"
             f"👋 Привет, <b>{safe_name}</b>!\n\n"
             f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
             f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
