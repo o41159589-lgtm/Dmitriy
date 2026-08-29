@@ -1,196 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 115 168">
 <defs>
-
-  <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"  stop-color="#DCE6EE"/>
-    <stop offset="100%" stop-color="#EEF2F4"/>
+  <linearGradient id="tFace" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#D08060"/>
+    <stop offset="40%" stop-color="#C47848"/>
+    <stop offset="100%" stop-color="#A85030"/>
+  </linearGradient>
+  <linearGradient id="tSide" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#B86038"/>
+    <stop offset="100%" stop-color="#904020"/>
   </linearGradient>
   <linearGradient id="grassG" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"  stop-color="#8A9A6E"/>
-    <stop offset="100%" stop-color="#6C7C52"/>
+    <stop offset="0%" stop-color="#88DC40"/>
+    <stop offset="100%" stop-color="#58A020"/>
   </linearGradient>
-  <linearGradient id="grassTop" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"  stop-color="#9CAA7C"/>
-    <stop offset="100%" stop-color="#8A9A6E"/>
-  </linearGradient>
-
-  <linearGradient id="stoneFace" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%"   stop-color="#B7A896"/>
-    <stop offset="45%"  stop-color="#A69682"/>
-    <stop offset="100%" stop-color="#8E7C68"/>
-  </linearGradient>
-  <linearGradient id="stoneSide" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%"   stop-color="#7C6C5A"/>
-    <stop offset="100%" stop-color="#5E4F40"/>
-  </linearGradient>
-  <linearGradient id="stoneAO" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"   stop-color="rgba(0,0,0,0.16)"/>
-    <stop offset="14%"  stop-color="rgba(0,0,0,0)"/>
-    <stop offset="86%"  stop-color="rgba(0,0,0,0)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0.22)"/>
-  </linearGradient>
-  <linearGradient id="stoneRoofBand" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%"   stop-color="#6E5C48"/>
-    <stop offset="100%" stop-color="#4C3E30"/>
-  </linearGradient>
-
-  <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur stdDeviation="1.4"/>
+  <filter id="tDrop">
+    <feDropShadow dx="3" dy="5" stdDeviation="5" flood-color="rgba(80,30,0,0.28)"/>
   </filter>
-  <filter id="softBlurSm" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur stdDeviation="0.6"/>
-  </filter>
-
-  <filter id="towerShadow" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="3.5" result="blur"/>
-    <feOffset in="blur" dx="2" dy="4" result="offsetBlur"/>
-    <feFlood flood-color="#2A2018" flood-opacity="0.30" result="color"/>
-    <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
-    <feMerge>
-      <feMergeNode in="shadow"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-  </filter>
-
-  <radialGradient id="doorDeep" cx="50%" cy="15%" r="100%">
-    <stop offset="0%"  stop-color="#2A1B10"/>
-    <stop offset="100%" stop-color="#150C06"/>
-  </radialGradient>
-
-  <radialGradient id="skyVignette" cx="50%" cy="35%" r="75%">
-    <stop offset="0%"  stop-color="rgba(255,255,255,0)"/>
-    <stop offset="100%" stop-color="rgba(60,70,80,0.10)"/>
-  </radialGradient>
+  <filter id="cF"><feGaussianBlur stdDeviation="1.5"/></filter>
 </defs>
+<!-- Grass and shadow -->
+<ellipse cx="60" cy="162" rx="50" ry="8" fill="rgba(40,80,0,0.18)" filter="url(#cF)"/>
+<ellipse cx="60" cy="158" rx="50" ry="14" fill="url(#grassG)"/>
+<ellipse cx="60" cy="154" rx="42" ry="10" fill="#90E048"/>
+<rect x="18" y="148" width="84" height="12" rx="6" fill="url(#grassG)"/>
 
-<rect x="0" y="0" width="115" height="168" fill="url(#skyG)"/>
-<rect x="0" y="0" width="115" height="168" fill="url(#skyVignette)"/>
+<!-- Tower (tilted 5° right) -->
+<g transform="rotate(5,55,90)" filter="url(#tDrop)">
+  <!-- Ground level -->
+  <rect x="16" y="93" width="76" height="58" rx="5" fill="url(#tFace)" stroke="#955028" stroke-width="1.2"/>
+  <!-- Brick lines base -->
+  <line x1="16" y1="108" x2="92" y2="108" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="16" y1="123" x2="92" y2="123" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="16" y1="138" x2="92" y2="138" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="54" y1="93" x2="54" y2="151" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
+  <!-- Main arch / door opening -->
+  <path d="M 30,151 L 30,122 Q 54,109 78,122 L 78,151 Z" fill="#621A08" opacity="0.75"/>
+  <path d="M 32,151 L 32,124 Q 54,113 76,124 L 76,151 Z" fill="#401008" opacity="0.5"/>
+  <!-- Left shadow -->
+  <rect x="16" y="93" width="9" height="58" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <!-- Right shadow -->
+  <rect x="83" y="93" width="9" height="58" rx="2" fill="rgba(0,0,0,0.08)"/>
 
-<ellipse cx="58" cy="161" rx="48" ry="7" fill="rgba(30,35,20,0.22)" filter="url(#softBlur)"/>
-<rect x="12" y="150" width="92" height="14" rx="3" fill="url(#grassG)"/>
-<ellipse cx="58" cy="150" rx="46" ry="7" fill="url(#grassTop)"/>
-<g stroke="rgba(255,255,255,0.10)" stroke-width="0.6">
-  <line x1="20" y1="151" x2="19" y2="146"/>
-  <line x1="30" y1="152" x2="29" y2="147"/>
-  <line x1="45" y1="153" x2="44" y2="148"/>
-  <line x1="62" y1="153" x2="63" y2="148"/>
-  <line x1="78" y1="152" x2="79" y2="147"/>
-  <line x1="90" y1="151" x2="91" y2="146"/>
+  <!-- Level 2 -->
+  <rect x="20" y="58" width="68" height="38" rx="4" fill="url(#tFace)" stroke="#905028" stroke-width="1.2"/>
+  <line x1="20" y1="73" x2="88" y2="73" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="20" y1="87" x2="88" y2="87" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <!-- Arches level 2 -->
+  <path d="M 26,96 Q 26,82 44,82 Q 54,82 54,96" fill="rgba(0,0,0,0.28)"/>
+  <path d="M 54,96 Q 54,82 66,82 Q 82,82 82,96" fill="rgba(0,0,0,0.28)"/>
+  <rect x="20" y="58" width="8" height="38" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="80" y="58" width="8" height="38" rx="2" fill="rgba(0,0,0,0.07)"/>
+
+  <!-- Level 3 -->
+  <rect x="24" y="26" width="60" height="36" rx="4" fill="url(#tFace)" stroke="#905028" stroke-width="1.2"/>
+  <line x1="24" y1="41" x2="84" y2="41" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <line x1="24" y1="55" x2="84" y2="55" stroke="rgba(0,0,0,0.10)" stroke-width="1"/>
+  <path d="M 32,62 Q 32,50 54,50 Q 76,50 76,62" fill="rgba(0,0,0,0.24)"/>
+  <rect x="24" y="26" width="8" height="36" rx="2" fill="rgba(255,255,255,0.07)"/>
+  <rect x="76" y="26" width="8" height="36" rx="2" fill="rgba(0,0,0,0.07)"/>
+
+  <!-- Battlements bar -->
+  <rect x="24" y="14" width="60" height="16" rx="3" fill="url(#tSide)" stroke="#804020" stroke-width="1"/>
+  <!-- 4 merlons -->
+  <rect x="24" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
+  <rect x="40" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
+  <rect x="56" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
+  <rect x="72" y="8"  width="12" height="16" rx="3" fill="url(#tFace)" stroke="#905028" stroke-width="1"/>
 </g>
 
-<g transform="rotate(5,55,90)" filter="url(#towerShadow)">
-
-  <rect x="17" y="92" width="76" height="58" rx="2" fill="url(#stoneFace)"/>
-  <rect x="17" y="92" width="76" height="58" rx="2" fill="url(#stoneAO)"/>
-  <rect x="17" y="92" width="76" height="58" rx="2" fill="none" stroke="#4C3E30" stroke-width="1" opacity="0.55"/>
-  <g stroke="rgba(40,30,20,0.18)" stroke-width="0.8">
-    <line x1="17" y1="103" x2="93" y2="103"/>
-    <line x1="17" y1="114" x2="93" y2="114"/>
-    <line x1="17" y1="125" x2="93" y2="125"/>
-    <line x1="17" y1="136" x2="93" y2="136"/>
-  </g>
-  <g stroke="rgba(40,30,20,0.14)" stroke-width="0.7">
-    <line x1="30" y1="92"  x2="30" y2="103"/>
-    <line x1="50" y1="92"  x2="50" y2="103"/>
-    <line x1="70" y1="92"  x2="70" y2="103"/>
-    <line x1="40" y1="103" x2="40" y2="114"/>
-    <line x1="60" y1="103" x2="60" y2="114"/>
-    <line x1="80" y1="103" x2="80" y2="114"/>
-    <line x1="25" y1="114" x2="25" y2="122"/>
-    <line x1="30" y1="125" x2="30" y2="136"/>
-    <line x1="50" y1="125" x2="50" y2="136"/>
-    <line x1="70" y1="125" x2="70" y2="136"/>
-    <line x1="85" y1="114" x2="85" y2="122"/>
-  </g>
-  <rect x="83" y="92" width="10" height="58" rx="2" fill="rgba(0,0,0,0.10)"/>
-  <rect x="17" y="92" width="7" height="58" rx="2" fill="rgba(255,255,255,0.06)"/>
-
-  <path d="M 32,150 L 32,121 Q 55,107 78,121 L 78,150 Z" fill="url(#doorDeep)"/>
-  <path d="M 32,150 L 32,121 Q 55,107 78,121 L 78,150 Z" fill="none" stroke="#3A2A1C" stroke-width="1.4" opacity="0.7"/>
-  <path d="M 32,121 Q 55,107 78,121" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="3" stroke-linecap="round"/>
-  <path d="M 34,150 L 34,123 Q 55,110 76,123 L 76,150 Z" fill="#0F0A05" opacity="0.55"/>
-
-  <rect x="21" y="57" width="68" height="38" rx="2" fill="url(#stoneFace)"/>
-  <rect x="21" y="57" width="68" height="38" rx="2" fill="url(#stoneAO)"/>
-  <rect x="21" y="57" width="68" height="38" rx="2" fill="none" stroke="#4C3E30" stroke-width="1" opacity="0.55"/>
-  <g stroke="rgba(40,30,20,0.18)" stroke-width="0.8">
-    <line x1="21" y1="69" x2="89" y2="69"/>
-    <line x1="21" y1="81" x2="89" y2="81"/>
-  </g>
-  <g stroke="rgba(40,30,20,0.14)" stroke-width="0.7">
-    <line x1="35" y1="57" x2="35" y2="69"/>
-    <line x1="55" y1="57" x2="55" y2="69"/>
-    <line x1="75" y1="57" x2="75" y2="69"/>
-    <line x1="45" y1="69" x2="45" y2="81"/>
-    <line x1="65" y1="69" x2="65" y2="81"/>
-  </g>
-  <rect x="81" y="57" width="8" height="38" rx="2" fill="rgba(0,0,0,0.09)"/>
-  <rect x="21" y="57" width="6" height="38" rx="2" fill="rgba(255,255,255,0.055)"/>
-  <path d="M 34,95 Q 34,84 45,84 Q 52,84 52,95" fill="#150C06" opacity="0.8"/>
-  <path d="M 58,95 Q 58,84 65,84 Q 76,84 76,95" fill="#150C06" opacity="0.8"/>
-  <path d="M 34,95 Q 34,84 45,84 Q 52,84 52,95" fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="1.2"/>
-  <path d="M 58,95 Q 58,84 65,84 Q 76,84 76,95" fill="none" stroke="rgba(0,0,0,0.3)" stroke-width="1.2"/>
-
-  <rect x="25" y="26" width="60" height="35" rx="2" fill="url(#stoneFace)"/>
-  <rect x="25" y="26" width="60" height="35" rx="2" fill="url(#stoneAO)"/>
-  <rect x="25" y="26" width="60" height="35" rx="2" fill="none" stroke="#4C3E30" stroke-width="1" opacity="0.55"/>
-  <g stroke="rgba(40,30,20,0.18)" stroke-width="0.8">
-    <line x1="25" y1="38" x2="85" y2="38"/>
-    <line x1="25" y1="50" x2="85" y2="50"/>
-  </g>
-  <g stroke="rgba(40,30,20,0.14)" stroke-width="0.7">
-    <line x1="38" y1="26" x2="38" y2="38"/>
-    <line x1="58" y1="26" x2="58" y2="38"/>
-    <line x1="72" y1="26" x2="72" y2="38"/>
-    <line x1="48" y1="38" x2="48" y2="50"/>
-    <line x1="68" y1="38" x2="68" y2="50"/>
-  </g>
-  <rect x="77" y="26" width="8" height="35" rx="2" fill="rgba(0,0,0,0.09)"/>
-  <rect x="25" y="26" width="6" height="35" rx="2" fill="rgba(255,255,255,0.055)"/>
-  <path d="M 34,61 Q 34,48 55,48 Q 76,48 76,61" fill="#150C06" opacity="0.78"/>
-  <path d="M 34,61 Q 34,48 55,48 Q 76,48 76,61" fill="none" stroke="rgba(0,0,0,0.28)" stroke-width="1.2"/>
-
-  <rect x="25" y="15" width="60" height="15" rx="1.5" fill="url(#stoneRoofBand)"/>
-  <rect x="25" y="15" width="60" height="15" rx="1.5" fill="none" stroke="#3A2E22" stroke-width="1" opacity="0.6"/>
-  <g stroke="rgba(0,0,0,0.20)" stroke-width="0.7">
-    <line x1="40" y1="15" x2="40" y2="30"/>
-    <line x1="55" y1="15" x2="55" y2="30"/>
-    <line x1="70" y1="15" x2="70" y2="30"/>
-  </g>
-  <rect x="25" y="24" width="60" height="6" fill="rgba(0,0,0,0.12)"/>
-
-  <g>
-    <rect x="25" y="9" width="11" height="16" rx="1.2" fill="url(#stoneFace)" stroke="#4C3E30" stroke-width="0.9"/>
-    <rect x="25" y="9" width="11" height="16" rx="1.2" fill="url(#stoneAO)"/>
-    <rect x="41" y="9" width="11" height="16" rx="1.2" fill="url(#stoneFace)" stroke="#4C3E30" stroke-width="0.9"/>
-    <rect x="41" y="9" width="11" height="16" rx="1.2" fill="url(#stoneAO)"/>
-    <rect x="57" y="9" width="11" height="16" rx="1.2" fill="url(#stoneFace)" stroke="#4C3E30" stroke-width="0.9"/>
-    <rect x="57" y="9" width="11" height="16" rx="1.2" fill="url(#stoneAO)"/>
-    <rect x="73" y="9" width="11" height="16" rx="1.2" fill="url(#stoneFace)" stroke="#4C3E30" stroke-width="0.9"/>
-    <rect x="73" y="9" width="11" height="16" rx="1.2" fill="url(#stoneAO)"/>
-    <rect x="33" y="9" width="3" height="16" fill="rgba(0,0,0,0.10)"/>
-    <rect x="49" y="9" width="3" height="16" fill="rgba(0,0,0,0.10)"/>
-    <rect x="65" y="9" width="3" height="16" fill="rgba(0,0,0,0.10)"/>
-    <rect x="81" y="9" width="3" height="16" fill="rgba(0,0,0,0.10)"/>
-  </g>
-
-  <g opacity="0.35" filter="url(#softBlurSm)">
-    <circle cx="28" cy="100" r="1.1" fill="rgba(0,0,0,0.25)"/>
-    <circle cx="61" cy="97" r="0.9" fill="rgba(0,0,0,0.2)"/>
-    <circle cx="86" cy="130" r="1" fill="rgba(0,0,0,0.22)"/>
-    <circle cx="40" cy="140" r="0.8" fill="rgba(255,255,255,0.18)"/>
-    <circle cx="70" cy="65" r="0.9" fill="rgba(0,0,0,0.2)"/>
-    <circle cx="30" cy="35" r="0.8" fill="rgba(0,0,0,0.18)"/>
-    <circle cx="66" cy="34" r="1" fill="rgba(255,255,255,0.16)"/>
-    <circle cx="47" cy="17" r="0.7" fill="rgba(0,0,0,0.2)"/>
-  </g>
-</g>
-
+<!-- Small cloud -->
 <g opacity="0.92">
   <ellipse cx="97" cy="27" rx="18" ry="10" fill="rgba(255,255,255,0.94)"/>
   <ellipse cx="83" cy="30" rx="15" ry="14" fill="rgba(255,255,255,0.94)"/>
   <ellipse cx="105" cy="31" rx="13" ry="11" fill="rgba(255,255,255,0.90)"/>
-  <ellipse cx="97" cy="36" rx="14" ry="6" fill="rgba(180,210,230,0.35)" filter="url(#softBlur)"/>
+  <ellipse cx="97" cy="36" rx="14" ry="6" fill="rgba(180,210,230,0.35)" filter="url(#cF)"/>
 </g>
-
+<!-- Stars -->
+<text x="4"  y="26" font-size="15" fill="rgba(80,180,30,0.65)" font-family="serif">★</text>
+<text x="84" y="11" font-size="12" fill="rgba(255,200,0,0.80)" font-family="serif">★</text>
 </svg>

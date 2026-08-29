@@ -37,6 +37,18 @@
     <feGaussianBlur stdDeviation="1" result="b"/>
     <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
+  <linearGradient id="bucketPurple" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#9050F0"/>
+    <stop offset="100%" stop-color="#5A18A8"/>
+  </linearGradient>
+  <linearGradient id="bucketBlue" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#5888F0"/>
+    <stop offset="100%" stop-color="#2850B8"/>
+  </linearGradient>
+  <linearGradient id="bucketGreen" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#40C888"/>
+    <stop offset="100%" stop-color="#148050"/>
+  </linearGradient>
 </defs>
 
 <!-- Board background -->
@@ -59,16 +71,16 @@
 </g>
 <!-- Row 3: 3 pegs (y=62) -->
 <g filter="url(#pegShadow)">
-  <circle cx="40" cy="62" r="7" fill="url(#pegG)"/><circle cx="40" cy="62" r="7" fill="url(#pegShine)"/>
-  <circle cx="70" cy="62" r="7" fill="url(#pegG)"/><circle cx="70" cy="62" r="7" fill="url(#pegShine)"/>
-  <circle cx="100" cy="62" r="7" fill="url(#pegG)"/><circle cx="100" cy="62" r="7" fill="url(#pegShine)"/>
+  <circle cx="40" cy="62" r="7" fill="url(#pegG)"/><circle cx="40" cy="62" r="7" fill="url(#pegShine)"/><circle cx="40" cy="62" r="7" fill="none" stroke="rgba(180,110,0,0.40)" stroke-width="1"/>
+  <circle cx="70" cy="62" r="7" fill="url(#pegG)"/><circle cx="70" cy="62" r="7" fill="url(#pegShine)"/><circle cx="70" cy="62" r="7" fill="none" stroke="rgba(180,110,0,0.40)" stroke-width="1"/>
+  <circle cx="100" cy="62" r="7" fill="url(#pegG)"/><circle cx="100" cy="62" r="7" fill="url(#pegShine)"/><circle cx="100" cy="62" r="7" fill="none" stroke="rgba(180,110,0,0.40)" stroke-width="1"/>
 </g>
 <!-- Row 4: 4 pegs (y=82) -->
 <g filter="url(#pegShadow)">
-  <circle cx="25" cy="82" r="7" fill="url(#pegG)"/><circle cx="25" cy="82" r="7" fill="url(#pegShine)"/>
-  <circle cx="55" cy="82" r="7" fill="url(#pegG)"/><circle cx="55" cy="82" r="7" fill="url(#pegShine)"/>
-  <circle cx="85" cy="82" r="7" fill="url(#pegG)"/><circle cx="85" cy="82" r="7" fill="url(#pegShine)"/>
-  <circle cx="115" cy="82" r="7" fill="url(#pegG)"/><circle cx="115" cy="82" r="7" fill="url(#pegShine)"/>
+  <circle cx="25" cy="82" r="7" fill="url(#pegG)"/><circle cx="25" cy="82" r="7" fill="url(#pegShine)"/><circle cx="25" cy="82" r="7" fill="none" stroke="rgba(180,110,0,0.40)" stroke-width="1"/>
+  <circle cx="55" cy="82" r="7" fill="url(#pegG)"/><circle cx="55" cy="82" r="7" fill="url(#pegShine)"/><circle cx="55" cy="82" r="7" fill="none" stroke="rgba(180,110,0,0.40)" stroke-width="1"/>
+  <circle cx="85" cy="82" r="7" fill="url(#pegG)"/><circle cx="85" cy="82" r="7" fill="url(#pegShine)"/><circle cx="85" cy="82" r="7" fill="none" stroke="rgba(180,110,0,0.40)" stroke-width="1"/>
+  <circle cx="115" cy="82" r="7" fill="url(#pegG)"/><circle cx="115" cy="82" r="7" fill="url(#pegShine)"/><circle cx="115" cy="82" r="7" fill="none" stroke="rgba(180,110,0,0.40)" stroke-width="1"/>
 </g>
 
 <!-- Ball trail (fading) -->
@@ -84,34 +96,32 @@
 <circle cx="65" cy="37" r="1.8" fill="rgba(255,255,255,0.75)"/>
 
 <!-- Multiplier buckets -->
+<ellipse cx="65" cy="130" rx="62" ry="4" fill="rgba(10,20,50,0.25)"/>
 <g font-family="'Nunito',Arial,sans-serif" font-size="9" font-weight="800" text-anchor="middle">
   <!-- 10x purple -->
-  <rect x="5"  y="100" width="21" height="28" rx="6" fill="#7028D8" filter="url(#bucketGlow)"/>
-  <rect x="5"  y="100" width="21" height="9"  rx="6" fill="rgba(255,255,255,0.25)"/>
+  <rect x="5"  y="100" width="21" height="28" rx="6" fill="url(#bucketPurple)" filter="url(#bucketGlow)" stroke="#3A0878" stroke-width="1"/>
+  <rect x="5"  y="100" width="21" height="9"  rx="6" fill="rgba(255,255,255,0.14)"/>
   <text x="15.5" y="119" fill="white" font-size="8.5">10x</text>
   <!-- 3x blue -->
-  <rect x="28" y="104" width="18" height="24" rx="5" fill="#3868E0"/>
-  <rect x="28" y="104" width="18" height="8"  rx="5" fill="rgba(255,255,255,0.20)"/>
+  <rect x="28" y="104" width="18" height="24" rx="5" fill="url(#bucketBlue)" stroke="#183880" stroke-width="1"/>
+  <rect x="28" y="104" width="18" height="8"  rx="5" fill="rgba(255,255,255,0.12)"/>
   <text x="37" y="120" fill="white" font-size="8.5">3x</text>
   <!-- 1x green -->
-  <rect x="48" y="107" width="16" height="21" rx="4" fill="#20A068"/>
-  <rect x="48" y="107" width="16" height="7"  rx="4" fill="rgba(255,255,255,0.18)"/>
+  <rect x="48" y="107" width="16" height="21" rx="4" fill="url(#bucketGreen)" stroke="#0A5030" stroke-width="1"/>
+  <rect x="48" y="107" width="16" height="7"  rx="4" fill="rgba(255,255,255,0.10)"/>
   <text x="56" y="121" fill="white" font-size="8.5">1x</text>
   <!-- 1x green -->
-  <rect x="66" y="107" width="16" height="21" rx="4" fill="#20A068"/>
-  <rect x="66" y="107" width="16" height="7"  rx="4" fill="rgba(255,255,255,0.18)"/>
+  <rect x="66" y="107" width="16" height="21" rx="4" fill="url(#bucketGreen)" stroke="#0A5030" stroke-width="1"/>
+  <rect x="66" y="107" width="16" height="7"  rx="4" fill="rgba(255,255,255,0.10)"/>
   <text x="74" y="121" fill="white" font-size="8.5">1x</text>
   <!-- 3x blue -->
-  <rect x="84" y="104" width="18" height="24" rx="5" fill="#3868E0"/>
-  <rect x="84" y="104" width="18" height="8"  rx="5" fill="rgba(255,255,255,0.20)"/>
+  <rect x="84" y="104" width="18" height="24" rx="5" fill="url(#bucketBlue)" stroke="#183880" stroke-width="1"/>
+  <rect x="84" y="104" width="18" height="8"  rx="5" fill="rgba(255,255,255,0.12)"/>
   <text x="93" y="120" fill="white" font-size="8.5">3x</text>
   <!-- 10x purple -->
-  <rect x="104" y="100" width="21" height="28" rx="6" fill="#7028D8" filter="url(#bucketGlow)"/>
-  <rect x="104" y="100" width="21" height="9"  rx="6" fill="rgba(255,255,255,0.25)"/>
+  <rect x="104" y="100" width="21" height="28" rx="6" fill="url(#bucketPurple)" filter="url(#bucketGlow)" stroke="#3A0878" stroke-width="1"/>
+  <rect x="104" y="100" width="21" height="9"  rx="6" fill="rgba(255,255,255,0.14)"/>
   <text x="114.5" y="119" fill="white" font-size="8.5">10x</text>
 </g>
 
-<!-- Corner decoration stars -->
-<text x="8"  y="20" font-size="12" fill="rgba(70,70,220,0.55)" font-family="serif">★</text>
-<text x="118" y="20" font-size="10" fill="rgba(70,70,220,0.45)" font-family="serif">★</text>
 </svg>

@@ -2,155 +2,118 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Магазин — TopLuck</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>TopLuck — Магазин</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="shared.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" onerror="console.error('[TopLuck] pako failed to load — animated .tgs gifts will fall back to emoji')"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js" onerror="console.error('[TopLuck] lottie-web failed to load — animated .tgs gifts will fall back to emoji')"></script>
 <script>
 (function(){
   try{
-    var _devUid = localStorage.getItem("__tl_dev_uid__");
-    if(!_devUid) return;
-    var _uid = parseInt(_devUid);
-    if(!_uid) return;
-    var tg = window.Telegram && window.Telegram.WebApp;
-    if(!tg) return;
-    if(!tg.initDataUnsafe)      tg.initDataUnsafe = {};
-    if(!tg.initDataUnsafe.user) tg.initDataUnsafe.user = {};
-    tg.initDataUnsafe.user.id = _uid;
-  } catch(e){}
+    const _devUid=localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid)return;
+    const _uid=parseInt(_devUid);if(!_uid)return;
+    const tg=window.Telegram?.WebApp;if(!tg)return;
+    if(!tg.initDataUnsafe)tg.initDataUnsafe={};
+    if(!tg.initDataUnsafe.user)tg.initDataUnsafe.user={};
+    tg.initDataUnsafe.user.id=_uid;
+  }catch(e){}
 })();
 </script>
+<link rel="stylesheet" href="shared.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" onerror="console.error('[TopLuck] pako failed to load — animated .tgs gifts will fall back to emoji')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js" onerror="console.error('[TopLuck] lottie-web failed to load — animated .tgs gifts will fall back to emoji')"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
-:root{--bg:#141414;--bg2:#1C1C1C;--bg3:#111125;--lime:#FFFFFF;--lime2:#E0E0E0;--pink:#FF2D6B;--cyan:#6BAAB8;--purple:#9977CC;--gold:#D9AC5A;--gold2:#E8C000;--green:#5DD98C;--red:#E07878;--blue:#00C8FF;--text:#F0EFFF;--muted:#848484;--muted2:#636363;--glass-bg:rgba(255,255,255,0.035);--glass-border:rgba(255,255,255,0.09);--border:rgba(255,255,255,0.12);--nav-h:70px;--font-display:'Bebas Neue',sans-serif;--font-ui:'Exo 2',sans-serif;--font-mono:'JetBrains Mono',monospace;}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:16px;overflow-x:hidden;padding-bottom:var(--nav-h);}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;}
-.liquid-bg{position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse 55% 35% at 10% 5%,rgba(155,93,255,0.08) 0%,transparent 65%),radial-gradient(ellipse 40% 45% at 90% 90%,rgba(0,229,255,0.06) 0%,transparent 65%);}
-.toast{position:fixed;top:14px;left:14px;right:14px;z-index:500;background:rgba(12,12,28,0.95);border:1px solid var(--glass-border);backdrop-filter:blur(20px);border-radius:16px;padding:13px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);transition:transform .3s cubic-bezier(.4,0,.2,1);}
-.toast.show{transform:translateY(0);}
-.toast.ok{color:var(--green);border-color:rgba(93,217,140,.25);}
-.toast.err{color:var(--red);border-color:rgba(224,120,120,.25);}
-.toast.info{color:var(--cyan);border-color:rgba(0,229,255,0.3);}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;position:sticky;top:0;z-index:50;background:rgba(6,6,15,0.88);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.08);}
-.nav{position:fixed;bottom:10px;left:10px;right:10px;height:56px;background:rgba(18,18,18,0.96);border:1px solid rgba(255,255,255,.1);border-radius:22px;backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.03);display:flex;z-index:100;}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;text-decoration:none;color:var(--muted2);cursor:pointer;font-family:var(--font-ui);font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:color .2s;border-radius:22px;min-height:44px;}
-.nav-btn.active{color:var(--pink);}
-.nav-btn svg{width:22px;height:22px;}
-.fp-back{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:22px;cursor:pointer;font-weight:700;}
-.fp-title{font-family:var(--font-display);font-size:20px;color:var(--white);letter-spacing:1px;}
-.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(255,214,0,0.1);border:1px solid rgba(255,214,0,0.25);border-radius:12px;padding:7px 12px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);}
-.card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:18px;overflow:hidden;margin-bottom:12px;}
-.card-head{padding:12px 16px;font-family:var(--font-mono);font-size:11px;color:var(--white);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.08);}
-.card-body{padding:14px 16px;}
-.irow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
-.irow:last-child{border-bottom:none;}
-.irow-l{font-size:13px;color:var(--muted2);}
-.irow-r{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text);}
+:root{--safe-top:env(safe-area-inset-top,0px);}
+.toast:not(.show){opacity:0!important;pointer-events:none!important;background:transparent!important;border-color:transparent!important;}
+.toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s!important;}
+.nav{bottom:calc(10px + env(safe-area-inset-bottom,0px)) !important;}
+html,body{padding-bottom:0!important;}
 
-.page-content{padding:14px 14px 20px;}
-.balance-banner{background:rgba(255,214,0,0.06);border:1px solid rgba(255,214,0,0.2);border-radius:18px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
-.bb-label{font-size:12px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;font-family:var(--font-mono);}
-.bb-val{font-family:var(--font-mono);font-size:22px;color:var(--gold);font-weight:700;}
-.topup-sm{background:var(--white);border:none;border-radius:12px;color:#000;padding:9px 14px;font-family:var(--font-display);font-size:16px;cursor:pointer;box-shadow:0 3px 14px rgba(255,255,255,.25);transition:transform .1s;}
-.topup-sm:active{transform:scale(.96);}
-.shop-tabs{display:flex;gap:8px;margin-bottom:18px;}
-.shop-tab{flex:1;padding:11px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;color:var(--muted2);font-weight:700;font-size:13px;cursor:pointer;text-align:center;transition:all 0.2s;}
-.shop-tab.active{background:var(--white);color:#000;border-color:var(--white);box-shadow:0 4px 16px rgba(255,255,255,.25);}
-.shop-note{border-radius:14px;padding:11px 14px;margin-bottom:16px;font-size:12px;line-height:1.6;}
-.shop-note.bot-note{background:rgba(224,120,120,.07);border:1px solid rgba(224,120,120,.15);color:rgba(255,200,200,.85);}
-.shop-note.owner-note{background:rgba(155,93,255,.08);border:1px solid rgba(155,93,255,.2);color:rgba(200,180,255,.85);}
-.gift-list{display:flex;flex-direction:column;gap:14px;}
-.gift-card{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:24px;overflow:hidden;cursor:pointer;transition:border-color .25s,transform .15s,box-shadow .25s;position:relative;}
-.gift-card:active{transform:scale(.98);}
-.gift-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);pointer-events:none;}
-.gift-card:hover{border-color:rgba(255,255,255,.2);box-shadow:0 8px 32px rgba(255,255,255,.06);}
-.gift-card.limited{border-color:rgba(255,59,85,.3);}
-.gift-inner{display:flex;align-items:center;gap:16px;padding:14px 18px;}
-.gift-big-emoji{width:60px;height:60px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;}
-.gift-info{flex:1;}
-.gift-name-big{font-weight:700;font-size:16px;margin-bottom:4px;}
-.gift-price-big{font-family:var(--font-mono);font-size:14px;color:var(--gold);font-weight:700;}
-.gift-coins{font-size:11px;color:var(--muted2);margin-top:2px;}
-.gift-remaining-big{font-size:10px;color:var(--red);font-weight:700;margin-top:2px;}
-.gift-buy-big{padding:10px 16px;background:var(--white);border:none;border-radius:12px;color:#000;font-family:var(--font-display);font-size:16px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
-.lim-badge{position:absolute;top:8px;right:-14px;background:var(--red);color:#fff;font-size:8px;font-weight:700;font-family:var(--font-mono);padding:3px 22px;transform:rotate(35deg);letter-spacing:.5px;}
-.gift-grid,.gifts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.gift-card-sm{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:20px;padding:16px 12px 14px;text-align:center;cursor:pointer;transition:transform .12s,border-color .15s;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;}
-.gift-card-sm:active{transform:scale(.96);}
-.gift-card-sm:hover{border-color:rgba(255,255,255,.2);}
-.gift-emoji-wrap{width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;position:relative;}
-.gift-emoji{font-size:40px;line-height:1;}
-.gift-emoji-big{font-size:40px;line-height:1;}
+/* body always gets sky gradient so no black area anywhere on the page */
+html{background:#C2E8F8!important;}
+body{background:transparent!important;min-height:100vh;}
+
+/* ── SHOP base layout (same as main.html) ── */
+.shop-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(var(--nav-h) + 24px);position:relative;z-index:1;}
+.shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.shop-title{font-family:'Caveat',cursive;font-style:normal;font-size:30px;font-weight:700;letter-spacing:0;color:#1A2040;}
+.shop-bal{display:flex;align-items:center;gap:5px;border-radius:10px;padding:7px 12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;background:rgba(255,255,255,0.90);border:1.5px solid rgba(255,210,40,0.45);color:#A87800;}
+
+/* ── SHOP sky theme (identical to what main.html used) ── */
+.hist-filter .hf{background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,255,255,0.85);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+.hist-filter .hf.a{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(40,80,200,0.25);}
+.owner-note{background:rgba(255,255,255,0.78);border:1.5px solid rgba(20,40,90,0.10);color:#445080;font-family:'Nunito',sans-serif;border-radius:18px;}
+.gift-card{background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.80);box-shadow:0 4px 14px rgba(20,40,90,0.09);border-radius:20px;}
+.gift-card:hover{border-color:rgba(68,80,160,0.26);}
+.gift-emoji-wrap{background:rgba(68,80,160,0.06);border:1.5px solid rgba(68,80,160,0.13);position:relative;}
+.gift-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+.gift-price{color:#A07800!important;font-family:'Nunito',sans-serif!important;font-weight:700!important;font-size:13px!important;}
+.gift-buy-btn{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 2px 8px rgba(40,80,200,0.22)!important;}
+.gift-loading{color:#8090B0;font-family:'Nunito',sans-serif;}
+
+/* ── Real animated Telegram sticker container — forced to fill its box
+     regardless of the sticker's own native size (this is what previously
+     broke the grid: an unconstrained sticker blew up the whole card) ── */
 .gift-lottie{position:absolute;inset:4px;display:none;overflow:hidden;width:calc(100% - 8px);height:calc(100% - 8px);}
 .gift-lottie svg,.gift-lottie video,.gift-lottie img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain;display:block;}
-.mp-stage{width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:16px;font-size:40px;}
-.gift-name{font-weight:700;font-size:13px;color:var(--text);margin-bottom:6px;}
-.gift-price{display:inline-flex;align-items:center;gap:4px;background:rgba(255,214,0,.1);border:1px solid rgba(255,214,0,.2);border-radius:8px;padding:5px 10px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--gold);margin-bottom:10px;}
-.gift-stars{font-size:10px;color:var(--muted2);margin-bottom:8px;}
-.gift-remaining{font-size:10px;color:var(--red);margin-bottom:6px;font-weight:700;}
-.gift-buy-btn{width:100%;padding:9px;background:var(--white);border:none;border-radius:10px;color:#000;font-family:var(--font-display);font-size:14px;cursor:pointer;}
-.gift-buy-btn:active{opacity:.8;}
-.gift-loading{text-align:center;padding:40px 20px;color:var(--muted2);}
-.gift-loading-spinner{font-size:32px;animation:spin 1s linear infinite;display:block;margin-bottom:12px;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.owner-note{background:rgba(155,93,255,.06);border:1px solid rgba(155,93,255,.15);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:rgba(200,180,255,.8);line-height:1.6;}
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:200;display:none;align-items:flex-end;}
-.ov.open{display:flex;}
-.modal{background:var(--bg2);border:1px solid rgba(255,255,255,0.12);border-radius:24px 24px 0 0;padding:20px 18px 36px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);}
-.mh{width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 16px;}
-.mt{font-family:var(--font-display);font-size:22px;color:var(--white);text-align:center;margin-bottom:16px;letter-spacing:1.5px;}
-.modal-gift-preview{display:flex;align-items:center;gap:14px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;padding:14px;margin-bottom:16px;}
-.mg-icon{width:56px;height:56px;border-radius:14px;flex-shrink:0;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:30px;}
-.mg-name{font-weight:700;font-size:16px;color:var(--text);margin-bottom:3px;}
-.mg-price{font-family:var(--font-mono);font-size:13px;color:var(--gold);}
-.error-msg{background:rgba(224,120,120,.07);border:1px solid rgba(255,59,85,.25);border-radius:12px;padding:10px 13px;color:var(--red);font-size:13px;margin-bottom:12px;display:none;}
-.error-msg.show{display:block;}
-.form-group{margin-bottom:12px;}
-.form-label{display:block;font-size:11px;color:var(--muted2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px;font-family:var(--font-mono);}
-.form-input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;color:var(--text);font-family:var(--font-ui);font-size:14px;font-weight:600;outline:none;}
-.form-input:focus{border-color:rgba(255,255,255,.4);}
-textarea.form-input{resize:none;}
-.rc-btns{display:flex;gap:6px;margin-bottom:8px;}
-.rc-btn{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;transition:all .15s;}
-.rc-btn.active{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:var(--white);}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;margin-bottom:8px;}
-.toggle-label{font-size:14px;font-weight:600;}
-.toggle{position:relative;width:46px;height:26px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:13px;cursor:pointer;transition:.2s;border:1px solid rgba(255,255,255,.08);}
-.toggle-slider::before{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;left:3px;top:2px;transition:.2s;}
-input:checked+.toggle-slider{background:var(--white);border-color:var(--white);}
-input:checked+.toggle-slider::before{transform:translateX(20px);background:#000;}
-.msg-quick{display:flex;gap:6px;margin-top:6px;}
-.mqb{padding:5px 10px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted2);}
-.modal-actions{display:flex;gap:8px;margin-top:14px;}
-.btn-cancel{flex:1;padding:13px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;color:var(--muted2);font-family:var(--font-ui);font-size:14px;font-weight:700;cursor:pointer;}
-.btn-confirm{flex:2;padding:13px;background:var(--white);border:none;border-radius:14px;color:#000;font-family:var(--font-display);font-size:16px;cursor:pointer;}
-.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
-.ta{padding:16px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:14px;text-align:center;cursor:pointer;transition:all .15s;}
-.ta.sel{border-color:var(--white);background:rgba(255,255,255,.08);}
-.ta-c{font-family:var(--font-mono);font-size:18px;color:var(--gold);font-weight:700;}
-.ta-s{font-size:12px;color:var(--muted2);margin-top:4px;}
-.ta-confirm{width:100%;padding:14px;background:var(--white);border:none;border-radius:14px;color:#000;font-family:var(--font-display);font-size:20px;cursor:pointer;}
-.empty{text-align:center;padding:40px 20px;color:var(--muted2);}
-.empty-i{font-size:52px;margin-bottom:12px;display:block;}
-.empty p{font-size:14px;line-height:1.6;}
+
+/* ── NAV BAR (identical styling to main.html) ── */
+.nav{background:rgba(255,255,255,0.96);border:1.5px solid rgba(255,255,255,0.85);box-shadow:0 6px 22px rgba(20,40,90,0.16),inset 0 1px 0 rgba(255,255,255,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+.nav-btn{color:#9AA6C0;font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.3px;gap:4px;text-decoration:none;cursor:pointer;}
+.nav-btn svg{display:none;}
+.nav-btn .nb-badge{width:30px;height:30px;display:block;transition:transform .15s;}
+.nav-btn.active{color:#1A2040;}
+.nav-btn.active .nb-badge{transform:translateY(-1px) scale(1.05);}
+.nav-ind{background:#FF6FA0;box-shadow:0 0 10px rgba(255,111,160,.65);height:3px;}
+
+/* ── TOAST (identical to main.html) ── */
+.toast{background:rgba(255,255,255,0.97);border:1.5px solid rgba(20,40,90,0.10);color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;box-shadow:0 8px 26px rgba(20,40,90,0.16);}
+.toast.ok{color:#1A9A50;border-color:rgba(26,154,80,.3);}
+.toast.err{color:#D8284A;border-color:rgba(216,40,74,.3);}
+.toast.info{color:#445080;border-color:rgba(68,80,128,.2);}
+
+/* ── MODALS (Buy gift / Topup) — identical to main.html ── */
+.ov{background:rgba(20,30,60,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.modal{background:rgba(244,248,255,0.98);border:2px solid rgba(255,255,255,0.9);border-radius:24px 24px 0 0;box-shadow:0 -8px 36px rgba(20,40,90,0.18);}
+.mh{background:rgba(20,40,90,0.14);}
+.mt{font-family:'Caveat',cursive;font-style:normal;font-size:26px;font-weight:700;letter-spacing:0;color:#1A2040;}
+.error-msg{background:rgba(216,40,74,0.08);border:1.5px solid rgba(216,40,74,0.28);color:#D8284A;font-family:'Nunito',sans-serif;}
+.form-label{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.form-input{background:rgba(20,40,90,0.05);border:1.5px solid rgba(20,40,90,0.14);color:#1A2040;font-family:'Nunito',sans-serif;}
+.form-input:focus{border-color:rgba(60,90,200,0.45);}
+.toggle-label{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;}
+.toggle-slider{background:rgba(20,40,90,0.10);}
+.toggle-slider::before{background:#fff;box-shadow:0 1px 3px rgba(20,40,90,0.3);}
+input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0);}
+.rc-btn{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.rc-btn.active{background:rgba(20,40,90,0.10);border-color:rgba(20,40,90,0.22);color:#1A2040;}
+.mqb{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);color:#8090B0;font-family:'Nunito',sans-serif;}
+.btn-cancel{background:rgba(20,40,90,0.06);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.btn-confirm{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+.modal-gift-preview{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);}
+.mg-icon{background:rgba(68,80,160,0.07);border:1.5px solid rgba(68,80,160,0.14);position:relative;overflow:hidden;}
+.mg-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+.mg-price{color:#A87800;font-family:'Nunito',sans-serif;font-weight:700;}
+.ta{background:rgba(20,40,90,0.04);border:1.5px solid rgba(20,40,90,0.12);}
+.ta.sel{background:rgba(20,40,90,0.08);border-color:rgba(20,40,90,0.24);}
+.ta-c{color:#A87800;font-family:'Nunito',sans-serif;font-weight:800;}
+.ta-s{color:#8090B0;font-family:'Nunito',sans-serif;}
+.ta-confirm{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+#ta-custom{background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.14)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;}
+.ov p[style]{color:#8090B0!important;}
+
+/* ── Debug console ── */
+#dbg-btn{position:fixed;bottom:calc(74px + env(safe-area-inset-bottom,0px));right:14px;z-index:998;width:36px;height:36px;border-radius:50%;background:rgba(20,20,30,.85);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<div class="liquid-bg"></div>
 
-<!-- On-page debug console -->
-<button onclick="toggleDebugPanel()" style="position:fixed;bottom:14px;right:14px;z-index:998;
-  width:38px;height:38px;border-radius:50%;background:rgba(20,20,30,.85);border:1px solid rgba(255,255,255,.18);
-  color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;">🐞</button>
-<div id="dbg-panel" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.92);
-  flex-direction:column;padding:12px;box-sizing:border-box;font-family:monospace;">
+<button id="dbg-btn" onclick="toggleDebugPanel()">🐞</button>
+<div id="dbg-panel" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.92);flex-direction:column;padding:12px;box-sizing:border-box;font-family:monospace;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#fff">
     <b>🐞 Логи магазина</b>
     <div style="display:flex;gap:8px">
@@ -161,575 +124,352 @@ input:checked+.toggle-slider::before{transform:translateX(20px);background:#000;
   <pre id="dbg-body" style="flex:1;overflow:auto;color:#7CFC7C;font-size:11px;white-space:pre-wrap;margin:0;line-height:1.5;"></pre>
 </div>
 
-<div class="topbar">
-  <button class="fp-back" onclick="history.back()">‹</button>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:20px">🛍</span>
-    <span class="fp-title">МАГАЗИН2</span>
-  </div>
-  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
-</div>
-
-<div class="page-content">
-
-  <div class="balance-banner">
-    <div>
-      <div class="bb-label">Ваш баланс</div>
-      <div class="bb-val">🪙 <span id="bal-display">—</span></div>
-    </div>
-    <button class="topup-sm" onclick="openTopup()">+ ПОПОЛНИТЬ</button>
-  </div>
-
-  <div class="shop-tabs">
-    <div class="shop-tab active" onclick="switchTab('bot',this)">🤖 От бота</div>
-    <div class="shop-tab" onclick="switchTab('owner',this)">👑 От владельца</div>
-  </div>
-
-  <!-- BOT TAB -->
-  <div id="tab-bot">
-    <div class="shop-note bot-note">
-      🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется мгновенно и автоматически.<br>
-      ⛔ <b>Нельзя конвертировать в звёзды</b> — эти подарки non-transferable по условиям Telegram.
-    </div>
-    <div class="gift-list" id="bot-gifts">
-      <div class="gift-loading">
-        <span class="gift-loading-icon">🎁</span>
-        Загружаем подарки...
-      </div>
+<div class="shop-content">
+  <div class="shop-header">
+    <div class="shop-title">МАГАЗИН</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="shop-bal"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="shop-bal">—</span></div>
+      <button onclick="openTopup()" style="background:linear-gradient(135deg,#4898E0,#2060C0);border:none;border-radius:10px;color:#fff;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(40,80,200,0.25);">+ ПОПОЛНИТЬ</button>
     </div>
   </div>
 
-  <!-- OWNER TAB -->
-  <div id="tab-owner" style="display:none">
-    <div class="shop-note owner-note">
-      👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>
-      ✅ <b>Можно конвертировать в звёзды</b> — стандартный Telegram-подарок.<br>
-      После покупки владелец получит уведомление и свяжется с вами.
-    </div>
-    <div class="gift-list" id="owner-gifts">
-      <div class="gift-loading">
-        <span class="gift-loading-icon">🎁</span>
-        Загружаем...
-      </div>
-    </div>
+  <div class="hist-filter" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
+    <div class="hf a" onclick="shopTab('bot',this)">🤖 От бота</div>
+    <div class="hf" onclick="shopTab('owner',this)">👑 От владельца</div>
   </div>
 
+  <div id="shop-bot">
+    <div class="owner-note" style="border-color:rgba(216,40,74,.25);background:rgba(255,230,230,0.75);color:#A01828;">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div>
+    <div id="bot-gifts-inner"><div class="gift-loading"><span class="gift-loading-spinner">🎁</span>Загружаем подарки...</div></div>
+  </div>
+  <div id="shop-owner" style="display:none">
+    <div class="owner-note">👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>✅ <b>Можно конвертировать в звёзды</b>.<br><br>После покупки владелец получит уведомление.</div>
+    <div class="gift-grid" id="owner-gifts-grid"></div>
+  </div>
 </div>
 
 <!-- BUY MODAL -->
-<div class="modal-ov" id="buy-modal" onclick="closeBuyModal(event)">
+<div class="ov" id="buy-modal" onclick="closeBuyModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-drag"></div>
-    <div class="modal-title">🎁 КУПИТЬ ПОДАРОК</div>
+    <div class="mh"></div>
+    <div class="mt">КУПИТЬ ПОДАРОК</div>
     <div class="error-msg" id="buy-error"></div>
-
-    <div class="modal-preview">
-      <div class="mp-stage" id="mp-stage-bg" style="position:relative">
-        <span id="modal-icon">🎁</span>
-        <div id="modal-lottie" class="gift-lottie" style="inset:8px"></div>
-      </div>
+    <div class="modal-gift-preview">
+      <div class="mg-icon" id="m-icon"><span id="m-icon-emoji">🎁</span><div id="m-lottie" class="gift-lottie" style="inset:0"></div></div>
       <div>
-        <div class="mp-name" id="modal-name">—</div>
-        <div class="mp-price"><span id="modal-price">—</span></div>
+        <div class="mg-name" id="m-name">—</div>
+        <div class="mg-price"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="m-price">—</span> монет</div>
       </div>
     </div>
-
     <div class="form-group">
       <label class="form-label">Кому:</label>
-      <div class="recipient-choice">
+      <div class="rc-btns">
         <div class="rc-btn active" onclick="setRecipient('self',this)">🙋 Себе</div>
         <div class="rc-btn" onclick="setRecipient('other',this)">👤 По ID</div>
       </div>
-      <div id="recipient-id-wrap" style="display:none;margin-top:8px">
-        <input class="form-input" id="recipient-id" type="number"
-          placeholder="Telegram ID получателя" inputmode="numeric">
-      </div>
+      <div id="m-recipient-wrap" style="display:none;margin-top:6px"><input class="form-input" id="m-recipient" type="number" placeholder="Telegram ID получателя" inputmode="numeric"></div>
     </div>
-
     <div class="toggle-row">
       <span class="toggle-label">🎭 Анонимно</span>
-      <label class="toggle">
-        <input type="checkbox" id="anon-toggle">
-        <span class="toggle-slider"></span>
-      </label>
+      <label class="toggle"><input type="checkbox" id="m-anon"><span class="toggle-slider"></span></label>
     </div>
-
     <div class="form-group">
       <label class="form-label">Подпись (необязательно):</label>
-      <textarea class="form-input" id="gift-msg" rows="2" placeholder="Текст подписи..."></textarea>
-      <div class="quick-btns">
-        <div class="qb" onclick="document.getElementById('gift-msg').value=''">Без подписи</div>
-        <div class="qb" onclick="setAutoMsg()">Авто 🤖</div>
+      <textarea class="form-input" id="m-msg" rows="2" placeholder="Текст подписи..."></textarea>
+      <div class="msg-quick">
+        <div class="mqb" onclick="document.getElementById('m-msg').value=''">Без подписи</div>
+        <div class="mqb" onclick="setAutoMsg()">Авто 🤖</div>
       </div>
     </div>
-
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeBuyModal()">Отмена</button>
-      <button class="btn-confirm" id="confirm-btn" onclick="confirmPurchase()">Купить ⭐</button>
+      <button class="btn-confirm" id="m-confirm" onclick="confirmPurchase()">КУПИТЬ ⭐</button>
     </div>
   </div>
 </div>
 
 <!-- TOPUP MODAL -->
-<div class="modal-ov" id="topup-modal" onclick="if(event.target.id==='topup-modal')closeTopup()">
-  <div class="modal">
-    <div class="modal-drag"></div>
-    <div class="modal-title">💳 ПОПОЛНЕНИЕ</div>
-    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:16px">1 ⭐ = 10 монет</p>
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"></div>
+    <div class="mt">💳 ПОПОЛНЕНИЕ</div>
+    <p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p>
     <div class="ta-grid">
-      <div class="ta sel" onclick="selTopup(this,50)">
-        <div class="ta-c">50</div><div class="ta-s">50 ⭐</div>
-      </div>
-      <div class="ta" onclick="selTopup(this,100)">
-        <div class="ta-c">100</div><div class="ta-s">100 ⭐</div>
-      </div>
-      <div class="ta" onclick="selTopup(this,250)">
-        <div class="ta-c">250</div><div class="ta-s">250 ⭐</div>
-      </div>
-      <div class="ta" onclick="selTopup(this,500)">
-        <div class="ta-c">500</div><div class="ta-s">500 ⭐</div>
-      </div>
+      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <span style="color:var(--muted);font-size:13px;white-space:nowrap">Или:</span>
-      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Своя сумма..."
-        oninput="onCustom()"
-        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
-          padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;
-          outline:none;text-align:center;">
+      <span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span>
+      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()" style="flex:1;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-align:center;"/>
       <span style="color:var(--gold)">⭐</span>
     </div>
-    <button class="btn-confirm" style="width:100%;font-size:14px;padding:15px"
-      onclick="confirmTopup()">Оплатить <span id="ta-amt">50</span> ⭐</button>
+    <button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button>
   </div>
 </div>
 
+<!-- NAV -->
+<nav class="nav" id="main-nav">
+  <div class="nav-ind" style="width:25%;left:75%"></div>
+  <a class="nav-btn" href="main.html?tab=home"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#4FAEEA"/><circle cx="18" cy="11.6" r="2.3" fill="#fff"/><rect x="15.7" y="16" width="4.6" height="11.4" rx="2.3" fill="#fff"/></svg>ИНФО</a>
+  <a class="nav-btn" href="main.html?tab=inventory"><svg class="nb-badge" viewBox="0 0 36 36"><defs><clipPath id="nbClipProf"><circle cx="18" cy="18" r="17"/></clipPath></defs><circle cx="18" cy="18" r="17" fill="#4CC97A"/><g clip-path="url(#nbClipProf)" fill="#fff"><circle cx="18" cy="15" r="5.6"/><ellipse cx="18" cy="31.5" rx="11.5" ry="9"/></g></svg>ПРОФИЛЬ</a>
+  <a class="nav-btn" href="main.html?tab=games"><svg class="nb-badge" viewBox="0 0 36 36"><rect x="1" y="1" width="34" height="34" rx="12" fill="#FFB020"/><rect x="8" y="14" width="20" height="12" rx="6" fill="#fff"/><rect x="12.2" y="18.7" width="4.4" height="1.8" rx="0.9" fill="#FFB020"/><rect x="13.8" y="17.1" width="1.8" height="4.4" rx="0.9" fill="#FFB020"/><circle cx="23" cy="18" r="1.5" fill="#FFB020"/><circle cx="25.6" cy="20.6" r="1.5" fill="#FFB020"/></svg>ИГРЫ</a>
+  <a class="nav-btn active" href="shop.html"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</a>
+</nav>
+
 <script>
-const tg = window.Telegram?.WebApp;
+const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
-const UID = tg?.initDataUnsafe?.user?.id || 0;
+const UID=tg?.initDataUnsafe?.user?.id||0;
+const FIRST_NAME=tg?.initDataUnsafe?.user?.first_name||'Игрок';
 TL_startBanPoll(UID);
-// В dev-режиме tg.initDataUnsafe содержит данные администратора, не пользователя.
-// FIRST_NAME будет переопределён после загрузки userData из базы.
-const _IS_DEV_MODE_SHOP = !!localStorage.getItem('__tl_dev_uid__');
-let FIRST_NAME = _IS_DEV_MODE_SHOP ? '' : (tg?.initDataUnsafe?.user?.first_name || 'Игрок');
 
-let userData    = null;
-let pendingGift = null;
-let currentSrc  = 'bot';
-let recipMode   = 'self';
-let topupAmt    = 50;
-
-// ── colour themes per gift position ──
-const THEMES = ['blue','purple','green','gold','red','purple','blue','gold'];
-const GLOW_COLORS = [
-  '#4cc9f0','#9b72ff','#2dc653','#f5c542','#e63946',
-  '#9b72ff','#4cc9f0','#f5c542'
-];
-const SPARK_COLORS = [
-  '#4cc9f0','#fff','#9b72ff','#f5c542','#ff6b6b',
-  '#9b72ff','#4cc9f0','#f5c542'
-];
-
-function toast(m,t='info'){
-  const el=document.getElementById('toast');
-  el.textContent=m;el.className='toast '+t;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2800);
+let BOT_USERNAME='TopLuckBot';
+async function fetchBotInfo(){
+  try{
+    const r=await fetch('/api/bot_info').then(r=>r.json());
+    if(r?.username)BOT_USERNAME=r.username.replace('@','');
+  }catch(e){}
 }
+
+function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
+
 // ── On-page debug console (visible in Telegram WebView too, no DevTools needed) ──
-const _dbgLog = [];
-function _dbg(kind, url, extra){
-  const line = `[${new Date().toLocaleTimeString('ru-RU')}] ${kind} ${url}${extra?' — '+extra:''}`;
+const _dbgLog=[];
+function _dbg(kind,url,extra){
+  const line=`[${new Date().toLocaleTimeString('ru-RU')}] ${kind} ${url}${extra?' — '+extra:''}`;
   _dbgLog.push(line);
   if(_dbgLog.length>200)_dbgLog.shift();
-  const el = document.getElementById('dbg-body');
-  if(el && el.style.display!=='none'){ el.textContent = _dbgLog.join('\n'); el.scrollTop = el.scrollHeight; }
+  const el=document.getElementById('dbg-body');
+  if(el && el.style.display!=='none'){el.textContent=_dbgLog.join('\n');el.scrollTop=el.scrollHeight;}
 }
 function toggleDebugPanel(){
-  const el = document.getElementById('dbg-panel');
-  const body = document.getElementById('dbg-body');
-  const show = el.style.display==='none';
-  el.style.display = show?'flex':'none';
-  if(show){ body.textContent = _dbgLog.join('\n'); body.scrollTop = body.scrollHeight; }
+  const el=document.getElementById('dbg-panel');const body=document.getElementById('dbg-body');
+  const show=el.style.display==='none';el.style.display=show?'flex':'none';
+  if(show){body.textContent=_dbgLog.join('\n');body.scrollTop=body.scrollHeight;}
 }
 function copyDebugLog(){
   navigator.clipboard?.writeText(_dbgLog.join('\n')).then(()=>{
-    const b = document.getElementById('dbg-copy-btn');
-    if(b){ const t=b.textContent; b.textContent='✅ Скопировано'; setTimeout(()=>b.textContent=t,1500); }
+    const b=document.getElementById('dbg-copy-btn');
+    if(b){const t=b.textContent;b.textContent='✅ Скопировано';setTimeout(()=>b.textContent=t,1500);}
   });
 }
 
 async function get(url){
-  try{
-    const r = await fetch(url);
-    _dbg('GET', url, 'HTTP '+r.status);
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return await r.json();
-  }catch(e){ _dbg('GET', url, '❌ '+e.message); throw e; }
+  try{const r=await fetch(url);_dbg('GET',url,'HTTP '+r.status);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json();}
+  catch(e){_dbg('GET',url,'❌ '+e.message);throw e;}
 }
 async function post(url,d){
   try{
-    const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
-    _dbg('POST', url, 'HTTP '+r.status);
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return await r.json();
-  }catch(e){ _dbg('POST', url, '❌ '+e.message); throw e; }
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+    _dbg('POST',url,'HTTP '+r.status);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json();
+  }catch(e){_dbg('POST',url,'❌ '+e.message);throw e;}
 }
 
 async function loadUser(){
   if(!UID)return;
-  userData = await get(`/api/user/${UID}`).catch(()=>null);
-  if(TL_guardBanned(userData))return;
-  if(userData){
-    const b = userData.balance??0;
-    document.getElementById('r-bal').textContent = b;
-    document.getElementById('bal-display').textContent = b;
-    // Имя покупателя: источник истины — база данных, затем TG-объект (может быть адм в dev-режиме)
-    FIRST_NAME = userData.first_name
-      || userData.username
-      || (!_IS_DEV_MODE_SHOP ? tg?.initDataUnsafe?.user?.first_name : '')
-      || 'Игрок';
-  }
-}
-
-function switchTab(tab, el){
-  document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('tab-bot').style.display   = tab==='bot'?'':'none';
-  document.getElementById('tab-owner').style.display = tab==='owner'?'':'none';
-}
-
-// ── Sparkle generator ──
-function makeSparkles(stage, color){
-  const positions = [
-    {tx:'28px',ty:'-22px',del:'0s',dur:'2.2s'},
-    {tx:'-24px',ty:'-18px',del:'.4s',dur:'2.5s'},
-    {tx:'18px',ty:'26px',del:'.8s',dur:'1.9s'},
-    {tx:'-30px',ty:'20px',del:'1.2s',dur:'2.3s'},
-    {tx:'36px',ty:'8px',del:'1.8s',dur:'2.1s'},
-  ];
-  positions.forEach(p=>{
-    const s = document.createElement('div');
-    s.className = 'spark';
-    s.style.cssText = `background:${color};left:50%;top:50%;
-      --tx:${p.tx};--ty:${p.ty};--del:${p.del};--dur:${p.dur};`;
-    stage.appendChild(s);
-  });
+  const u=await get(`/api/user/${UID}`).catch(()=>null);
+  if(!u)return;
+  if(TL_guardBanned(u))return;
+  const el=document.getElementById('shop-bal');if(el)el.textContent=u.balance??0;
+  window._userData=u;
 }
 
 // ── Real animated Telegram gift stickers (video .webm / Lottie .tgs / static .webp) ──
-const _stickerJsonCache = new Map();   // file_id -> parsed Lottie JSON (tgs only)
-const _stickerFailCache = new Set();   // file_id that failed once — don't retry
-async function renderGiftSticker(container, fileId, isVideo, isAnimated){
-  if(!fileId){ _dbg('STICKER','(none)','⚠️ gift has no sticker_file_id'); console.warn('[TopLuck] gift has no sticker_file_id — check /api/gifts response'); return false; }
-  if(_stickerFailCache.has(fileId)) return false;
+const _stickerJsonCache=new Map();
+const _stickerFailCache=new Set();
+async function renderGiftSticker(container,fileId,isVideo,isAnimated){
+  if(!fileId){_dbg('STICKER','(none)','⚠️ gift has no sticker_file_id');return false;}
+  if(_stickerFailCache.has(fileId))return false;
   try{
-    const url = '/api/sticker/'+fileId;
-    _dbg('STICKER', url, isVideo?'video':isAnimated?'tgs':'webp');
+    const url='/api/sticker/'+fileId;
+    _dbg('STICKER',url,isVideo?'video':isAnimated?'tgs':'webp');
     if(isVideo){
-      const v = document.createElement('video');
-      v.src = url; v.autoplay = true; v.loop = true; v.muted = true; v.playsInline = true;
-      v.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-      await new Promise((res,rej)=>{ v.onloadeddata=res; v.onerror=()=>rej(new Error('video load error')); setTimeout(()=>rej(new Error('video load timeout')),4000); });
-      container.appendChild(v);
-      _dbg('STICKER', url, '✅ video rendered');
-      return true;
+      const v=document.createElement('video');
+      v.src=url;v.autoplay=true;v.loop=true;v.muted=true;v.playsInline=true;
+      await new Promise((res,rej)=>{v.onloadeddata=res;v.onerror=()=>rej(new Error('video load error'));setTimeout(()=>rej(new Error('video load timeout')),4000);});
+      container.appendChild(v);_dbg('STICKER',url,'✅ video rendered');return true;
     }
     if(isAnimated){
-      if(typeof pako==='undefined'){ _dbg('STICKER',url,'❌ pako not loaded'); console.error('[TopLuck] pako is not defined — CDN script did not load'); return false; }
-      if(typeof lottie==='undefined'){ _dbg('STICKER',url,'❌ lottie not loaded'); console.error('[TopLuck] lottie is not defined — CDN script did not load'); return false; }
-      let json = _stickerJsonCache.get(fileId);
+      if(typeof pako==='undefined'){_dbg('STICKER',url,'❌ pako not loaded');return false;}
+      if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
+      let json=_stickerJsonCache.get(fileId);
       if(!json){
-        const r = await fetch(url);
-        if(!r.ok) throw new Error('sticker fetch failed: HTTP '+r.status);
-        const buf = await r.arrayBuffer();
-        json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
-        _stickerJsonCache.set(fileId, json);
+        const r=await fetch(url);if(!r.ok)throw new Error('sticker fetch failed: HTTP '+r.status);
+        const buf=await r.arrayBuffer();
+        json=JSON.parse(pako.inflate(new Uint8Array(buf),{to:'string'}));
+        _stickerJsonCache.set(fileId,json);
       }
-      lottie.loadAnimation({container, renderer:'svg', loop:true, autoplay:true, animationData:json});
-      _dbg('STICKER', url, '✅ tgs rendered');
-      return true;
+      lottie.loadAnimation({container,renderer:'svg',loop:true,autoplay:true,animationData:json});
+      _dbg('STICKER',url,'✅ tgs rendered');return true;
     }
-    // Static sticker (.webp) — browsers render webp natively, no decoding needed
-    const img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
-    await new Promise((res,rej)=>{ img.onload=res; img.onerror=()=>rej(new Error('image load error')); setTimeout(()=>rej(new Error('image load timeout')),4000); });
-    container.appendChild(img);
-    _dbg('STICKER', url, '✅ webp rendered');
-    return true;
+    const img=document.createElement('img');
+    img.src=url;
+    await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(new Error('image load error'));setTimeout(()=>rej(new Error('image load timeout')),4000);});
+    container.appendChild(img);_dbg('STICKER',url,'✅ webp rendered');return true;
   }catch(e){
-    _dbg('STICKER', '/api/sticker/'+fileId, '❌ '+e.message);
-    console.error('[TopLuck] gift sticker render failed for file_id='+fileId, e);
-    _stickerFailCache.add(fileId);
-    return false;
+    _dbg('STICKER','/api/sticker/'+fileId,'❌ '+e.message);
+    _stickerFailCache.add(fileId);return false;
   }
 }
 
-// ── Build a big gift card ──
-function buildGiftCard(gift, source, idx){
-  const theme = THEMES[idx % THEMES.length];
-  const glow  = GLOW_COLORS[idx % GLOW_COLORS.length];
-  const spark = SPARK_COLORS[idx % SPARK_COLORS.length];
-  const limited = gift.is_limited && gift.remaining_count !== null;
-  const gd = JSON.stringify({
-    id: gift.id||'', emoji: gift.emoji||'🎁',
-    name: gift.name||(gift.emoji||'🎁'),
-    star_count: gift.star_count,
-    is_limited: gift.is_limited||false
-  }).replace(/"/g,'&quot;');
+// ── Shop tabs / gift catalog (same behaviour as the old main.html shop tab) ──
+let shopGifts=[],shopLoaded=false;
+let pendingGift=null,pendingSource='bot',recipientMode='self';
+let topupAmt=50;
 
-  const card = document.createElement('div');
-  card.className = 'gift-card' + (limited?' limited':'');
-  card.onclick = () => openBuyModal(
-    {id:gift.id||'',emoji:gift.emoji||'🎁',
-     name:gift.name||(gift.emoji||'🎁'),
-     sticker_file_id:gift.sticker_file_id||null,
-     sticker_is_video:gift.sticker_is_video||false,
-     sticker_is_animated:gift.sticker_is_animated||false,
-     star_count:gift.star_count,is_limited:gift.is_limited||false},
-    source);
-
-  // Limited badge
-  if(limited) card.innerHTML += `<div class="limit-badge">ЛИМИТ</div>`;
-
-  // Stage
-  const stage = document.createElement('div');
-  stage.className = `gift-stage ${theme}`;
-
-  // Glow
-  const glowEl = document.createElement('div');
-  glowEl.className = 'gift-glow';
-  glowEl.style.cssText = `width:120px;height:120px;background:${glow};top:30px;left:50%;margin-left:-60px;`;
-  stage.appendChild(glowEl);
-
-  // Emoji wrap: halo + emoji (Telegram-style animation)
-  const wrap = document.createElement('div');
-  wrap.className = 'gift-emoji-wrap';
-  // Halo ring
-  const halo = document.createElement('div');
-  halo.className = 'gift-halo';
-  halo.style.background = `conic-gradient(from 0deg,
-    transparent 0%, ${glow}88 20%, transparent 40%,
-    ${glow}66 60%, transparent 80%, ${glow}99 100%)`;
-  wrap.appendChild(halo);
-  // Emoji
-  const em = document.createElement('span');
-  em.className = 'gift-emoji-big';
-  em.textContent = gift.emoji||'🎁';
-  // Stagger start of float per card for natural feel
-  em.style.animationDelay = `${(idx % 4) * 0.4}s, ${(idx % 3) * 0.5}s`;
-  wrap.appendChild(em);
-
-  // Real animated Telegram sticker (.tgs), if available — replaces the emoji once loaded
-  if(gift.sticker_file_id){
-    const lottieBox = document.createElement('div');
-    lottieBox.className = 'gift-lottie';
-    wrap.appendChild(lottieBox);
-    renderGiftSticker(lottieBox, gift.sticker_file_id, gift.sticker_is_video, gift.sticker_is_animated).then(ok=>{
-      if(ok){ em.style.display='none'; lottieBox.style.display='block'; }
-    });
-  }
-  stage.appendChild(wrap);
-
-  // Sparkles
-  makeSparkles(stage, spark);
-
-  // Remaining bar
-  if(limited && gift.total_count){
-    const pct = Math.max(2, Math.round(gift.remaining_count / gift.total_count * 100));
-    stage.innerHTML += `
-      <div class="remain-bar-wrap">
-        <div class="remain-label">Осталось: ${gift.remaining_count} / ${gift.total_count}</div>
-        <div class="remain-bar"><div class="remain-fill" style="width:${pct}%"></div></div>
-      </div>`;
-  }
-
-  card.appendChild(stage);
-
-  // Info
-  const info = document.createElement('div');
-  info.className = 'gift-info';
-  // No visible name shown — emoji in stage is the identifier
-  const isBotSrc = source === 'bot';
-  info.innerHTML = `
-    <div class="gift-top">
-      <div class="gift-price-badge">${gift.star_count*10} 🪙 <span style="font-size:11px;opacity:.7">(⭐${gift.star_count})</span></div>
-    </div>
-    <div class="gift-desc-text">${
-      isBotSrc
-        ? 'Настоящий Telegram‑подарок — отправляется автоматически за считанные секунды.'
-        : 'Отправляет лично владелец. Можно конвертировать в звёзды Telegram.'
-    }</div>
-    <button class="gift-buy-btn ${isBotSrc?'':'purple-btn'}" onclick="event.stopPropagation();
-      openBuyModal({id:'${(gift.id||'').replace(/'/g,'\\\'') }',emoji:'${(gift.emoji||'🎁').replace(/'/g,'\\\'') }',name:'${(gift.emoji||"🎁").replace(/'/g,"\\'") }',sticker_file_id:${JSON.stringify(gift.sticker_file_id||null)},sticker_is_video:${!!gift.sticker_is_video},sticker_is_animated:${!!gift.sticker_is_animated},star_count:${gift.star_count},is_limited:${gift.is_limited||false}},'${source}')">
-      ${isBotSrc ? '🎁 Купить подарок' : '👑 Заказать у владельца'}
-    </button>`;
-
-  card.appendChild(info);
-  return card;
+function shopTab(tab,el){
+  document.querySelectorAll('[onclick^="shopTab"]').forEach(t=>t.classList.remove('a'));
+  el.classList.add('a');
+  document.getElementById('shop-bot').style.display=tab==='bot'?'':'none';
+  document.getElementById('shop-owner').style.display=tab==='owner'?'':'none';
 }
 
-async function loadGifts(){
+async function loadShopGifts(){
+  shopLoaded=true;
+  const botInner=document.getElementById('bot-gifts-inner');
   try{
-    const data = await get('/api/gifts');
-    const gifts = data.gifts || [];
-    console.log('[TopLuck] /api/gifts response:', gifts.length, 'gifts. Example:', gifts[0]);
-    if(gifts.length && !gifts[0].sticker_file_id){
-      console.warn('[TopLuck] gifts have no sticker_file_id — server may be running an old bot.py, restart it');
-    }
-
-    const botList   = document.getElementById('bot-gifts');
-    const ownerList = document.getElementById('owner-gifts');
-
-    if(!gifts.length){
-      botList.innerHTML   = '<div class="gift-empty"><span class="gift-empty-icon">📭</span>Подарки временно недоступны</div>';
-      ownerList.innerHTML = '<div class="gift-empty"><span class="gift-empty-icon">📭</span>Подарки временно недоступны</div>';
-      return;
-    }
-
-    botList.innerHTML   = '';
-    ownerList.innerHTML = '';
-
-    gifts.forEach((g, i) => {
-      botList.appendChild(buildGiftCard(g, 'bot', i));
-      ownerList.appendChild(buildGiftCard(g, 'owner', i));
-    });
-  } catch(e){
-    document.getElementById('bot-gifts').innerHTML =
-      '<div class="gift-empty"><span class="gift-empty-icon">⚠️</span>Не удалось загрузить подарки</div>';
+    const data=await get('/api/gifts');
+    shopGifts=data.gifts||[];
+    _dbg('SHOP','/api/gifts',shopGifts.length+' gifts loaded');
+    if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}
+    else renderBotGifts();
+  }catch(e){
+    if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Не удалось загрузить подарки</p></div>';
   }
+  renderOwnerGifts();
 }
 
-// ── BUY MODAL ──
-function openBuyModal(gift, source){
-  pendingGift = gift; currentSrc = source;
-  document.getElementById('modal-icon').textContent      = gift.emoji;
-  document.getElementById('modal-icon').style.display    = '';
-  const modalLottie = document.getElementById('modal-lottie');
-  modalLottie.style.display = 'none';
-  modalLottie.innerHTML = '';
+// Card click (anywhere on the card, including the button — same as the original) opens the buy modal.
+function giftCard(gift,source){
+  const limited=gift.is_limited&&gift.remaining_count!==null&&gift.remaining_count!==undefined;
+  const cls=limited?'gift-card limited':'gift-card';
+  const emoji=gift.emoji||'🎁';
+  const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';
+  const displayCost=gift.coin_cost||(gift.star_count*10);
+  const gd=JSON.stringify({
+    id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,coin_cost:displayCost,
+    is_limited:gift.is_limited||false,sticker_file_id:gift.sticker_file_id||null,
+    sticker_is_video:gift.sticker_is_video||false,sticker_is_animated:gift.sticker_is_animated||false,
+  }).replace(/"/g,'&quot;');
+  return `<div class="${cls}" onclick="openBuyModal(${gd},'${source}')">
+    <div class="gift-emoji-wrap" id="gw-${source}-${gift.id}"><span class="gift-emoji">${emoji}</span></div>
+    <div class="gift-name">${gift.name||'Подарок'}</div>
+    <div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> ${displayCost} монет</div>
+    ${remaining}
+    <button class="gift-buy-btn">КУПИТЬ</button>
+  </div>`;
+}
+
+function mountGiftStickers(gifts,source){
+  gifts.forEach(gift=>{
+    if(!gift.sticker_file_id)return;
+    const wrap=document.getElementById(`gw-${source}-${gift.id}`);
+    if(!wrap)return;
+    const emojiEl=wrap.querySelector('.gift-emoji');
+    const box=document.createElement('div');
+    box.className='gift-lottie';
+    wrap.appendChild(box);
+    renderGiftSticker(box,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
+      if(ok){if(emojiEl)emojiEl.style.display='none';box.style.display='block';}
+    });
+  });
+}
+
+function renderBotGifts(){
+  const inner=document.getElementById('bot-gifts-inner');
+  if(inner)inner.innerHTML=`<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;
+  mountGiftStickers(shopGifts,'bot');
+}
+function renderOwnerGifts(){
+  const g=document.getElementById('owner-gifts-grid');
+  const staticGifts=[{id:'random_nft',emoji:'🎲',name:'Рандомный НФТ',star_count:400,coin_cost:4000,is_limited:false,is_static:true}];
+  const allOwner=[...staticGifts,...shopGifts];
+  if(!allOwner.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}
+  g.innerHTML=allOwner.map(gift=>giftCard(gift,'owner')).join('');
+  mountGiftStickers(allOwner,'owner');
+}
+
+function openBuyModal(gift,source){
+  pendingGift=gift;pendingSource=source;
+  const emojiEl=document.getElementById('m-icon-emoji');
+  emojiEl.textContent=gift.emoji;emojiEl.style.display='';
+  const mLottie=document.getElementById('m-lottie');
+  mLottie.style.display='none';mLottie.innerHTML='';
   if(gift.sticker_file_id){
-    renderGiftSticker(modalLottie, gift.sticker_file_id, gift.sticker_is_video, gift.sticker_is_animated).then(ok=>{
-      if(ok){ document.getElementById('modal-icon').style.display='none'; modalLottie.style.display='block'; }
+    renderGiftSticker(mLottie,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
+      if(ok){emojiEl.style.display='none';mLottie.style.display='block';}
     });
   }
-  document.getElementById('modal-name').textContent      = gift.emoji + ' ' + (gift.name && gift.name !== gift.emoji ? gift.name : '');
-  document.getElementById('modal-price').textContent     = (gift.star_count * 10) + ' 🪙 (⭐' + gift.star_count + ')';
-  document.getElementById('mp-stage-bg').style.background =
-    source==='bot'
-      ? 'linear-gradient(135deg,rgba(76,201,240,.15),rgba(76,201,240,.05))'
-      : 'linear-gradient(135deg,rgba(123,47,255,.2),rgba(123,47,255,.07))';
-  document.getElementById('gift-msg').value = '';
-  document.getElementById('anon-toggle').checked = false;
+  document.getElementById('m-name').textContent=gift.name||gift.emoji;
+  document.getElementById('m-price').textContent=gift.star_count;
+  document.getElementById('m-msg').value='';
+  document.getElementById('m-anon').checked=false;
   document.getElementById('buy-error').classList.remove('show');
-  setRecipient('self', document.querySelector('.rc-btn'));
-  document.getElementById('confirm-btn').textContent = 'Купить ⭐';
+  setRecipient('self',document.querySelector('.rc-btn'));
   document.getElementById('buy-modal').classList.add('open');
 }
-
-function closeBuyModal(e){
-  if(!e || e.target.id==='buy-modal')
-    document.getElementById('buy-modal').classList.remove('open');
-}
-
-function setRecipient(mode, el){
-  recipMode = mode;
+function closeBuyModal(e){if(!e||e.target.id==='buy-modal')document.getElementById('buy-modal').classList.remove('open');}
+function setRecipient(mode,el){
+  recipientMode=mode;
   document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-  document.getElementById('recipient-id-wrap').style.display = mode==='other'?'block':'none';
+  if(el)el.classList.add('active');
+  document.getElementById('m-recipient-wrap').style.display=mode==='other'?'block':'none';
 }
-
-function setAutoMsg(){
-  document.getElementById('gift-msg').value = `🎁 Подарок от ${FIRST_NAME}!`;
-}
+function setAutoMsg(){document.getElementById('m-msg').value=`🎁 Подарок от ${FIRST_NAME}!`;}
 
 async function confirmPurchase(){
-  if(!pendingGift) return;
-  const errEl = document.getElementById('buy-error');
-  errEl.classList.remove('show');
-  const bal = userData?.balance||0;
-  if(bal < pendingGift.star_count * 10){
-    errEl.textContent='Недостаточно монет на балансе!';errEl.classList.add('show');return;
-  }
-  const anon = document.getElementById('anon-toggle').checked;
-  const msg  = document.getElementById('gift-msg').value.trim();
-  let recipientId = UID;
-  if(recipMode==='other'){
-    const rid = parseInt(document.getElementById('recipient-id').value)||0;
+  if(!pendingGift)return;
+  const errEl=document.getElementById('buy-error');errEl.classList.remove('show');
+  const bal=window._userData?.balance||0;
+  const costCoins=pendingGift.coin_cost||(pendingGift.star_count*10);
+  if(bal<costCoins){errEl.textContent='Недостаточно монет!';errEl.classList.add('show');return;}
+  const anon=document.getElementById('m-anon').checked;
+  const msg=document.getElementById('m-msg').value.trim();
+  let recipientId=UID;
+  if(recipientMode==='other'){
+    const rid=parseInt(document.getElementById('m-recipient').value)||0;
     if(!rid){errEl.textContent='Введите ID получателя';errEl.classList.add('show');return;}
-    recipientId = rid;
+    recipientId=rid;
   }
-  const btn = document.getElementById('confirm-btn');
-  btn.disabled=true; btn.textContent='Покупаем...';
-  const res = await post('/api/gift/buy',{
-    user_id: UID, gift_id: pendingGift.id||'',
-    gift_name: pendingGift.name||pendingGift.emoji,
-    gift_emoji: pendingGift.emoji,
-    star_count: pendingGift.star_count,
-    coin_cost:  pendingGift.star_count * 10,
-    source: currentSrc,
-    recipient_id: recipientId,
-    anonymous: anon,
-    message: msg||null,
-    sender_name: anon ? null : FIRST_NAME,
+  const btn=document.getElementById('m-confirm');btn.disabled=true;btn.textContent='Покупаем...';
+  const res=await post('/api/gift/buy',{
+    user_id:UID,gift_id:pendingGift.id||'',star_count:pendingGift.star_count,coin_cost:costCoins,
+    source:pendingSource,recipient_id:recipientId,anonymous:anon,message:msg||null,
+    sender_name:anon?null:FIRST_NAME,gift_name:pendingGift.name||pendingGift.emoji,gift_emoji:pendingGift.emoji,
   }).catch(()=>null);
-  btn.disabled=false; btn.textContent='Купить ⭐';
+  btn.disabled=false;btn.textContent='КУПИТЬ ⭐';
   if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
   if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
   document.getElementById('buy-modal').classList.remove('open');
-  if(currentSrc==='bot'){
-    toast(`🎁 Подарок отправлен!`,'ok');
-  } else {
-    toast(`📨 Заявка отправлена владельцу!`,'ok');
-    setTimeout(()=>{
-      if(tg?.openTelegramLink) tg.openTelegramLink(`https://t.me/Smishek?start=gift_request`);
-    }, 1500);
+  if(pendingSource==='bot'){toast('🎁 Подарок отправлен!','ok');}
+  else{
+    toast('📨 Заявка отправлена владельцу!','ok');
+    setTimeout(()=>{if(tg?.openTelegramLink)tg.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=gift_request`);},1500);
   }
-  if(userData) userData.balance = res.new_balance ?? (userData.balance - pendingGift.star_count * 10);
-  const b = userData?.balance??0;
-  document.getElementById('r-bal').textContent   = b;
-  document.getElementById('bal-display').textContent = b;
+  if(window._userData)window._userData.balance=res.new_balance??(bal-costCoins);
+  const el=document.getElementById('shop-bal');if(el)el.textContent=window._userData?.balance??0;
 }
 
-// ── TOPUP ──
-function openTopup(){ document.getElementById('topup-modal').classList.add('open'); }
-function closeTopup(){ document.getElementById('topup-modal').classList.remove('open'); }
-function selTopup(el,v){
-  document.querySelectorAll('#topup-modal .ta').forEach(t=>t.classList.remove('sel'));
-  el.classList.add('sel'); topupAmt=v;
-  document.getElementById('ta-custom').value='';
-  document.getElementById('ta-amt').textContent=v;
-}
-function onCustom(){
-  const v=parseInt(document.getElementById('ta-custom').value)||0;
-  if(v>=1){
-    document.querySelectorAll('#topup-modal .ta').forEach(t=>t.classList.remove('sel'));
-    topupAmt=v; document.getElementById('ta-amt').textContent=v;
-  }
-}
+// ── Topup ──
+function openTopup(){document.getElementById('ov-topup').classList.add('open');}
+function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
+function selAmt(el,v){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');topupAmt=v;document.getElementById('ta-custom').value='';document.getElementById('ta-amt').textContent=v;}
+function onCustomInput(){const v=parseInt(document.getElementById('ta-custom').value)||0;if(v>=1){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));topupAmt=v;document.getElementById('ta-amt').textContent=v;}}
 async function confirmTopup(){
   if(!UID){toast('Войдите через Telegram','err');return;}
-  const custom=parseInt(document.getElementById('ta-custom').value)||0;
-  if(custom>=1) topupAmt=custom;
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;if(custom>=1)topupAmt=custom;
   if(topupAmt<1){toast('Введите сумму','err');return;}
-  closeTopup();
+  document.getElementById('ov-topup').classList.remove('open');
   const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
-  if(res?.ok) toast('Инвойс отправлен в чат с ботом!','ok');
-  else toast('Откройте чат с ботом для оплаты','info');
+  if(res?.ok)toast('Инвойс отправлен в чат с ботом!','ok');else toast('Откройте чат с ботом для оплаты','info');
 }
 
 // ── INIT ──
+fetchBotInfo();
 loadUser();
-loadGifts();
+loadShopGifts();
 </script>
-
-<!-- NAV -->
-<nav class="nav">
-  <a class="nav-btn" href="main.html?tab=home"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#4FAEEA"/><circle cx="18" cy="11.6" r="2.3" fill="#fff"/><rect x="15.7" y="16" width="4.6" height="11.4" rx="2.3" fill="#fff"/></svg>ИНФО</a>
-  <a class="nav-btn" href="main.html?tab=inventory"><svg viewBox="0 0 36 36"><defs><clipPath id="nbClipProf"><circle cx="18" cy="18" r="17"/></clipPath></defs><circle cx="18" cy="18" r="17" fill="#4CC97A"/><g clip-path="url(#nbClipProf)" fill="#fff"><circle cx="18" cy="15" r="5.6"/><ellipse cx="18" cy="31.5" rx="11.5" ry="9"/></g></svg>ПРОФИЛЬ</a>
-  <a class="nav-btn" href="main.html?tab=games"><svg viewBox="0 0 36 36"><rect x="1" y="1" width="34" height="34" rx="12" fill="#FFB020"/><rect x="8" y="14" width="20" height="12" rx="6" fill="#fff"/><rect x="12.2" y="18.7" width="4.4" height="1.8" rx="0.9" fill="#FFB020"/><rect x="13.8" y="17.1" width="1.8" height="4.4" rx="0.9" fill="#FFB020"/><circle cx="23" cy="18" r="1.5" fill="#FFB020"/><circle cx="25.6" cy="20.6" r="1.5" fill="#FFB020"/></svg>ИГРЫ</a>
-  <a class="nav-btn active" href="shop.html"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</a>
-</nav>
 </body>
 </html>

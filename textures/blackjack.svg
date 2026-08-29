@@ -1,144 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125 125">
 <defs>
-
-  <filter id="cardShadow" x="-40%" y="-40%" width="180%" height="180%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="3.2" result="blur"/>
-    <feOffset in="blur" dx="2" dy="3.5" result="off"/>
-    <feFlood flood-color="#28004E" flood-opacity="0.30" result="col"/>
-    <feComposite in="col" in2="off" operator="in" result="sh"/>
-    <feMerge>
-      <feMergeNode in="sh"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
+  <filter id="cardShadow">
+    <feDropShadow dx="2" dy="3" stdDeviation="4" flood-color="rgba(40,0,80,0.28)"/>
   </filter>
-
-  <filter id="frontShadow" x="-40%" y="-40%" width="180%" height="180%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="2.6" result="blur"/>
-    <feOffset in="blur" dx="1.4" dy="2.4" result="off"/>
-    <feFlood flood-color="#28004E" flood-opacity="0.24" result="col"/>
-    <feComposite in="col" in2="off" operator="in" result="sh"/>
-    <feMerge>
-      <feMergeNode in="sh"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
+  <filter id="frontShadow">
+    <feDropShadow dx="1" dy="2" stdDeviation="3" flood-color="rgba(40,0,80,0.22)"/>
   </filter>
-
-  <filter id="pipShadow" x="-60%" y="-60%" width="220%" height="220%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="1.1" result="blur"/>
-    <feOffset in="blur" dx="0.6" dy="1.2" result="off"/>
-    <feFlood flood-color="#000000" flood-opacity="0.25" result="col"/>
-    <feComposite in="col" in2="off" operator="in" result="sh"/>
-    <feMerge>
-      <feMergeNode in="sh"/>
-      <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-  </filter>
-
   <linearGradient id="cardBackG" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%"   stop-color="#9A6BFF"/>
-    <stop offset="30%"  stop-color="#7B45E8"/>
-    <stop offset="65%"  stop-color="#5A26C0"/>
-    <stop offset="100%" stop-color="#340C80"/>
+    <stop offset="0%"  stop-color="#7040D8"/>
+    <stop offset="100%" stop-color="#4020A0"/>
   </linearGradient>
-  <linearGradient id="cardBackSheen" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%"  stop-color="rgba(255,255,255,0.35)"/>
-    <stop offset="35%" stop-color="rgba(255,255,255,0.05)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </linearGradient>
-  <radialGradient id="cardBackVignette" cx="50%" cy="45%" r="75%">
-    <stop offset="55%" stop-color="rgba(0,0,0,0)"/>
-    <stop offset="100%" stop-color="rgba(20,0,45,0.35)"/>
-  </radialGradient>
-
-  <linearGradient id="cardFaceG" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%"   stop-color="#FFFFFF"/>
-    <stop offset="60%"  stop-color="#FAF8FF"/>
-    <stop offset="100%" stop-color="#E9E2F6"/>
-  </linearGradient>
-  <linearGradient id="faceSheen" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%"  stop-color="rgba(255,255,255,0.55)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </linearGradient>
-  <radialGradient id="pipGloss" cx="35%" cy="22%" r="70%">
-    <stop offset="0%"  stop-color="#3A3A55"/>
-    <stop offset="45%" stop-color="#181828"/>
-    <stop offset="100%" stop-color="#050508"/>
-  </radialGradient>
-
-  <pattern id="latticeSm" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
-    <path d="M0,7 L7,0 L14,7 L7,14 Z" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="0.7"/>
-    <circle cx="7" cy="7" r="1" fill="rgba(255,255,255,0.14)"/>
-  </pattern>
-
-  <clipPath id="backClip">
-    <rect x="22" y="22" width="56" height="80" rx="6"/>
-  </clipPath>
 </defs>
 
+<!-- Back card (rotated -16deg) -->
 <g transform="rotate(-16,60,68)" filter="url(#cardShadow)">
-  <rect x="18" y="18" width="64" height="88" rx="9" fill="white" stroke="#D2C0F5" stroke-width="1.4"/>
-
-  <g clip-path="url(#backClip)">
-    <rect x="22" y="22" width="56" height="80" fill="url(#cardBackG)"/>
-    <rect x="22" y="22" width="56" height="80" fill="url(#latticeSm)"/>
-
-    <g fill="none" stroke="rgba(255,255,255,0.30)" stroke-width="1">
-      <path d="M22,40 L50,22 L78,40 L50,58 Z"/>
-      <path d="M22,70 L50,52 L78,70 L50,88 Z"/>
-      <path d="M22,100 L50,82 L78,100"/>
-    </g>
-    <g fill="none" stroke="rgba(20,0,50,0.22)" stroke-width="0.6">
-      <path d="M22,55 L50,37 L78,55 L50,73 Z"/>
-    </g>
-
-    <rect x="27" y="27" width="46" height="70" rx="3" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1"/>
-    <rect x="30" y="30" width="40" height="64" rx="2" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.7"/>
-
-    <circle cx="50" cy="62" r="9" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
-    <circle cx="50" cy="62" r="4.2" fill="rgba(255,255,255,0.22)"/>
-
-    <rect x="22" y="22" width="56" height="80" fill="url(#cardBackVignette)"/>
-    <ellipse cx="33" cy="32" rx="13" ry="9" fill="url(#cardBackSheen)"/>
+  <rect x="18" y="18" width="64" height="88" rx="9" fill="white" stroke="#D8C8F8" stroke-width="1.5"/>
+  <!-- Pattern fill -->
+  <rect x="22" y="22" width="56" height="80" rx="6" fill="url(#cardBackG)"/>
+  <!-- Diamond lattice pattern -->
+  <g fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1">
+    <path d="M22,40 L50,22 L78,40 L50,58 Z"/>
+    <path d="M22,70 L50,52 L78,70 L50,88 Z"/>
+    <path d="M22,100 L50,82 L78,100"/>
   </g>
-
-  <rect x="22" y="22" width="56" height="80" rx="6" fill="none" stroke="rgba(18,0,44,0.45)" stroke-width="1.4"/>
-  <rect x="18" y="18" width="64" height="88" rx="9" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.7"/>
+  <!-- Inner border -->
+  <rect x="25" y="25" width="50" height="74" rx="4" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
 </g>
 
+<!-- Front card: Ace of Spades (+8deg) -->
 <g transform="rotate(8,64,68)" filter="url(#frontShadow)">
-  <rect x="36" y="14" width="64" height="88" rx="9" fill="url(#cardFaceG)" stroke="#C2AEE0" stroke-width="1.2"/>
-  <rect x="36" y="14" width="64" height="30" rx="9" fill="url(#faceSheen)"/>
-
-  <rect x="39.5" y="17.5" width="57" height="81" rx="6.5" fill="none" stroke="rgba(90,60,140,0.22)" stroke-width="0.9"/>
-
-  <g font-family="Georgia, 'Times New Roman', serif">
-    <text x="42.5" y="30" font-size="12.5" font-weight="700" fill="#15151F" letter-spacing="-0.3">A</text>
-    <path d="M46 34 C46 32.3 44.6 31.2 43.4 32.2 C42.2 31.2 40.8 32.3 40.8 34 C40.8 35.7 43.4 37.6 43.4 37.6 C43.4 37.6 46 35.7 46 34 Z" fill="#15151F" transform="translate(0,0) scale(0.62)" transform-origin="43 34"/>
-    <text x="41.6" y="41.5" font-size="9.5" fill="#15151F">&#9824;</text>
+  <rect x="36" y="14" width="64" height="88" rx="9" fill="white" stroke="#E0D8E8" stroke-width="1.2"/>
+  <!-- Inner card border -->
+  <rect x="39" y="17" width="58" height="82" rx="7" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="1"/>
+  <!-- Top-left rank + suit -->
+  <text x="42" y="32" font-size="14" font-weight="900" fill="#1A1A2E" font-family="Georgia,Times,serif" letter-spacing="-0.5">A</text>
+  <text x="42" y="46" font-size="13" fill="#1A1A2E" font-family="Arial">♠</text>
+  <!-- Centre large spade -->
+  <text x="68" y="76" text-anchor="middle" font-size="44" fill="#1A1A2E" font-family="Arial" filter="url(#frontShadow)">♠</text>
+  <!-- Bottom-right (rotated 180) -->
+  <g transform="rotate(180,84,91)">
+    <text x="78" y="96" font-size="14" font-weight="900" fill="#1A1A2E" font-family="Georgia,Times,serif" letter-spacing="-0.5">A</text>
+    <text x="78" y="110" font-size="13" fill="#1A1A2E" font-family="Arial">♠</text>
   </g>
-
-  <g filter="url(#pipShadow)">
-    <path d="M68,54
-             C 68,60 58,66 58,75
-             C 58,82 63,85.5 68,82.5
-             C 68,86.5 63.5,88.5 63.5,88.5
-             L 72.5,88.5
-             C 72.5,88.5 68,86.5 68,82.5
-             C 73,85.5 78,82 78,75
-             C 78,66 68,60 68,54 Z"
-          fill="url(#pipGloss)"/>
-    <ellipse cx="64.5" cy="63" rx="3.2" ry="5" fill="rgba(255,255,255,0.16)" transform="rotate(-18 64.5 63)"/>
-  </g>
-
-  <g transform="rotate(180,84,91)" font-family="Georgia, 'Times New Roman', serif">
-    <text x="78.5" y="94.5" font-size="12.5" font-weight="700" fill="#15151F" letter-spacing="-0.3">A</text>
-    <text x="78" y="105.5" font-size="9.5" fill="#15151F">&#9824;</text>
-  </g>
-
-  <path d="M 40 19 Q 47 15 57 15.3" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M 39 24 Q 44 21 50 21.4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.2" stroke-linecap="round"/>
-
-  <rect x="36" y="14" width="64" height="88" rx="9" fill="none" stroke="rgba(60,30,110,0.18)" stroke-width="0.8"/>
+  <!-- Card shine -->
+  <path d="M 40 20 Q 46 16 55 16" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2.5" stroke-linecap="round"/>
 </g>
 
+<!-- Decorative stars -->
+<text x="4"  y="20" font-size="14" fill="rgba(90,40,200,0.60)" font-family="serif">★</text>
+<text x="106" y="116" font-size="11" fill="rgba(90,40,200,0.50)" font-family="serif">★</text>
 </svg>
