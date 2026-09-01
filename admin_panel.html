@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>TopLuck Admin</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
 :root{
@@ -291,11 +292,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 </script>
 
 <div class="admin-loading" id="admin-loading">
-  <div class="al-icon">⚙️</div>
+  <div id="al-eyes"></div>
   <div class="al-title">TOPLUCK ADMIN</div>
   <div class="al-sub" id="al-sub">Проверка доступа...</div>
   <div class="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
 </div>
+<script>window._alEyesCtrl = TL_mountEyesLoader(document.getElementById('al-eyes'), {width:180, height:110, eyeR:26, pupilR:10});</script>
 <div class="toast" id="toast"></div>
 
 <div class="header">
@@ -2169,6 +2171,7 @@ async function saveTowerMult(){
 function hideLoadingOverlay(){
   const el = document.getElementById('admin-loading');
   if(!el) return;
+  if(window._alEyesCtrl){ window._alEyesCtrl.stop(); window._alEyesCtrl=null; }
   el.style.opacity = '0';
   el.style.transition = 'opacity 0.35s ease';
   setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 400);
