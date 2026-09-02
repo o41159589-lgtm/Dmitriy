@@ -711,6 +711,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
 <!-- DEV MODE -->
 <div class="tab-pane" id="tab-devmode">
+  <div class="rev-card" style="margin-bottom:14px">
+    <div class="rev-title">🖼 ГАЛЕРЕЯ NFT (магазин, вкладка «От владельца»)</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Пополняется двумя способами: перешлите боту стикер нужного NFT (он спросит название) — или укажите ссылку на стикерпак в <code>NFT_STICKER_PACK</code> (.env) и нажмите «Обновить» ниже, тогда бот заберёт из него все стикеры сразу.
+    </p>
+    <button class="abtn set" style="width:100%;padding:10px;margin-bottom:12px" onclick="resyncNftPack()">🔄 Обновить из стикерпака</button>
+    <div id="nft-gallery-list" style="display:flex;flex-direction:column;gap:6px">
+      <div style="text-align:center;padding:14px;color:var(--muted)">⏳ Загрузка...</div>
+    </div>
+  </div>
   <div class="rev-card">
     <div class="rev-title">🔬 РЕЖИМ РАЗРАБОТЧИКА</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:14px">
@@ -901,6 +911,7 @@ function switchTab(name,btn){
   if(name==='logs') renderLogs();
   if(name==='tasks') loadAdminTasks();
   if(name==='group') loadGlogs();
+  if(name==='devmode') loadNftGalleryAdmin();
 }
 
 // ══════════════════════════════
@@ -2426,6 +2437,44 @@ function renderGlogs(){
       <div style="color:var(--text-main)">${i.text||''}</div>
     </div>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════
+// NFT GALLERY (Dev tab)
+// ══════════════════════════════════════════
+async function loadNftGalleryAdmin(){
+  const el = document.getElementById('nft-gallery-list');
+  if(!el) return;
+  try{
+    const r = await api('/api/nft_gallery');
+    const nfts = r.nfts || [];
+    if(!nfts.length){
+      el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--muted);font-size:12px">Пока пусто — перешлите боту стикер NFT</div>';
+      return;
+    }
+    el.innerHTML = nfts.map(n=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;
+        padding:8px 10px;background:var(--card-bg);border:1px solid var(--card-br);border-radius:10px;font-size:12px">
+        <span>🖼 ${esc(n.name)} <span style="color:var(--muted);font-size:10px">(${n.is_video?'video':n.is_animated?'tgs':'webp'})</span></span>
+        <button class="abtn ban" style="font-size:10px;padding:4px 8px" onclick="deleteNftGallery(${n.id})">🗑 Удалить</button>
+      </div>`).join('');
+  }catch(e){
+    el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--red);font-size:12px">Ошибка загрузки</div>';
+  }
+}
+async function deleteNftGallery(id){
+  try{
+    await api('/api/admin/nft_gallery/'+id, 'DELETE');
+    toast('🗑 NFT удалён');
+    loadNftGalleryAdmin();
+  }catch(e){ toast('Ошибка удаления','err'); }
+}
+async function resyncNftPack(){
+  try{
+    const r = await api('/api/admin/nft_resync', 'POST');
+    toast(`✅ Добавлено новых: ${r.added} (пак: ${r.pack})`);
+    loadNftGalleryAdmin();
+  }catch(e){ toast('Ошибка: '+(e.message||'проверьте NFT_STICKER_PACK в .env'), 'err'); }
 }
 
 </script>

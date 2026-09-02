@@ -111,6 +111,9 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
 
 /* ── NFT carousel card (owner tab) ── */
 .nft-mystery{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.nft-carousel-item{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:scale(.7);transition:opacity .45s ease,transform .45s ease;}
+.nft-carousel-item.show{opacity:1;transform:scale(1);}
 .nft-mystery::before{content:'';position:absolute;width:140%;height:140%;
   background:conic-gradient(from 0deg,transparent,rgba(160,80,240,.35),transparent 35%);
   animation:nftSpin 3.5s linear infinite;}
@@ -379,21 +382,62 @@ function renderBotGifts(){
   if(inner)inner.innerHTML=`<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;
   mountGiftStickers(shopGifts,'bot');
 }
+let nftGallery=[];
+async function loadNftGallery(){
+  try{
+    const data=await get('/api/nft_gallery');
+    nftGallery=data.nfts||[];
+  }catch(e){ nftGallery=[]; }
+}
+
 function renderOwnerGifts(){
   const g=document.getElementById('owner-gifts-grid');
   if(!shopGifts.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}
   const nftCardHtml=`<div class="gift-card" onclick="openBuyModal(${JSON.stringify({id:'random_nft',emoji:'💎',name:'Рандомный НФТ',star_count:400,coin_cost:4000,is_limited:false,is_static:true}).replace(/"/g,'&quot;')},'owner')">
-    <div class="gift-emoji-wrap"><div class="nft-mystery"><div class="nft-gem"></div>
-      <div class="nft-spark" style="width:4px;height:4px;top:8%;left:70%;animation-delay:.1s"></div>
-      <div class="nft-spark" style="width:3px;height:3px;top:70%;left:20%;animation-delay:.6s"></div>
-      <div class="nft-spark" style="width:3px;height:3px;top:20%;left:15%;animation-delay:1.1s"></div>
-    </div></div>
+    <div class="gift-emoji-wrap" id="gw-owner-random_nft">
+      <div class="nft-mystery" id="nft-mystery-fallback"><div class="nft-gem"></div>
+        <div class="nft-spark" style="width:4px;height:4px;top:8%;left:70%;animation-delay:.1s"></div>
+        <div class="nft-spark" style="width:3px;height:3px;top:70%;left:20%;animation-delay:.6s"></div>
+        <div class="nft-spark" style="width:3px;height:3px;top:20%;left:15%;animation-delay:1.1s"></div>
+      </div>
+    </div>
     <div class="gift-name">Рандомный НФТ</div>
     <div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> 4000 монет</div>
     <button class="gift-buy-btn">КУПИТЬ</button>
   </div>`;
   g.innerHTML=nftCardHtml+shopGifts.map(gift=>giftCard(gift,'owner')).join('');
   mountGiftStickers(shopGifts,'owner');
+  if(nftGallery.length) mountRealNftCarousel();
+}
+
+// Cycles through the real admin-added NFT collectibles (Pepe, Torch, Statue, etc.) — each one
+// is a genuine sticker forwarded to the bot, since Telegram has no public catalog of all NFTs.
+let _nftTimer=null;
+function mountRealNftCarousel(){
+  if(_nftTimer){clearInterval(_nftTimer);_nftTimer=null;}
+  const wrap=document.getElementById('gw-owner-random_nft');
+  const fallback=document.getElementById('nft-mystery-fallback');
+  if(!wrap)return;
+  if(fallback)fallback.style.display='none';
+  let idx=0;
+  function frame(){
+    const nft=nftGallery[idx%nftGallery.length];idx++;
+    const item=document.createElement('div');
+    item.className='nft-carousel-item';
+    const box=document.createElement('div');
+    box.className='gift-lottie';
+    item.appendChild(box);
+    wrap.appendChild(item);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>item.classList.add('show')));
+    renderGiftSticker(box,nft.sticker_file_id,nft.is_video,nft.is_animated).then(ok=>{
+      box.style.display=ok?'block':'none';
+    });
+    wrap.querySelectorAll('.nft-carousel-item').forEach(el=>{
+      if(el!==item){el.classList.remove('show');setTimeout(()=>el.remove(),500);}
+    });
+  }
+  frame();
+  _nftTimer=setInterval(frame,1600);
 }
 
 function openBuyModal(gift,source){
@@ -475,6 +519,7 @@ async function confirmTopup(){
 fetchBotInfo();
 loadUser();
 loadShopGifts();
+loadNftGallery().then(()=>{ if(shopLoaded) renderOwnerGifts(); });
 </script>
 </body>
 </html>

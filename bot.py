@@ -26,6 +26,9 @@ load_dotenv()
 # ════════════════════════════════════════
 BOT_TOKEN   = os.getenv("BOT_TOKEN", "")
 WEBAPP_URL  = os.getenv("WEBAPP_URL", "")
+# Accepts either a bare short name ("MyNftPack") or a full link (t.me/addstickers/MyNftPack)
+_NFT_PACK_RAW = os.getenv("NFT_STICKER_PACK", "").strip()
+NFT_STICKER_PACK = _NFT_PACK_RAW.rstrip("/").split("/")[-1] if _NFT_PACK_RAW else ""
 ADMIN_URL   = os.getenv("ADMIN_URL", "")
 PORT        = int(os.getenv("PORT", 8080))
 ADMIN_IDS   = [int(x) for x in os.getenv("ADMIN_IDS","").split(",") if x.strip()]
@@ -372,7 +375,7 @@ async def cmd_start(message: Message):
         safe_name = _html.escape(user.first_name or "Игрок")
         is_new = not existed
         greeting = (
-            f"🎉 <b>Добро пожаловать в TopLuck Casino777!</b>\n\n"
+            f"🎉 <b>Добро пожаловать в TopLuck Casino!</b>\n\n"
             f"👋 Привет, <b>{safe_name}</b>!\n\n"
             f"🍀 Испытай удачу в рулетке, участвуй в GTA-розыгрышах и покупай подарки!\n\n"
             f"💰 Стартовый баланс: <b>{u['balance']}</b> монет\n"
@@ -514,6 +517,52 @@ async def cmd_info(message: Message):
         f"⛔ Заблокирован: {banned}\n\n"
         f"📋 Последние 5 операций:\n{recent}",
         parse_mode="HTML")
+
+# Pulls every sticker from an official Telegram sticker pack (NFT_STICKER_PACK env var)
+# via the official Bot API — no scraping, no third-party services.
+async def sync_nft_pack():
+    if not NFT_STICKER_PACK:
+        return 0
+    try:
+        pack = await bot.get_sticker_set(NFT_STICKER_PACK)
+    except Exception as e:
+        logger.warning(f"NFT pack sync failed ({NFT_STICKER_PACK}): {e}")
+        return 0
+    added = 0
+    for i, st in enumerate(pack.stickers, start=1):
+        name = f"{pack.title} #{i}" + (f" {st.emoji}" if st.emoji else "")
+        ok = await db.add_nft(name, st.file_id, bool(st.is_video), bool(st.is_animated),
+                               added_by=0, file_unique_id=st.file_unique_id, source="pack")
+        if ok: added += 1
+    logger.info(f"NFT pack sync: {added} new / {len(pack.stickers)} total in '{NFT_STICKER_PACK}'")
+    return added
+
+_pending_nft = {}  # admin_id -> {file_id, is_video, is_animated, ts}
+
+@dp.message(F.sticker)
+async def on_admin_sticker(message: Message):
+    if message.from_user.id not in ADMIN_IDS: return
+    st = message.sticker
+    _pending_nft[message.from_user.id] = {
+        "file_id": st.file_id, "file_unique_id": st.file_unique_id,
+        "is_video": bool(st.is_video), "is_animated": bool(st.is_animated),
+        "ts": time.time(),
+    }
+    await message.reply("🖼 Стикер получен! Пришлите следующим сообщением название этого NFT (например «Пепе» или «Факел»).")
+
+@dp.message(F.text, ~F.text.startswith("/"))
+async def on_admin_nft_name(message: Message):
+    uid = message.from_user.id
+    if uid not in ADMIN_IDS: return
+    pending = _pending_nft.get(uid)
+    if not pending or time.time() - pending["ts"] > 600:
+        return  # not currently waiting for an NFT name from this admin
+    name = message.text.strip()
+    if not name: return
+    ok = await db.add_nft(name, pending["file_id"], pending["is_video"], pending["is_animated"], uid,
+                           file_unique_id=pending.get("file_unique_id",""), source="manual")
+    del _pending_nft[uid]
+    await message.reply(f"✅ NFT «{name}» добавлен в галерею магазина." if ok else "⚠️ Такой стикер уже есть в галерее.")
 
 @dp.message(Command("ban"))
 async def cmd_ban(message: Message):
@@ -766,6 +815,23 @@ async def api_sticker(req: web.Request):
     except Exception as e:
         logger.warning(f"sticker proxy error ({file_id}): {e}")
         return web.json_response({"error": str(e)}, status=404)
+
+# ── NFT GALLERY (admin-curated, populated by forwarding stickers to the bot) ──
+async def api_nft_gallery(req: web.Request):
+    return web.json_response({"nfts": await db.get_nfts()})
+
+async def api_admin_delete_nft(req: web.Request):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    nft_id = int(req.match_info["nft_id"])
+    await db.delete_nft(nft_id)
+    return web.json_response({"ok": True})
+
+async def api_admin_resync_nft_pack(req: web.Request):
+    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
+    if not NFT_STICKER_PACK:
+        return web.json_response({"error": "NFT_STICKER_PACK не задан в .env"}, status=400)
+    added = await sync_nft_pack()
+    return web.json_response({"ok": True, "added": added, "pack": NFT_STICKER_PACK})
 
 async def api_gift_buy(req: web.Request):
     data         = await req.json()
@@ -2250,6 +2316,9 @@ async def start_web():
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_post("/api/admin/plinko_mults",   api_admin_set_plinko_mults)
     app.router.add_get ("/api/admin/glogs",          api_admin_glogs)
+    app.router.add_get ("/api/nft_gallery",           api_nft_gallery)
+    app.router.add_delete("/api/admin/nft_gallery/{nft_id}", api_admin_delete_nft)
+    app.router.add_post("/api/admin/nft_resync", api_admin_resync_nft_pack)
     # Tasks (public)
     app.router.add_get ("/api/tasks",                  api_tasks)
     app.router.add_post("/api/tasks/complete",         api_task_complete)
@@ -2277,6 +2346,7 @@ async def main():
     await db.init_db()
     await start_web()
     asyncio.create_task(daily_backup())
+    asyncio.create_task(sync_nft_pack())
     await dp.start_polling(bot, skip_updates=True)
 
 

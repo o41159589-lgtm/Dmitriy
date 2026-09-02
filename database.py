@@ -27,6 +27,17 @@ async def init_db():
                 detail     TEXT DEFAULT '',
                 created_at REAL DEFAULT 0
             );
+            CREATE TABLE IF NOT EXISTS nft_gallery (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                name          TEXT NOT NULL,
+                sticker_file_id TEXT NOT NULL,
+                file_unique_id TEXT DEFAULT '',
+                is_video      INTEGER DEFAULT 0,
+                is_animated   INTEGER DEFAULT 0,
+                source        TEXT DEFAULT 'manual',
+                added_by      INTEGER DEFAULT 0,
+                created_at    REAL DEFAULT 0
+            );
             CREATE TABLE IF NOT EXISTS glogs (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 thread      INTEGER NOT NULL,
@@ -100,6 +111,15 @@ async def init_db():
         # Migration: add banned column if missing
         try:
             await db.execute('ALTER TABLE users ADD COLUMN banned INTEGER DEFAULT 0')
+        except Exception: pass
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN ban_reason TEXT DEFAULT ''")
+        except Exception: pass
+        try:
+            await db.execute("ALTER TABLE nft_gallery ADD COLUMN file_unique_id TEXT DEFAULT ''")
+        except Exception: pass
+        try:
+            await db.execute("ALTER TABLE nft_gallery ADD COLUMN source TEXT DEFAULT 'manual'")
         except Exception: pass
         try:
             await db.execute('ALTER TABLE users ADD COLUMN referrer_id INTEGER DEFAULT NULL')
@@ -208,6 +228,35 @@ async def get_glog_counts():
     async with aiosqlite.connect(DB_PATH) as db:
         rows = await _rows(db, "SELECT category, COUNT(*) as c FROM glogs GROUP BY category", ())
         return {r["category"]: r["c"] for r in rows}
+
+# ── NFT GALLERY (real unique-gift stickers — manually forwarded, or synced from a sticker pack) ──
+async def add_nft(name: str, sticker_file_id: str, is_video: bool, is_animated: bool, added_by: int,
+                   file_unique_id: str = "", source: str = "manual"):
+    async with aiosqlite.connect(DB_PATH) as db:
+        # Skip if this exact sticker (by stable file_unique_id) is already in the gallery
+        if file_unique_id:
+            async with db.execute("SELECT id FROM nft_gallery WHERE file_unique_id=?", (file_unique_id,)) as cur:
+                if await cur.fetchone():
+                    return False
+        await db.execute(
+            "INSERT INTO nft_gallery (name,sticker_file_id,file_unique_id,is_video,is_animated,source,added_by,created_at) VALUES (?,?,?,?,?,?,?,?)",
+            (name, sticker_file_id, file_unique_id, 1 if is_video else 0, 1 if is_animated else 0, source, added_by, time.time()))
+        await db.commit()
+        return True
+
+async def get_nfts():
+    async with aiosqlite.connect(DB_PATH) as db:
+        return await _rows(db, "SELECT * FROM nft_gallery ORDER BY created_at DESC", ())
+
+async def delete_nft(nft_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM nft_gallery WHERE id=?", (nft_id,))
+        await db.commit()
+
+async def clear_nfts_by_source(source: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM nft_gallery WHERE source=?", (source,))
+        await db.commit()
 
 # ── HISTORY ──
 async def add_history(uid: int, type_: str, amount: int, detail=""):
@@ -399,9 +448,16 @@ async def is_banned(uid: int) -> bool:
             row = await cur.fetchone()
             return bool(row[0]) if row else False
 
-async def set_banned(uid: int, banned: bool):
+async def get_ban_reason(uid: int) -> str:
     async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("UPDATE users SET banned=? WHERE user_id=?", (1 if banned else 0, uid))
+        async with db.execute("SELECT ban_reason FROM users WHERE user_id=?", (uid,)) as cur:
+            row = await cur.fetchone()
+            return (row[0] or "") if row else ""
+
+async def set_banned(uid: int, banned: bool, reason: str = ""):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE users SET banned=?, ban_reason=? WHERE user_id=?",
+                          (1 if banned else 0, reason if banned else "", uid))
         await db.commit()
 async def get_mines_max_mult() -> float:
     async with aiosqlite.connect(DB_PATH) as db_conn:
