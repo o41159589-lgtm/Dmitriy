@@ -57,7 +57,7 @@ body{background:transparent!important;min-height:100vh;}
 /* ── Real animated Telegram sticker container — forced to fill its box
      regardless of the sticker's own native size (this is what previously
      broke the grid: an unconstrained sticker blew up the whole card) ── */
-.gift-lottie{position:absolute;inset:4px;display:none;overflow:hidden;width:calc(100% - 8px);height:calc(100% - 8px);}
+.gift-lottie{position:absolute;inset:4px;display:none;overflow:hidden;}
 .gift-lottie svg,.gift-lottie video,.gift-lottie img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain;display:block;}
 
 /* ── NAV BAR (identical styling to main.html) ── */
@@ -383,6 +383,7 @@ function renderBotGifts(){
   mountGiftStickers(shopGifts,'bot');
 }
 let nftGallery=[];
+let _gridNftCarousel=null, _modalNftCarousel=null;
 async function loadNftGallery(){
   try{
     const data=await get('/api/nft_gallery');
@@ -407,19 +408,20 @@ function renderOwnerGifts(){
   </div>`;
   g.innerHTML=nftCardHtml+shopGifts.map(gift=>giftCard(gift,'owner')).join('');
   mountGiftStickers(shopGifts,'owner');
-  if(nftGallery.length) mountRealNftCarousel();
+  if(nftGallery.length){
+    if(_gridNftCarousel) _gridNftCarousel.stop();
+    const fallback=document.getElementById('nft-mystery-fallback');
+    if(fallback)fallback.style.display='none';
+    _gridNftCarousel=mountRealNftCarousel(document.getElementById('gw-owner-random_nft'),1600);
+  }
 }
 
 // Cycles through the real admin-added NFT collectibles (Pepe, Torch, Statue, etc.) — each one
 // is a genuine sticker forwarded to the bot, since Telegram has no public catalog of all NFTs.
 let _nftTimer=null;
-function mountRealNftCarousel(){
-  if(_nftTimer){clearInterval(_nftTimer);_nftTimer=null;}
-  const wrap=document.getElementById('gw-owner-random_nft');
-  const fallback=document.getElementById('nft-mystery-fallback');
-  if(!wrap)return;
-  if(fallback)fallback.style.display='none';
-  let idx=0;
+function mountRealNftCarousel(wrap, intervalMs){
+  if(!wrap || !nftGallery.length) return null;
+  let idx=0, timer=null;
   function frame(){
     const nft=nftGallery[idx%nftGallery.length];idx++;
     const item=document.createElement('div');
@@ -437,7 +439,8 @@ function mountRealNftCarousel(){
     });
   }
   frame();
-  _nftTimer=setInterval(frame,1600);
+  timer=setInterval(frame,intervalMs||1600);
+  return {stop(){clearInterval(timer);}};
 }
 
 function openBuyModal(gift,source){
@@ -446,7 +449,11 @@ function openBuyModal(gift,source){
   emojiEl.textContent=gift.emoji;emojiEl.style.display='';
   const mLottie=document.getElementById('m-lottie');
   mLottie.style.display='none';mLottie.innerHTML='';
-  if(gift.sticker_file_id){
+  if(_modalNftCarousel){_modalNftCarousel.stop();_modalNftCarousel=null;}
+  if(gift.id==='random_nft' && nftGallery.length){
+    emojiEl.style.display='none';mLottie.style.display='block';
+    _modalNftCarousel=mountRealNftCarousel(mLottie,900);
+  } else if(gift.sticker_file_id){
     renderGiftSticker(mLottie,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
       if(ok){emojiEl.style.display='none';mLottie.style.display='block';}
     });
@@ -459,7 +466,12 @@ function openBuyModal(gift,source){
   setRecipient('self',document.querySelector('.rc-btn'));
   document.getElementById('buy-modal').classList.add('open');
 }
-function closeBuyModal(e){if(!e||e.target.id==='buy-modal')document.getElementById('buy-modal').classList.remove('open');}
+function closeBuyModal(e){
+  if(!e||e.target.id==='buy-modal'){
+    document.getElementById('buy-modal').classList.remove('open');
+    if(_modalNftCarousel){_modalNftCarousel.stop();_modalNftCarousel=null;}
+  }
+}
 function setRecipient(mode,el){
   recipientMode=mode;
   document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));
