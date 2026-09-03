@@ -133,3 +133,82 @@ function TL_mountEyesLoader(container, opts){
   raf = requestAnimationFrame(frame);
   return { stop(){ stopped=true; if(raf) cancelAnimationFrame(raf); } };
 }
+
+// ── Shared sticker cache (IndexedDB) + shop prefetch ──
+// Lets main.html warm the gift catalog + decoded .tgs stickers in the background
+// while the user browses, so shop.html can render everything instantly and
+// animated on open instead of showing emoji first and swapping in the animation.
+const TL_CACHE_DB = 'tl_cache', TL_CACHE_STORE = 'stickers';
+function TL_idbOpen(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(TL_CACHE_DB, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(TL_CACHE_STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function TL_idbGet(key){
+  try{
+    const db = await TL_idbOpen();
+    return await new Promise((resolve,reject)=>{
+      const tx = db.transaction(TL_CACHE_STORE,'readonly');
+      const req = tx.objectStore(TL_CACHE_STORE).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }catch(e){ return null; }
+}
+async function TL_idbSet(key, value){
+  try{
+    const db = await TL_idbOpen();
+    return await new Promise((resolve,reject)=>{
+      const tx = db.transaction(TL_CACHE_STORE,'readwrite');
+      tx.objectStore(TL_CACHE_STORE).put(value, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error);
+    });
+  }catch(e){ return false; }
+}
+function TL_loadScriptOnce(src){
+  return new Promise((resolve,reject)=>{
+    if(document.querySelector(`script[src="${src}"]`)){ resolve(); return; }
+    const s=document.createElement('script');
+    s.src=src; s.onload=()=>resolve(); s.onerror=()=>reject(new Error('load failed: '+src));
+    document.head.appendChild(s);
+  });
+}
+async function TL_prefetchShop(){
+  try{
+    const [giftsRes, nftRes] = await Promise.all([
+      fetch('/api/gifts').then(r=>r.json()).catch(()=>({gifts:[]})),
+      fetch('/api/nft_gallery').then(r=>r.json()).catch(()=>({nfts:[]})),
+    ]);
+    const gifts = giftsRes.gifts || [];
+    const nfts = nftRes.nfts || [];
+    try{
+      sessionStorage.setItem('tl_shop_gifts_cache', JSON.stringify({ts:Date.now(), gifts}));
+      sessionStorage.setItem('tl_shop_nft_cache', JSON.stringify({ts:Date.now(), nfts}));
+    }catch(e){}
+
+    const items = [...gifts, ...nfts.map(n=>({sticker_file_id:n.sticker_file_id, sticker_is_video:n.is_video, sticker_is_animated:n.is_animated}))];
+    const animated = items.filter(g=>g.sticker_file_id && (g.sticker_is_animated||g.is_animated));
+    const others   = items.filter(g=>g.sticker_file_id && !(g.sticker_is_animated||g.is_animated));
+
+    // Warm the HTTP cache for video/webp stickers (server sends long-lived Cache-Control already)
+    others.forEach(g=>{ fetch('/api/sticker/'+g.sticker_file_id).catch(()=>{}); });
+
+    // Decode and cache .tgs (Lottie) stickers into IndexedDB so shop.html can mount them with zero delay
+    if(animated.length){
+      await TL_loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js').catch(()=>{});
+      for(const g of animated){
+        try{
+          const cached = await TL_idbGet(g.sticker_file_id);
+          if(cached) continue;
+          const buf = await fetch('/api/sticker/'+g.sticker_file_id).then(r=>r.arrayBuffer());
+          const json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
+          await TL_idbSet(g.sticker_file_id, json);
+        }catch(e){ /* skip this one, shop.html will just fetch it fresh */ }
+      }
+    }
+  }catch(e){ /* prefetch is best-effort, never blocks anything */ }
+}

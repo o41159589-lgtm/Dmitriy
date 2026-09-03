@@ -939,6 +939,10 @@ window.addEventListener('load',async()=>{
   if(btn)showPage(tabParam,btn,idx);else showPage('games',document.querySelectorAll('.nav-btn')[2],2);
   await initUser();
   setInterval(loadUser,15000);
+  // Warm the shop's gift list + stickers in the background so it opens instantly, already animated
+  const _prefetch=()=>{ if(typeof TL_prefetchShop==='function') TL_prefetchShop(); };
+  if('requestIdleCallback' in window) requestIdleCallback(_prefetch,{timeout:4000});
+  else setTimeout(_prefetch,1500);
 });
 </script>
 </body>

@@ -279,7 +279,6 @@ async function renderGiftSticker(container,fileId,isVideo,isAnimated){
   if(_stickerFailCache.has(fileId))return false;
   try{
     const url='/api/sticker/'+fileId;
-    _dbg('STICKER',url,isVideo?'video':isAnimated?'tgs':'webp');
     if(isVideo){
       const v=document.createElement('video');
       v.src=url;v.autoplay=true;v.loop=true;v.muted=true;v.playsInline=true;
@@ -287,15 +286,20 @@ async function renderGiftSticker(container,fileId,isVideo,isAnimated){
       container.appendChild(v);_dbg('STICKER',url,'✅ video rendered');return true;
     }
     if(isAnimated){
-      if(typeof pako==='undefined'){_dbg('STICKER',url,'❌ pako not loaded');return false;}
-      if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
       let json=_stickerJsonCache.get(fileId);
+      if(!json && typeof TL_idbGet==='function'){
+        json = await TL_idbGet(fileId).catch(()=>null);
+        if(json){ _stickerJsonCache.set(fileId,json); _dbg('STICKER',url,'⚡ from prefetch cache'); }
+      }
       if(!json){
+        if(typeof pako==='undefined'){_dbg('STICKER',url,'❌ pako not loaded');return false;}
+        if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
         const r=await fetch(url);if(!r.ok)throw new Error('sticker fetch failed: HTTP '+r.status);
         const buf=await r.arrayBuffer();
         json=JSON.parse(pako.inflate(new Uint8Array(buf),{to:'string'}));
         _stickerJsonCache.set(fileId,json);
       }
+      if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
       lottie.loadAnimation({container,renderer:'svg',loop:true,autoplay:true,animationData:json});
       _dbg('STICKER',url,'✅ tgs rendered');return true;
     }
@@ -322,9 +326,30 @@ function shopTab(tab,el){
 }
 
 let _shopLoaderCtrl=null;
+const SHOP_CACHE_MAX_AGE=10*60*1000; // 10 minutes
+function _readShopCache(key){
+  try{
+    const raw=sessionStorage.getItem(key);
+    if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    if(Date.now()-parsed.ts>SHOP_CACHE_MAX_AGE)return null;
+    return parsed;
+  }catch(e){ return null; }
+}
 async function loadShopGifts(){
   shopLoaded=true;
   const botInner=document.getElementById('bot-gifts-inner');
+
+  const cached=_readShopCache('tl_shop_gifts_cache');
+  if(cached){
+    shopGifts=cached.gifts||[];
+    _dbg('SHOP','cache','⚡ '+shopGifts.length+' gifts from prefetch cache');
+    if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}
+    else renderBotGifts();
+    renderOwnerGifts();
+    return;
+  }
+
   const eyesEl=document.getElementById('shop-eyes-loader');
   if(eyesEl) _shopLoaderCtrl=TL_mountEyesLoader(eyesEl);
   try{
@@ -385,6 +410,8 @@ function renderBotGifts(){
 let nftGallery=[];
 let _gridNftCarousel=null, _modalNftCarousel=null;
 async function loadNftGallery(){
+  const cached=_readShopCache('tl_shop_nft_cache');
+  if(cached){ nftGallery=cached.nfts||[]; _dbg('SHOP','cache','⚡ '+nftGallery.length+' NFTs from prefetch cache'); return; }
   try{
     const data=await get('/api/nft_gallery');
     nftGallery=data.nfts||[];
