@@ -336,6 +336,28 @@ function _readShopCache(key){
     return parsed;
   }catch(e){ return null; }
 }
+// Decodes every animated (.tgs) sticker up front (checking the IndexedDB prefetch cache first)
+// so cards can mount their animation the instant they're created — no flash of plain emoji first.
+async function preloadAnimatedStickers(gifts){
+  const jobs = gifts
+    .filter(g => g.sticker_file_id && g.sticker_is_animated)
+    .map(async g => {
+      if(_stickerJsonCache.has(g.sticker_file_id)) return;
+      try{
+        let json = typeof TL_idbGet==='function' ? await TL_idbGet(g.sticker_file_id).catch(()=>null) : null;
+        if(!json){
+          if(typeof pako==='undefined') return;
+          const r = await fetch('/api/sticker/'+g.sticker_file_id);
+          if(!r.ok) return;
+          const buf = await r.arrayBuffer();
+          json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
+        }
+        _stickerJsonCache.set(g.sticker_file_id, json);
+      }catch(e){ /* this one gift falls back to the async path at render time */ }
+    });
+  await Promise.all(jobs);
+}
+
 async function loadShopGifts(){
   shopLoaded=true;
   const botInner=document.getElementById('bot-gifts-inner');
@@ -344,6 +366,7 @@ async function loadShopGifts(){
   if(cached){
     shopGifts=cached.gifts||[];
     _dbg('SHOP','cache','⚡ '+shopGifts.length+' gifts from prefetch cache');
+    await preloadAnimatedStickers(shopGifts);
     if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}
     else renderBotGifts();
     renderOwnerGifts();
@@ -356,6 +379,7 @@ async function loadShopGifts(){
     const data=await get('/api/gifts');
     shopGifts=data.gifts||[];
     _dbg('SHOP','/api/gifts',shopGifts.length+' gifts loaded');
+    await preloadAnimatedStickers(shopGifts); // keep the loader up until animations are actually ready
     if(_shopLoaderCtrl){_shopLoaderCtrl.stop();_shopLoaderCtrl=null;}
     if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}
     else renderBotGifts();
@@ -396,6 +420,15 @@ function mountGiftStickers(gifts,source){
     const box=document.createElement('div');
     box.className='gift-lottie';
     wrap.appendChild(box);
+
+    const cachedJson = gift.sticker_is_animated ? _stickerJsonCache.get(gift.sticker_file_id) : null;
+    if(cachedJson && typeof lottie!=='undefined'){
+      // Fully synchronous — the animation exists before this card is ever painted, zero flash.
+      if(emojiEl) emojiEl.style.display='none';
+      box.style.display='block';
+      lottie.loadAnimation({container:box,renderer:'svg',loop:true,autoplay:true,animationData:cachedJson});
+      return;
+    }
     renderGiftSticker(box,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
       if(ok){if(emojiEl)emojiEl.style.display='none';box.style.display='block';}
     });
@@ -439,18 +472,21 @@ function renderOwnerGifts(){
     if(_gridNftCarousel) _gridNftCarousel.stop();
     const fallback=document.getElementById('nft-mystery-fallback');
     if(fallback)fallback.style.display='none';
-    _gridNftCarousel=mountRealNftCarousel(document.getElementById('gw-owner-random_nft'),1600);
+    _gridNftCarousel=mountRealNftCarousel(document.getElementById('gw-owner-random_nft'),3200,false);
   }
 }
 
 // Cycles through the real admin-added NFT collectibles (Pepe, Torch, Statue, etc.) — each one
 // is a genuine sticker forwarded to the bot, since Telegram has no public catalog of all NFTs.
 let _nftTimer=null;
-function mountRealNftCarousel(wrap, intervalMs){
+let _nftSharedIndex=0; // shared position across grid + modal carousels
+function mountRealNftCarousel(wrap, intervalMs, startAtShared){
   if(!wrap || !nftGallery.length) return null;
-  let idx=0, timer=null;
+  let idx = startAtShared ? _nftSharedIndex : 0, timer=null;
   function frame(){
-    const nft=nftGallery[idx%nftGallery.length];idx++;
+    const nft=nftGallery[idx%nftGallery.length];
+    _nftSharedIndex=idx;
+    idx++;
     const item=document.createElement('div');
     item.className='nft-carousel-item';
     const box=document.createElement('div');
@@ -466,7 +502,7 @@ function mountRealNftCarousel(wrap, intervalMs){
     });
   }
   frame();
-  timer=setInterval(frame,intervalMs||1600);
+  timer=setInterval(frame,intervalMs||3200);
   return {stop(){clearInterval(timer);}};
 }
 
@@ -478,8 +514,9 @@ function openBuyModal(gift,source){
   mLottie.style.display='none';mLottie.innerHTML='';
   if(_modalNftCarousel){_modalNftCarousel.stop();_modalNftCarousel=null;}
   if(gift.id==='random_nft' && nftGallery.length){
+    if(_gridNftCarousel){_gridNftCarousel.stop();_gridNftCarousel=null;}
     emojiEl.style.display='none';mLottie.style.display='block';
-    _modalNftCarousel=mountRealNftCarousel(mLottie,900);
+    _modalNftCarousel=mountRealNftCarousel(mLottie,3200,true);
   } else if(gift.sticker_file_id){
     renderGiftSticker(mLottie,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
       if(ok){emojiEl.style.display='none';mLottie.style.display='block';}
@@ -497,6 +534,10 @@ function closeBuyModal(e){
   if(!e||e.target.id==='buy-modal'){
     document.getElementById('buy-modal').classList.remove('open');
     if(_modalNftCarousel){_modalNftCarousel.stop();_modalNftCarousel=null;}
+    const gridWrap=document.getElementById('gw-owner-random_nft');
+    if(gridWrap && nftGallery.length && !_gridNftCarousel){
+      _gridNftCarousel=mountRealNftCarousel(gridWrap,3200,true);
+    }
   }
 }
 function setRecipient(mode,el){
