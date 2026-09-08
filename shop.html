@@ -230,6 +230,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
 </nav>
 
 <script>
+console.log('[TopLuck] shop.html build: nft-5s-sync-preload-v3');
 const tg=window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();}
 const UID=tg?.initDataUnsafe?.user?.id||0;
@@ -472,7 +473,7 @@ function renderOwnerGifts(){
     if(_gridNftCarousel) _gridNftCarousel.stop();
     const fallback=document.getElementById('nft-mystery-fallback');
     if(fallback)fallback.style.display='none';
-    _gridNftCarousel=mountRealNftCarousel(document.getElementById('gw-owner-random_nft'),3200,false);
+    _gridNftCarousel=mountRealNftCarousel(document.getElementById('gw-owner-random_nft'),5000,false);
   }
 }
 
@@ -502,7 +503,7 @@ function mountRealNftCarousel(wrap, intervalMs, startAtShared){
     });
   }
   frame();
-  timer=setInterval(frame,intervalMs||3200);
+  timer=setInterval(frame,intervalMs||5000);
   return {stop(){clearInterval(timer);}};
 }
 
@@ -516,7 +517,7 @@ function openBuyModal(gift,source){
   if(gift.id==='random_nft' && nftGallery.length){
     if(_gridNftCarousel){_gridNftCarousel.stop();_gridNftCarousel=null;}
     emojiEl.style.display='none';mLottie.style.display='block';
-    _modalNftCarousel=mountRealNftCarousel(mLottie,3200,true);
+    _modalNftCarousel=mountRealNftCarousel(mLottie,5000,true);
   } else if(gift.sticker_file_id){
     renderGiftSticker(mLottie,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
       if(ok){emojiEl.style.display='none';mLottie.style.display='block';}
@@ -536,7 +537,7 @@ function closeBuyModal(e){
     if(_modalNftCarousel){_modalNftCarousel.stop();_modalNftCarousel=null;}
     const gridWrap=document.getElementById('gw-owner-random_nft');
     if(gridWrap && nftGallery.length && !_gridNftCarousel){
-      _gridNftCarousel=mountRealNftCarousel(gridWrap,3200,true);
+      _gridNftCarousel=mountRealNftCarousel(gridWrap,5000,true);
     }
   }
 }
