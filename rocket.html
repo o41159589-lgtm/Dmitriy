@@ -112,14 +112,8 @@ function setBet(v){ document.getElementById('bet-inp').value = v; }
 function halfBet(){ const v=parseInt(document.getElementById('bet-inp').value)||0; document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2)); }
 function doubleBet(){ const v=parseInt(document.getElementById('bet-inp').value)||0; document.getElementById('bet-inp').value=v*2; }
 
-// Generate crash point: exponential distribution weighted low
-function genCrash(){
-  // ~30% chance < 1.5x, ~50% chance < 3x, rare big values
-  const r = Math.random();
-  if(r < 0.03) return 1.00; // 3% instant
-  const crash = 1 / (1 - r * 0.97);
-  return Math.min(crash, 100);
-}
+// Точка краха известна ТОЛЬКО серверу. Клиент рисует полёт по формуле m(t)=e^(rate·t) и сверяется с сервером.
+let RATE=0.15, pollTimer=null, finished=false;
 
 function resizeCanvas(){
   const stage = document.getElementById('stage');
@@ -150,28 +144,23 @@ function drawTrail(){
 function multToPos(mult){
   const stageH = canvas.height || 260;
   const stageW = canvas.width || 360;
-  const progress = Math.min((mult - 1) / (crashPoint - 1), 1);
+  const progress = 1 - 1/(1 + 0.9*Math.log(Math.max(1,mult)));
   const x = 30 + progress * (stageW - 80);
   const y = stageH - 30 - progress * (stageH - 80);
   return {x, y};
 }
 
 function animate(ts){
-  if(!startTime) startTime = ts;
-  const elapsed = (ts - startTime) / 1000;
-  // Exponential growth: mult = e^(elapsed * growth_rate)
-  const growthRate = 0.08;
-  currentMult = Math.pow(Math.E, elapsed * growthRate * crashPoint);
-  currentMult = Math.min(currentMult, crashPoint * 1.001);
-  currentMult = Math.round(currentMult * 100) / 100;
+  if(finished || gamePhase!=='running') return;
+  const elapsed = (performance.now() - startTime) / 1000;
+  currentMult = Math.floor(Math.pow(Math.E, elapsed * RATE) * 100) / 100;
+  currentMult = Math.min(currentMult, 100);
 
-  // Update display
   const mEl = document.getElementById('mult-display');
   mEl.textContent = currentMult.toFixed(2) + '×';
   mEl.className = 'mult-val safe';
   document.getElementById('st-curr').textContent = currentMult.toFixed(2) + '×';
 
-  // Move rocket
   const pos = multToPos(currentMult);
   const rocket = document.getElementById('rocket-wrap');
   const stageH = canvas.height || 260;
@@ -180,14 +169,15 @@ function animate(ts){
   trailPoints.push({x:pos.x, y:pos.y});
   if(trailPoints.length > 200) trailPoints.shift();
   drawTrail();
-
-  // Check auto cashout
-  const ac = parseFloat(document.getElementById('ac-inp').value);
-  if(ac >= 1.01 && currentMult >= ac && !cashedOut){ doCashout(); return; }
-
-  // Check crash
-  if(currentMult >= crashPoint){ doCrash(); return; }
   animFrame = requestAnimationFrame(animate);
+}
+
+async function api(path, method, body){
+  const o = {method:method||'GET', headers:{'Content-Type':'application/json'}};
+  if(body) o.body = JSON.stringify(body);
+  const r = await fetch(path, o);
+  let j = null; try{ j = await r.json(); }catch(e){}
+  return j || {error:'Ошибка сервера'};
 }
 
 async function mainAction(){
@@ -199,9 +189,15 @@ async function launchRocket(){
   const bet = parseInt(document.getElementById('bet-inp').value)||0;
   if(bet < 1){ toast('Введите ставку','err'); return; }
   if(bet > balance){ toast('Недостаточно монет','err'); return; }
-  currentBet = bet; cashedOut = false;
-  crashPoint = genCrash();
-  trailPoints = []; startTime = null;
+  const ac = parseFloat(document.getElementById('ac-inp').value) || 0;
+  const btn = document.getElementById('main-btn'); btn.disabled = true;
+  const r = await api('/api/rocket/start','POST',{bet, auto: ac>=1.01 ? ac : 0});
+  btn.disabled = false;
+  if(r.error){ toast(r.error,'err'); return; }
+  RATE = r.rate || RATE;
+  balance = r.new_balance; document.getElementById('r-bal').textContent = balance;
+  currentBet = bet; cashedOut = false; finished = false;
+  trailPoints = []; startTime = performance.now();
   gamePhase = 'running';
 
   resizeCanvas();
@@ -210,41 +206,54 @@ async function launchRocket(){
   document.getElementById('st-bet').textContent = currentBet;
   document.getElementById('st-curr').textContent = '1.00×';
   document.getElementById('st-cashout').textContent = '—';
-
-  // Move rocket to start
   const rocket = document.getElementById('rocket-wrap');
   rocket.style.bottom = '30px';
   rocket.style.left = 'calc(50% - 18px)';
-
-  const btn = document.getElementById('main-btn');
   btn.textContent = '💰 КЕШАУТ';
   btn.className = 'launch-btn cashout-btn';
 
   animFrame = requestAnimationFrame(animate);
+  pollTimer = setInterval(pollState, 200);
 }
 
-function doCrash(){
-  if(window._rocketTimeout){clearTimeout(window._rocketTimeout);window._rocketTimeout=null;}
+async function pollState(){
+  if(finished) return;
+  const r = await api('/api/rocket/state');
+  if(finished) return;
+  if(r.status === 'running'){
+    startTime = performance.now() - r.t*1000;      // подстраиваем наши часы под серверные
+  } else if(r.status === 'crashed'){ endRound(r); }
+  else if(r.status === 'cashed'){ endRound(r); }
+  else if(r.status === 'idle'){ endRound({status:'crashed', crash:currentMult}); }
+}
+
+function stopLoops(){
+  finished = true;
   if(animFrame) cancelAnimationFrame(animFrame);
-  gamePhase = 'crashed';
-  document.getElementById('exhaust').style.display = 'none';
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+}
+
+function endRound(r){
+  if(finished) return;
+  stopLoops();
+  if(r.new_balance != null){ balance = r.new_balance; document.getElementById('r-bal').textContent = balance; }
   const mEl = document.getElementById('mult-display');
-  mEl.textContent = crashPoint.toFixed(2) + '×';
-  mEl.className = 'mult-val crashed';
-  document.getElementById('mult-status').textContent = '💥 CRASHED';
-
-  if(!cashedOut){
-    history.unshift({mult:crashPoint.toFixed(2), won:false});
-    renderHistory();
-    // Submit loss
-    fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:UID,game:'Ракета',bet:currentBet,won:false,detail:`Ракета: крэш ${crashPoint.toFixed(2)}×`})
-    }).then(r=>r.json()).then(res=>{
-      if(res?.new_balance != null){ balance=res.new_balance; document.getElementById('r-bal').textContent=balance; }
-    }).catch(()=>{});
-    toast(`💥 Крэш на ${crashPoint.toFixed(2)}× — потеряно ${currentBet}🪙`,'err');
+  document.getElementById('exhaust').style.display = 'none';
+  if(r.status === 'cashed'){
+    cashedOut = true;
+    mEl.textContent = r.mult.toFixed(2) + '×'; mEl.className = 'mult-val safe';
+    document.getElementById('mult-status').textContent = '💰 КЕШАУТ';
+    document.getElementById('st-cashout').textContent = r.mult.toFixed(2) + '×';
+    history.unshift({mult:r.mult.toFixed(2), won:true});
+    toast(`💰 Кешаут ${r.mult.toFixed(2)}× · ${r.profit>=0?'+':''}${r.profit}🪙`, 'ok');
+  } else {
+    gamePhase = 'crashed';
+    mEl.textContent = r.crash.toFixed(2) + '×'; mEl.className = 'mult-val crashed';
+    document.getElementById('mult-status').textContent = '💥 CRASHED';
+    history.unshift({mult:r.crash.toFixed(2), won:false});
+    toast(`💥 Крэш на ${r.crash.toFixed(2)}× — потеряно ${currentBet}🪙`, 'err');
   }
-
+  renderHistory();
   const btn = document.getElementById('main-btn');
   btn.textContent = '🚀 ЗАПУСТИТЬ СНОВА';
   btn.className = 'launch-btn';
@@ -252,22 +261,12 @@ function doCrash(){
 }
 
 async function doCashout(){
-  if(gamePhase !== 'running' || cashedOut) return;
-  cashedOut = true;
-  const mult = currentMult;
-  const won = Math.round(currentBet * mult);
-  const profit = won - currentBet;
-
-  document.getElementById('st-cashout').textContent = mult.toFixed(2) + '×';
-
-  const res = await fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({user_id:UID,game:'Ракета',bet:currentBet,won:true,multiplier:mult,detail:`Ракета: кешаут ${mult.toFixed(2)}× (+${profit}🪙)`})
-  }).then(r=>r.json()).catch(()=>null);
-
-  if(res?.new_balance != null){ balance=res.new_balance; document.getElementById('r-bal').textContent=balance; }
-  history.unshift({mult:mult.toFixed(2), won:true});
-  renderHistory();
-  toast(`💰 Кешаут ${mult.toFixed(2)}× · +${profit}🪙`,'ok');
+  if(gamePhase !== 'running' || finished) return;
+  const btn = document.getElementById('main-btn'); btn.disabled = true;
+  const r = await api('/api/rocket/cashout','POST',{});
+  btn.disabled = false;
+  if(r.error){ toast(r.error,'err'); return; }
+  endRound(r);
 }
 
 function renderHistory(){
@@ -289,7 +288,21 @@ function initStars(){
   }
 }
 initStars();
-loadUser();
+async function resumeRound(){
+  const r = await api('/api/rocket/state');
+  if(r.status === 'running'){
+    RATE = r.rate || RATE; currentBet = r.bet; finished = false; cashedOut = false;
+    startTime = performance.now() - r.t*1000; trailPoints = []; gamePhase = 'running';
+    resizeCanvas();
+    document.getElementById('st-bet').textContent = currentBet;
+    document.getElementById('exhaust').style.display = '';
+    document.getElementById('mult-status').textContent = 'ПОЛЁТ...';
+    const btn = document.getElementById('main-btn');
+    btn.textContent = '💰 КЕШАУТ'; btn.className = 'launch-btn cashout-btn';
+    animFrame = requestAnimationFrame(animate); pollTimer = setInterval(pollState, 200);
+  } else if(r.status === 'crashed' || r.status === 'cashed'){ gamePhase='running'; finished=false; endRound(r); }
+}
+loadUser().then(resumeRound);
 </script>
 </body>
 </html>

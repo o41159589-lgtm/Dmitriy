@@ -487,29 +487,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   </div>
 
   <!-- Blackjack luck — INDEPENDENT -->
-  <div class="settings-block">
-    <div class="settings-title">🃏 БЛЭКДЖЕК — УДАЧА</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Только для Блэкджека. <b style="color:var(--text)">Не влияет на другие режимы.</b>
-    </p>
-    <div class="slider-box" style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
-        <span id="bj-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
-      </div>
-      <input type="range" id="bj-slider" min="0" max="200" value="100" oninput="onBjSlider(this.value)"
-        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-        <div class="pb" onclick="setBjCoeff(0)">0.0</div>
-        <div class="pb" onclick="setBjCoeff(0.5)">0.5</div>
-        <div class="pb" onclick="setBjCoeff(1.0)">1.0 — Честно</div>
-      </div>
-      <button class="abtn set" style="width:100%;padding:11px" onclick="saveBjCoeff()">💾 Сохранить (только блэкджек)</button>
-    </div>
-    <div id="bj-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
-  </div>
-
-  <!-- ═══ Everything below is NOT a luck coefficient ═══ -->
+    <!-- ═══ Everything below is NOT a luck coefficient ═══ -->
 
   <!-- Incognito mode -->
   <div class="settings-block" id="incognito-block" style="display:none">
@@ -2080,7 +2058,7 @@ async function saveBjCoeff(){
 
 // Maintenance / per-game switches
 const GAME_LABELS={european_roulette:'🎡 Евр. рулетка',gta_roulette:'🔫 GTA рулетка',mines:'💣 Мины',tower:'🗼 Башня',
-  blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета',aviator:'✈️ Самолётик'};
+  blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета'};
 async function loadMaintenance(){
   try{
     const d=await api('/api/admin/maintenance');

@@ -75,10 +75,6 @@ TL_startBanPoll(UID);
 /* ── Настройки ── 9 слотов, 8 рядов колышков. Слот k = число "вправо" среди 8 отскоков. */
 let MULTS=[5,2,1.1,1,0.5,1,1.1,2,5];
 const ROWS=8, NSLOTS=9, SEG=0.28;          // SEG — секунд на один отскок
-const BINOM=[1,8,28,56,70,56,28,8,1];
-/* Смещение к центру при luck=50. 0 = честный бином (RTP≈98%), -0.3 ≈ RTP 88%, -0.5 ≈ 83%.
-   Чем меньше число — тем чаще центр (проигрыш) и реже края. */
-const CENTER_BIAS=-0.3;
 
 async function loadMults(){
   try{
@@ -101,7 +97,7 @@ const TOP=34, BOT=H-SLOT_H-26;
 function rowY(r){return TOP+r*((BOT-TOP)/(ROWS-1));}
 function pegPos(r,i){return{x:W/2+(i-r/2)*SP,y:rowY(r)};}
 
-let bal=0,userLuck=50,animId=null,balls=[],lastT=0;
+let bal=0,animId=null,balls=[],lastT=0;
 let slotFlash=new Array(NSLOTS).fill(0);
 const pegFlash=Array.from({length:ROWS},(_,r)=>new Array(r+1).fill(0));
 let parts=[],floats=[];
@@ -119,7 +115,6 @@ async function loadUser(){
   if(!u)return;
   if(TL_guardBanned(u))return;
   bal=u.balance??0;
-  userLuck=u.luck??50;
   document.getElementById('r-bal').textContent=bal;
 }
 function sb(v){document.getElementById('bet-inp').value=v;}
@@ -220,26 +215,9 @@ function drawBoard(){
   ctx.globalAlpha=1;ctx.textAlign='start';
 }
 
-/* ── Честный RNG ── */
+/* Косметический рандом (дрожание траектории). Результат броска приходит ТОЛЬКО с сервера. */
 function rnd(){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]/4294967296;}
 
-/* Итоговый слот выбирается ДО анимации. Анимация только показывает результат,
-   поэтому размер окна/устройство/FPS на исход не влияют.
-   luck=50 — базовая игра со смещением к центру (CENTER_BIAS<0 → больше проигрышей);
-   luck>50 — сдвиг к краям; luck<50 — ещё сильнее к центру; luck>=100 — гарантированно край. */
-function pickSlot(luck){
-  if(luck>=100){const e=[0,1,7,8];return e[Math.floor(rnd()*e.length)];}
-  const tilt=CENTER_BIAS+Math.max(-1,Math.min(1,(luck-50)/50))*0.6;
-  const w=BINOM.map((c,k)=>c*Math.exp(tilt*Math.abs(k-4)));
-  let s=w.reduce((a,b)=>a+b,0)*rnd();
-  for(let k=0;k<NSLOTS;k++){s-=w[k];if(s<=0)return k;}
-  return 4;
-}
-function makePath(slot){
-  const d=[];for(let i=0;i<ROWS;i++)d.push(i<slot?1:0);
-  for(let i=d.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
-  return d;
-}
 function buildWaypoints(dirs){
   const off=PEG_R+BALL_R*.55,pts=[{x:W/2+(rnd()-.5)*6,y:-BALL_R,peg:null}];
   let k=0;
@@ -252,10 +230,10 @@ function buildWaypoints(dirs){
   return pts;
 }
 
-function createBall(bet){
-  const slot=pickSlot(userLuck);
-  const wp=buildWaypoints(makePath(slot));
-  return{x:wp[0].x,y:wp[0].y,wp,seg:0,t:0,trail:[],done:false,slot,_bet:bet,_landTime:0};
+function createBall(r){
+  // r — ответ сервера: path (8 бросков 0/1), slot, mult, payout, profit
+  const wp=buildWaypoints(r.path);
+  return{x:wp[0].x,y:wp[0].y,wp,seg:0,t:0,trail:[],done:false,slot:r.slot,res:r,_bet:r.payout-r.profit,_landTime:0};
 }
 
 function burst(x,y,col){
@@ -306,30 +284,33 @@ function loop(now){
   if(balls.length||parts.length||floats.length)animId=requestAnimationFrame(loop);else animId=null;
 }
 
-async function resolveBall(b){
-  const mult=MULTS[b.slot];
-  const profit=Math.round(b._bet*mult)-b._bet;
+function resolveBall(b){
+  const r=b.res, mult=r.mult, profit=r.profit;
   document.getElementById('s-mult').textContent=mult.toFixed(2)+'x';
   document.getElementById('s-win').textContent=(profit>=0?'+':'')+profit;
   document.getElementById('s-win').style.color=profit>=0?'var(--green)':'var(--red)';
-  const res=await fetch('/api/game/play',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({user_id:UID,game:'Plinko',bet:b._bet,won:mult>=1.0,multiplier:mult,
-      detail:'Plinko x'+mult.toFixed(2)+' ('+(profit>=0?'+':'')+profit+')'})
-  }).then(r=>r.json()).catch(()=>null);
-  if(res?.new_balance!=null){bal=res.new_balance;document.getElementById('r-bal').textContent=bal;}
-  const coin='\u{1FA99}';
-  toast(mult.toFixed(2)+'x  '+(profit>=0?'+':'')+profit+' '+coin,profit>=0?'ok':'err');
+  bal+=r.payout;                                   // ставка списана при броске, выплату показываем при приземлении
+  document.getElementById('r-bal').textContent=bal;
+  toast(mult.toFixed(2)+'x  '+(profit>=0?'+':'')+profit+' \u{1FA99}',profit>=0?'ok':'err');
 }
 
+let _dropBusy=0;
 async function dropBalls(){
   const bet=Math.floor(+document.getElementById('bet-inp').value||0);
   if(bet<1){toast('Введите ставку','err');return;}
   if(bet>bal){toast('Недостаточно монет','err');return;}
-  bal-=bet;
+  if(_dropBusy>=5){return;}
+  bal-=bet; _dropBusy++;
   document.getElementById('r-bal').textContent=bal;
   document.getElementById('s-bet').textContent=bet;
-  balls.push(createBall(bet));
+  const r=await fetch('/api/plinko/drop',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({bet})}).then(x=>x.json()).catch(()=>null);
+  _dropBusy--;
+  if(!r||r.error||!Array.isArray(r.path)){
+    bal+=bet; document.getElementById('r-bal').textContent=bal;
+    toast(r?.error||'Ошибка сервера','err'); return;
+  }
+  balls.push(createBall(r));
   if(!animId){lastT=performance.now();animId=requestAnimationFrame(loop);}
 }
 

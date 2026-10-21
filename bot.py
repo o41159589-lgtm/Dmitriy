@@ -772,7 +772,12 @@ async def api_invoice(req: web.Request):
     except Exception as e:
         return web.json_response({"error": str(e)}, status=500)
 
+_gifts_cache = {"ts": 0.0, "data": None}
+_GIFTS_TTL = 300   # каталог подарков меняется редко — не дёргаем Telegram на каждый заход
+
 async def api_get_gifts(req: web.Request):
+    if _gifts_cache["data"] is not None and time.time() - _gifts_cache["ts"] < _GIFTS_TTL:
+        return web.json_response(_gifts_cache["data"], headers={"Cache-Control": "public, max-age=120"})
     try:
         result = await bot.get_available_gifts()
         gifts_list = []
@@ -790,31 +795,55 @@ async def api_get_gifts(req: web.Request):
                 "is_limited": gift.total_count is not None,
                 "can_be_upgraded": getattr(gift, "can_be_upgraded", False),
             })
-        return web.json_response({"gifts": gifts_list})
+        _gifts_cache["data"] = {"gifts": gifts_list}; _gifts_cache["ts"] = time.time()
+        return web.json_response({"gifts": gifts_list}, headers={"Cache-Control": "public, max-age=120"})
     except Exception as e:
+        if _gifts_cache["data"] is not None:       # Telegram недоступен — отдаём последний удачный каталог
+            return web.json_response(_gifts_cache["data"])
         logger.error(f"get_available_gifts: {e}")
         return web.json_response({"error": str(e), "gifts": []}, status=500)
 
 # Proxies a Telegram sticker file (.tgs — gzipped Lottie JSON) to the browser.
 # Keeps the bot token server-side; the frontend just fetches /api/sticker/{file_id}.
+_STICKER_DIR = Path(__file__).parent / "cache" / "stickers"
+_sticker_mem: dict[str, tuple[bytes, str]] = {}
+_STICKER_MEM_MAX = 300
+
+def _sticker_ctype(path: str) -> str:
+    path = (path or "").lower()
+    if path.endswith(".webm"): return "video/webm"
+    if path.endswith(".webp"): return "image/webp"
+    if path.endswith(".png"):  return "image/png"
+    if path.endswith((".jpg", ".jpeg")): return "image/jpeg"
+    return "application/octet-stream"          # .tgs (gzipped Lottie)
+
 async def api_sticker(req: web.Request):
     file_id = req.match_info["file_id"]
-    try:
-        f = await bot.get_file(file_id)
-        buf = await bot.download_file(f.file_path)
-        data = buf.read() if hasattr(buf, "read") else buf
-        path = (f.file_path or "").lower()
-        if path.endswith(".webm"):        ctype = "video/webm"
-        elif path.endswith(".webp"):      ctype = "image/webp"
-        elif path.endswith((".png",)):    ctype = "image/png"
-        elif path.endswith((".jpg",".jpeg")): ctype = "image/jpeg"
-        else:                             ctype = "application/octet-stream"  # .tgs (gzipped Lottie)
-        resp = web.Response(body=data, content_type=ctype)
-        resp.headers["Cache-Control"] = "public, max-age=604800, immutable"
-        return resp
-    except Exception as e:
-        logger.warning(f"sticker proxy error ({file_id}): {e}")
-        return web.json_response({"error": str(e)}, status=404)
+    if not file_id.replace("_", "").replace("-", "").isalnum() or len(file_id) > 200:
+        return web.json_response({"error": "bad id"}, status=400)
+    headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+    hit = _sticker_mem.get(file_id)
+    if hit is None:                                    # диск
+        f_ = _STICKER_DIR / file_id
+        m_ = _STICKER_DIR / (file_id + ".ct")
+        if f_.exists() and m_.exists():
+            hit = (f_.read_bytes(), m_.read_text())
+    if hit is None:                                    # Telegram (один раз на стикер за всё время)
+        try:
+            f = await bot.get_file(file_id)
+            buf = await bot.download_file(f.file_path)
+            data = buf.read() if hasattr(buf, "read") else buf
+            hit = (data, _sticker_ctype(f.file_path))
+            _STICKER_DIR.mkdir(parents=True, exist_ok=True)
+            (_STICKER_DIR / file_id).write_bytes(data)
+            (_STICKER_DIR / (file_id + ".ct")).write_text(hit[1])
+        except Exception as e:
+            logger.warning(f"sticker proxy error ({file_id}): {e}")
+            return web.json_response({"error": "sticker unavailable"}, status=404)
+    if len(_sticker_mem) >= _STICKER_MEM_MAX:
+        _sticker_mem.pop(next(iter(_sticker_mem)))
+    _sticker_mem[file_id] = hit
+    return web.Response(body=hit[0], content_type=hit[1], headers=headers)
 
 # ── NFT GALLERY (admin-curated, populated by forwarding stickers to the bot) ──
 async def api_nft_gallery(req: web.Request):
@@ -1446,7 +1475,7 @@ def _actor_uid(req) -> int:
     return int(req.get("tg_uid") or 0)
 
 # Публичные API без авторизации
-_PUBLIC_API = {"/api/bot_info", "/api/status", "/api/plinko_mults",
+_PUBLIC_API = {"/api/bot_info", "/api/status", "/api/plinko_mults", "/api/gifts",
                "/api/mines/settings", "/api/notify_not_telegram"}
 
 # Страницы/файлы, которые доступны всегда (даже в техработах)
@@ -1458,17 +1487,19 @@ _BLOCKED_STATIC = {"dev_snippet.html", "telegram_mini_app.html"}
 _PAGE_TO_GAME = {
     "european_roulette.html": "european_roulette", "gta_roulette.html": "gta_roulette",
     "mines.html": "mines", "tower.html": "tower", "blackjack.html": "blackjack",
-    "plinko.html": "plinko", "rocket.html": "rocket", "aviator.html": "aviator",
+    "plinko.html": "plinko", "rocket.html": "rocket",
 }
 _GAMENAME_TO_GAME = {"Блэкджек": "blackjack", "Plinko": "plinko",
-                     "Ракета": "rocket", "Самолётик": "aviator"}
+                     "Ракета": "rocket"}
 
 def _api_game_key(path: str, body: dict):
     if path == "/api/spin": return "european_roulette"
     if path.startswith("/api/gta/"): return "gta_roulette"
     if path.startswith("/api/mines/") and path != "/api/mines/settings": return "mines"
     if path.startswith("/api/tower/"): return "tower"
-    if path == "/api/game/play": return _GAMENAME_TO_GAME.get(str((body or {}).get("game", "")))
+    if path.startswith("/api/plinko/"): return "plinko"
+    if path.startswith("/api/blackjack/"): return "blackjack"
+    if path.startswith("/api/rocket/"): return "rocket"
     return None
 
 # API, доступные во время техработ (всё остальное блокируется для обычных игроков)
@@ -1498,7 +1529,7 @@ async def guard_middleware(req: web.Request, handler):
     req["tg_uid"] = tg_uid
     is_staff = bool(tg_uid) and (tg_uid in ADMIN_IDS or tg_uid in DEV_IDS)
 
-    if path in _PUBLIC_API:
+    if path in _PUBLIC_API or path.startswith("/api/sticker/"):
         return await handler(req)
     if not tg_uid:
         return web.json_response({"error": "unauthorized"}, status=401)
@@ -1727,8 +1758,14 @@ async def api_bot_info(req):
 async def serve_admin(req): return await serve_html("admin_panel.html")
 async def health(req):      return web.Response(text="OK")
 _STATIC_EXTS = {".css",".png",".jpg",".jpeg",".js",".svg",".html",".ico",".webp"}
+_CT = {".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",
+       ".js":"application/javascript",".svg":"image/svg+xml",".html":"text/html",
+       ".ico":"image/x-icon",".webp":"image/webp"}
+_TEXTUAL = {".css", ".js", ".svg", ".html"}
+_static_cache: dict[str, tuple[float, int, bytes, str]] = {}    # path -> (mtime, size, body, etag)
+
 async def serve_static(req):
-    filename = req.match_info.get("filename","")
+    filename = req.match_info.get("filename", "")
     try:
         target = (BASE / filename).resolve()
         target.relative_to(BASE.resolve())
@@ -1737,14 +1774,29 @@ async def serve_static(req):
     if not target.exists() or not target.is_file():
         return web.Response(text="Not found", status=404)
     ext = target.suffix.lower()
-    if ext not in _STATIC_EXTS:
+    if ext not in _STATIC_EXTS or target.name.lower() in _BLOCKED_STATIC:
         return web.Response(text="Forbidden", status=403)
-    ct = {".css":"text/css",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",
-          ".js":"application/javascript",".svg":"image/svg+xml",".html":"text/html",
-          ".ico":"image/x-icon",".webp":"image/webp"}.get(ext,"application/octet-stream")
-    if ext in (".html",".css",".js"):
-        return web.Response(text=target.read_text("utf-8"), content_type=ct, charset="utf-8")
-    return web.Response(body=target.read_bytes(), content_type=ct)
+    st = target.stat()
+    key = str(target)
+    c = _static_cache.get(key)
+    if not c or c[0] != st.st_mtime or c[1] != st.st_size:
+        body = target.read_bytes()
+        c = (st.st_mtime, st.st_size, body, '"%x-%x"' % (int(st.st_mtime), st.st_size))
+        _static_cache[key] = c
+    etag = c[3]
+    # картинки/шрифты/svg: кешируем надолго (раньше без заголовков — перекачивались при каждом переходе)
+    # html/css/js: всегда сверяем ETag (304 — мгновенно), чтобы обновления доезжали сразу
+    if ext in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico"):
+        cache = "public, max-age=2592000, stale-while-revalidate=86400"
+    else:
+        cache = "no-cache"
+    headers = {"ETag": etag, "Cache-Control": cache}
+    if req.headers.get("If-None-Match") == etag:
+        return web.Response(status=304, headers=headers)
+    resp = web.Response(body=c[2], content_type=_CT.get(ext, "application/octet-stream"), headers=headers)
+    if ext in _TEXTUAL:
+        resp.enable_compression()
+    return resp
 
 # ════════════════════════════════════════
 #  TOWER GAME API
@@ -2064,10 +2116,6 @@ async def api_admin_set_blackjack_luck(req):
             f"Коэффициент блэкджека → {coeff}", incognito=False))
     return web.json_response({"ok": True, "coeff": coeff})
 
-# ── PLINKO MULTIPLIERS (15-slot ladder, public + admin) ──
-async def api_plinko_mults(req):
-    return web.json_response({"mults": await db.get_plinko_mults()})
-
 # ── GROUP LOGS (in-panel copy of the Telegram log group) ──
 async def api_admin_glogs(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
@@ -2330,75 +2378,229 @@ async def api_notify_not_telegram(req: web.Request):
 
 
 # ════════════════════════════════════════
-#  GENERIC GAME API (Blackjack, Plinko)
+#  SERVER-AUTHORITATIVE GAMES: Plinko · Blackjack · Rocket
+#  Клиент НИЧЕГО не решает: сервер списывает ставку, сам бросает кубики
+#  (secrets/SystemRandom), хранит состояние раунда и сам начисляет выплату.
 # ════════════════════════════════════════
-async def api_game_play(req: web.Request):
-    try:
-        data   = await req.json()
-        uid    = int(data.get("user_id", 0))
-        game   = str(data.get("game", ""))
-        bet    = int(data.get("bet", 0))
-        won    = bool(data.get("won", False))
-        mult   = float(data.get("multiplier", 2.0))
-        detail = str(data.get("detail", ""))[:200]
-    except Exception:
-        return web.json_response({"error": "bad request"}, status=400)
-    if not uid or bet < 1 or not game:
-        return web.json_response({"error": "invalid params"}, status=400)
-    u = await db.get_user(uid)
-    if not u:
-        return web.json_response({"error": "user not found"}, status=404)
-    if u.get("banned"):
-        return web.json_response({"error": "banned"}, status=403)
-    # Белый список игр и потолок множителя. ВАЖНО: won/multiplier всё ещё приходят от клиента
-    # (см. SECURITY_REPORT.md) — потолок лишь ограничивает ущерб, но не заменяет серверный RNG.
-    game_caps = {"Блэкджек": 2.5, "Plinko": max(await db.get_plinko_mults() or [1.0]),
-                 "Ракета": 100.0, "Самолётик": 100.0}
-    if game not in game_caps:
-        return web.json_response({"error": "unknown game"}, status=400)
-    if not (mult == mult) or mult < 0:      # NaN / отрицательные
-        return web.json_response({"error": "invalid multiplier"}, status=400)
-    mult = min(mult, game_caps[game])
-    bet = min(bet, 10**9)
-    if await db.try_debit(uid, bet) is None:
-        return web.json_response({"error": "insufficient balance"}, status=400)
-    # Apply luck (same system as other games)
-    try:
-        luck     = await db.get_luck(uid)
-        game_coeff = await db.get_blackjack_luck_coeff() if game == "Блэкджек" else 1.0
-        global_k = await db.get_global_luck_coeff() * game_coeff
-        if luck == 100:
-            won = True   # Always win
-        elif luck == 0:
-            won = False  # Always lose
-        elif luck > 0:
-            import random as _rnd
-            effective = min(100, int(luck * global_k))
-            if not won and effective > 50 and _rnd.random() < (effective - 50) / 100:
-                won = True   # Luck saves the player
-            elif won and effective < 50 and _rnd.random() < (50 - effective) / 100:
-                won = False  # Bad luck overrides win
-    except Exception:
-        pass
+import secrets
+_rng = random.SystemRandom()
 
-    if not won:
-        new_bal = (await db.get_user(uid) or {}).get("balance", 0)   # ставка уже списана
-        await db.add_history(uid, "lose", bet, detail or f"{game}: проигрыш")
-        await db.update_spin_stats(uid, False, 0, bet)
-        asyncio.create_task(_passive_ref_income(uid, bet))
-        asyncio.create_task(db.add_xp(uid, max(1, bet // 100)))
+async def _finish_game(uid: int, title: str, bet: int, payout: int, detail: str) -> int:
+    """Ставка уже списана (try_debit). Начисляет payout, пишет историю/статистику/лог. Возвращает баланс."""
+    if payout > 0:
+        new_bal = await db.add_to_balance(uid, payout)
     else:
-        gain    = round(bet * mult)
-        profit  = gain - bet
-        new_bal = await db.add_to_balance(uid, gain)   # ставка уже списана
-        await db.add_history(uid, "win", gain, detail or f"{game}: x{mult:.2f}")
-        await db.update_spin_stats(uid, True, gain, 0)
+        new_bal = int((await db.get_user(uid) or {}).get("balance", 0))
+    profit = payout - bet
+    if profit >= 0:
+        await db.add_history(uid, "win", payout, detail)
+        await db.update_spin_stats(uid, True, payout, 0)
         asyncio.create_task(db.add_xp(uid, max(1, profit // 10)))
-    u2   = await db.get_user(uid)
-    name = (u2 or {}).get("first_name", "?")
-    fire_log(log_game(uid, name, game, bet, "Выигрыш" if won else "Проигрыш",
-                      round(bet * mult) if won else 0, new_bal))
-    return web.json_response({"ok": True, "won": won, "new_balance": new_bal})
+    else:
+        lost = bet - payout
+        await db.add_history(uid, "lose", lost, detail)
+        await db.update_spin_stats(uid, False, payout, lost)
+        asyncio.create_task(_passive_ref_income(uid, lost))
+        asyncio.create_task(db.add_xp(uid, max(1, lost // 100)))
+    u2 = await db.get_user(uid)
+    fire_log(log_game(uid, (u2 or {}).get("first_name", "?"), title, bet,
+                      "Выигрыш" if profit >= 0 else "Проигрыш", payout, new_bal))
+    return new_bal
+
+async def _read_bet(req, data, lo=1, hi=10**9):
+    uid = int(req.get("tg_uid") or 0)
+    try: bet = int(data.get("bet", 0))
+    except Exception: return uid, None, web.json_response({"error": "bad bet"}, status=400)
+    if bet < lo or bet > hi:
+        return uid, None, web.json_response({"error": "bad bet"}, status=400)
+    if await db.is_banned(uid):
+        return uid, None, web.json_response({"error": "⛔ Вы заблокированы."}, status=403)
+    return uid, bet, None
+
+# ── PLINKO (8 рядов, 9 слотов, честный биномиальный RNG, RTP ≈ 98%) ──
+PLINKO_ROWS = 8
+PLINKO_MULTS = [5, 2, 1.1, 1, 0.5, 1, 1.1, 2, 5]
+
+async def api_plinko_mults(req):
+    return web.json_response({"mults": PLINKO_MULTS, "rows": PLINKO_ROWS})
+
+async def api_plinko_drop(req):
+    try: data = await req.json()
+    except Exception: return web.json_response({"error": "bad request"}, status=400)
+    uid, bet, err = await _read_bet(req, data)
+    if err: return err
+    if await db.try_debit(uid, bet) is None:
+        return web.json_response({"error": "Недостаточно монет"}, status=400)
+    path = [_rng.getrandbits(1) for _ in range(PLINKO_ROWS)]   # 0=влево, 1=вправо на каждом колышке
+    slot = sum(path)
+    mult = PLINKO_MULTS[slot]
+    payout = int(bet * mult + 0.5)
+    new_bal = await _finish_game(uid, "Plinko", bet, payout,
+                                 f"Plinko x{mult:.2f} ({'+' if payout>=bet else ''}{payout-bet})")
+    return web.json_response({"ok": True, "slot": slot, "path": path, "mult": mult,
+                              "payout": payout, "profit": payout - bet, "new_balance": new_bal})
+
+# ── BLACKJACK ──
+_BJ_SUITS = "♠♥♦♣"
+_BJ_VALS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
+active_bj: dict[int, dict] = {}
+
+def _bj_val(v): return 10 if v in "JQK" or v == "10" else (11 if v == "A" else int(v))
+def _bj_score(h):
+    s = sum(_bj_val(c["v"]) for c in h); a = sum(1 for c in h if c["v"] == "A")
+    while s > 21 and a: s -= 10; a -= 1
+    return s
+def _bj_is_bj(h): return len(h) == 2 and _bj_score(h) == 21
+
+def _bj_public(g, done=False):
+    return {"player": g["ph"], "dealer": g["dh"] if done else [g["dh"][0], None],
+            "bet": g["bet"], "doubled": g["doubled"],
+            "can_double": (not done) and not g["doubled"] and len(g["ph"]) == 2,
+            "ps": _bj_score(g["ph"]), "ds": _bj_score(g["dh"]) if done else None}
+
+async def _bj_finish(uid, g):
+    """Дилер добирает, считаем исход, платим. Единственное место, где решается результат."""
+    while _bj_score(g["dh"]) < 17:
+        g["dh"].append(g["deck"].pop())
+    ps, ds = _bj_score(g["ph"]), _bj_score(g["dh"])
+    pbj = _bj_is_bj(g["ph"]) and not g["doubled"]
+    bet = g["bet"]
+    if ps > 21:                  outcome, mult = "bust", 0
+    elif pbj and ds != 21:       outcome, mult = "bj", 2.5
+    elif ds > 21 or ps > ds:     outcome, mult = "win", 2
+    elif ps == ds:               outcome, mult = "push", 1
+    else:                        outcome, mult = "lose", 0
+    payout = int(bet * mult)
+    active_bj.pop(uid, None)
+    new_bal = await _finish_game(uid, "Блэкджек", bet, payout, f"Блэкджек: {outcome} ({ps} vs {ds})")
+    return {"ok": True, "done": True, "state": _bj_public(g, True),
+            "result": {"outcome": outcome, "mult": mult, "payout": payout, "profit": payout - bet},
+            "new_balance": new_bal}
+
+async def api_bj_start(req):
+    try: data = await req.json()
+    except Exception: return web.json_response({"error": "bad request"}, status=400)
+    uid, bet, err = await _read_bet(req, data)
+    if err: return err
+    if uid in active_bj:   # незаконченная игра — просто продолжаем её
+        return web.json_response({"ok": True, "done": False, "resume": True,
+                                  "state": _bj_public(active_bj[uid])})
+    if await db.try_debit(uid, bet) is None:
+        return web.json_response({"error": "Недостаточно монет"}, status=400)
+    deck = [{"s": s_, "v": v} for s_ in _BJ_SUITS for v in _BJ_VALS]
+    _rng.shuffle(deck)
+    g = {"deck": deck, "ph": [deck.pop(), deck.pop()], "dh": [deck.pop(), deck.pop()],
+         "bet": bet, "doubled": False}
+    active_bj[uid] = g
+    if _bj_is_bj(g["ph"]) or _bj_is_bj(g["dh"]):    # натурал у кого-то — раунд сразу заканчивается
+        return web.json_response(await _bj_finish(uid, g))
+    bal = int((await db.get_user(uid) or {}).get("balance", 0))
+    return web.json_response({"ok": True, "done": False, "state": _bj_public(g), "new_balance": bal})
+
+async def api_bj_action(req):
+    try: data = await req.json()
+    except Exception: return web.json_response({"error": "bad request"}, status=400)
+    uid = int(req.get("tg_uid") or 0)
+    g = active_bj.get(uid)
+    if not g: return web.json_response({"error": "Нет активной игры"}, status=400)
+    act = str(data.get("action", ""))
+    if act == "hit":
+        g["ph"].append(g["deck"].pop())
+        if _bj_score(g["ph"]) >= 21:
+            return web.json_response(await _bj_finish(uid, g))
+    elif act == "stand":
+        return web.json_response(await _bj_finish(uid, g))
+    elif act == "double":
+        if g["doubled"] or len(g["ph"]) != 2:
+            return web.json_response({"error": "Удвоение недоступно"}, status=400)
+        if await db.try_debit(uid, g["bet"]) is None:
+            return web.json_response({"error": "Недостаточно монет для удвоения"}, status=400)
+        g["bet"] *= 2; g["doubled"] = True
+        g["ph"].append(g["deck"].pop())
+        return web.json_response(await _bj_finish(uid, g))
+    else:
+        return web.json_response({"error": "bad action"}, status=400)
+    bal = int((await db.get_user(uid) or {}).get("balance", 0))
+    return web.json_response({"ok": True, "done": False, "state": _bj_public(g), "new_balance": bal})
+
+async def api_bj_state(req):
+    g = active_bj.get(int(req.get("tg_uid") or 0))
+    return web.json_response({"active": bool(g), "state": _bj_public(g) if g else None})
+
+# ── ROCKET (crash) ──
+# m(t) = e^(RATE·t). Точка краха выбирается на сервере в момент ставки и клиенту НЕ отправляется;
+# выплату по кешауту считает сервер по СВОЕМУ времени.  P(crash ≥ x) = (1-EDGE)/x  → RTP = 97%.
+ROCKET_RATE = 0.15
+ROCKET_EDGE = 0.03
+ROCKET_MAX = 100.0
+active_rockets: dict[int, dict] = {}
+
+def _rocket_mult(t: float) -> float:
+    return min(ROCKET_MAX, int(100 * (2.718281828459045 ** (ROCKET_RATE * max(0.0, t)))) / 100)
+
+def _rocket_crash_point() -> float:
+    r = _rng.random()
+    return min(ROCKET_MAX, max(1.0, int(100 * (1 - ROCKET_EDGE) / (1 - r)) / 100))
+
+async def _rocket_resolve(uid: int, g: dict, cash_now: bool = False):
+    """Приводит раунд к итогу, если он уже закончился (крэш / авто-кешаут) или игрок жмёт кешаут.
+    Возвращает dict ответа или None, если раунд ещё идёт."""
+    t = time.time() - g["start"]
+    m = _rocket_mult(t)
+    crash, bet, auto = g["crash"], g["bet"], g["auto"]
+    # авто-кешаут: срабатывает ровно на заданном множителе, если ракета до него долетела
+    if auto and auto <= crash and m >= auto:
+        return await _rocket_pay(uid, g, auto)
+    if m >= crash:
+        active_rockets.pop(uid, None)
+        new_bal = await _finish_game(uid, "Ракета", bet, 0, f"Ракета: крэш {crash:.2f}×")
+        return {"ok": True, "status": "crashed", "crash": crash, "new_balance": new_bal}
+    if cash_now:
+        return await _rocket_pay(uid, g, m)
+    return None
+
+async def _rocket_pay(uid, g, mult):
+    active_rockets.pop(uid, None)
+    bet = g["bet"]; payout = int(bet * mult)
+    new_bal = await _finish_game(uid, "Ракета", bet, payout,
+                                 f"Ракета: кешаут {mult:.2f}× ({'+' if payout>=bet else ''}{payout-bet})")
+    return {"ok": True, "status": "cashed", "mult": mult, "payout": payout,
+            "profit": payout - bet, "new_balance": new_bal}
+
+async def api_rocket_start(req):
+    try: data = await req.json()
+    except Exception: return web.json_response({"error": "bad request"}, status=400)
+    uid, bet, err = await _read_bet(req, data)
+    if err: return err
+    old = active_rockets.get(uid)
+    if old:
+        res = await _rocket_resolve(uid, old)          # старый раунд мог уже закончиться
+        if res is None:
+            return web.json_response({"error": "Раунд уже идёт", "status": "running",
+                                      "t": time.time() - old["start"]}, status=409)
+    try: auto = float(data.get("auto") or 0)
+    except Exception: auto = 0.0
+    auto = auto if 1.01 <= auto <= ROCKET_MAX else 0.0
+    if await db.try_debit(uid, bet) is None:
+        return web.json_response({"error": "Недостаточно монет"}, status=400)
+    active_rockets[uid] = {"bet": bet, "crash": _rocket_crash_point(), "start": time.time(), "auto": auto}
+    bal = int((await db.get_user(uid) or {}).get("balance", 0))
+    return web.json_response({"ok": True, "rate": ROCKET_RATE, "new_balance": bal})
+
+async def api_rocket_state(req):
+    uid = int(req.get("tg_uid") or 0)
+    g = active_rockets.get(uid)
+    if not g: return web.json_response({"status": "idle"})
+    res = await _rocket_resolve(uid, g)
+    if res: return web.json_response(res)
+    return web.json_response({"status": "running", "t": time.time() - g["start"], "rate": ROCKET_RATE,
+                              "bet": g["bet"], "auto": g["auto"]})
+
+async def api_rocket_cashout(req):
+    uid = int(req.get("tg_uid") or 0)
+    g = active_rockets.get(uid)
+    if not g: return web.json_response({"error": "Нет активного раунда"}, status=400)
+    return web.json_response(await _rocket_resolve(uid, g, cash_now=True))
 
 
 async def start_web():
@@ -2459,7 +2661,13 @@ async def start_web():
     app.router.add_post("/api/promo/activate",                           api_promo_activate)
     # Not-Telegram visitor notification
     app.router.add_post("/api/notify_not_telegram",    api_notify_not_telegram)
-    app.router.add_post("/api/game/play",              api_game_play)
+    app.router.add_post("/api/plinko/drop",           api_plinko_drop)
+    app.router.add_post("/api/blackjack/start",       api_bj_start)
+    app.router.add_post("/api/blackjack/action",      api_bj_action)
+    app.router.add_get ("/api/blackjack/state",       api_bj_state)
+    app.router.add_post("/api/rocket/start",          api_rocket_start)
+    app.router.add_get ("/api/rocket/state",          api_rocket_state)
+    app.router.add_post("/api/rocket/cashout",        api_rocket_cashout)
     app.router.add_get ("/api/admin/blackjack_luck", api_admin_get_blackjack_luck)
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)

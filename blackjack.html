@@ -222,24 +222,19 @@ if(!tg?.initDataUnsafe?.user?.id)window.location.replace('not_telegram.html');
 const UID=tg?.initDataUnsafe?.user?.id||0;
 TL_startBanPoll(UID);
 
-let bal=0,bet=0,deck=[],ph=[],dh=[],active=false,doubled=false,userLuck=50;
+let bal=0,bet=0,ph=[],dh=[],active=false,doubled=false,busy=false;
 const SUITS=[String.fromCharCode(9824),String.fromCharCode(9829),String.fromCharCode(9830),String.fromCharCode(9827)];
 const VALS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const RED_S=new Set([String.fromCharCode(9829),String.fromCharCode(9830)]);
 
 function toast(m,t){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'info')+' show';setTimeout(()=>el.classList.remove('show'),2800);}
-async function load(){const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);if(!u)return;if(TL_guardBanned(u))return;bal=u.balance??0;userLuck=u.luck??50;upd();}
+async function load(){const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);if(!u)return;if(TL_guardBanned(u))return;bal=u.balance??0;upd();resumeGame();}
 function upd(){document.getElementById('r-bal').textContent=bal;document.getElementById('bal-v').textContent=bal;}
 function sb(v){document.getElementById('bet-inp').value=v;}
 function hb(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2));}
 function db2(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=v*2;}
 function mb(){document.getElementById('bet-inp').value=bal;}
 
-function buildDeck(){
-  const d=[];for(const s of SUITS)for(const v of VALS)d.push({s,v});
-  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
-  return d;
-}
 function cv(v){if('JQK'.includes(v))return 10;if(v==='A')return 11;return+v;}
 function score(h){let s=0,a=0;for(const c of h){s+=cv(c.v);if(c.v==='A')a++;}while(s>21&&a>0){s-=10;a--;}return s;}
 function isBJ(h){return h.length===2&&score(h)===21;}
@@ -261,97 +256,77 @@ function render(hd){
   document.getElementById('st-win').textContent=Math.round(bet*(isBJ(ph)?2.5:2))+' 🪙';
 }
 
-function deal(){
-  bet=+document.getElementById('bet-inp').value||0;
-  if(bet<1){toast('Введите ставку','err');return;}
-  if(bet>bal){toast('Недостаточно монет','err');return;}
-  doubled=false;deck=buildDeck();
-  ph=[deck.pop(),deck.pop()];dh=[luckDraw(deck,true),luckDraw(deck,true)];
-  active=true;
+async function bjApi(path,body){
+  try{
+    const r=await fetch(path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+    return await r.json();
+  }catch(e){return {error:'Ошибка сервера'};}
+}
+function applyState(st){
+  ph=st.player;dh=st.dealer;bet=st.bet;doubled=st.doubled;
+  document.getElementById('st-bet').textContent=bet+' 🪙';
+  document.getElementById('b-dbl').disabled=!st.can_double;
+}
+function showTable(){
   document.getElementById('setup').style.display='none';
   document.getElementById('game').classList.add('on');
-  document.getElementById('st-bet').textContent=bet+' 🪙';
   document.getElementById('st-turn').textContent='Твой';
-  document.getElementById('b-dbl').disabled=false;
-  render(true);
-  if(isBJ(ph))setTimeout(()=>stand(),700);
 }
-
-function hit(){
-  if(!active)return;
-  ph.push(deck.pop());
-  document.getElementById('b-dbl').disabled=true;
-  render(true);
-  if(score(ph)>=21)stand();
+async function resumeGame(){
+  const r=await bjApi('/api/blackjack/state');
+  if(r&&r.active){active=true;showTable();applyState(r.state);render(true);}
 }
-
-function dbl(){
-  if(!active||doubled)return;
-  const extra=Math.min(bet,bal-bet);
-  if(extra<=0){toast('Недостаточно монет','err');return;}
-  bet+=extra;doubled=true;
-  document.getElementById('st-bet').textContent=bet+' 🪙';
-  ph.push(deck.pop());render(true);stand();
+async function deal(){
+  if(busy)return;
+  const b=+document.getElementById('bet-inp').value||0;
+  if(b<1){toast('Введите ставку','err');return;}
+  if(b>bal){toast('Недостаточно монет','err');return;}
+  busy=true;
+  const r=await bjApi('/api/blackjack/start',{bet:b});
+  busy=false;
+  if(r.error){toast(r.error,'err');return;}
+  if(r.new_balance!=null){bal=r.new_balance;upd();}
+  else if(!r.resume){bal-=b;upd();}
+  active=!r.done;showTable();applyState(r.state);
+  if(r.done){render(false);await finishRound(r);}else render(true);
 }
-
-// Luck-biased card draw: high luck = dealer gets worse cards, low luck = dealer gets better cards
-function luckDraw(fromDeck, forDealer){
-  if(!forDealer||userLuck==50)return fromDeck.pop();
-  // Build sorted candidates by face value
-  const candidates=[...fromDeck];
-  if(userLuck>50&&forDealer){
-    // Dealer should draw low — sort ascending by value, pick from low end
-    const bias=(userLuck-50)/50; // 0..1
-    candidates.sort((a,b)=>cv(a.v)-cv(b.v));
-    const cutoff=Math.max(1,Math.floor(candidates.length*(0.2+bias*0.5)));
-    const pick=candidates[Math.floor(Math.random()*cutoff)];
-    const idx=fromDeck.findIndex(c=>c===pick);
-    if(idx>=0)fromDeck.splice(idx,1);
-    return pick;
-  }else if(userLuck<50&&forDealer){
-    // Low luck: dealer draws high cards
-    const bias=(50-userLuck)/50;
-    candidates.sort((a,b)=>cv(b.v)-cv(a.v));
-    const cutoff=Math.max(1,Math.floor(candidates.length*(0.2+bias*0.5)));
-    const pick=candidates[Math.floor(Math.random()*cutoff)];
-    const idx=fromDeck.findIndex(c=>c===pick);
-    if(idx>=0)fromDeck.splice(idx,1);
-    return pick;
-  }
-  return fromDeck.pop();
+async function act(a){
+  if(!active||busy)return;
+  busy=true;
+  const r=await bjApi('/api/blackjack/action',{action:a});
+  busy=false;
+  if(r.error){toast(r.error,'err');return;}
+  applyState(r.state);
+  if(r.done){active=false;document.getElementById('b-dbl').disabled=true;render(false);await finishRound(r);}
+  else render(true);
 }
+function hit(){act('hit');}
+function stand(){act('stand');}
+function dbl(){act('double');}
 
-async function stand(){
-  if(!active)return;
-  active=false;
+const OUTCOMES={
+  bj:['&#x1F0CF;','БЛЭКДЖЕК!','x2.5 выплата','win'],
+  win:['&#x1F3C6;','ПОБЕДА','','win'],
+  push:['&#x1F91D;','НИЧЬЯ','Ставка возвращена','push'],
+  lose:['&#x1F480;','ПРОИГРЫШ','','lose'],
+  bust:['&#x1F4A5;','BUST','Перебор!','lose']
+};
+async function finishRound(r){
   document.getElementById('st-turn').textContent='Дилер';
-  while(score(dh)<17)dh.push(luckDraw(deck,true));
-  render(false);
-  const ps=score(ph),ds=score(dh),playerBJ=isBJ(ph)&&!doubled;
-  await new Promise(r=>setTimeout(r,700));
-  let won=false,push=false,mult=0,emoji,title,sub;
-  if(ps>21){emoji='&#x1F4A5;';title='BUST';sub='Перебор!';}
-  else if(playerBJ&&ds!==21){won=true;mult=2.5;emoji='&#x1F0CF;';title='БЛЭКДЖЕК!';sub='x2.5 выплата';}
-  else if(ds>21){won=true;mult=2;emoji='&#x1F3C6;';title='ПОБЕДА';sub='Дилер перебрал!';}
-  else if(ps>ds){won=true;mult=2;emoji='&#x1F3C6;';title='ПОБЕДА';sub=ps+' > '+ds;}
-  else if(ps===ds){push=true;emoji='&#x1F91D;';title='НИЧЬЯ';sub='Ставка возвращена';}
-  else{emoji='&#x1F480;';title='ПРОИГРЫШ';sub=ps+' < '+ds;}
+  await new Promise(x=>setTimeout(x,700));
+  const o=r.result,ps=r.state.ps,ds=r.state.ds;
+  const [emoji,title,sub0,cls]=OUTCOMES[o.outcome];
+  let sub=sub0;
+  if(o.outcome==='win')sub=ds>21?'Дилер перебрал!':ps+' > '+ds;
+  if(o.outcome==='lose')sub=ps+' < '+ds;
   const rEl=document.getElementById('r-ov');
   rEl.querySelector('.r-emoji').innerHTML=emoji;
-  const tEl=rEl.querySelector('.r-title');
-  tEl.textContent=title;tEl.className='r-title '+(won?'win':push?'push':'lose');
+  const tEl=rEl.querySelector('.r-title');tEl.textContent=title;tEl.className='r-title '+cls;
   rEl.querySelector('.r-sub').textContent=sub;
   const aEl=rEl.querySelector('.r-amount');
-  if(push){aEl.innerHTML='= '+bet+' 🪙';aEl.className='r-amount push';}
-  else{
-    const profit=won?Math.round(bet*(mult-1)):-bet;
-    aEl.innerHTML=(profit>=0?'+':'')+profit+' 🪙';
-    aEl.className='r-amount '+(won?'win':'lose');
-    const res=await fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user_id:UID,game:'Блэкджек',bet,won,multiplier:mult,detail:'Блэкджек: '+title+' ('+ps+' vs '+ds+')'})
-    }).then(r=>r.json()).catch(()=>null);
-    if(res?.new_balance!=null){bal=res.new_balance;upd();}
-  }
+  if(o.outcome==='push'){aEl.innerHTML='= '+r.state.bet+' 🪙';aEl.className='r-amount push';}
+  else{aEl.innerHTML=(o.profit>=0?'+':'')+o.profit+' 🪙';aEl.className='r-amount '+(o.profit>0?'win':'lose');}
+  if(r.new_balance!=null){bal=r.new_balance;upd();}
   setTimeout(()=>rEl.classList.add('show'),150);
 }
 

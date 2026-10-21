@@ -895,7 +895,7 @@ async def set_tower_max_mult(val: float):
 
 # ── MAINTENANCE / GAME SWITCHES ──────────────────────────────────────────
 GAME_KEYS = ["european_roulette", "gta_roulette", "mines", "tower",
-             "blackjack", "plinko", "rocket", "aviator"]
+             "blackjack", "plinko", "rocket"]
 
 
 async def _get_setting_str(key: str, default: str = "") -> str:

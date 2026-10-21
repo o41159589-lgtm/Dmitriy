@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>TopLuck — технические работы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{font-family:'Nunito',system-ui,sans-serif;color:#10264a;overflow:hidden;
+  background:linear-gradient(175deg,#4FA6DA 0%,#7EC4E8 35%,#A9D9F2 65%,#D3EEFB 100%);
+  display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom))}
+/* плывущие облака */
+.cloud{position:fixed;background:#fff;border-radius:60px;opacity:.55;filter:blur(1px);animation:drift linear infinite}
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+.cloud.c1{width:120px;height:34px;top:12%;left:-140px;animation-duration:46s}
+.cloud.c1::before{width:52px;height:52px;top:-26px;left:18px}.cloud.c1::after{width:40px;height:40px;top:-18px;left:58px}
+.cloud.c2{width:170px;height:44px;top:68%;left:-200px;animation-duration:62s;animation-delay:-20s;opacity:.4}
+.cloud.c2::before{width:70px;height:70px;top:-36px;left:26px}.cloud.c2::after{width:52px;height:52px;top:-24px;left:82px}
+.cloud.c3{width:90px;height:26px;top:34%;left:-120px;animation-duration:38s;animation-delay:-9s;opacity:.35}
+.cloud.c3::before{width:40px;height:40px;top:-20px;left:14px}.cloud.c3::after{width:30px;height:30px;top:-12px;left:44px}
+@keyframes drift{to{transform:translateX(calc(100vw + 360px))}}
+
+.card{position:relative;z-index:2;width:100%;max-width:360px;text-align:center;
+  background:rgba(255,255,255,.82);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.9);border-radius:28px;padding:30px 24px 24px;
+  box-shadow:0 20px 50px rgba(0,40,90,.22),inset 0 1px 0 #fff;animation:rise .6s cubic-bezier(.2,.9,.3,1.1) both}
+@keyframes rise{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+.logo{width:68px;height:68px;border-radius:20px;margin:-62px auto 14px;display:block;object-fit:cover;
+  box-shadow:0 10px 24px rgba(0,40,90,.3);border:3px solid #fff;background:#fff}
+
+/* шестерёнки */
+.gears{position:relative;width:150px;height:96px;margin:6px auto 10px}
+.gear{position:absolute;color:#FFD028;filter:drop-shadow(0 4px 6px rgba(150,100,0,.35))}
+.gear.g1{width:78px;height:78px;left:6px;top:14px;animation:spin 6s linear infinite}
+.gear.g2{width:56px;height:56px;left:72px;top:0;color:#FF9F1C;animation:spin 6s linear infinite reverse}
+.gear.g3{width:40px;height:40px;left:98px;top:50px;color:#5B8CFF;animation:spin 4.2s linear infinite}
+.lock{font-size:60px;line-height:96px;height:96px;animation:bob 2.4s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bob{50%{transform:translateY(-6px)}}
+
+h1{font-size:24px;font-weight:900;letter-spacing:-.2px;margin-bottom:8px}
+p{font-size:14.5px;line-height:1.55;font-weight:600;color:#47608a;margin-bottom:18px;white-space:pre-line}
+.bar{height:8px;border-radius:99px;background:rgba(16,38,74,.1);overflow:hidden;margin-bottom:14px}
+.bar i{display:block;height:100%;width:40%;border-radius:99px;
+  background:linear-gradient(90deg,#FFD028,#FF9F1C,#FFD028);background-size:200% 100%;
+  animation:slide 1.6s ease-in-out infinite,shimmer 1.2s linear infinite}
+@keyframes slide{0%{margin-left:-40%}100%{margin-left:100%}}
+@keyframes shimmer{to{background-position:-200% 0}}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#47608a;
+  background:rgba(16,38,74,.06);padding:7px 12px;border-radius:99px;margin-bottom:16px}
+.dot{width:8px;height:8px;border-radius:50%;background:#FF9F1C;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25;transform:scale(.7)}}
+.btn{width:100%;border:0;border-radius:16px;padding:14px;font:900 15px 'Nunito',sans-serif;cursor:pointer;
+  background:linear-gradient(180deg,#FFE05A,#FFC400);color:#3a2a00;box-shadow:0 6px 0 #D9A200,0 10px 18px rgba(217,162,0,.35);
+  transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #D9A200}
+.btn.ghost{margin-top:12px;background:rgba(16,38,74,.07);color:#10264a;box-shadow:none;font-weight:800}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+<main class="card">
+  <img class="logo" src="logo.webp" alt="TopLuck" onerror="this.style.display='none'">
+  <div id="art-maint" class="gears">
+    <svg class="gear g1" viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="none" stroke="currentColor" stroke-width="14" stroke-dasharray="11.3 11.3"/><circle cx="50" cy="50" r="32" fill="currentColor"/><circle cx="50" cy="50" r="13.0" fill="#fff" opacity=".92"/></svg>
+    <svg class="gear g2" viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="none" stroke="currentColor" stroke-width="14" stroke-dasharray="11.3 11.3"/><circle cx="50" cy="50" r="32" fill="currentColor"/><circle cx="50" cy="50" r="13.0" fill="#fff" opacity=".92"/></svg>
+    <svg class="gear g3" viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="none" stroke="currentColor" stroke-width="14" stroke-dasharray="11.3 11.3"/><circle cx="50" cy="50" r="32" fill="currentColor"/><circle cx="50" cy="50" r="13.0" fill="#fff" opacity=".92"/></svg>
+  </div>
+  <div id="art-game" class="lock hide">🔒</div>
+  <h1 id="title">Технические работы</h1>
+  <p id="msg">Мы улучшаем TopLuck и скоро вернёмся.\nЗагляни чуть позже — всё будет на месте 🍀</p>
+  <div class="bar"><i></i></div>
+  <div class="pill"><span class="dot"></span><span id="pill">Проверяем статус автоматически</span></div>
+  <button class="btn" onclick="check(true)">Проверить снова</button>
+  <button class="btn ghost hide" id="back" onclick="location.href='main.html?tab=games'">← К другим играм</button>
+</main>
+<script>
+const tg=window.Telegram?.WebApp; if(tg){tg.ready();tg.expand();tg.setBackgroundColor?.('#7EC4E8');tg.setHeaderColor?.('#4FA6DA');}
+const game=new URLSearchParams(location.search).get('game');
+const NAMES={european_roulette:'Европейская рулетка',gta_roulette:'GTA рулетка',mines:'Мины',tower:'Башня',blackjack:'Блэкджек',plinko:'Plinko',rocket:'Ракета'};
+let timer=null;
+async function check(manual){
+  const pill=document.getElementById('pill');
+  if(manual) pill.textContent='Проверяем…';
+  try{
+    const st=await fetch('/api/status',{cache:'no-store'}).then(r=>r.json());
+    const gameClosed=!!game&&(st.disabled_games||[]).includes(game);
+    if(!st.maintenance&&!gameClosed){ location.replace(game?game+'.html':'main.html'); return; }
+    const gameOnly=!st.maintenance&&gameClosed;
+    document.getElementById('art-maint').classList.toggle('hide',gameOnly);
+    document.getElementById('art-game').classList.toggle('hide',!gameOnly);
+    document.getElementById('back').classList.toggle('hide',!gameOnly);
+    if(gameOnly){
+      document.getElementById('title').textContent=(NAMES[game]||'Игра')+' закрыта';
+      document.getElementById('msg').textContent='Игра временно на обслуживании.\nОстальные игры работают как обычно 🎮';
+    }else{
+      document.getElementById('title').textContent='Технические работы';
+      document.getElementById('msg').textContent=st.message||'Мы улучшаем TopLuck и скоро вернёмся.\nЗагляни чуть позже — всё будет на месте 🍀';
+    }
+    pill.textContent=manual?'Пока закрыто — проверим ещё раз':'Проверяем статус автоматически';
+  }catch(e){ pill.textContent='Нет связи с сервером'; }
+}
+check(); timer=setInterval(check,10000);
+if(tg?.BackButton){tg.BackButton.hide();}
+</script>
+</body>
+</html>
