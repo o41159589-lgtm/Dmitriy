@@ -582,16 +582,23 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
-  <!-- Plinko multipliers — 15 editable slots -->
+  <!-- Maintenance / game switches -->
   <div class="settings-block">
-    <div class="settings-title">🟣 PLINKO — КОЭФФИЦИЕНТЫ (15 слотов)</div>
+    <div class="settings-title">🛠️ ТЕХРАБОТЫ И ЗАКРЫТИЕ ИГР</div>
     <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Значения множителей в каждом слоте, слева направо (края — крайние слоты).<br/>
-      <span style="color:var(--muted);font-size:10px">Массив симметричен по умолчанию: 20/10/5/2.5/2/1.5/1.2/0/1.2/1.5/2/2.5/5/10/20</span>
+      Техработы закрывают всё приложение для игроков. Админы заходят как обычно.<br/>
+      Ниже можно закрыть отдельную игру — остальные продолжат работать.
     </p>
-    <div id="plinko-mults-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px"></div>
-    <button class="abtn set" style="width:100%;padding:11px" onclick="savePlinkoMults()">💾 Сохранить множители Plinko</button>
-    <div id="plinko-mults-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:14px">
+      <input type="checkbox" id="maint-on" style="width:20px;height:20px"/>
+      <b>Закрыть всё приложение на техработы</b>
+    </label>
+    <input type="text" id="maint-msg" maxlength="300" placeholder="Сообщение игрокам (необязательно)"
+      style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:10px;color:var(--text);font-size:13px;margin-bottom:12px"/>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Закрытые игры:</div>
+    <div id="maint-games" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
+    <button class="abtn set" style="width:100%;padding:11px" onclick="saveMaintenance()">💾 Применить</button>
+    <div id="maint-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
   </div>
 
 </div>
@@ -1507,8 +1514,7 @@ async function api(path, method='GET', body=null){
     method,
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Uid': ADMIN_UID,
-      'X-Admin-Key': ADMIN_UID,
+      'X-Tg-Init-Data': tg?.initData || '',
     }
   };
   if(body) o.body = JSON.stringify({...body, incognito: incognitoMode});
@@ -1867,7 +1873,7 @@ async function sendMsg(e,uid){
   try{
     const r = await fetch(`/api/admin/send_message`, {
       method:'POST',
-      headers:{'Content-Type':'application/json','X-Admin-Uid':ADMIN_UID},
+      headers:{'Content-Type':'application/json','X-Tg-Init-Data':tg?.initData||''},
       body: JSON.stringify({user_id:uid, text})
     });
     const d = await r.json();
@@ -2072,32 +2078,34 @@ async function saveBjCoeff(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
-// Plinko multipliers — 15 editable slots
-let plinkoMults = [20,10,5,2.5,2,1.5,1.2,0,1.2,1.5,2,2.5,5,10,20];
-function renderPlinkoMultsGrid(){
-  const grid = document.getElementById('plinko-mults-grid');
-  if(!grid) return;
-  grid.innerHTML = plinkoMults.map((v,i)=>`
-    <input type="number" step="0.1" min="0" value="${v}" data-idx="${i}"
-      onchange="plinkoMults[${i}]=parseFloat(this.value)||0"
-      style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:6px;
-      width:30px;padding:6px 2px;color:var(--text);font-size:11px;text-align:center;font-family:var(--font-mono);margin:0 auto;display:block"/>
-  `).join('');
-}
-async function loadPlinkoMults(){
+// Maintenance / per-game switches
+const GAME_LABELS={european_roulette:'🎡 Евр. рулетка',gta_roulette:'🔫 GTA рулетка',mines:'💣 Мины',tower:'🗼 Башня',
+  blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета',aviator:'✈️ Самолётик'};
+async function loadMaintenance(){
   try{
-    const d = await api('/api/plinko_mults');
-    if(Array.isArray(d.mults) && d.mults.length===15) plinkoMults = d.mults;
-  } catch{}
-  renderPlinkoMultsGrid();
+    const d=await api('/api/admin/maintenance');
+    document.getElementById('maint-on').checked=!!d.maintenance;
+    document.getElementById('maint-msg').value=d.message||'';
+    const closed=new Set(d.disabled_games||[]);
+    document.getElementById('maint-games').innerHTML=(d.games||Object.keys(GAME_LABELS)).map(g=>`
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;background:rgba(0,0,0,.25);padding:8px;border-radius:8px">
+        <input type="checkbox" class="maint-game" value="${g}" ${closed.has(g)?'checked':''}/> ${GAME_LABELS[g]||g}
+      </label>`).join('');
+  }catch{}
 }
-async function savePlinkoMults(){
-  const st = document.getElementById('plinko-mults-status');
+async function saveMaintenance(){
+  const st=document.getElementById('maint-status');
+  const on=document.getElementById('maint-on').checked;
+  if(on && !confirm('Закрыть ВСЁ приложение для игроков?')) return;
   try{
-    await api('/api/admin/plinko_mults','POST',{mults:plinkoMults});
-    st.textContent = '✅ Множители Plinko сохранены'; st.style.color='var(--green)';
-    setTimeout(()=>st.textContent='',3000);
-  } catch{ st.textContent='❌ Ошибка'; st.style.color='var(--red)'; }
+    await api('/api/admin/maintenance','POST',{
+      maintenance:on,
+      message:document.getElementById('maint-msg').value,
+      disabled_games:[...document.querySelectorAll('.maint-game:checked')].map(x=>x.value)
+    });
+    st.textContent=on?'🛠️ Приложение закрыто на техработы':'✅ Сохранено'; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',4000);
+  }catch{ st.textContent='❌ Ошибка'; st.style.color='var(--red)'; }
 }
 
 async function loadGl(){
@@ -2115,7 +2123,7 @@ async function loadGl(){
   minesCoeff      = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
   towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
   bjCoeff         = await load('/api/admin/blackjack_luck', 'coeff', document.getElementById('bj-slider'), document.getElementById('bj-val'));
-  await loadPlinkoMults();
+  await loadMaintenance();
   try{
     const d = await api('/api/admin/mines_max_mult');
     minesMaxMult = d.max_mult ?? d.value ?? 25;
@@ -2237,7 +2245,7 @@ document.getElementById('d-from').value = new Date(Date.now()-7*86400000).toISOS
 // Dev incognito block
 setTimeout(async()=>{
   try{
-    const r = await fetch('/api/admin/is_dev', { headers:{'X-Admin-Uid':ADMIN_UID} });
+    const r = await fetch('/api/admin/is_dev', { headers:{'X-Tg-Init-Data':tg?.initData||''} });
     const d = await r.json();
     if(d.is_dev){
       const ib = document.getElementById('incognito-block');

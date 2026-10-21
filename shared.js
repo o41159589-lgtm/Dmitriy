@@ -1,4 +1,33 @@
 // TopLuck — shared helpers
+// ── Auth + maintenance layer: wraps fetch() for all same-origin /api/ calls ──
+// 1) attaches the signed Telegram initData (server verifies the HMAC -> real user id)
+// 2) if the server answers 503 {maintenance:true} -> sends the player to maintenance.html
+(function(){
+  if(window.__tl_fetch_wrapped__) return;
+  window.__tl_fetch_wrapped__ = true;
+  const _fetch = window.fetch.bind(window);
+  window.fetch = async function(input, init){
+    let url = typeof input === 'string' ? input : (input && input.url) || '';
+    const isApi = url.startsWith('/api/') || url.startsWith(location.origin + '/api/');
+    if(!isApi) return _fetch(input, init);
+    init = init ? {...init} : {};
+    const h = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
+    const idata = window.Telegram?.WebApp?.initData;
+    if(idata && !h.has('X-Tg-Init-Data')) h.set('X-Tg-Init-Data', idata);
+    init.headers = h;
+    const res = await _fetch(input, init);
+    if(res.status === 503){
+      try{
+        const j = await res.clone().json();
+        if(j && j.maintenance && !/maintenance\.html$/.test(location.pathname)){
+          location.replace('maintenance.html' + (j.game ? '?game=' + encodeURIComponent(j.game) : ''));
+        }
+      }catch(_){}
+    }
+    return res;
+  };
+})();
+
 // Redirects a banned user to banned.html with their ban reason.
 // Call right after fetching /api/user/{uid} (or getting a 403 "banned" error from any action).
 // Returns true if the user was redirected (caller should stop further execution).
@@ -22,6 +51,11 @@ function TL_startBanPoll(uid, intervalMs){
     try{
       const u = await fetch('/api/user/'+uid).then(r=>r.json());
       if(u && u.banned){ location.replace('main.html'); }
+      const st = await fetch('/api/status').then(r=>r.json());
+      const page = location.pathname.split('/').pop().replace('.html','');
+      if(st && (st.maintenance || (st.disabled_games||[]).includes(page))){
+        location.replace('maintenance.html' + (page ? '?game='+page : ''));
+      }
     }catch(e){ /* ignore transient network errors */ }
   }, intervalMs);
 }

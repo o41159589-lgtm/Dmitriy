@@ -293,6 +293,26 @@ async def add_to_balance(uid: int, delta) -> int:
         return new_bal
 
 
+async def try_debit(uid: int, amount) -> int | None:
+    """Атомарно списывает amount. Возвращает новый баланс или None, если средств не хватает.
+    Защищает от гонки «проверил баланс -> параллельные запросы -> ставка из воздуха»."""
+    amount = _to_int(amount)
+    if amount <= 0:
+        return None
+    async with _tx() as db:
+        async with db.execute("SELECT balance FROM users WHERE user_id=?", (uid,)) as cur:
+            row = await cur.fetchone()
+        if not row:
+            return None
+        cur_bal = _to_int(row[0])
+        if cur_bal < amount:
+            return None
+        new_bal = cur_bal - amount
+        await db.execute("UPDATE users SET balance=? WHERE user_id=?", (str(new_bal), uid))
+        await db.commit()
+        return new_bal
+
+
 async def set_luck(uid: int, luck: int):
     async with _tx() as db:
         await db.execute("UPDATE users SET luck_pct=? WHERE user_id=?", (luck, uid))
@@ -871,3 +891,51 @@ async def get_tower_max_mult() -> float:
 async def set_tower_max_mult(val: float):
     val = max(1.1, min(100.0, val))
     await _set_setting('tower_max_mult', str(val))
+
+
+# ── MAINTENANCE / GAME SWITCHES ──────────────────────────────────────────
+GAME_KEYS = ["european_roulette", "gta_roulette", "mines", "tower",
+             "blackjack", "plinko", "rocket", "aviator"]
+
+
+async def _get_setting_str(key: str, default: str = "") -> str:
+    db = await _get_conn()
+    async with db.execute("SELECT value FROM settings WHERE key=?", (key,)) as cur:
+        row = await cur.fetchone()
+        return str(row[0]) if row and row[0] is not None else default
+
+
+async def get_site_status() -> dict:
+    """{'maintenance': bool, 'message': str, 'disabled_games': [keys]}"""
+    maint = (await _get_setting_str("maintenance", "0")) == "1"
+    msg = await _get_setting_str("maintenance_msg", "")
+    try:
+        disabled = json.loads(await _get_setting_str("disabled_games", "[]"))
+        if not isinstance(disabled, list):
+            disabled = []
+    except Exception:
+        disabled = []
+    return {"maintenance": maint, "message": msg,
+            "disabled_games": [g for g in disabled if g in GAME_KEYS]}
+
+
+async def set_site_status(maintenance=None, message=None, disabled_games=None):
+    if maintenance is not None:
+        await _set_setting("maintenance", "1" if maintenance else "0")
+    if message is not None:
+        await _set_setting("maintenance_msg", str(message)[:300])
+    if disabled_games is not None:
+        clean = [g for g in dict.fromkeys(disabled_games) if g in GAME_KEYS]
+        await _set_setting("disabled_games", json.dumps(clean))
+
+
+async def get_recent_activity(limit: int = 100) -> list:
+    db = await _get_conn()
+    db.row_factory = aiosqlite.Row
+    async with db.execute(
+        """SELECT h.id, h.user_id, h.type, h.amount, h.detail, h.created_at,
+                  u.first_name, u.username
+           FROM history h LEFT JOIN users u ON u.user_id = h.user_id
+           ORDER BY h.created_at DESC LIMIT ?""", (limit,)) as cur:
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]

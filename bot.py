@@ -833,7 +833,17 @@ async def api_admin_resync_nft_pack(req: web.Request):
     added = await sync_nft_pack()
     return web.json_response({"ok": True, "added": added, "pack": NFT_STICKER_PACK})
 
+_gift_locks: dict[int, asyncio.Lock] = {}
+
 async def api_gift_buy(req: web.Request):
+    """Сериализуем покупки подарков одного игрока: проверка баланса -> отправка подарка
+    (реальные Stars бота!) -> списание. Без лока параллельные запросы дарили подарки бесплатно."""
+    uid = req.get("tg_uid") or 0
+    lock = _gift_locks.setdefault(int(uid), asyncio.Lock())
+    async with lock:
+        return await _api_gift_buy_inner(req)
+
+async def _api_gift_buy_inner(req: web.Request):
     data         = await req.json()
     uid          = int(data.get("user_id", 0))
     gift_id      = str(data.get("gift_id", ""))
@@ -969,8 +979,11 @@ async def api_spin(req: web.Request):
     u = await db.get_user(uid)
     if not u: return web.json_response({"error":"user not found"}, status=404)
     if await db.is_banned(uid): return web.json_response({"error":"⛔ Вы заблокированы."}, status=403)
+    if len(bets) > 13: return web.json_response({"error":"too many bets"}, status=400)
     total_cost = sum(b["amount"] for b in bets)
-    if total_cost <= 0 or total_cost > u["balance"]: return web.json_response({"error":"invalid bet"}, status=400)
+    # Атомарное списание ставки (защита от параллельных запросов / двойной траты)
+    if total_cost <= 0 or await db.try_debit(uid, total_cost) is None:
+        return web.json_response({"error":"invalid bet"}, status=400)
 
     luck, global_k = await db.get_luck(uid), await db.get_global_luck_coeff()
     euro_k = await db.get_euro_luck_coeff()
@@ -1010,7 +1023,7 @@ async def api_spin(req: web.Request):
 
     profit = total_gain - total_cost
     won = profit > 0
-    new_bal = await db.add_to_balance(uid, profit)
+    new_bal = await db.add_to_balance(uid, total_gain)   # ставка уже списана выше
 
     types_str = "+".join(b["type"] for b in bets)
     if profit >= 0:
@@ -1060,7 +1073,8 @@ async def api_gta_bet(req: web.Request):
     if not lobby:
         lid = await db.create_lobby(); lobby = await db.get_lobby(lid)
     if lobby["status"] != "open": return web.json_response({"error":"lobby not open"}, status=400)
-    await db.add_to_balance(uid, -amount)
+    if await db.try_debit(uid, amount) is None:
+        return web.json_response({"error":"invalid amount"}, status=400)
     await db.place_gta_bet(lobby["id"], uid, amount)
     # History recorded after spin result (win or lose), not during betting
     bets = await db.get_lobby_bets(lobby["id"])
@@ -1190,7 +1204,8 @@ async def api_mines_start(req: web.Request):
     random.shuffle(positions)
     bomb_set = set(positions[:bombs])
 
-    new_bal = await db.add_to_balance(uid, -bet)
+    new_bal = await db.try_debit(uid, bet)
+    if new_bal is None: return web.json_response({"error": "Недостаточно монет"}, status=400)
     game_id = str(int(time.time() * 1000))
 
     active_mines[uid] = {
@@ -1389,18 +1404,139 @@ async def api_mines_status(req: web.Request):
         "next_mult": min(mines_mult(safe_count + 1, game["bombs"]), _mines_max),
     })
 
-def _is_admin(req):
+# ════════════════════════════════════════
+#  AUTH: проверка подписи Telegram initData (HMAC) + админ-права
+# ════════════════════════════════════════
+import hmac, hashlib
+from urllib.parse import parse_qsl
+
+INIT_DATA_MAX_AGE = 24 * 3600   # initData старше суток не принимаем
+
+def validate_init_data(init_data: str, token: str, max_age: int = INIT_DATA_MAX_AGE):
+    """Возвращает user_id из подписанного Telegram initData или None."""
+    if not init_data or not token:
+        return None
     try:
-        uid = int(req.headers.get("X-Admin-Uid","0"))
-        key = req.headers.get("X-Admin-Key","")
-        return key == BOT_TOKEN or uid in ADMIN_IDS + DEV_IDS
-    except: return False
+        pairs = dict(parse_qsl(init_data, keep_blank_values=True))
+        recv_hash = pairs.pop("hash", "")
+        if not recv_hash:
+            return None
+        check = "\n".join(f"{k}={v}" for k, v in sorted(pairs.items()))
+        secret = hmac.new(b"WebAppData", token.encode(), hashlib.sha256).digest()
+        calc = hmac.new(secret, check.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(calc, recv_hash):
+            return None
+        if time.time() - int(pairs.get("auth_date", "0")) > max_age:
+            return None
+        return int(json.loads(pairs.get("user", "{}")).get("id", 0)) or None
+    except Exception:
+        return None
+
+def _is_admin(req):
+    """Админ = подтверждённый подписью Telegram user_id из ADMIN_IDS/DEV_IDS.
+    Заголовки X-Admin-Uid / X-Admin-Key БОЛЬШЕ не доверяются."""
+    uid = req.get("tg_uid")
+    return bool(uid) and (uid in ADMIN_IDS or uid in DEV_IDS)
 
 def _is_dev(req):
-    try:
-        uid = int(req.headers.get("X-Admin-Uid","0"))
-        return uid in DEV_IDS
-    except: return False
+    uid = req.get("tg_uid")
+    return bool(uid) and uid in DEV_IDS
+
+def _actor_uid(req) -> int:
+    return int(req.get("tg_uid") or 0)
+
+# Публичные API без авторизации
+_PUBLIC_API = {"/api/bot_info", "/api/status", "/api/plinko_mults",
+               "/api/mines/settings", "/api/notify_not_telegram"}
+
+# Страницы/файлы, которые доступны всегда (даже в техработах)
+_ALWAYS_OPEN_PAGES = {"admin_panel.html", "maintenance.html", "banned.html",
+                      "not_telegram.html", "index.html"}
+# Файлы, которые вообще не должны раздаваться
+_BLOCKED_STATIC = {"dev_snippet.html", "telegram_mini_app.html"}
+
+_PAGE_TO_GAME = {
+    "european_roulette.html": "european_roulette", "gta_roulette.html": "gta_roulette",
+    "mines.html": "mines", "tower.html": "tower", "blackjack.html": "blackjack",
+    "plinko.html": "plinko", "rocket.html": "rocket", "aviator.html": "aviator",
+}
+_GAMENAME_TO_GAME = {"Блэкджек": "blackjack", "Plinko": "plinko",
+                     "Ракета": "rocket", "Самолётик": "aviator"}
+
+def _api_game_key(path: str, body: dict):
+    if path == "/api/spin": return "european_roulette"
+    if path.startswith("/api/gta/"): return "gta_roulette"
+    if path.startswith("/api/mines/") and path != "/api/mines/settings": return "mines"
+    if path.startswith("/api/tower/"): return "tower"
+    if path == "/api/game/play": return _GAMENAME_TO_GAME.get(str((body or {}).get("game", "")))
+    return None
+
+# API, доступные во время техработ (всё остальное блокируется для обычных игроков)
+_MAINT_API_OK = ("/api/admin/", "/api/dev/", "/api/user/", "/api/ensure_user")
+
+@web.middleware
+async def guard_middleware(req: web.Request, handler):
+    path = req.path
+    # ── статика / страницы ──
+    if not path.startswith("/api/"):
+        name = path.rsplit("/", 1)[-1].lower()
+        if name in _BLOCKED_STATIC:
+            return web.Response(text="Not found", status=404)
+        if name.endswith(".html") or path in ("/", "/tower"):
+            if name not in _ALWAYS_OPEN_PAGES and path != "/admin":
+                st = await db.get_site_status()
+                game = _PAGE_TO_GAME.get(name) or ("tower" if path == "/tower" else None)
+                if st["maintenance"] or (game and game in st["disabled_games"]):
+                    html_ = (BASE / "maintenance.html").read_text("utf-8")
+                    return web.Response(text=html_, content_type="text/html",
+                                        charset="utf-8", status=503,
+                                        headers={"Cache-Control": "no-store"})
+        return await handler(req)
+
+    # ── API ──
+    tg_uid = validate_init_data(req.headers.get("X-Tg-Init-Data", ""), BOT_TOKEN)
+    req["tg_uid"] = tg_uid
+    is_staff = bool(tg_uid) and (tg_uid in ADMIN_IDS or tg_uid in DEV_IDS)
+
+    if path in _PUBLIC_API:
+        return await handler(req)
+    if not tg_uid:
+        return web.json_response({"error": "unauthorized"}, status=401)
+
+    if path.startswith("/api/admin/") or path.startswith("/api/dev/"):
+        if not is_staff:
+            return web.json_response({"error": "forbidden"}, status=403)
+        return await handler(req)
+
+    # JSON-тело читаем один раз (aiohttp кеширует его для хендлера)
+    body = {}
+    if req.method in ("POST", "PUT", "PATCH", "DELETE") and req.can_read_body:
+        try:
+            body = await req.json()
+            if not isinstance(body, dict): body = {}
+        except Exception:
+            body = {}
+
+    # Игрок может действовать только от своего имени
+    claimed = []
+    for v in (req.match_info.get("uid"), req.rel_url.query.get("uid"), body.get("user_id")):
+        if v not in (None, "", 0, "0"):
+            try: claimed.append(int(v))
+            except Exception: return web.json_response({"error": "bad uid"}, status=400)
+    if any(c != tg_uid for c in claimed) and tg_uid not in DEV_IDS:
+        return web.json_response({"error": "forbidden"}, status=403)
+
+    # Техработы / закрытые игры (админам можно)
+    if not is_staff:
+        st = await db.get_site_status()
+        if st["maintenance"] and not path.startswith(_MAINT_API_OK):
+            return web.json_response({"error": st["message"] or "Технические работы",
+                                      "maintenance": True}, status=503)
+        game = _api_game_key(path, body)
+        if game and game in st["disabled_games"]:
+            return web.json_response({"error": "Игра временно закрыта",
+                                      "maintenance": True, "game": game}, status=503)
+    return await handler(req)
 
 async def api_admin_get_global_luck(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
@@ -1413,7 +1549,7 @@ async def api_admin_set_global_luck(req):
     await db.set_global_luck_coeff(coeff)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid)
             aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
@@ -1449,7 +1585,7 @@ async def api_admin_set_balance(req):
         await db.add_history(uid, "admin_deduct", abs(delta), f"Списание администратором: {old}→{new_bal}")
     if not incognito:
         try:
-            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            admin_uid = _actor_uid(req)
             au = await db.get_user(admin_uid)
             aname = au.get("first_name","Admin") if au else "Admin"
         except: aname = "Admin"; admin_uid = 0
@@ -1471,7 +1607,7 @@ async def api_admin_set_luck(req):
     # Only log to admin group, no user-visible history entry
     if not incognito:
         try:
-            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            admin_uid = _actor_uid(req)
             au = await db.get_user(admin_uid)
             aname = au.get("first_name","Admin") if au else "Admin"
         except: aname = "Admin"; admin_uid = 0
@@ -1500,7 +1636,7 @@ async def api_admin_ban(req):
     except Exception as e: logger.warning(f"[api_admin_ban] notify uid={uid}: {e}")
     if not incognito:
         try:
-            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            admin_uid = _actor_uid(req)
             au = await db.get_user(admin_uid); aname = au.get("first_name","Admin") if au else "Admin"
         except: aname = "Admin"; admin_uid = 0
         tu = await db.get_user(uid); tname = tu.get("first_name","?") if tu else "?"
@@ -1517,7 +1653,7 @@ async def api_admin_send_message(req):
     try:
         await bot.send_message(uid, f"📩 <b>Сообщение от администрации TopLuck:</b>\n\n{_html.escape(text)}", parse_mode="HTML")
         try:
-            admin_uid = int(req.headers.get("X-Admin-Uid","0"))
+            admin_uid = _actor_uid(req)
             au = await db.get_user(admin_uid); aname = au.get("first_name","Admin") if au else "Admin"
         except: aname="Admin"; admin_uid=0
         u_t = await db.get_user(uid); tname = u_t.get("first_name","?") if u_t else "?"
@@ -1530,10 +1666,39 @@ async def api_admin_send_message(req):
 
 async def api_admin_is_dev(req):
     try:
-        uid = int(req.headers.get("X-Admin-Uid","0"))
+        uid = _actor_uid(req)
         return web.json_response({"is_dev": uid in DEV_IDS})
     except:
         return web.json_response({"is_dev": False})
+
+async def api_status(req):
+    """Публичный статус: техработы и закрытые игры."""
+    return web.json_response(await db.get_site_status())
+
+async def api_admin_get_maintenance(req):
+    st = await db.get_site_status()
+    st["games"] = db.GAME_KEYS
+    return web.json_response(st)
+
+async def api_admin_set_maintenance(req):
+    data = await req.json()
+    maint = data.get("maintenance")
+    msg = data.get("message")
+    games = data.get("disabled_games")
+    if games is not None and not isinstance(games, list):
+        return web.json_response({"error": "disabled_games must be a list"}, status=400)
+    await db.set_site_status(
+        maintenance=None if maint is None else bool(maint),
+        message=msg, disabled_games=games)
+    st = await db.get_site_status()
+    if not bool(data.get("incognito", False)):
+        uid = _actor_uid(req)
+        u = await db.get_user(uid)
+        aname = u.get("first_name", "Admin") if u else "Admin"
+        fire_log(log_admin_action(uid, aname, "SET_MAINTENANCE", 0, "Все игроки",
+            f"Техработы: {'ВКЛ' if st['maintenance'] else 'выкл'} · закрыто игр: {len(st['disabled_games'])} "
+            f"({', '.join(st['disabled_games']) or '—'})", incognito=False))
+    return web.json_response({"ok": True, **st})
 
 # Static
 BASE = Path(__file__).parent
@@ -1547,21 +1712,11 @@ async def api_admin_activity(req):
     if not _is_admin(req):
         return web.json_response({'error': 'forbidden'}, status=403)
     try:
-        limit = int(req.rel_url.query.get('limit', 100))
-        limit = max(10, min(500, limit))
-        async with aiosqlite.connect(DB_PATH) as db:
-            db.row_factory = aiosqlite.Row
-            rows = await db.execute_fetchall(
-                """SELECT h.id, h.user_id, h.type, h.amount, h.detail, h.created_at,
-                          u.first_name, u.username
-                   FROM history h
-                   LEFT JOIN users u ON u.user_id = h.user_id
-                   ORDER BY h.created_at DESC LIMIT ?""",
-                (limit,)
-            )
-        return web.json_response({'activity': [dict(r) for r in rows]})
+        limit = max(10, min(500, int(req.rel_url.query.get('limit', 100))))
+        return web.json_response({'activity': await db.get_recent_activity(limit)})
     except Exception as e:
-        return web.json_response({'error': str(e)}, status=500)
+        logger.exception("admin_activity failed")
+        return web.json_response({'error': 'internal error'}, status=500)
 
 
 async def api_bot_info(req):
@@ -1618,7 +1773,8 @@ async def api_tower_start(req: web.Request):
                 f"Башня: незавершённая игра (брошена, этаж {old['floor']})")
 
     # Generate bomb cell fresh on each step (not pre-generated for infinite tower)
-    new_bal = await db.add_to_balance(uid, -bet)
+    new_bal = await db.try_debit(uid, bet)
+    if new_bal is None: return web.json_response({"error": "Недостаточно монет"}, status=400)
 
     active_towers[uid] = {
         "bet":        bet,
@@ -1786,7 +1942,7 @@ async def api_admin_set_tower_luck(req):
     await db.set_tower_luck_coeff(coeff)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid)
             aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
@@ -1805,7 +1961,7 @@ async def api_admin_set_mines_max_mult(req):
     await db.set_mines_max_mult(val)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid)
             aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
@@ -1824,7 +1980,7 @@ async def api_admin_set_tower_max_floors(req):
     await db.set_tower_max_floors(val)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid)
             aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
@@ -1843,7 +1999,7 @@ async def api_admin_set_tower_max_mult(req):
     await db.set_tower_max_mult(val)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid)
             aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
@@ -1863,7 +2019,7 @@ async def api_admin_set_euro_luck(req):
     await db.set_euro_luck_coeff(coeff)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
         fire_log(log_admin_action(uid, aname, "SET_EURO_LUCK", 0, "Все игроки",
@@ -1882,7 +2038,7 @@ async def api_admin_set_mines_luck(req):
     await db.set_mines_luck_coeff(coeff)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
         fire_log(log_admin_action(uid, aname, "SET_MINES_LUCK", 0, "Все игроки",
@@ -1901,7 +2057,7 @@ async def api_admin_set_blackjack_luck(req):
     await db.set_blackjack_luck_coeff(coeff)
     if not incognito:
         try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
+            uid = _actor_uid(req)
             u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
         except: aname = "Admin"; uid = 0
         fire_log(log_admin_action(uid, aname, "SET_BLACKJACK_LUCK", 0, "Все игроки",
@@ -1911,23 +2067,6 @@ async def api_admin_set_blackjack_luck(req):
 # ── PLINKO MULTIPLIERS (15-slot ladder, public + admin) ──
 async def api_plinko_mults(req):
     return web.json_response({"mults": await db.get_plinko_mults()})
-
-async def api_admin_set_plinko_mults(req):
-    if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
-    data = await req.json()
-    vals = data.get("mults", [])
-    if not isinstance(vals, list) or len(vals) != 15:
-        return web.json_response({"error":"expected 15 values"}, status=400)
-    incognito = bool(data.get("incognito", False))
-    await db.set_plinko_mults(vals)
-    if not incognito:
-        try:
-            uid = int(req.headers.get("X-Admin-Uid","0"))
-            u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
-        except: aname = "Admin"; uid = 0
-        fire_log(log_admin_action(uid, aname, "SET_PLINKO_MULTS", 0, "Все игроки",
-            f"Множители Plinko → {vals}", incognito=False))
-    return web.json_response({"ok": True, "mults": await db.get_plinko_mults()})
 
 # ── GROUP LOGS (in-panel copy of the Telegram log group) ──
 async def api_admin_glogs(req):
@@ -1969,7 +2108,7 @@ async def api_admin_promo_create(req):
         return web.json_response({"error": "Промокод уже существует"}, status=409)
     await db.create_promo(code, reward, uses_left, expires_at)
     try:
-        uid = int(req.headers.get("X-Admin-Uid","0"))
+        uid = _actor_uid(req)
         u = await db.get_user(uid); aname = u.get("first_name","Admin") if u else "Admin"
     except: aname = "Admin"; uid = 0
     fire_log(log_admin_action(uid, aname, "CREATE_PROMO", 0, "—",
@@ -2143,7 +2282,7 @@ async def api_admin_set_level(req: web.Request):
 # ── DEV: login-as user ──
 async def api_dev_user_view(req: web.Request):
     """Dev-only: get full user state for impersonation."""
-    uid_hdr = int(req.headers.get("X-Admin-Uid","0"))
+    uid_hdr = _actor_uid(req)
     if uid_hdr not in DEV_IDS + ADMIN_IDS:
         return web.json_response({"error":"forbidden"}, status=403)
     target = int(req.match_info.get("uid",0))
@@ -2201,7 +2340,7 @@ async def api_game_play(req: web.Request):
         bet    = int(data.get("bet", 0))
         won    = bool(data.get("won", False))
         mult   = float(data.get("multiplier", 2.0))
-        detail = str(data.get("detail", ""))
+        detail = str(data.get("detail", ""))[:200]
     except Exception:
         return web.json_response({"error": "bad request"}, status=400)
     if not uid or bet < 1 or not game:
@@ -2211,7 +2350,17 @@ async def api_game_play(req: web.Request):
         return web.json_response({"error": "user not found"}, status=404)
     if u.get("banned"):
         return web.json_response({"error": "banned"}, status=403)
-    if u["balance"] < bet:
+    # Белый список игр и потолок множителя. ВАЖНО: won/multiplier всё ещё приходят от клиента
+    # (см. SECURITY_REPORT.md) — потолок лишь ограничивает ущерб, но не заменяет серверный RNG.
+    game_caps = {"Блэкджек": 2.5, "Plinko": max(await db.get_plinko_mults() or [1.0]),
+                 "Ракета": 100.0, "Самолётик": 100.0}
+    if game not in game_caps:
+        return web.json_response({"error": "unknown game"}, status=400)
+    if not (mult == mult) or mult < 0:      # NaN / отрицательные
+        return web.json_response({"error": "invalid multiplier"}, status=400)
+    mult = min(mult, game_caps[game])
+    bet = min(bet, 10**9)
+    if await db.try_debit(uid, bet) is None:
         return web.json_response({"error": "insufficient balance"}, status=400)
     # Apply luck (same system as other games)
     try:
@@ -2233,7 +2382,7 @@ async def api_game_play(req: web.Request):
         pass
 
     if not won:
-        new_bal = await db.add_to_balance(uid, -bet)
+        new_bal = (await db.get_user(uid) or {}).get("balance", 0)   # ставка уже списана
         await db.add_history(uid, "lose", bet, detail or f"{game}: проигрыш")
         await db.update_spin_stats(uid, False, 0, bet)
         asyncio.create_task(_passive_ref_income(uid, bet))
@@ -2241,7 +2390,7 @@ async def api_game_play(req: web.Request):
     else:
         gain    = round(bet * mult)
         profit  = gain - bet
-        new_bal = await db.add_to_balance(uid, profit)
+        new_bal = await db.add_to_balance(uid, gain)   # ставка уже списана
         await db.add_history(uid, "win", gain, detail or f"{game}: x{mult:.2f}")
         await db.update_spin_stats(uid, True, gain, 0)
         asyncio.create_task(db.add_xp(uid, max(1, profit // 10)))
@@ -2253,7 +2402,7 @@ async def api_game_play(req: web.Request):
 
 
 async def start_web():
-    app = web.Application()
+    app = web.Application(middlewares=[guard_middleware], client_max_size=1024**2)
     app.router.add_get("/", serve_app)
     app.router.add_get("/admin", serve_admin)
     app.router.add_get("/health", health)
@@ -2314,7 +2463,9 @@ async def start_web():
     app.router.add_get ("/api/admin/blackjack_luck", api_admin_get_blackjack_luck)
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
-    app.router.add_post("/api/admin/plinko_mults",   api_admin_set_plinko_mults)
+    app.router.add_get ("/api/status",                 api_status)
+    app.router.add_get ("/api/admin/maintenance",     api_admin_get_maintenance)
+    app.router.add_post("/api/admin/maintenance",     api_admin_set_maintenance)
     app.router.add_get ("/api/admin/glogs",          api_admin_glogs)
     app.router.add_get ("/api/nft_gallery",           api_nft_gallery)
     app.router.add_delete("/api/admin/nft_gallery/{nft_id}", api_admin_delete_nft)
