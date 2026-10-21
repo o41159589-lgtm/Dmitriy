@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TopLuck Admin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+:root{
+  --bg:#0A0A0A;--bg2:#111111;--bg3:#1A1A1A;
+  --white:#FFFFFF;--gray1:#E0E0E0;--gray2:#AAAAAA;--gray3:#555555;--gray4:#2A2A2A;
+  --green:#22C55E;--red:#EF4444;--gold:#F59E0B;--blue:#3B82F6;--purple:#8B5CF6;--cyan:#06B6D4;
+  --text:#F0F0F0;--muted:#777777;--muted2:#999999;
+  --card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.12);
+  --glass-bg:rgba(255,255,255,0.04);--glass-border:rgba(255,255,255,0.08);--glass-blur:22px;
+  /* legacy aliases for old JS references */
+  --gold2:#D97706;--accent:var(--red);
+  --card-bg:var(--card);--card-br:var(--border2);--text-main:var(--text);--blue-faint:rgba(59,130,246,0.14);
+  --font-display:'Bebas Neue',sans-serif;
+  --font-ui:'Exo 2',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+.incognito-mode{--accent:var(--green);--border:rgba(34,197,94,0.15);}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;padding:12px 12px 40px;min-height:100vh;}
+
+/* noise */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.02;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;}
+
+/* ── ADMIN LOADING ── */
+.admin-loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;}
+.al-icon{font-size:48px;margin-bottom:16px;animation:al-spin 2s linear infinite;}
+@keyframes al-spin{to{transform:rotate(360deg);}}
+.al-title{font-family:var(--font-display);font-size:24px;color:var(--white);letter-spacing:2px;margin-bottom:6px;}
+.al-sub{font-family:var(--font-mono);font-size:12px;color:var(--muted2);margin-bottom:18px;}
+.al-bar-wrap{width:180px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.al-bar{height:100%;width:0%;background:var(--white);border-radius:2px;transition:width .3s linear;box-shadow:0 0 8px rgba(255,255,255,.5);}
+
+/* ── HEADER ── */
+.header{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
+.header::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);}
+.incognito-mode .header{border-color:rgba(34,197,94,.2);}
+.header h1{font-family:var(--font-display);font-size:20px;color:var(--white);margin-bottom:3px;letter-spacing:2px;}
+.header p{color:var(--muted2);font-size:11px;font-family:var(--font-mono);}
+.incognito-badge{display:none;position:absolute;top:10px;right:12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:3px 8px;font-size:10px;color:var(--green);font-weight:700;font-family:var(--font-mono);}
+.incognito-mode .incognito-badge{display:block;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.tab{flex:1;min-width:72px;padding:8px 5px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--muted2);font-weight:700;font-size:11px;cursor:pointer;text-align:center;transition:all .2s;font-family:var(--font-mono);}
+.tab.a{background:var(--white);color:#000;border-color:var(--white);box-shadow:0 2px 12px rgba(255,255,255,.15);}
+.incognito-mode .tab.a{background:var(--green);color:#000;border-color:var(--green);}
+.tab-pane{display:none;}.tab-pane.a{display:block;}
+
+/* ── STATS BAR ── */
+.sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
+.sb{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;position:relative;overflow:hidden;}
+.sb::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);}
+.sb-v{font-family:var(--font-mono);font-size:14px;color:var(--gray1);font-weight:700;}
+.sb-l{font-size:10px;color:var(--muted2);margin-top:3px;}
+
+/* ── LOADER ── */
+.loader{text-align:center;padding:30px 20px;}
+.loader span{font-size:32px;display:block;margin-bottom:12px;animation:al-spin 1.5s linear infinite;}
+.loader p{color:var(--muted2);font-size:13px;font-family:var(--font-mono);}
+
+/* ── SEARCH ── */
+.search{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;margin-bottom:10px;}
+.search:focus{border-color:var(--border2);}
+
+/* ── USER CARDS ── */
+.uc-top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;}
+.uc-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gray4),var(--gray3));border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16px;color:var(--gray1);flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+.uc-av.banned-av{border-color:rgba(239,68,68,.5);filter:grayscale(.7);}
+.uc-info{flex:1;}
+.uc-name{font-weight:700;font-size:14px;color:var(--text);}
+.uc-id{font-family:var(--font-mono);font-size:10px;color:var(--muted2);}
+.uc-bal{font-family:var(--font-mono);font-size:15px;color:var(--gold);font-weight:700;}
+.uc{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:8px;transition:border-color .15s;}
+.uc:hover{border-color:var(--border2);}
+.uc.ban{border-color:rgba(239,68,68,.2);}
+.uc-body{padding:12px 14px;}
+.uinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.uinfo-item{background:rgba(0,0,0,.3);border-radius:10px;padding:9px 10px;}
+.uinfo-label{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-family:var(--font-mono);}
+.uinfo-val{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gray1);}
+
+/* ── ACTION BUTTONS (admin) ── */
+.abtn{padding:7px 12px;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;font-family:var(--font-mono);transition:all .15s;background:none;display:inline-flex;align-items:center;gap:5px;}
+.abtn:active{opacity:.8;transform:scale(.97);}
+.abtn.add{border-color:rgba(34,197,94,.3);color:var(--green);}
+.abtn.add:hover{background:rgba(34,197,94,.1);}
+.abtn.ban{border-color:rgba(239,68,68,.3);color:var(--red);}
+.abtn.ban:hover{background:rgba(239,68,68,.1);}
+.abtn.unban{border-color:rgba(34,197,94,.3);color:var(--green);}
+.abtn.unban:hover{background:rgba(34,197,94,.1);}
+.abtn.set{border-color:var(--border2);color:var(--gray1);}
+.abtn.set:hover{background:rgba(255,255,255,.06);}
+.abtn.pur{border-color:rgba(139,92,246,.3);color:var(--purple);}
+.abtn.pur:hover{background:rgba(139,92,246,.1);}
+.abtn.lbtn{border-color:var(--border2);color:var(--muted2);font-size:10px;padding:5px 8px;}
+.lbtn{padding:5px 9px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;font-size:10px;font-weight:700;cursor:pointer;color:var(--muted2);font-family:var(--font-mono);}
+
+/* ── LUCK ROW ── */
+.luck-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.luck0{padding:6px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-mono);}
+.luck100{padding:6px 12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:8px;color:var(--green);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-mono);}
+.luck-row .a{outline:2px solid var(--white);}
+
+/* ── AG INPUTS ── */
+.ag-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.ag-l{font-size:12px;color:var(--muted2);min-width:90px;font-family:var(--font-mono);}
+.ag-inp{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:8px 12px;color:var(--text);font-family:var(--font-ui);font-size:13px;outline:none;flex:1;}
+.ag-inp:focus{border-color:var(--border2);}
+.ag-g{font-family:var(--font-mono);font-size:12px;color:var(--muted2);}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;
+  padding:8px 12px;color:var(--text);font-family:var(--font-ui);font-size:14px;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--border2);}
+select{cursor:pointer;}
+select option{background:var(--bg2);}
+
+/* ── SETTINGS BLOCK ── */
+.settings-block{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;position:relative;}
+.settings-block::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);}
+.settings-title{font-family:var(--font-mono);font-size:11px;color:var(--gray2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;}
+
+/* ── TOGGLE ROW ── */
+.incognito-toggle{display:flex;align-items:center;justify-content:space-between;padding:8px 0;margin-bottom:10px;}
+.it-label{font-size:14px;font-weight:700;color:var(--text);}
+.it-sub{font-size:11px;color:var(--muted2);margin-top:2px;}
+.toggle{position:relative;width:46px;height:26px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:13px;cursor:pointer;transition:.2s;border:1px solid var(--border);}
+.toggle-slider::before{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:var(--gray2);left:3px;top:2px;transition:.2s;}
+input:checked+.toggle-slider{background:var(--white);}
+input:checked+.toggle-slider::before{transform:translateX(20px);background:#000;}
+
+/* ── SLIDER ── */
+.slider-box{background:rgba(0,0,0,.3);border-radius:14px;padding:14px;}
+input[type=range]{width:100%;-webkit-appearance:none;background:rgba(255,255,255,.12);border-radius:4px;height:6px;outline:none;cursor:pointer;border:none;padding:0;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--white);box-shadow:0 0 8px rgba(255,255,255,.4);cursor:pointer;border:none;}
+
+/* ── REVENUE ── */
+.rev-card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;}
+.rev-title{font-family:var(--font-mono);font-size:11px;color:var(--gray2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;}
+.rev-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ri{background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.ri-l{font-size:11px;color:var(--muted2);margin-bottom:4px;font-family:var(--font-mono);}
+.ri-v{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--gray1);}
+.rt-l{font-size:12px;color:var(--muted2);margin-bottom:4px;font-family:var(--font-mono);}
+.rt-v{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--gold);}
+.rev-total{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px;margin-top:10px;}
+.period-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.pb{padding:7px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted2);font-family:var(--font-mono);transition:all .15s;}
+.pb.a{background:var(--white);color:#000;border-color:var(--white);}
+.date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.date-lbl{font-size:12px;color:var(--muted2);white-space:nowrap;font-family:var(--font-mono);}
+.date-inp{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;outline:none;flex:1;min-width:100px;}
+
+/* ── PROMO ── */
+.promo-detail{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.promo-code{font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--gray1);margin-bottom:3px;}
+.promo-meta{font-size:11px;color:var(--muted2);}
+.promo-del{padding:5px 10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-mono);flex-shrink:0;}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:14px;left:14px;right:14px;z-index:500;background:rgba(20,20,20,.97);border:1px solid var(--border2);backdrop-filter:blur(20px);border-radius:16px;padding:13px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.toast.show{transform:translateY(0);}
+.toast.ok{color:var(--green);border-color:rgba(34,197,94,.3);}
+.toast.err{color:var(--red);border-color:rgba(239,68,68,.3);}
+.toast.info{color:var(--gray1);border-color:var(--border2);}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:300;display:none;align-items:flex-end;}
+.ov.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:24px 24px 0 0;padding:20px 18px 36px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);}
+.mh{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px;}
+.mt{font-family:var(--font-display);font-size:22px;color:var(--white);text-align:center;margin-bottom:16px;letter-spacing:1.5px;}
+
+/* ── HISTORY IN ADMIN ── */
+.hi{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:10px 13px;margin-bottom:7px;}
+.hi-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.hi-ic.win{background:rgba(34,197,94,.1);}.hi-ic.lose{background:rgba(239,68,68,.1);}.hi-ic.deposit{background:rgba(59,130,246,.1);}.hi-ic.ref{background:rgba(245,158,11,.1);}
+.hi-b{flex:1;}.hi-t{font-weight:700;font-size:13px;}.hi-s{font-size:11px;color:var(--muted2);}
+.hi-a{font-family:var(--font-mono);font-size:13px;font-weight:700;}
+.g,.hi-a.p,.green{color:var(--green);}
+.r,.hi-a.n,.red{color:var(--red);}
+.gold{color:var(--gold);}
+.blue{color:var(--blue);}
+.pur{color:var(--purple);}
+.muted{color:var(--muted2);}
+.sub{color:var(--muted2);font-size:12px;}
+.msg{font-size:13px;color:var(--muted2);text-align:center;padding:10px 0;}
+
+/* ── DEV MODE ── */
+.dev-section{background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.12);border-radius:14px;padding:14px;margin-bottom:12px;}
+.dev-title{font-family:var(--font-mono);font-size:11px;color:var(--blue);letter-spacing:1.5px;margin-bottom:10px;}
+
+/* ── IROW ── */
+.irow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.irow:last-child{border-bottom:none;}
+.irow-l{font-size:13px;color:var(--muted2);}
+.irow-r{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text);}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted2);}
+.empty-i{font-size:44px;margin-bottom:12px;display:block;}
+.empty p{font-size:13px;line-height:1.6;font-family:var(--font-mono);}
+
+/* ── MISC ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:var(--font-mono);}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red);}
+.badge-green{background:rgba(34,197,94,.12);color:var(--green);}
+.badge-gold{background:rgba(245,158,11,.12);color:var(--gold);}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;}
+.dot.green{background:var(--green);box-shadow:0 0 6px var(--green);}
+.dot.red{background:var(--red);box-shadow:0 0 6px var(--red);}
+.dot.yellow{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+.load-spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--white);border-radius:50%;animation:al-spin .7s linear infinite;vertical-align:middle;}
+.loading-text{text-align:center;padding:30px 20px;color:var(--muted2);font-family:var(--font-mono);}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+
+/* ── COMPACT USER ROW ── */
+.uc{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:7px;transition:border-color .15s;}
+.uc:hover{border-color:var(--border2);}
+.uc.banned{border-color:rgba(239,68,68,.2);}
+.uc-row{display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer;transition:background .12s;user-select:none;}
+.uc-row:active{background:rgba(255,255,255,.03);}
+.uc-num{font-family:var(--font-mono);font-size:11px;color:var(--gray3);min-width:24px;flex-shrink:0;text-align:right;}
+.uc-av-wrap{position:relative;flex-shrink:0;width:36px;}
+.uc-av{width:36px;height:36px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:15px;color:var(--gray1);overflow:hidden;background-size:cover;background-position:center;}
+.uc-av.banned-av{border-color:rgba(239,68,68,.5);filter:grayscale(.6);}
+.uc-lvl-badge{position:absolute;bottom:-2px;right:-4px;background:var(--gold);color:#000;font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:4px;padding:1px 3px;line-height:1.2;white-space:nowrap;pointer-events:none;z-index:2;}
+.uc-row-info{flex:1;min-width:0;}
+.uc-row-name{font-weight:700;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.uc-row-sub{font-family:var(--font-mono);font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.uc-row-bal{font-family:var(--font-mono);font-size:13px;color:var(--gold);font-weight:700;white-space:nowrap;flex-shrink:0;}
+.uc-arr{font-size:18px;color:var(--gray3);transition:transform .22s;flex-shrink:0;}
+
+/* Body — hidden by default, shown when .open */
+.uc-body{display:none;padding:12px 14px 14px;border-top:1px solid var(--border);}
+.uc.open .uc-body{display:block;}
+
+/* uinfo grid */
+.uinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;}
+.uinfo-item{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:10px;padding:9px 10px;}
+.uinfo-label{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-family:var(--font-mono);}
+.uinfo-val{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gray1);}
+.uinfo-val.blue{color:var(--blue);}
+.uinfo-val.green{color:var(--green);}
+.uinfo-val.red{color:var(--red);}
+.uinfo-val.gold{color:var(--gold);}
+.uinfo-val.muted{color:var(--muted2);}
+
+/* ag sections */
+.ag{margin-bottom:10px;}
+.ag-l{font-size:11px;color:var(--muted2);margin-bottom:6px;font-family:var(--font-mono);letter-spacing:.5px;}
+.ag-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.ag-inp{flex:1;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:9px;padding:8px 11px;color:var(--text);font-family:var(--font-ui);font-size:13px;outline:none;min-width:0;}
+.ag-inp:focus{border-color:var(--border2);}
+.ag-g{font-family:var(--font-mono);font-size:12px;color:var(--muted2);}
+
+/* luck buttons */
+.luck-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.lbtn{padding:6px 11px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;color:var(--muted2);font-family:var(--font-mono);transition:all .15s;}
+.lbtn:active{opacity:.7;}
+.lbtn.a{background:rgba(255,255,255,.14);border-color:var(--border2);color:var(--white);}
+.lbtn.luck0{border-color:rgba(239,68,68,.25);color:var(--red);}
+.lbtn.luck0.a{background:rgba(239,68,68,.15);}
+.lbtn.luck100{border-color:rgba(34,197,94,.25);color:var(--green);}
+.lbtn.luck100.a{background:rgba(34,197,94,.15);}
+
+.abtn.sub{border-color:rgba(239,68,68,.3);color:var(--red);}
+.abtn.sub:hover{background:rgba(239,68,68,.1);}
+.abtn.msg{border-color:var(--border2);color:var(--gray2);}
+</style>
+</head>
+<body>
+<!-- No UID gate: non-Telegram → not_telegram.html, non-admin → index.html silently -->
+<script>
+(function(){
+  const _tg = window.Telegram?.WebApp;
+  if(_tg){ _tg.ready(); _tg.expand(); }
+  if(!_tg?.initDataUnsafe?.user?.id){
+    window.location.replace('not_telegram.html');
+  }
+})();
+</script>
+
+<div class="admin-loading" id="admin-loading">
+  <div id="al-eyes"></div>
+  <div class="al-title">TOPLUCK ADMIN</div>
+  <div class="al-sub" id="al-sub">Проверка доступа...</div>
+  <div class="al-bar-wrap"><div class="al-bar" id="al-bar"></div></div>
+</div>
+<script>window._alEyesCtrl = TL_mountEyesLoader(document.getElementById('al-eyes'), {width:180, height:110, eyeR:26, pupilR:10});</script>
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <span class="incognito-badge">🥷 ИНКОГНИТО</span>
+  <h1 id="header-title">🛠 TOPLUCK ADMIN</h1>
+  <p id="header-sub">Панель управления казино</p>
+</div>
+
+<div class="tabs">
+  <div class="tab a" onclick="switchTab('users',this)">👥 Игроки</div>
+  <div class="tab"   onclick="switchTab('revenue',this)">💰 Доход</div>
+  <div class="tab"   onclick="switchTab('promo',this)">🎟 Промо</div>
+  <div class="tab"   onclick="switchTab('settings',this)">⚙️ Настройки</div>
+  <div class="tab"   onclick="switchTab('tasks',this)">✅ Задания</div>
+  <div class="tab"   onclick="switchTab('commands',this)">🛠 Команды</div>
+  <div class="tab"   onclick="switchTab('devmode',this)">🔬 Dev</div>
+  <div class="tab"   onclick="switchTab('logs',this)">📋 Логи</div>
+  <div class="tab"   onclick="switchTab('activity',this)">🎮 Активность</div>
+  <div class="tab"   onclick="switchTab('group',this)">👥 Группа</div>
+</div>
+
+<!-- USERS -->
+<div class="tab-pane a" id="tab-users">
+  <div id="users-root"><div class="loader"><span>⚙️</span><p>Загрузка...</p></div></div>
+</div>
+
+<!-- PROMO CODES -->
+<div class="tab-pane" id="tab-promo">
+
+  <div class="settings-block" style="border-color:rgba(245,197,66,.2);">
+    <div class="settings-title">➕ СОЗДАТЬ ПРОМОКОД</div>
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Код</div>
+      <input class="ag-inp" id="cp-code" type="text" placeholder="TOPLUCK2024" style="width:100%;text-transform:uppercase;font-family:var(--font-mono)"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Начисление 🪙 (может быть −)</div>
+        <input class="ag-inp" id="cp-reward" type="number" placeholder="100" value="100" style="width:100%;min-width:0;font-family:var(--font-mono);font-size:14px;"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Активаций</div>
+        <div style="display:flex;gap:5px">
+          <input class="ag-inp" id="cp-uses" type="number" placeholder="100" value="100" style="flex:1"/>
+          <button class="abtn pur" id="cp-inf-btn" onclick="toggleCpInf('uses')" title="Безлимит" style="padding:6px 9px;font-size:13px">∞</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Дата окончания</div>
+      <div style="display:flex;gap:5px">
+        <input class="ag-inp" id="cp-expires" type="date" style="flex:1"/>
+        <button class="abtn pur" id="cp-eternal-btn" onclick="toggleCpInf('eternal')" title="Вечный" style="padding:6px 9px;font-size:11px">∞ всегда</button>
+      </div>
+    </div>
+    <button class="abtn set" style="width:100%;padding:12px;font-size:13px" onclick="createPromo()">🎟 Создать промокод</button>
+    <div id="cp-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:8px"></div>
+  </div>
+
+  <div style="font-family:var(--font-mono);font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:10px;padding:0 2px">
+    📋 ВСЕ ПРОМОКОДЫ
+  </div>
+  <div id="promo-list" style="min-height:60px">
+    <div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">⏳ Загрузка...</div>
+  </div>
+</div>
+
+<!-- REVENUE -->
+<div class="tab-pane" id="tab-revenue">
+  <div class="rev-card">
+    <div class="rev-title">📅 ПЕРИОД</div>
+    <div class="period-btns">
+      <div class="pb a" onclick="setPeriod(this,'today')">Сегодня</div>
+      <div class="pb"   onclick="setPeriod(this,'week')">7 дней</div>
+      <div class="pb"   onclick="setPeriod(this,'month')">30 дней</div>
+      <div class="pb"   onclick="setPeriod(this,'all')">Всё время</div>
+      <div class="pb"   onclick="setPeriod(this,'custom')">Даты</div>
+    </div>
+    <div id="custom-wrap" style="display:none">
+      <div class="date-row">
+        <span class="date-lbl">С:</span><input class="date-inp" type="date" id="d-from"/>
+        <span class="date-lbl">По:</span><input class="date-inp" type="date" id="d-to"/>
+        <button class="abtn set" onclick="loadRev()">OK</button>
+      </div>
+    </div>
+    <div id="rev-msg" style="text-align:center;color:var(--muted);padding:14px">Загрузка...</div>
+    <div class="rev-grid" id="rev-grid" style="display:none"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="tab-pane" id="tab-settings">
+
+  <!-- Global luck → applies to ALL modes at once -->
+  <div class="settings-block">
+    <div class="settings-title">🌐 ГЛОБАЛЬНЫЙ КОЭФФИЦИЕНТ УДАЧИ</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Применяется ко <b style="color:var(--text)">всем режимам сразу</b> (Рулетка + Мины + Башня).<br/>
+      <b style="color:var(--green)">1.0</b> — честная игра ·
+      <b style="color:var(--red)">0.0</b> — казино всегда выигрывает<br/>
+      <span style="color:rgba(255,255,255,.3);font-size:10px">Личная удача 100% / 0% остаётся абсолютной при любом коэффициенте</span>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="gl-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="gl-slider" min="0" max="100" value="100" oninput="onGlSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setGlCoeff(0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="setGlCoeff(0.5)">0.5 — Меньше шансов</div>
+        <div class="pb" onclick="setGlCoeff(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveGlCoeff()">💾 Применить ко всем режимам</button>
+    </div>
+    <div id="gl-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- Euro Roulette luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🎰 ЕВРОПЕЙСКАЯ РУЛЕТКА — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Европейской рулетки. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="euro-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--green);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="euro-slider" min="0" max="100" value="100" oninput="onEuroSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--green);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setEuroCoeff(0)">0.0</div>
+        <div class="pb" onclick="setEuroCoeff(0.5)">0.5</div>
+        <div class="pb" onclick="setEuroCoeff(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px;accent-color:var(--green)" onclick="saveEuroCoeff()">💾 Сохранить (только рулетка)</button>
+    </div>
+    <div id="euro-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- Mines luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">💣 МИНЫ — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Мин. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="mines-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--red);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="mines-slider" min="0" max="100" value="100" oninput="onMinesSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setMinesCoeff(0)">0.0</div>
+        <div class="pb" onclick="setMinesCoeff(0.5)">0.5</div>
+        <div class="pb" onclick="setMinesCoeff(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveMinesCoeff()">💾 Сохранить (только мины)</button>
+    </div>
+    <div id="mines-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- Tower luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🗼 БАШНЯ — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Башни. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент башни:</span>
+        <span id="tower-luck-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--blue);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="tower-luck-slider" min="0" max="100" value="100" oninput="onTowerLuckSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setTowerLuck(0)">0.0 — Всегда взрыв</div>
+        <div class="pb" onclick="setTowerLuck(0.5)">0.5</div>
+        <div class="pb" onclick="setTowerLuck(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerLuck()">💾 Сохранить (только башня)</button>
+    </div>
+    <div id="tower-luck-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- Blackjack luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🃏 БЛЭКДЖЕК — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Блэкджека. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="bj-val" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.0</span>
+      </div>
+      <input type="range" id="bj-slider" min="0" max="200" value="100" oninput="onBjSlider(this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setBjCoeff(0)">0.0</div>
+        <div class="pb" onclick="setBjCoeff(0.5)">0.5</div>
+        <div class="pb" onclick="setBjCoeff(1.0)">1.0 — Честно</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveBjCoeff()">💾 Сохранить (только блэкджек)</button>
+    </div>
+    <div id="bj-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- ═══ Everything below is NOT a luck coefficient ═══ -->
+
+  <!-- Incognito mode -->
+  <div class="settings-block" id="incognito-block" style="display:none">
+    <div class="settings-title">🥷 РЕЖИМ ИНКОГНИТО</div>
+    <div class="incognito-toggle">
+      <div>
+        <div class="it-label">Режим инкогнито</div>
+        <div class="it-sub">Действия не логируются в группу логов</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div id="incognito-status" style="font-size:12px;color:var(--muted);text-align:center"></div>
+  </div>
+
+  <!-- Mines max multiplier -->
+  <div class="settings-block">
+    <div class="settings-title">💎 МИНЫ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Ограничивает максимальный множитель выплаты в игре «Мины».<br/>
+      <b style="color:var(--text)">25x</b> — без ограничений · <b style="color:var(--text)">2x</b> — минимальный выигрыш<br/>
+      <span style="color:var(--muted);font-size:10px">При 3 бомбах максимум теоретически ~24x; при 24 бомбах — ~24x</span>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Максимальный коэф.:</span>
+        <span id="mines-max-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--red);font-weight:700">25.0x</span>
+      </div>
+      <input type="range" id="mines-max-slider" min="1" max="100" value="25" step="0.5"
+        oninput="onMinesMaxSlider(this.value)"
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--red);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setMinesMax(2)">2x — Строго</div>
+        <div class="pb" onclick="setMinesMax(5)">5x</div>
+        <div class="pb" onclick="setMinesMax(10)">10x</div>
+        <div class="pb" onclick="setMinesMax(25)">25x — По умолчанию</div>
+        <div class="pb" onclick="setMinesMax(100)">100x — Без лимита</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveMinesMax()">💾 Сохранить</button>
+    </div>
+    <div id="mines-max-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- Tower max floors -->
+  <div class="settings-block">
+    <div class="settings-title">🗼 БАШНЯ — МАКСИМАЛЬНЫЙ КОЭФФИЦИЕНТ</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Башня останавливается когда коэффициент достигает этого значения.<br/>
+      <b style="color:var(--text)">×5.0</b> — стандарт · <b style="color:var(--text)">×3.0</b> — мягко · <b style="color:var(--text)">×10.0</b> — хардкор<br/>
+      <span style="color:var(--muted);font-size:10px">⚠️ Вступает в силу для новых игр.</span>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Макс. коэф.:</span>
+        <span id="tower-mult-val" style="font-family:Orbitron,monospace;font-size:18px;color:var(--blue);font-weight:700">×5.0</span>
+      </div>
+      <input type="range" id="tower-mult-slider" min="1.5" max="20" value="5" step="0.5"
+        oninput="onTowerMultSlider(this.value)"
+        style="width:100%;height:5px;border-radius:3px;cursor:pointer;accent-color:var(--blue);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="setTowerMult(3)">×3 — Мягко</div>
+        <div class="pb" onclick="setTowerMult(5)">×5 — Стандарт</div>
+        <div class="pb" onclick="setTowerMult(8)">×8 — Расш.</div>
+        <div class="pb" onclick="setTowerMult(15)">×15 — Хардкор</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="saveTowerMult()">💾 Сохранить</button>
+    </div>
+    <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- Plinko multipliers — 15 editable slots -->
+  <div class="settings-block">
+    <div class="settings-title">🟣 PLINKO — КОЭФФИЦИЕНТЫ (15 слотов)</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Значения множителей в каждом слоте, слева направо (края — крайние слоты).<br/>
+      <span style="color:var(--muted);font-size:10px">Массив симметричен по умолчанию: 20/10/5/2.5/2/1.5/1.2/0/1.2/1.5/2/2.5/5/10/20</span>
+    </p>
+    <div id="plinko-mults-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px"></div>
+    <button class="abtn set" style="width:100%;padding:11px" onclick="savePlinkoMults()">💾 Сохранить множители Plinko</button>
+    <div id="plinko-mults-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
+  </div>
+
+</div>
+
+<!-- TASKS -->
+<div class="tab-pane" id="tab-tasks">
+  <div class="rev-card" style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="rev-title" style="margin-bottom:0">✅ УПРАВЛЕНИЕ ЗАДАНИЯМИ</div>
+      <button class="abtn set" onclick="showCreateTask()" style="font-size:11px;padding:6px 12px">+ Создать</button>
+    </div>
+    <div id="tasks-admin-list"><div style="text-align:center;padding:20px;color:var(--muted)">⏳ Загружаем...</div></div>
+  </div>
+  <!-- Create task form -->
+  <div id="task-create-form" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-top:10px">
+    <div class="rev-title" style="margin-bottom:12px">📝 НОВОЕ ЗАДАНИЕ</div>
+    <div style="display:grid;gap:8px">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Тип</div>
+        <select id="nt-type" style="width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:9px 12px;color:var(--text);font-size:13px">
+          <option value="channel">📢 Вступить в канал</option>
+          <option value="group">👥 Вступить в группу</option>
+          <option value="bot">🤖 Запустить бота</option>
+          <option value="spend">🎰 Потратить монеты</option>
+          <option value="deposit">💳 Пополнить монеты</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Название</div>
+        <input id="nt-title" type="text" placeholder="Подпишись на наш канал"
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+          padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-ui);outline:none;"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Описание</div>
+        <input id="nt-desc" type="text" placeholder="Необязательное описание"
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+          padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-ui);outline:none;"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Цель (ссылка или @username)</div>
+        <input id="nt-target" type="text" placeholder="@TopLuckBot или https://t.me/..."
+          style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+          padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-ui);outline:none;"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Награда 🪙</div>
+          <input id="nt-reward" type="number" value="50" min="1"
+            style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+            padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-mono);outline:none;"/>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:4px;text-transform:uppercase">Кол-во (spend/dep)</div>
+          <input id="nt-count" type="number" value="1" min="1"
+            style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:10px;
+            padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-mono);outline:none;"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="abtn set" style="flex:1" onclick="createTask()">✅ Создать</button>
+        <button class="abtn ban" style="flex:1" onclick="document.getElementById('task-create-form').style.display='none'">✕ Отмена</button>
+      </div>
+      <div id="task-create-status" style="text-align:center;font-size:12px;min-height:16px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- COMMANDS -->
+<div class="tab-pane" id="tab-commands">
+  <div class="rev-card" style="margin-bottom:10px">
+    <div class="rev-title">🛠 КОМАНДЫ АДМИНИСТРАТОРОВ</div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Быстрые действия для управления ботом</p>
+    <div style="display:grid;gap:8px">
+      <button class="abtn set" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('broadcast')">
+        📢 Рассылка всем игрокам
+      </button>
+      <button class="abtn msg" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('give_all')">
+        🪙 Выдать монеты всем
+      </button>
+      <button class="abtn msg" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('top_players')">
+        🏆 Топ игроков по балансу
+      </button>
+      <button class="abtn msg" style="width:100%;padding:12px;text-align:left" onclick="adminCmd('stats')">
+        📊 Общая статистика сервера
+      </button>
+    </div>
+  </div>
+  <!-- Command results -->
+  <div id="cmd-result" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px">
+    <div class="rev-title" id="cmd-result-title" style="margin-bottom:10px"></div>
+    <div id="cmd-result-body" style="font-size:13px;line-height:1.7;color:var(--text)"></div>
+  </div>
+  <!-- Broadcast form -->
+  <div id="cmd-broadcast-form" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-top:10px">
+    <div class="rev-title" style="margin-bottom:10px">📢 РАССЫЛКА</div>
+    <textarea id="bc-text" rows="4" placeholder="Текст сообщения (поддерживается HTML)"
+      style="width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:10px;
+      padding:10px;color:var(--text);font-size:13px;resize:vertical;font-family:var(--font-ui)"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="abtn set" onclick="sendBroadcast()" style="flex:1">📢 Отправить</button>
+      <button class="abtn ban" onclick="document.getElementById('cmd-broadcast-form').style.display='none'" style="flex:1">✕</button>
+    </div>
+    <div id="bc-status" style="text-align:center;font-size:12px;margin-top:6px;min-height:16px"></div>
+  </div>
+  <!-- Give all form -->
+  <div id="cmd-give-all-form" style="display:none;background:var(--card-bg);border:1px solid var(--card-br);border-radius:16px;padding:14px;margin-top:10px">
+    <div class="rev-title" style="margin-bottom:10px">🪙 ВЫДАТЬ МОНЕТЫ ВСЕМ</div>
+    <input class="ag-inp" id="ga-amount" type="number" placeholder="Количество монет" value="10" style="width:100%;margin-bottom:8px"/>
+    <div style="display:flex;gap:8px">
+      <button class="abtn set" onclick="giveAll()" style="flex:1">✅ Выдать</button>
+      <button class="abtn ban" onclick="document.getElementById('cmd-give-all-form').style.display='none'" style="flex:1">✕</button>
+    </div>
+    <div id="ga-status" style="text-align:center;font-size:12px;margin-top:6px;min-height:16px"></div>
+  </div>
+</div>
+
+<!-- DEV MODE -->
+<div class="tab-pane" id="tab-devmode">
+  <div class="rev-card" style="margin-bottom:14px">
+    <div class="rev-title">🖼 ГАЛЕРЕЯ NFT (магазин, вкладка «От владельца»)</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Пополняется двумя способами: перешлите боту стикер нужного NFT (он спросит название) — или укажите ссылку на стикерпак в <code>NFT_STICKER_PACK</code> (.env) и нажмите «Обновить» ниже, тогда бот заберёт из него все стикеры сразу.
+    </p>
+    <button class="abtn set" style="width:100%;padding:10px;margin-bottom:12px" onclick="resyncNftPack()">🔄 Обновить из стикерпака</button>
+    <div id="nft-gallery-list" style="display:flex;flex-direction:column;gap:6px">
+      <div style="text-align:center;padding:14px;color:var(--muted)">⏳ Загрузка...</div>
+    </div>
+  </div>
+  <div class="rev-card">
+    <div class="rev-title">🔬 РЕЖИМ РАЗРАБОТЧИКА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:14px">
+      Введи Telegram ID — откроется полноценный мини-апп <b style="color:var(--text)">от его имени</b>.<br/>
+      Все действия (игры, покупки и т.д.) будут работать как если бы зашёл сам игрок.
+    </p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="dev-uid" type="number" placeholder="Telegram ID пользователя"
+        style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);
+        border-radius:10px;padding:11px 14px;color:#fff;font-size:15px;
+        font-family:var(--font-ui);outline:none;"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="abtn set" onclick="devEnter(false)" style="flex:1;padding:11px;font-size:13px">
+        🚀 Войти
+      </button>
+      <button class="abtn pur" onclick="devEnter(true)" style="flex:1;padding:11px;font-size:13px"
+        title="Войти от имени пользователя + показать скрытую вкладку История">
+        🔬 Войти с отладкой
+      </button>
+    </div>
+    <div id="dev-enter-status" style="font-size:12px;color:var(--muted);min-height:16px;text-align:center"></div>
+  </div>
+
+  <!-- Recent entries -->
+  <div id="dev-recent" style="margin-top:12px;display:none">
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);
+      letter-spacing:1px;margin-bottom:8px;">ПОСЛЕДНИЕ</div>
+    <div id="dev-recent-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     DEV IMPERSONATION OVERLAY — fullscreen iframe
+══════════════════════════════════════ -->
+<div id="dev-overlay" style="display:none;position:fixed;inset:0;z-index:9000;">
+  <!-- Top bar -->
+  <div id="dev-bar" style="position:absolute;top:0;left:0;right:0;height:40px;
+    background:rgba(20,5,5,0.97);border-bottom:2px solid var(--red);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 12px;z-index:10;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:14px">🔬</span>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:1px;">DEV</span>
+      <span id="dev-bar-info" style="font-size:11px;color:rgba(255,255,255,0.5);"></span>
+    </div>
+    <button onclick="devClose()" style="
+      background:rgba(230,57,70,0.2);border:1px solid rgba(230,57,70,0.4);
+      border-radius:8px;color:var(--red);font-size:12px;font-weight:700;
+      padding:4px 12px;cursor:pointer;font-family:var(--font-ui);">
+      ✕ Выйти из режима
+    </button>
+  </div>
+  <!-- The actual mini-app as the user -->
+  <iframe id="dev-iframe"
+    src=""
+    style="position:absolute;top:40px;left:0;right:0;bottom:0;
+    width:100%;height:calc(100% - 40px);border:none;background:#08080f;">
+  </iframe>
+</div>
+
+<!-- LOGS -->
+<div class="tab-pane" id="tab-logs">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
+    <div style="display:flex;gap:6px">
+      <div id="log-count"    style="background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--blue);font-family:var(--font-mono)">0</div>
+      <div id="log-ok-count" style="background:rgba(45,198,83,.1);border:1px solid rgba(45,198,83,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--green);font-family:var(--font-mono)">0 OK</div>
+      <div id="log-err-count"style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.25);border-radius:7px;padding:4px 10px;font-size:11px;color:var(--red);font-family:var(--font-mono)">0 ERR</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="abtn msg" onclick="copyLogs()" style="font-size:11px;padding:6px 10px">📋 Copy</button>
+      <button class="abtn ban" onclick="clearLogs()" style="font-size:11px;padding:6px 10px">🗑</button>
+    </div>
+  </div>
+  <!-- Terminal block -->
+  <div id="logs-terminal" style="
+    background:#0d0d0d;
+    border:1px solid #333;
+    border-radius:14px;
+    font-family:'Courier New',Courier,monospace;
+    font-size:12px;
+    line-height:1.6;
+    padding:14px;
+    min-height:300px;
+    max-height:65vh;
+    overflow-y:auto;
+    color:#ccc;
+    word-break:break-word;
+    white-space:pre-wrap;
+  ">
+    <span style="color:#555"># Ожидаем действий администратора...</span>
+  </div>
+</div>
+
+<!-- ══════════ ACTIVITY TAB ══════════ -->
+<div class="tab-pane" id="tab-activity">
+  <div class="rev-title" style="margin-bottom:4px">🎮 АКТИВНОСТЬ ИГРОКОВ</div>
+  <p style="color:var(--muted);font-size:12px;line-height:1.5;margin-bottom:10px">
+    Живая лента событий по игрокам: выигрыши/проигрыши в играх, пополнения, выполненные задания, промокоды, начисления/списания от админа. Отличается от вкладки «Группа» тем, что это отфильтрованная и агрегированная статистика по каждому игроку, а не сырая копия групповых логов.
+  </p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
+    <div style="width:1px"></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <select id="act-limit" style="background:var(--card-bg);border:1px solid var(--card-br);border-radius:8px;padding:5px 8px;color:var(--text-main);font-size:12px;cursor:pointer" onchange="loadActivity()">
+        <option value="50">50 записей</option>
+        <option value="100" selected>100 записей</option>
+        <option value="250">250 записей</option>
+        <option value="500">500 записей</option>
+      </select>
+      <div id="act-type" style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="abtn set" onclick="setActFilter('all',this)" style="font-size:10px;padding:4px 8px;background:var(--blue-faint);border-color:var(--blue)">Все</button>
+        <button class="abtn" onclick="setActFilter('win',this)" style="font-size:10px;padding:4px 8px">🏆</button>
+        <button class="abtn" onclick="setActFilter('lose',this)" style="font-size:10px;padding:4px 8px">💀</button>
+        <button class="abtn" onclick="setActFilter('deposit',this)" style="font-size:10px;padding:4px 8px">💳</button>
+        <button class="abtn" onclick="setActFilter('task',this)" style="font-size:10px;padding:4px 8px">✅</button>
+        <button class="abtn" onclick="setActFilter('promo',this)" style="font-size:10px;padding:4px 8px">🎟</button>
+        <button class="abtn" onclick="setActFilter('admin_credit',this)" style="font-size:10px;padding:4px 8px">⬆️</button>
+        <button class="abtn" onclick="setActFilter('admin_deduct',this)" style="font-size:10px;padding:4px 8px">⬇️</button>
+      </div>
+      <button class="abtn set" onclick="loadActivity()" style="font-size:11px;padding:5px 10px">↻ Обновить</button>
+    </div>
+  </div>
+  <div id="act-stats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+  <div id="act-list" style="display:flex;flex-direction:column;gap:5px;max-height:60vh;overflow-y:auto">
+    <div style="text-align:center;padding:20px;color:var(--muted)">⏳ Нажмите «Обновить» для загрузки</div>
+  </div>
+</div>
+
+<!-- ══════════ GROUP TAB (in-panel copy of Telegram log group, no freeze) ══════════ -->
+<div class="tab-pane" id="tab-group">
+  <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:10px">
+    Полная копия групповых логов прямо в панели — все категории сразу, без открытия Telegram и без фриза при скролле.
+  </p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+    <div id="glog-cats" style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="abtn set" onclick="setGlogCat('all',this)" style="font-size:10px;padding:5px 9px;background:var(--blue-faint);border-color:var(--blue)">Все <span id="gc-all">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('users',this)" style="font-size:10px;padding:5px 9px">👤 Игроки <span id="gc-users">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('games',this)" style="font-size:10px;padding:5px 9px">🎮 Игры <span id="gc-games">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('deposit',this)" style="font-size:10px;padding:5px 9px">💳 Депозиты <span id="gc-deposit">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('withdraw',this)" style="font-size:10px;padding:5px 9px">📦 Выводы <span id="gc-withdraw">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('withdraw_bot',this)" style="font-size:10px;padding:5px 9px">🤖 Выводы (бот) <span id="gc-withdraw_bot">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('admin',this)" style="font-size:10px;padding:5px 9px">🛠 Админ <span id="gc-admin">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('broadcast',this)" style="font-size:10px;padding:5px 9px">📢 Рассылка <span id="gc-broadcast">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('backup',this)" style="font-size:10px;padding:5px 9px">💾 Бэкап <span id="gc-backup">0</span></button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <div style="position:relative">
+        <input type="text" id="glog-uid-filter" placeholder="🔍 Поиск: ID, текст, тип..." inputmode="text"
+          style="background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:9px;padding:6px 26px 6px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;width:170px" oninput="renderGlogs()"/>
+        <span onclick="document.getElementById('glog-uid-filter').value='';renderGlogs()"
+          style="position:absolute;right:7px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-size:13px">✕</span>
+      </div>
+      <button class="abtn set" onclick="loadGlogs()" style="font-size:11px;padding:6px 10px">↻ Обновить</button>
+    </div>
+  </div>
+  <div id="glog-list" style="display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow-y:auto">
+    <div style="text-align:center;padding:20px;color:var(--muted)">⏳ Нажмите «Обновить» для загрузки</div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+let ADMIN_UID = tg?.initDataUnsafe?.user?.id?.toString()||'';
+const IS_DEV = false; // Will be set by API response
+
+let users = [], curPeriod = 'today';
+let incognitoMode = false;
+let _lastUsersHash = '';
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toast(m,t='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=m; el.className='toast '+t; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('a'));
+  document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('a'));
+  btn.classList.add('a');
+  document.getElementById('tab-'+name).classList.add('a');
+  if(name==='revenue') loadRev();
+  if(name==='settings') loadGl();
+  if(name==='promo') loadPromos();
+  if(name==='logs') renderLogs();
+  if(name==='tasks') loadAdminTasks();
+  if(name==='group') loadGlogs();
+  if(name==='devmode') loadNftGalleryAdmin();
+}
+
+// ══════════════════════════════
+// TASKS MANAGEMENT
+// ══════════════════════════════
+const TASK_ICONS = {channel:'📢',group:'👥',bot:'🤖',spend:'🎰',deposit:'💳'};
+const TASK_LABELS= {channel:'Канал',group:'Группа',bot:'Бот',spend:'Трата монет',deposit:'Пополнение'};
+
+async function loadAdminTasks(){
+  const listEl = document.getElementById('tasks-admin-list');
+  if(!listEl) return;
+  try{
+    const r = await api('/api/admin/tasks');
+    const tasks = r.tasks||[];
+    if(!tasks.length){
+      listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">Заданий нет. Создайте первое!</div>';
+      return;
+    }
+    listEl.innerHTML = tasks.map(t=>`
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+        border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:22px">${TASK_ICONS[t.type]||'📋'}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px;color:${t.active?'var(--text)':'var(--muted)'}">
+            ${esc(t.title)} <span style="font-size:10px;color:var(--muted)">(${TASK_LABELS[t.type]||t.type})</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted)">${esc(t.description||'')} · ${t.target||''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:var(--font-mono);font-size:13px;color:var(--gold)">+${t.reward}🪙</div>
+          <div style="display:flex;gap:5px;margin-top:5px">
+            <button class="abtn msg" style="font-size:10px;padding:4px 8px"
+              onclick="toggleTask(${t.id},${t.active?0:1})">${t.active?'Скрыть':'Показать'}</button>
+            <button class="abtn ban" style="font-size:10px;padding:4px 8px"
+              onclick="deleteTask(${t.id})">✕</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }catch(e){ listEl.innerHTML=`<div style="color:var(--red);padding:12px">Ошибка: ${e.message}</div>`; }
+}
+
+function showCreateTask(){
+  document.getElementById('task-create-form').style.display='block';
+}
+
+async function createTask(){
+  const st = document.getElementById('task-create-status');
+  const type   = document.getElementById('nt-type').value;
+  const title  = document.getElementById('nt-title').value.trim();
+  const desc   = document.getElementById('nt-desc').value.trim();
+  const target = document.getElementById('nt-target').value.trim();
+  const reward = parseInt(document.getElementById('nt-reward').value)||50;
+  const count  = parseInt(document.getElementById('nt-count').value)||1;
+  if(!title){ st.textContent='❌ Введите название'; st.style.color='var(--red)'; return; }
+  st.textContent='⏳ Создаём...'; st.style.color='var(--muted)';
+  try{
+    await api('/api/admin/tasks/create','POST',{type,title,description:desc,reward,target,target_count:count});
+    st.textContent='✅ Задание создано!'; st.style.color='var(--green)';
+    setTimeout(()=>{ document.getElementById('task-create-form').style.display='none'; loadAdminTasks(); },1000);
+  }catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
+}
+
+async function toggleTask(id, active){
+  await api('/api/admin/tasks/update','POST',{id,active}).catch(()=>{});
+  loadAdminTasks();
+}
+
+async function deleteTask(id){
+  if(!confirm('Удалить задание?')) return;
+  await api('/api/admin/tasks/delete','POST',{id}).catch(()=>{});
+  loadAdminTasks();
+}
+
+// ══════════════════════════════
+// COMMANDS
+// ══════════════════════════════
+function adminCmd(type){
+  document.getElementById('cmd-broadcast-form').style.display='none';
+  document.getElementById('cmd-give-all-form').style.display='none';
+  document.getElementById('cmd-result').style.display='none';
+  if(type==='broadcast'){ document.getElementById('cmd-broadcast-form').style.display='block'; return; }
+  if(type==='give_all')  { document.getElementById('cmd-give-all-form').style.display='block'; return; }
+  if(type==='top_players') loadTopPlayers();
+  if(type==='stats') loadServerStats();
+}
+
+async function loadTopPlayers(){
+  const res = document.getElementById('cmd-result');
+  res.style.display='block';
+  document.getElementById('cmd-result-title').textContent='🏆 ТОП ИГРОКОВ';
+  document.getElementById('cmd-result-body').textContent='⏳ Загружаем...';
+  try{
+    const r = await api('/api/admin/users');
+    const top = _toUsers(r).sort((a,b)=>(b.balance||0)-(a.balance||0)).slice(0,10);
+    document.getElementById('cmd-result-body').innerHTML = top.map((u,i)=>
+      `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+        <b>${i+1}.</b> ${esc(u.first_name||'?')}
+        <span style="float:right;font-family:var(--font-mono);color:var(--gold)">${u.balance||0}🪙</span>
+      </div>`).join('');
+  }catch(e){ document.getElementById('cmd-result-body').textContent='Ошибка: '+e.message; }
+}
+
+async function loadServerStats(){
+  const res = document.getElementById('cmd-result');
+  res.style.display='block';
+  document.getElementById('cmd-result-title').textContent='📊 СТАТИСТИКА СЕРВЕРА';
+  document.getElementById('cmd-result-body').textContent='⏳ Загружаем...';
+  try{
+    const r2 = await api('/api/admin/users');
+    const users2 = _toUsers(r2);
+    const total = users2.length;
+    const active = users2.filter(u=>u.spins>0).length;
+    const totalBal = users2.reduce((s,u)=>s+(u.balance||0),0);
+    const totalWon = users2.reduce((s,u)=>s+(u.total_won||0),0);
+    document.getElementById('cmd-result-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:var(--font-mono);font-size:18px;color:var(--blue)">${total}</div>
+          <div style="font-size:11px;color:var(--muted)">Пользователей</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:var(--font-mono);font-size:18px;color:var(--green)">${active}</div>
+          <div style="font-size:11px;color:var(--muted)">Активных</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:var(--font-mono);font-size:18px;color:var(--gold)">${totalBal}</div>
+          <div style="font-size:11px;color:var(--muted)">Монет в обороте</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:var(--font-mono);font-size:18px;color:var(--purple)">${totalWon}</div>
+          <div style="font-size:11px;color:var(--muted)">Всего выиграно</div>
+        </div>
+      </div>`;
+  }catch(e){ document.getElementById('cmd-result-body').textContent='Ошибка: '+e.message; }
+}
+
+async function sendBroadcast(){
+  const st = document.getElementById('bc-status');
+  const text = document.getElementById('bc-text').value.trim();
+  if(!text){ st.textContent='❌ Введите текст'; st.style.color='var(--red)'; return; }
+  st.textContent='⏳ Отправляем...'; st.style.color='var(--muted)';
+  try{
+    const r = await api('/api/admin/users');
+    const users = _toUsers(r);
+    let sent=0, failed=0;
+    for(const u of users){
+      try{
+        await api('/api/admin/send_message','POST',{user_id:u.user_id,text});
+        sent++;
+      }catch{ failed++; }
+    }
+    st.textContent=`✅ Отправлено: ${sent}, ошибок: ${failed}`;
+    st.style.color='var(--green)';
+  }catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
+}
+
+async function giveAll(){
+  const st = document.getElementById('ga-status');
+  const amount = parseInt(document.getElementById('ga-amount').value)||0;
+  if(amount<1){ st.textContent='❌ Введите сумму'; st.style.color='var(--red)'; return; }
+  if(!confirm(`Выдать ${amount} монет ВСЕМ игрокам?`)) return;
+  st.textContent='⏳ Выдаём...'; st.style.color='var(--muted)';
+  try{
+    const r = await api('/api/admin/users');
+    const users = _toUsers(r);
+    let done=0;
+    for(const u of users){
+      try{
+        await api('/api/admin/set_balance','POST',{user_id:u.user_id,balance:(u.balance||0)+amount});
+        done++;
+      }catch{}
+    }
+    st.textContent=`✅ Выдано ${done} игрокам`; st.style.color='var(--green)';
+  }catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
+}
+
+// ══════════════════════════════
+// DEV MODE
+// ══════════════════════════════
+// ══════════════════════════════
+// DEV IMPERSONATION
+// ══════════════════════════════
+const DEV_LS_KEY = '__tl_dev_uid__';
+
+function devEnter(debug){
+  const uid = parseInt(document.getElementById('dev-uid').value)||0;
+  const st  = document.getElementById('dev-enter-status');
+  if(!uid){ st.textContent='⚠️ Введите Telegram ID'; st.style.color='var(--red)'; return; }
+
+  st.textContent = '⏳ Загружаем...'; st.style.color = 'var(--muted)';
+
+  // Сохраняем UID для всех страниц — они читают этот ключ и подменяют tg.initDataUnsafe.user.id
+  localStorage.setItem(DEV_LS_KEY, String(uid));
+
+  // Флаг отладки: включает скрытую вкладку «История» в main.html
+  if(debug){
+    localStorage.setItem('__tl_dev_debug__', '1');
+  } else {
+    localStorage.removeItem('__tl_dev_debug__');
+  }
+
+  // Update "recent" list
+  let recent = JSON.parse(localStorage.getItem('__tl_dev_recent__')||'[]');
+  recent = [uid, ...recent.filter(x=>x!==uid)].slice(0,5);
+  localStorage.setItem('__tl_dev_recent__', JSON.stringify(recent));
+  renderDevRecent();
+
+  // Обновляем overlay-бар
+  const overlay = document.getElementById('dev-overlay');
+  const iframe  = document.getElementById('dev-iframe');
+  const bar     = document.getElementById('dev-bar');
+
+  document.getElementById('dev-bar-info').textContent = `UID: ${uid}${debug?' · 🔬 debug':''}`;
+
+  // Красим бар: обычный — красный, debug — фиолетовый
+  bar.style.borderBottomColor = debug ? 'var(--purple)' : 'var(--red)';
+  bar.style.background = debug
+    ? 'rgba(20,5,25,0.97)'
+    : 'rgba(20,5,5,0.97)';
+
+  iframe.src = 'main.html';
+  overlay.style.display = 'block';
+  st.textContent = `✅ Вошли как UID ${uid}${debug?' (режим отладки)':''}`;
+  st.style.color = 'var(--green)';
+}
+
+function devClose(){
+  // Удаляем оба ключа — и UID и debug-флаг
+  localStorage.removeItem(DEV_LS_KEY);
+  localStorage.removeItem('__tl_dev_debug__');
+  const iframe = document.getElementById('dev-iframe');
+  iframe.src = '';
+  document.getElementById('dev-overlay').style.display = 'none';
+}
+
+function renderDevRecent(){
+  const recent = JSON.parse(localStorage.getItem('__tl_dev_recent__')||'[]');
+  const wrap = document.getElementById('dev-recent');
+  const list = document.getElementById('dev-recent-list');
+  if(!recent.length){ wrap.style.display='none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = recent.map(uid => `
+    <button onclick="document.getElementById('dev-uid').value=${uid};devEnter(false)"
+      style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+      border-radius:8px;padding:6px 12px;color:var(--text);font-size:12px;
+      font-family:var(--font-mono);cursor:pointer;">
+      ${uid}
+    </button>`).join('');
+}
+
+// Init recent list on tab open
+document.querySelector('[onclick*="devmode"]')?.addEventListener('click', renderDevRecent);
+
+// ══════════════════════════════
+// LEVEL editing in user card
+// ══════════════════════════════
+async function setUserLevel(uid, level){
+  try{
+    await api('/api/admin/set_level','POST',{user_id:uid,level:parseInt(level)});
+    toast(`✅ Уровень ${level} установлен`,'ok');
+    // Smooth update: just update the displayed level without re-rendering
+    const lvlEl = document.getElementById(`u-level-${uid}`);
+    if(lvlEl) lvlEl.textContent = level;
+  }catch(e){ toast('Ошибка: '+e.message,'err'); }
+}
+
+// ══════════════════════════════
+// SMOOTH UPDATES — don't re-render if no changes
+// ══════════════════════════════
+function _toUsers(r){ return Array.isArray(r) ? r : (r.users||[]); }
+
+async function load(){
+  try{
+    const r     = await api('/api/admin/users');
+    const users = _toUsers(r).sort((a,b)=>(a.user_id||0)-(b.user_id||0));
+    const hash  = JSON.stringify(users.map(u=>({id:u.user_id,bal:u.balance,banned:u.banned,lvl:u.level})));
+    if(hash === _lastUsersHash) return;
+    _lastUsersHash = hash;
+    renderUsers(users);
+  }catch(e){ console.error('load error',e); }
+}
+
+
+
+// ══════════════════════════════
+// LOGS SYSTEM
+// ══════════════════════════════
+const _adminLogs = [];
+
+function _addLog(method, path, ok, body, result, errMsg){
+  // Incognito: skip logging for promo create/update/delete
+  const isPromoWrite = method==='POST' && (path.includes('/promo/create')||path.includes('/promo/update')||path.includes('/promo/delete'));
+  if(incognitoMode && isPromoWrite) return;
+
+  const now = new Date();
+  const ts = now.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const label = _describeAction(method, path, body);
+  _adminLogs.unshift({ts, method, path, ok, label, body: body ? JSON.stringify(body).slice(0,200) : null, result: result ? JSON.stringify(result).slice(0,200) : null, errMsg});
+  if(_adminLogs.length > 500) _adminLogs.length = 500;
+  const total = _adminLogs.length;
+  const okCnt = _adminLogs.filter(l=>l.ok).length;
+  const errCnt = total - okCnt;
+  const cEl = document.getElementById('log-count');
+  const oEl = document.getElementById('log-ok-count');
+  const eEl = document.getElementById('log-err-count');
+  if(cEl) cEl.textContent = total + ' log' + (total===1?'':'s');
+  if(oEl) oEl.textContent = okCnt + ' OK';
+  if(eEl) eEl.textContent = errCnt + ' ERR';
+  // Append to terminal if logs tab is active
+  _appendTerminalLine({ts, ok, label, errMsg, result, method, path});
+}
+
+function _appendTerminalLine(l){
+  const term = document.getElementById('logs-terminal');
+  if(!term) return;
+  // Clear placeholder on first entry
+  if(_adminLogs.length === 1) term.innerHTML = '';
+
+  const line = document.createElement('div');
+  const tsSpan  = `<span style="color:#555">[${l.ts}]</span>`;
+  const okSpan  = l.ok
+    ? `<span style="color:#2dc653">OK </span>`
+    : `<span style="color:#e63946">ERR</span>`;
+  const methodSpan = `<span style="color:#4cc9f0">${l.method.padEnd(4)}</span>`;
+  const pathSpan   = `<span style="color:#888">${esc(l.path)}</span>`;
+  const labelSpan  = l.ok
+    ? `<span style="color:#e8e8f0"> — ${esc(l.label)}</span>`
+    : `<span style="color:#e63946"> — ${esc(l.label)}</span>`;
+
+  let html = `${tsSpan} ${okSpan} ${methodSpan} ${pathSpan}${labelSpan}`;
+  if(l.errMsg){
+    html += `\n<span style="color:#e63946;padding-left:64px">    ↳ ERROR: ${esc(l.errMsg)}</span>`;
+  } else if(l.result && l.ok){
+    const short = l.result.length > 120 ? l.result.slice(0,120)+'…' : l.result;
+    html += `\n<span style="color:#555;padding-left:64px">    ↳ ${esc(short)}</span>`;
+  }
+
+  line.innerHTML = html;
+  // Prepend so newest is on top
+  term.insertBefore(line, term.firstChild);
+}
+
+function renderLogs(){
+  const term = document.getElementById('logs-terminal');
+  if(!term) return;
+  if(!_adminLogs.length){
+    term.innerHTML = '<span style="color:#555"># Ожидаем действий администратора...</span>';
+    return;
+  }
+  term.innerHTML = '';
+  // Render all in reverse-chron order (newest first already)
+  _adminLogs.forEach(l => {
+    const line = document.createElement('div');
+    const tsSpan  = `<span style="color:#555">[${l.ts}]</span>`;
+    const okSpan  = l.ok
+      ? `<span style="color:#2dc653">OK </span>`
+      : `<span style="color:#e63946">ERR</span>`;
+    const methodSpan = `<span style="color:#4cc9f0">${l.method.padEnd(4)}</span>`;
+    const pathSpan   = `<span style="color:#888">${esc(l.path)}</span>`;
+    const labelSpan  = l.ok
+      ? `<span style="color:#e8e8f0"> — ${esc(l.label)}</span>`
+      : `<span style="color:#e63946"> — ${esc(l.label)}</span>`;
+    let html = `${tsSpan} ${okSpan} ${methodSpan} ${pathSpan}${labelSpan}`;
+    if(l.errMsg){
+      html += `\n<span style="color:#e63946">    ↳ ERROR: ${esc(l.errMsg)}</span>`;
+    } else if(l.result && l.ok){
+      const short = l.result.length > 120 ? l.result.slice(0,120)+'…' : l.result;
+      html += `\n<span style="color:#555">    ↳ ${esc(short)}</span>`;
+    }
+    line.innerHTML = html;
+    term.appendChild(line);
+  });
+}
+
+function copyLogs(){
+  if(!_adminLogs.length){toast('Логи пусты','err');return;}
+  const text = _adminLogs.map(l=>
+    `[${l.ts}] ${l.ok?'OK ':'ERR'} ${l.method.padEnd(4)} ${l.path} — ${l.label}${l.errMsg?' → ERROR: '+l.errMsg:''}${!l.errMsg&&l.result?' → '+l.result:''}`
+  ).join('\n');
+  navigator.clipboard.writeText(text).then(()=>toast('📋 Логи скопированы!')).catch(()=>{
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); toast('📋 Логи скопированы!');
+  });
+}
+
+function clearLogs(){
+  _adminLogs.length = 0;
+  const term = document.getElementById('logs-terminal');
+  if(term) term.innerHTML = '<span style="color:#555"># Лог очищен. Ожидаем действий...</span>';
+  ['log-count','log-ok-count','log-err-count'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=['0 logs','0 OK','0 ERR'][i];
+  });
+  toast('🗑 Логи очищены');
+}
+
+function _describeAction(method, path, body){
+  if(path.includes('/api/admin/set_balance')) return `💰 Баланс → ${body?.balance ?? '?'} для UID ${body?.user_id ?? '?'}`;
+  if(path.includes('/api/admin/set_luck')) return `🍀 Удача → ${body?.luck ?? '?'}% для UID ${body?.user_id ?? '?'}`;
+  if(path.includes('/api/admin/ban')) return body?.banned ? `⛔ Бан UID ${body?.user_id}` : `✅ Разбан UID ${body?.user_id}`;
+  if(path.includes('/api/admin/send_message')) return `📨 Сообщение → UID ${body?.user_id}: "${(body?.text||'').slice(0,40)}"`;
+  if(path.includes('/api/admin/promo/create')) return `🎟 Создан промокод ${body?.code}, награда ${body?.reward}`;
+  if(path.includes('/api/admin/promo/update')) return `✏️ Изменён промокод ${body?.code}`;
+  if(path.includes('/api/admin/promo/delete')) return `🗑 Удалён промокод ${body?.code}`;
+  if(path.includes('/api/admin/global_luck') && method==='POST') return `🌐 Глобальная удача → ${body?.coeff}`;
+  if(path.includes('/api/admin/euro_luck') && method==='POST') return `🎰 Удача рулетки → ${body?.coeff}`;
+  if(path.includes('/api/admin/mines_luck') && method==='POST') return `💣 Удача мин → ${body?.coeff}`;
+  if(path.includes('/api/admin/tower_luck') && method==='POST') return `🗼 Удача башни → ${body?.coeff}`;
+  if(path.includes('/api/admin/mines_max_mult') && method==='POST') return `💎 Макс. коэф. мин → ${body?.max_mult}x`;
+  if(path.includes('/api/admin/tower_max_floors') && method==='POST') return `🗼 Этажей башни → ${body?.max_floors}`;
+  if(method==='GET') return `📥 GET ${path}`;
+  return `📤 ${method} ${path}`;
+}
+
+// ══════════════════════════════
+// PROMO CODES
+// ══════════════════════════════
+let promos = [];
+let _cpUsesInf = false;
+let _cpEternal = false;
+
+function toggleCpInf(field){
+  if(field==='uses'){
+    _cpUsesInf = !_cpUsesInf;
+    const btn = document.getElementById('cp-inf-btn');
+    const inp = document.getElementById('cp-uses');
+    btn.style.background = _cpUsesInf ? 'rgba(76,201,240,.4)' : '';
+    inp.disabled = _cpUsesInf; inp.style.opacity = _cpUsesInf ? '.4' : '1';
+  } else {
+    _cpEternal = !_cpEternal;
+    const btn = document.getElementById('cp-eternal-btn');
+    const inp = document.getElementById('cp-expires');
+    btn.style.background = _cpEternal ? 'rgba(76,201,240,.4)' : '';
+    inp.disabled = _cpEternal; inp.style.opacity = _cpEternal ? '.4' : '1';
+  }
+}
+
+function isPromoActive(p){
+  if(p.uses_left !== null && p.uses_left <= 0) return false;
+  if(p.expires_at !== null && p.expires_at < Date.now()/1000) return false;
+  return true;
+}
+
+async function loadPromos(){
+  const list = document.getElementById('promo-list');
+  list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">⏳ Загрузка...</div>';
+  try{
+    promos = await api('/api/admin/promo');
+    renderPromos();
+  } catch(e){
+    list.innerHTML = '<div style="text-align:center;color:var(--red);padding:24px;font-size:13px">❌ Ошибка загрузки (проверьте API)</div>';
+  }
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderPromos(){
+  const list = document.getElementById('promo-list');
+  if(!promos.length){
+    list.innerHTML='<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Промокодов пока нет</div>';
+    return;
+  }
+  const sorted = [...promos].sort((a,b)=>isPromoActive(b)-isPromoActive(a));
+  list.innerHTML = sorted.map(p => {
+    const active = isPromoActive(p);
+    const eternal = p.expires_at === null, infUses = p.uses_left === null;
+    const expStr = eternal ? '∞ Вечный' : new Date(p.expires_at*1000).toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const rColor = p.reward >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<div style="
+      background:${active?'rgba(45,198,83,.04)':'rgba(255,255,255,.02)'};
+      border:1px solid ${active?'rgba(45,198,83,.3)':'rgba(255,255,255,.07)'};
+      border-radius:14px;padding:12px 14px;margin-bottom:10px;
+      opacity:${active?1:.65};">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer" onclick="this.parentElement.querySelector('.promo-detail').style.display=this.parentElement.querySelector('.promo-detail').style.display==='none'?'block':'none'">
+        <span style="font-size:14px">${active?'🟢':'⚫'}</span>
+        <span style="font-family:var(--font-mono);font-size:14px;font-weight:700;flex:1">${esc(p.code)}</span>
+        <span style="padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;font-family:var(--font-mono);
+          background:${active?(eternal?'rgba(76,201,240,.2)':'rgba(45,198,83,.2)'):'rgba(100,100,100,.15)'};
+          color:${active?(eternal?'var(--blue)':'var(--green)'):'#888'};
+          border:1px solid ${active?(eternal?'rgba(76,201,240,.3)':'rgba(45,198,83,.3)'):'rgba(100,100,100,.2)'}">${active?(eternal?'∞ ВЕЧНЫЙ':'АКТИВЕН'):'ИСТЁК'}</span>
+        <span style="color:var(--muted);font-size:16px">›</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">💰 <b style="color:${rColor}">${p.reward>=0?'+':''}${p.reward} 🪙</b></span>
+        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">🔢 Осталось: <b>${infUses?'∞':p.uses_left}</b></span>
+        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">📅 ${expStr}</span>
+        <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:2px 8px;font-size:11px">✅ Активаций: <b>${p.total_activations||0}</b></span>
+      </div>
+      <div class="promo-detail" style="display:none;border-top:1px solid rgba(255,255,255,.06);padding-top:10px;margin-top:4px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✏️ Изменить</div>
+        <div class="ag-row" style="margin-bottom:6px">
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">Награда:</span>
+          <input class="ag-inp" id="pe-rew-${esc(p.code)}" type="number" value="${p.reward}" style="max-width:90px;text-align:center"/>
+          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','reward')">SET</button>
+        </div>
+        <div class="ag-row" style="margin-bottom:6px">
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">Активаций:</span>
+          <input class="ag-inp" id="pe-uses-${esc(p.code)}" type="number" value="${infUses?'':p.uses_left}" placeholder="∞" style="max-width:90px;text-align:center"/>
+          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','uses')">SET</button>
+          <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','uses_inf')" title="Безлимит">∞</button>
+        </div>
+        <div class="ag-row" style="margin-bottom:10px">
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">До даты:</span>
+          <input class="ag-inp" id="pe-exp-${esc(p.code)}" type="date" value="${eternal?'':new Date(p.expires_at*1000).toISOString().split('T')[0]}" style="max-width:140px"/>
+          <button class="abtn set" onclick="editPromo(event,'${esc(p.code)}','expires')">SET</button>
+          <button class="abtn pur" onclick="editPromo(event,'${esc(p.code)}','eternal')" title="Вечный">∞</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">👥 Кто активировал (${p.total_activations||0})</div>
+        <div id="pa-${esc(p.code)}" style="min-height:20px">
+          <div style="font-size:12px;color:var(--muted);text-align:center;padding:4px">Нажмите кнопку для загрузки</div>
+        </div>
+        <div class="ag-row" style="margin-top:8px;gap:8px">
+          <button class="abtn msg" style="flex:1" onclick="loadPromoActs(event,'${esc(p.code)}')">📋 Загрузить активации</button>
+          <button class="abtn ban" onclick="deletePromo(event,'${esc(p.code)}')">🗑 Удалить</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function createPromo(){
+  const code = document.getElementById('cp-code').value.trim().toUpperCase();
+  const reward = parseInt(document.getElementById('cp-reward').value)||0;
+  const uses = _cpUsesInf ? null : (parseInt(document.getElementById('cp-uses').value)||100);
+  const expInp = document.getElementById('cp-expires').value;
+  const expires = _cpEternal || !expInp ? null : new Date(expInp).getTime()/1000 + 86399;
+  const st = document.getElementById('cp-status');
+  if(!code||code.length<3){st.textContent='❌ Код должен быть ≥ 3 символа';st.style.color='var(--red)';return;}
+  st.textContent='⏳ Создаём...'; st.style.color='var(--muted)';
+  try{
+    await api('/api/admin/promo/create','POST',{code,reward,uses_left:uses,expires_at:expires});
+    st.textContent=`✅ Промокод ${code} создан!`; st.style.color='var(--green)';
+    document.getElementById('cp-code').value='';
+    setTimeout(()=>st.textContent='',3000);
+    await loadPromos();
+  } catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
+}
+
+async function editPromo(e,code,field){
+  e.stopPropagation();
+  let body = {code};
+  if(field==='reward') body.reward = parseInt(document.getElementById('pe-rew-'+code).value)||0;
+  else if(field==='uses'){ const v=parseInt(document.getElementById('pe-uses-'+code).value); body.uses_left=isNaN(v)?null:v; }
+  else if(field==='uses_inf') body.uses_left=null;
+  else if(field==='expires'){ const v=document.getElementById('pe-exp-'+code).value; body.expires_at=v?new Date(v).getTime()/1000+86399:null; }
+  else if(field==='eternal') body.expires_at=null;
+  try{ await api('/api/admin/promo/update','POST',body); toast(`✅ ${code} обновлён`); await loadPromos(); }
+  catch{ toast('Ошибка обновления','err'); }
+}
+
+async function deletePromo(e,code){
+  e.stopPropagation();
+  if(!confirm(`Удалить промокод ${code}?`)) return;
+  try{ await api('/api/admin/promo/delete','POST',{code}); toast(`🗑 ${code} удалён`); await loadPromos(); }
+  catch{ toast('Ошибка','err'); }
+}
+
+async function loadPromoActs(e,code){
+  e.stopPropagation();
+  const el = document.getElementById('pa-'+code);
+  el.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:4px">⏳ Загрузка...</div>';
+  try{
+    const acts = await api(`/api/admin/promo/${encodeURIComponent(code)}/activations`);
+    if(!acts.length){ el.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:4px">Никто не активировал</div>'; return; }
+    el.innerHTML = acts.map((a,i)=>{
+      const d = new Date(a.activated_at*1000);
+      const dt = d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+      const amt = a.amount_received;
+      return `<div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:7px 10px;margin-bottom:5px;font-size:12px">
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);width:20px">#${i+1}</span>
+        <span style="flex:1;color:var(--text);font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(245,197,66,.3)"
+          onclick="jumpToUser(${a.user_id})">${esc(a.first_name||a.username||'ID:'+a.user_id)}${a.username?'<span style="color:var(--muted);font-size:10px"> @'+esc(a.username)+'</span>':''}</span>
+        <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:${amt>=0?'var(--green)':'var(--red)'}">${amt>=0?'+':''}${amt}🪙</span>
+        <span style="font-size:10px;color:var(--muted)">${dt}</span>
+      </div>`;
+    }).join('');
+  } catch{ el.innerHTML='<div style="font-size:12px;color:var(--red);text-align:center;padding:4px">Ошибка загрузки</div>'; }
+}
+
+function jumpToUser(uid){
+  const usersTab = document.querySelector('[onclick*="\'users\'"]');
+  if(usersTab) switchTab('users',usersTab);
+  setTimeout(()=>{
+    const el = document.getElementById('uc-'+uid);
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('open'); }
+    else toast('Сначала загрузите список игроков','err');
+  },350);
+}
+
+async function api(path, method='GET', body=null){
+  const o = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Uid': ADMIN_UID,
+      'X-Admin-Key': ADMIN_UID,
+    }
+  };
+  if(body) o.body = JSON.stringify({...body, incognito: incognitoMode});
+  let result = null, errMsg = null, ok = false;
+  try {
+    const r = await fetch(path, o);
+    if(!r.ok){
+      let em = r.status;
+      try{ const j = await r.json(); em = j.error || j.detail || r.status; } catch{}
+      errMsg = String(em);
+      _addLog(method, path, false, body, null, errMsg);
+      throw new Error(errMsg);
+    }
+    result = await r.json();
+    ok = true;
+    _addLog(method, path, true, body, result, null);
+    return result;
+  } catch(e) {
+    if(ok === false && !errMsg){
+      errMsg = e.message;
+      _addLog(method, path, false, body, null, errMsg);
+    }
+    throw e;
+  }
+}
+
+// ── INCOGNITO ──
+function toggleIncognito(on){
+  incognitoMode = on;
+  document.body.classList.toggle('incognito-mode', on);
+  const st = document.getElementById('incognito-status');
+  if(on){
+    st.textContent = '🥷 Режим инкогнито включён — действия не логируются';
+    st.style.color = 'var(--green)';
+    document.getElementById('header-title').textContent = '🥷 ИНКОГНИТО';
+    document.getElementById('header-sub').textContent = 'Действия не логируются';
+  } else {
+    st.textContent = '✅ Стандартный режим — все действия логируются';
+    st.style.color = 'var(--muted)';
+    document.getElementById('header-title').textContent = '🛠 TOPLUCK ADMIN';
+    document.getElementById('header-sub').textContent = 'Панель управления казино';
+  }
+}
+
+// ── USERS ──
+function stats(){
+  const total = users.length;
+  const coins = users.reduce((s,u)=>s+u.balance,0);
+  const banned = users.filter(u=>u.banned).length;
+  const lucky = users.filter(u=>u.luck_pct>=0).length;
+  return {total,coins,banned,lucky};
+}
+
+function renderUsers(list){
+  const s = stats();
+  document.getElementById('users-root').innerHTML = `
+    <div class="sbar">
+      <div class="sb"><div class="sb-v">${s.total}</div><div class="sb-l">Игроков</div></div>
+      <div class="sb"><div class="sb-v">${s.coins}</div><div class="sb-l">Монет</div></div>
+      <div class="sb"><div class="sb-v">${s.lucky}</div><div class="sb-l">Подкручено</div></div>
+      <div class="sb"><div class="sb-v" style="color:var(--red)">${s.banned}</div><div class="sb-l">Заблок.</div></div>
+    </div>
+    <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)"/>
+    <div id="ulist">${list.map(uCard).join('')}</div>`;
+}
+
+function filterU(q){
+  q = q.toLowerCase();
+  document.getElementById('ulist').innerHTML =
+    users.filter(u =>
+      (u.first_name||'').toLowerCase().includes(q) ||
+      (u.username||'').toLowerCase().includes(q) ||
+      String(u.user_id).includes(q)
+    ).map(uCard).join('');
+}
+
+function fmtDate(ts){
+  if(!ts) return '—';
+  const d = new Date(ts*1000);
+  return d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'2-digit'})
+       + ' ' + d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function winrate(u){
+  if(!u.spins) return '—';
+  return Math.round(u.wins/u.spins*100)+'%';
+}
+
+function uCard(u){
+  const name = esc(u.first_name||u.username||'Аноним');
+  const uname = u.username ? `@${esc(u.username)}` : '';
+  const profit = u.total_lost - u.total_won;
+  const luck = u.luck_pct < 0 ? '<span style="color:var(--green)">●Авто</span>'
+    : u.luck_pct === 100 ? '<span style="color:var(--green)">●100% ВЫИГР.</span>'
+    : u.luck_pct === 0   ? '<span style="color:var(--red)">●0% ПРОГР.</span>'
+    : `<span style="color:var(--purple)">●${u.luck_pct}%</span>`;
+  const isBanned = u.banned;
+  const lvl = u.level||0;
+  const avBg = isBanned ? 'var(--red)' : 'linear-gradient(135deg,var(--purple),#4361ee)';
+  return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}" data-balance="${u.balance}">
+    <div class="uc-top" onclick="tog(${u.user_id})">
+      <div class="uc-av${isBanned?' banned-av':''}" style="background:${avBg};position:relative">
+        ${(name[0]||'?').toUpperCase()}
+        <span style="position:absolute;bottom:-3px;right:-3px;background:var(--gold);color:#000;
+          font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:6px;padding:1px 4px">
+          ${lvl}
+        </span>
+      </div>
+      <div class="uc-info">
+        <div class="uc-name">${name}${isBanned?' ⛔':''}</div>
+        <div class="uc-id">ID: ${u.user_id}${uname?' · '+uname:''}</div>
+      </div>
+      <div class="uc-bal" id="uc-bal-${u.user_id}">${u.balance}🪙</div>
+    </div>
+    <div class="uc-body">
+      <div class="uinfo-grid">
+        <div class="uinfo-item"><div class="uinfo-label">🎲 Игр</div><div class="uinfo-val blue">${u.spins}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🏆 Побед</div><div class="uinfo-val green">${u.wins}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">📈 Выиграно</div><div class="uinfo-val green">+${u.total_won}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">📉 Проиграно</div><div class="uinfo-val red">-${u.total_lost}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">💼 Доход казино</div><div class="uinfo-val ${profit>=0?'green':'red'}">${profit>=0?'+':''}${profit}🪙</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🎯 Винрейт</div><div class="uinfo-val gold">${winrate(u)}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">📅 Регистрация</div><div class="uinfo-val muted">${fmtDate(u.created_at)}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🍀 Удача</div><div class="uinfo-val">${luck}</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">🔗 Рефералы</div><div class="uinfo-val blue" id="ref-cnt-${u.user_id}">—</div></div>
+        <div class="uinfo-item"><div class="uinfo-label">⭐ XP</div><div class="uinfo-val gold">${u.xp||0}</div></div>
+      </div>
+      <!-- Level edit -->
+      <div class="ag" style="margin-bottom:8px">
+        <div class="ag-l">🏅 Уровень (текущий: <span id="u-level-${u.user_id}" style="color:var(--gold);font-weight:700">${lvl}</span>)</div>
+        <div class="ag-row">
+          <input class="ag-inp" id="lvl-${u.user_id}" type="number" value="${lvl}" min="0" max="100"/>
+          <button class="abtn set" onclick="setUserLevel(${u.user_id},document.getElementById('lvl-${u.user_id}').value)">SET</button>
+        </div>
+      </div>
+      <!-- Refs list (lazy-loaded) -->
+      <div id="refs-panel-${u.user_id}" style="display:none;margin:8px 0">
+        <button class="abtn msg" style="width:100%;margin-bottom:6px" onclick="loadUserRefs(${u.user_id})">👥 Показать рефералов</button>
+        <div id="refs-list-${u.user_id}" style="font-size:12px;color:var(--muted)"></div>
+      </div>
+      <!-- Balance -->
+      <div class="ag">
+        <div class="ag-l">💰 Управление балансом</div>
+        <div class="ag-row" style="margin-bottom:6px">
+          <input class="ag-inp" id="bi-${u.user_id}" type="number" value="${u.balance}" min="0" placeholder="Новый баланс..."/>
+          <button class="abtn set" onclick="sbal(event,${u.user_id})" title="Установить баланс равным введённому значению">📍 Задать</button>
+        </div>
+        <div class="ag-row">
+          <input class="ag-inp" id="di-${u.user_id}" type="number" value="100" min="1" placeholder="Сумма..."/>
+          <button class="abtn add" onclick="addBal(event,${u.user_id})" title="Начислить сумму к текущему балансу">➕ Начислить</button>
+          <button class="abtn sub" onclick="subBal(event,${u.user_id})" title="Снять сумму с текущего баланса">➖ Снять</button>
+        </div>
+      </div>
+      <!-- Luck -->
+      <div class="ag">
+        <div class="ag-l">🍀 Удача игрока</div>
+        <div class="luck-row">
+          <div class="lbtn luck0 ${u.luck_pct===0?'a':''}" onclick="sluck(event,${u.user_id},0)">0%</div>
+          <div class="lbtn ${u.luck_pct===-1?'a':''}" onclick="sluck(event,${u.user_id},-1)">Авто</div>
+          <div class="lbtn ${u.luck_pct===25?'a':''}" onclick="sluck(event,${u.user_id},25)">25%</div>
+          <div class="lbtn ${u.luck_pct===50?'a':''}" onclick="sluck(event,${u.user_id},50)">50%</div>
+          <div class="lbtn ${u.luck_pct===75?'a':''}" onclick="sluck(event,${u.user_id},75)">75%</div>
+          <div class="lbtn luck100 ${u.luck_pct===100?'a':''}" onclick="sluck(event,${u.user_id},100)">100%★</div>
+        </div>
+        <div class="ag-row" style="margin-top:6px">
+          <input class="ag-inp" id="li-${u.user_id}" type="number" min="0" max="100" placeholder="0–100"/>
+          <button class="abtn pur" onclick="sluck_c(event,${u.user_id})">Задать</button>
+        </div>
+      </div>
+      <!-- Message & Ban -->
+      <div class="ag">
+        <div class="ag-l">📩 Сообщение / ⛔ Бан</div>
+        <div class="ag-row">
+          <input class="ag-inp" id="msg-${u.user_id}" type="text" placeholder="Текст сообщения..." style="font-family:var(--font-ui);font-size:13px;"/>
+          <button class="abtn msg" onclick="sendMsg(event,${u.user_id})">📨</button>
+        </div>
+        <div class="ag-row">
+          ${isBanned
+            ? `<button class="abtn unban" style="flex:1" onclick="banUser(event,${u.user_id},false)">✅ Разблокировать</button>`
+            : `<button class="abtn ban" style="flex:1" onclick="banUser(event,${u.user_id},true)">⛔ Заблокировать</button>`
+          }
+        </div>
+      </div>
+      <!-- История пользователя -->
+      <div class="ag" style="padding-top:4px">
+        <div class="ag-l">📋 История транзакций</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+          <button class="abtn msg" style="font-size:10px;padding:4px 8px" onclick="loadUHist(${u.user_id},'all',this)">Все</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(45,198,83,.1);border-color:rgba(45,198,83,.3);color:var(--green)" onclick="loadUHist(${u.user_id},'win',this)">🏆 Победы</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(230,57,70,.1);border-color:rgba(230,57,70,.3);color:var(--red)" onclick="loadUHist(${u.user_id},'lose',this)">💀 Проигрыши</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(76,201,240,.1);border-color:rgba(76,201,240,.3);color:var(--blue)" onclick="loadUHist(${u.user_id},'deposit',this)">💳 Пополн.</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(245,197,66,.1);border-color:rgba(245,197,66,.3);color:var(--gold)" onclick="loadUHist(${u.user_id},'task',this)">✅ Задания</button>
+          <button class="abtn" style="font-size:10px;padding:4px 8px;background:rgba(155,89,182,.1);border-color:rgba(155,89,182,.3);color:var(--purple)" onclick="loadUHist(${u.user_id},'promo',this)">🎟 Промо</button>
+          <button class="abtn add" style="font-size:10px;padding:4px 8px" onclick="loadUHist(${u.user_id},'admin_credit',this)">⬆️ Добавление</button>
+          <button class="abtn sub" style="font-size:10px;padding:4px 8px" onclick="loadUHist(${u.user_id},'admin_deduct',this)">⬇️ Списание</button>
+        </div>
+        <div id="uhist-${u.user_id}" style="max-height:220px;overflow-y:auto;font-size:11px;color:var(--muted)">
+          <button class="abtn msg" style="width:100%" onclick="loadUHist(${u.user_id},'all',this)">📋 Загрузить историю</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function tog(uid){
+  const card = document.getElementById('uc-'+uid);
+  card.classList.toggle('open');
+  if(card.classList.contains('open')){
+    // Show refs panel and load count
+    const rp = document.getElementById('refs-panel-'+uid);
+    if(rp) rp.style.display='block';
+    loadUserRefsCount(uid);
+  }
+}
+async function loadUserRefsCount(uid){
+  try{
+    const r = await api(`/api/user/${uid}/refs`);
+    const el = document.getElementById('ref-cnt-'+uid);
+    if(el) el.textContent = r.count||0;
+  }catch(e){}
+}
+async function loadUHist(uid, filter, btn){
+  const listEl = document.getElementById('uhist-'+uid);
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="padding:8px;text-align:center">⏳ Загружаем...</div>';
+  try{
+    const r = await api(`/api/history/${uid}`);
+    let items = Array.isArray(r) ? r : [];
+    if(filter && filter !== 'all') items = items.filter(i => i.type === filter);
+    if(!items.length){
+      listEl.innerHTML = '<div style="padding:8px;text-align:center;color:var(--muted)">Записей нет</div>';
+      return;
+    }
+    const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',
+      admin_credit:'⬆️',admin_deduct:'⬇️',promo:'🎟',task:'✅'};
+    const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',
+      gift_sent:'Подарок отпр.',gift_received:'Подарок получ.',
+      admin_credit:'Начисление',admin_deduct:'Списание',promo:'Промокод',task:'Задание'};
+    const POS=['win','deposit','ref','gift_received','admin_credit','promo','task'];
+    listEl.innerHTML = items.slice(0,60).map(i=>{
+      const d = new Date((i.created_at||0)*1000);
+      const dt = d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+               +' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+      const pos = POS.includes(i.type);
+      const col = pos ? 'var(--green)' : 'var(--red)';
+      return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--card-br)">
+        <span>${ICONS[i.type]||'•'}</span>
+        <span style="flex:1;color:var(--text-main)">${TITLES[i.type]||i.type}${i.detail?' · <span style="color:var(--muted)">'+esc(i.detail)+'</span>':''}</span>
+        <span style="color:${col};font-weight:700;white-space:nowrap">${pos?'+':'-'}${Math.abs(i.amount)}🪙</span>
+        <span style="color:var(--muted);white-space:nowrap">${dt}</span>
+      </div>`;
+    }).join('');
+  }catch(e){
+    listEl.innerHTML='<div style="padding:8px;text-align:center;color:var(--red)">Ошибка загрузки</div>';
+  }
+}
+async function loadUserRefs(uid){
+  const listEl = document.getElementById('refs-list-'+uid);
+  if(!listEl) return;
+  listEl.innerHTML = '⏳ Загружаем...';
+  try{
+    const r = await api(`/api/user/${uid}/refs`);
+    const refs = r.refs||[];
+    if(!refs.length){ listEl.innerHTML='<i>Рефералов нет</i>'; return; }
+    listEl.innerHTML = refs.map(ref=>{
+      const who = (ref.detail||'').replace('Реферал:','').trim()||'?';
+      const dt  = fmtDate(ref.created_at);
+      return `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)">🤝 <b>${esc(who)}</b> · ${dt} · +${ref.amount}🪙</div>`;
+    }).join('');
+  }catch(e){ listEl.innerHTML='<i style="color:var(--red)">Ошибка</i>'; }
+}
+
+// ── Balance management ──
+// Читаем текущий баланс из data-balance на карточке — надёжнее чем users.find
+// и не требует полной перерисовки карточки при каждом изменении
+
+function patchBalance(uid, nb){
+  // 1. data-balance — источник истины для следующей операции
+  const card = document.getElementById('uc-'+uid);
+  if(card) card.dataset.balance = String(nb);
+  // 2. Чип баланса в шапке карточки — обновляем только его, без скачков
+  const balEl = document.getElementById('uc-bal-'+uid);
+  if(balEl) balEl.textContent = nb + '🪙';
+  // 3. Поле «Задать» — устанавливаем новое значение
+  const bi = document.getElementById('bi-'+uid);
+  if(bi) bi.value = String(nb);
+  // 4. Синхронизируем массив users (для других операций на странице)
+  const u = users.find(x=>+x.user_id===+uid);
+  if(u) u.balance = nb;
+}
+
+async function sbal(e, uid){
+  e.stopPropagation();
+  const nb = parseInt(document.getElementById('bi-'+uid)?.value);
+  if(isNaN(nb)||nb<0){ toast('Неверное значение','err'); return; }
+  const card = document.getElementById('uc-'+uid);
+  const old  = parseInt(card?.dataset?.balance||'0');
+  try{
+    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:old});
+    patchBalance(uid, nb);
+    toast(`✅ Баланс → ${nb}🪙`);
+  } catch(err){ toast('Ошибка сервера','err'); }
+}
+
+async function addBal(e, uid){
+  e.stopPropagation();
+  const d    = parseInt(document.getElementById('di-'+uid)?.value)||0;
+  if(!d){ toast('Введите сумму','err'); return; }
+  const card = document.getElementById('uc-'+uid);
+  const cur  = parseInt(card?.dataset?.balance||'0');
+  const nb   = cur + d;
+  try{
+    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:cur});
+    patchBalance(uid, nb);
+    toast(`✅ +${d}🪙 → теперь ${nb}🪙`);
+  } catch(err){ toast('Ошибка сервера','err'); }
+}
+
+async function subBal(e, uid){
+  e.stopPropagation();
+  const d    = parseInt(document.getElementById('di-'+uid)?.value)||0;
+  if(!d){ toast('Введите сумму','err'); return; }
+  const card = document.getElementById('uc-'+uid);
+  const cur  = parseInt(card?.dataset?.balance||'0');
+  if(d > cur){ toast(`❌ На балансе ${cur}🪙 — нельзя снять ${d}`, 'err'); return; }
+  const nb   = cur - d;
+  try{
+    await api('/api/admin/set_balance','POST',{user_id:+uid, balance:nb, old_balance:cur});
+    patchBalance(uid, nb);
+    toast(`✅ -${d}🪙 → теперь ${nb}🪙`);
+  } catch(err){ toast('Ошибка сервера','err'); }
+}
+
+async function sluck(e,uid,pct){
+  e.stopPropagation();
+  const u = users.find(x=>x.user_id===uid);
+  try{
+    await api('/api/admin/set_luck','POST',{user_id:uid,luck:pct});
+    if(u) u.luck_pct=pct; updateCard(uid,u);
+    const label = pct<0?'Авто':pct===100?'100% (всегда выигрывает)':pct===0?'0% (всегда проигрывает)':`${pct}%`;
+    toast(`🍀 Удача: ${label}`);
+  } catch{ toast('Ошибка','err'); }
+}
+
+async function sluck_c(e,uid){
+  e.stopPropagation();
+  const v = parseInt(document.getElementById('li-'+uid).value);
+  if(isNaN(v)||v<0||v>100){toast('0–100','err');return;}
+  await sluck(e,uid,v);
+}
+
+async function sendMsg(e,uid){
+  e.stopPropagation();
+  const text = document.getElementById('msg-'+uid).value.trim();
+  if(!text){toast('Введите текст','err');return;}
+  try{
+    const r = await fetch(`/api/admin/send_message`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Uid':ADMIN_UID},
+      body: JSON.stringify({user_id:uid, text})
+    });
+    const d = await r.json();
+    if(d.ok) toast('📨 Сообщение отправлено');
+    else toast(d.error||'Ошибка','err');
+  } catch{ toast('Ошибка','err'); }
+}
+
+async function banUser(e,uid,banned){
+  e.stopPropagation();
+  const u = users.find(x=>x.user_id===uid);
+  const reason = banned ? (prompt('Причина бана (необязательно):') || '—') : '—';
+  try{
+    await api('/api/admin/ban','POST',{user_id:uid,banned,reason});
+    if(u) u.banned=banned; updateCard(uid,u);
+    toast(banned?`⛔ Заблокирован`:`✅ Разблокирован`);
+  } catch{ toast('Ошибка','err'); }
+}
+
+function updateCard(uid, u){
+  const el = document.getElementById('uc-'+uid);
+  if(el && u){
+    const wasOpen = el.classList.contains('open');
+    el.outerHTML = uCard(u);
+    if(wasOpen) document.getElementById('uc-'+uid)?.classList.add('open');
+  }
+}
+
+// ── REVENUE ──
+function setPeriod(btn,p){
+  document.querySelectorAll('.pb').forEach(b=>b.classList.remove('a'));
+  btn.classList.add('a'); curPeriod=p;
+  document.getElementById('custom-wrap').style.display=p==='custom'?'block':'none';
+  if(p!=='custom') loadRev();
+}
+function getTsRange(){
+  const now=Date.now()/1000;
+  if(curPeriod==='today'){const d=new Date();d.setHours(0,0,0,0);return{f:d.getTime()/1000,t:now};}
+  if(curPeriod==='week') return{f:now-7*86400,t:now};
+  if(curPeriod==='month')return{f:now-30*86400,t:now};
+  if(curPeriod==='all')  return{f:0,t:now};
+  const fv=document.getElementById('d-from').value;
+  const tv=document.getElementById('d-to').value;
+  return{f:fv?new Date(fv).getTime()/1000:0,t:tv?new Date(tv).getTime()/1000+86399:now};
+}
+async function loadRev(){
+  const msg=document.getElementById('rev-msg');
+  const grid=document.getElementById('rev-grid');
+  msg.style.display='block';msg.textContent='Загрузка...';grid.style.display='none';
+  const{f,t}=getTsRange();
+  try{
+    const d=await api(`/api/admin/revenue?from=${f}&to=${t}`);
+    msg.style.display='none';grid.style.display='grid';
+    const ep=d.euro_losses-d.euro_wins;
+    const mp=d.mines_losses-d.mines_wins;
+    const tp=d.tower_losses-d.tower_wins;
+    grid.innerHTML=`
+      <div class="ri"><div class="ri-l">🏙 GTA комиссии</div><div class="ri-v g">+${d.gta_commission}</div></div>
+      <div class="ri"><div class="ri-l">🎰 Европ. (виртуально)</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
+      <div class="ri"><div class="ri-l">💣 Мины (виртуально)</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
+      <div class="ri"><div class="ri-l">🗼 Башня (виртуально)</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
+      <div class="ri"><div class="ri-l">📉 Проиграно игр. (виртуально)</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
+      <div class="ri"><div class="ri-l">📈 Выплачено игр. (виртуально)</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
+      <div class="ri"><div class="ri-l">💳 Куплено монет (⭐)</div><div class="ri-v gold">+${d.deposits}</div></div>
+      <div class="ri"><div class="ri-l">🎁 Выведено подарками</div><div class="ri-v r">-${d.withdrawals||0}</div></div>
+      <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${users.length}</div></div>
+      <div class="rev-total">
+        <div class="rt-l">Итого реальный доход (⭐ купили − ⭐ выплатили подарками)</div>
+        <div class="rt-v" style="color:${d.total_revenue>=0?'var(--gold)':'var(--red)'}">
+          ${d.total_revenue>=0?'+':''}${d.total_revenue} 🪙
+        </div>
+      </div>`;
+  } catch{ msg.style.display='block';msg.textContent='Ошибка загрузки'; }
+}
+
+// ── LUCK SETTINGS (independent per mode) ──
+let glCoeff = 1.0;
+let euroCoeff = 1.0;
+let minesCoeff = 1.0;
+let towerLuckCoeff = 1.0;
+let bjCoeff = 1.0;
+let minesMaxMult = 25.0;
+let towerMaxFloors = 10;
+
+function _colorCoeff(v){ return v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--green)'; }
+
+// Global (applies to ALL when saved)
+function onGlSlider(v){
+  glCoeff = parseInt(v)/100;
+  const el = document.getElementById('gl-val');
+  el.textContent = glCoeff.toFixed(2); el.style.color = _colorCoeff(glCoeff);
+}
+function setGlCoeff(v){
+  glCoeff = v;
+  document.getElementById('gl-val').textContent = v.toFixed(2);
+  document.getElementById('gl-slider').value = Math.round(v*100);
+  document.getElementById('gl-val').style.color = _colorCoeff(v);
+}
+async function saveGlCoeff(){
+  const st = document.getElementById('gl-status');
+  st.textContent='⏳ Сохраняем...'; st.style.color='var(--muted)';
+  try{
+    await Promise.all([
+      api('/api/admin/global_luck','POST',{coeff:glCoeff}),
+      api('/api/admin/euro_luck','POST',{coeff:glCoeff}),
+      api('/api/admin/mines_luck','POST',{coeff:glCoeff}),
+      api('/api/admin/tower_luck','POST',{coeff:glCoeff}),
+    ]);
+    euroCoeff = glCoeff; minesCoeff = glCoeff; towerLuckCoeff = glCoeff;
+    ['euro-slider','mines-slider','tower-luck-slider'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value=Math.round(glCoeff*100);
+    });
+    ['euro-val','mines-val','tower-luck-val'].forEach(id=>{
+      const el=document.getElementById(id); if(el){el.textContent=glCoeff.toFixed(2);el.style.color=_colorCoeff(glCoeff);}
+    });
+    st.textContent=`✅ Применено ко всем: ${glCoeff.toFixed(2)}`; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch(e){ st.textContent='❌ '+e.message; st.style.color='var(--red)'; }
+}
+
+// Euro — independent
+function onEuroSlider(v){
+  euroCoeff = parseInt(v)/100;
+  const el = document.getElementById('euro-val');
+  el.textContent = euroCoeff.toFixed(2); el.style.color = _colorCoeff(euroCoeff);
+}
+function setEuroCoeff(v){
+  euroCoeff = v;
+  document.getElementById('euro-val').textContent = v.toFixed(2);
+  document.getElementById('euro-slider').value = Math.round(v*100);
+  document.getElementById('euro-val').style.color = _colorCoeff(v);
+}
+async function saveEuroCoeff(){
+  const st = document.getElementById('euro-status');
+  try{
+    await api('/api/admin/euro_luck','POST',{coeff:euroCoeff});
+    st.textContent = `✅ Рулетка сохранена: ${euroCoeff.toFixed(2)}`; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка','err'); }
+}
+
+// Mines — independent
+function onMinesSlider(v){
+  minesCoeff = parseInt(v)/100;
+  const el = document.getElementById('mines-val');
+  el.textContent = minesCoeff.toFixed(2); el.style.color = _colorCoeff(minesCoeff);
+}
+function setMinesCoeff(v){
+  minesCoeff = v;
+  document.getElementById('mines-val').textContent = v.toFixed(2);
+  document.getElementById('mines-slider').value = Math.round(v*100);
+  document.getElementById('mines-val').style.color = _colorCoeff(v);
+}
+async function saveMinesCoeff(){
+  const st = document.getElementById('mines-status');
+  try{
+    await api('/api/admin/mines_luck','POST',{coeff:minesCoeff});
+    st.textContent = `✅ Мины сохранены: ${minesCoeff.toFixed(2)}`; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка','err'); }
+}
+
+// Tower — independent
+function onTowerLuckSlider(v){
+  towerLuckCoeff = parseInt(v)/100;
+  const el = document.getElementById('tower-luck-val');
+  el.textContent = towerLuckCoeff.toFixed(2); el.style.color = _colorCoeff(towerLuckCoeff);
+}
+function setTowerLuck(v){
+  towerLuckCoeff = v;
+  document.getElementById('tower-luck-val').textContent = v.toFixed(2);
+  document.getElementById('tower-luck-slider').value = Math.round(v*100);
+  document.getElementById('tower-luck-val').style.color = _colorCoeff(v);
+}
+async function saveTowerLuck(){
+  const st = document.getElementById('tower-luck-status');
+  try{
+    await api('/api/admin/tower_luck','POST',{coeff:towerLuckCoeff});
+    st.textContent = `✅ Башня сохранена: ${towerLuckCoeff.toFixed(2)}`; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка сохранения','err'); }
+}
+
+// Blackjack — independent
+function onBjSlider(v){
+  bjCoeff = parseInt(v)/100;
+  const el = document.getElementById('bj-val');
+  el.textContent = bjCoeff.toFixed(2); el.style.color = _colorCoeff(bjCoeff);
+}
+function setBjCoeff(v){
+  bjCoeff = v;
+  document.getElementById('bj-val').textContent = v.toFixed(2);
+  document.getElementById('bj-slider').value = Math.round(v*100);
+  document.getElementById('bj-val').style.color = _colorCoeff(v);
+}
+async function saveBjCoeff(){
+  const st = document.getElementById('bj-status');
+  try{
+    await api('/api/admin/blackjack_luck','POST',{coeff:bjCoeff});
+    st.textContent = `✅ Блэкджек сохранён: ${bjCoeff.toFixed(2)}`; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка сохранения','err'); }
+}
+
+// Plinko multipliers — 15 editable slots
+let plinkoMults = [20,10,5,2.5,2,1.5,1.2,0,1.2,1.5,2,2.5,5,10,20];
+function renderPlinkoMultsGrid(){
+  const grid = document.getElementById('plinko-mults-grid');
+  if(!grid) return;
+  grid.innerHTML = plinkoMults.map((v,i)=>`
+    <input type="number" step="0.1" min="0" value="${v}" data-idx="${i}"
+      onchange="plinkoMults[${i}]=parseFloat(this.value)||0"
+      style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:6px;
+      width:30px;padding:6px 2px;color:var(--text);font-size:11px;text-align:center;font-family:var(--font-mono);margin:0 auto;display:block"/>
+  `).join('');
+}
+async function loadPlinkoMults(){
+  try{
+    const d = await api('/api/plinko_mults');
+    if(Array.isArray(d.mults) && d.mults.length===15) plinkoMults = d.mults;
+  } catch{}
+  renderPlinkoMultsGrid();
+}
+async function savePlinkoMults(){
+  const st = document.getElementById('plinko-mults-status');
+  try{
+    await api('/api/admin/plinko_mults','POST',{mults:plinkoMults});
+    st.textContent = '✅ Множители Plinko сохранены'; st.style.color='var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ st.textContent='❌ Ошибка'; st.style.color='var(--red)'; }
+}
+
+async function loadGl(){
+  const load = async(url, key, slEl, valEl, color) => {
+    try{
+      const d = await api(url);
+      const v = d.coeff ?? 1.0;
+      if(slEl) slEl.value = Math.round(v*100);
+      if(valEl){ valEl.textContent = v.toFixed(2); valEl.style.color = _colorCoeff(v); }
+      return v;
+    } catch{ return 1.0; }
+  };
+  glCoeff         = await load('/api/admin/global_luck', 'coeff', document.getElementById('gl-slider'), document.getElementById('gl-val'));
+  euroCoeff       = await load('/api/admin/euro_luck', 'coeff', document.getElementById('euro-slider'), document.getElementById('euro-val'));
+  minesCoeff      = await load('/api/admin/mines_luck', 'coeff', document.getElementById('mines-slider'), document.getElementById('mines-val'));
+  towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
+  bjCoeff         = await load('/api/admin/blackjack_luck', 'coeff', document.getElementById('bj-slider'), document.getElementById('bj-val'));
+  await loadPlinkoMults();
+  try{
+    const d = await api('/api/admin/mines_max_mult');
+    minesMaxMult = d.max_mult ?? d.value ?? 25;
+    document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1)+'x';
+    document.getElementById('mines-max-slider').value = Math.min(100, minesMaxMult);
+  } catch{}
+  try{
+    const d = await api('/api/admin/tower_max_mult');
+    towerMaxFloors = d.max_mult ?? 5.0;
+    document.getElementById('tower-mult-val').textContent = '×'+parseFloat(towerMaxFloors).toFixed(1);
+    document.getElementById('tower-mult-slider').value = towerMaxFloors;
+  } catch{}
+}  // ← закрытие loadGl()
+
+// ── MINES MAX MULTIPLIER ──
+function onMinesMaxSlider(v){
+  minesMaxMult = parseFloat(v);
+  const el = document.getElementById('mines-max-val');
+  el.textContent = minesMaxMult.toFixed(1)+'x';
+  el.style.color = minesMaxMult <= 5 ? 'var(--green)' : minesMaxMult <= 15 ? 'var(--gold)' : 'var(--red)';
+}
+function setMinesMax(v){
+  minesMaxMult = v;
+  document.getElementById('mines-max-val').textContent = v.toFixed(1)+'x';
+  document.getElementById('mines-max-slider').value = Math.min(100, v);
+  const el = document.getElementById('mines-max-val');
+  el.style.color = v <= 5 ? 'var(--green)' : v <= 15 ? 'var(--gold)' : 'var(--red)';
+}
+async function saveMinesMax(){
+  try{
+    await api('/api/admin/mines_max_mult','POST',{max_mult: minesMaxMult});
+    const st = document.getElementById('mines-max-status');
+    st.textContent = '✅ Сохранено: макс. '+minesMaxMult.toFixed(1)+'x';
+    st.style.color = 'var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка сохранения','err'); }
+}
+
+// ── TOWER MAX MULTIPLIER ──
+function onTowerMultSlider(v){
+  towerMaxFloors = parseFloat(v);
+  const el = document.getElementById('tower-mult-val');
+  el.textContent = '×'+parseFloat(v).toFixed(1);
+  el.style.color = v <= 3 ? 'var(--green)' : v <= 7 ? 'var(--blue)' : 'var(--red)';
+}
+function setTowerMult(v){
+  towerMaxFloors = v;
+  document.getElementById('tower-mult-val').textContent = '×'+parseFloat(v).toFixed(1);
+  document.getElementById('tower-mult-slider').value = v;
+  const el = document.getElementById('tower-mult-val');
+  el.style.color = v <= 3 ? 'var(--green)' : v <= 7 ? 'var(--blue)' : 'var(--red)';
+}
+async function saveTowerMult(){
+  try{
+    await api('/api/admin/tower_max_mult','POST',{max_mult: towerMaxFloors});
+    const st = document.getElementById('tower-mult-status');
+    st.textContent = '✅ Сохранено: ×'+parseFloat(towerMaxFloors).toFixed(1);
+    st.style.color = 'var(--green)';
+    setTimeout(()=>st.textContent='',3000);
+  } catch{ toast('Ошибка сохранения','err'); }
+}
+
+// ── LOADING OVERLAY — bulletproof version ──
+function hideLoadingOverlay(){
+  const el = document.getElementById('admin-loading');
+  if(!el) return;
+  if(window._alEyesCtrl){ window._alEyesCtrl.stop(); window._alEyesCtrl=null; }
+  el.style.opacity = '0';
+  el.style.transition = 'opacity 0.35s ease';
+  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); }, 400);
+}
+
+function showLoadingError(msg){
+  const sub = document.getElementById('al-sub');
+  const bar = document.querySelector('.al-bar-wrap');
+  if(sub) sub.innerHTML = msg;
+  if(bar) bar.style.display = 'none';
+}
+
+// Animate the loading bar
+(function(){
+  const bar = document.getElementById('al-bar');
+  if(!bar) return;
+  let pct = 0;
+  const iv = setInterval(()=>{
+    pct = Math.min(pct + Math.random()*10 + 3, 88);
+    bar.style.width = pct + '%';
+  }, 130);
+  window._clearLoadBar = ()=>{ clearInterval(iv); if(bar) bar.style.width='100%'; };
+})();
+
+// ── ADMIN GUARD ──
+// Auth: if UID exists → show panel (each API call has server-side 403 guard anyway).
+// Only redirect on confirmed HTTP 403 from a lightweight endpoint.
+// ── ADMIN GUARD ──────────────────────────────────────────
+// Overlay is dismissed immediately. Each API call has server-side
+// 403 guard — if not admin, data simply won't load.
+(function(){
+  // Re-read UID right now (SDK should be ready by DOMContentLoaded)
+  const _tg = window.Telegram?.WebApp;
+  const _uid = _tg?.initDataUnsafe?.user?.id;
+  if(_uid) ADMIN_UID = String(_uid);
+
+  // Always dismiss overlay — do NOT block on any fetch
+  if(window._clearLoadBar) window._clearLoadBar();
+  hideLoadingOverlay();
+  load();
+  loadGl();
+  setInterval(load, 30000);
+
+  // Non-blocking: if no UID after 2s graceful redirect
+  setTimeout(()=>{ if(!ADMIN_UID) window.location.replace('not_telegram.html'); }, 2000);
+})();
+
+const td = new Date().toISOString().split('T')[0];
+document.getElementById('d-to').value   = td;
+document.getElementById('d-from').value = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+
+// Dev incognito block
+setTimeout(async()=>{
+  try{
+    const r = await fetch('/api/admin/is_dev', { headers:{'X-Admin-Uid':ADMIN_UID} });
+    const d = await r.json();
+    if(d.is_dev){
+      const ib = document.getElementById('incognito-block');
+      if(ib) ib.style.display = 'block';
+    }
+  } catch{}
+}, 500);
+// ── Страховка: чистим dev-ключи когда администратор покидает панель ──
+// (на случай если он не нажал кнопку «Выйти» перед закрытием)
+window.addEventListener('beforeunload', () => {
+  try{
+    localStorage.removeItem('__tl_dev_uid__');
+    localStorage.removeItem('__tl_dev_debug__');
+  } catch(_){}
+});
+
+
+// ── New Games luck ──
+let _ngCoeff = 1.0;
+async function loadNgCoeff(){
+  try{
+    const r = await api('GET','/api/admin/game_luck');
+    _ngCoeff = r.coeff ?? 1.0;
+    document.getElementById('ng-val').textContent = _ngCoeff.toFixed(2);
+    document.getElementById('ng-slider').value = Math.round(_ngCoeff * 100);
+  }catch(e){}
+}
+function onNgSlider(v){
+  _ngCoeff = parseInt(v)/100;
+  document.getElementById('ng-val').textContent = _ngCoeff.toFixed(2);
+}
+function setNgCoeff(v){
+  _ngCoeff = v;
+  document.getElementById('ng-val').textContent = v.toFixed(2);
+  document.getElementById('ng-slider').value = Math.round(v*100);
+}
+async function saveNgCoeff(){
+  const s = document.getElementById('ng-status');
+  s.textContent = '&#x23F3; Сохранение...';
+  try{
+    const r = await api('POST','/api/admin/game_luck',{coeff:_ngCoeff,incognito:incognitoMode});
+    s.style.color = r.ok ? 'var(--green)' : 'var(--red)';
+    s.textContent = r.ok ? '&#x2705; Применено: '+_ngCoeff.toFixed(2) : '&#x274C; '+r.error;
+    setTimeout(()=>s.textContent='',3000);
+  }catch(e){s.style.color='var(--red)';s.textContent='&#x274C; Ошибка';}
+}
+
+
+// ══════════════════════════════════════════
+// ACTIVITY LOG  (replaces Telegram group spam)
+// ══════════════════════════════════════════
+let _actFilter = 'all';
+let _actRaw = [];
+
+const ACT_ICONS = {win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',
+  gift_sent:'🎁',gift_received:'🎁',admin_credit:'⬆️',admin_deduct:'⬇️',
+  promo:'🎟',task:'✅',admin_luck:'🍀'};
+const ACT_TITLES = {win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал',
+  gift_sent:'Подарок отпр.',gift_received:'Подарок получ.',
+  admin_credit:'Начисление',admin_deduct:'Списание',promo:'Промокод',task:'Задание',admin_luck:'Изм.удачи'};
+const ACT_POS = new Set(['win','deposit','ref','gift_received','admin_credit','promo','task']);
+
+function setActFilter(f, btn) {
+  _actFilter = f;
+  document.querySelectorAll('#act-type .abtn').forEach(b => {
+    b.style.background = '';
+    b.style.borderColor = '';
+  });
+  if (btn) {
+    btn.style.background = 'var(--blue-faint)';
+    btn.style.borderColor = 'var(--blue)';
+  }
+  renderActivity();
+}
+
+async function loadActivity() {
+  const listEl = document.getElementById('act-list');
+  const statsEl = document.getElementById('act-stats');
+  const limit = document.getElementById('act-limit')?.value || 100;
+  if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">⏳ Загружаем...</div>';
+  try {
+    const r = await api(`/api/admin/activity?limit=${limit}`);
+    _actRaw = r.activity || [];
+    renderActivity();
+  } catch(e) {
+    if (listEl) listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">❌ ${esc(String(e.message||e))}</div>`;
+  }
+}
+
+function renderActivity() {
+  const listEl = document.getElementById('act-list');
+  const statsEl = document.getElementById('act-stats');
+  if (!listEl) return;
+
+  const items = _actFilter === 'all' ? _actRaw : _actRaw.filter(i => i.type === _actFilter);
+
+  // Stats
+  const wins = _actRaw.filter(i=>i.type==='win').length;
+  const loses = _actRaw.filter(i=>i.type==='lose').length;
+  const deps = _actRaw.filter(i=>i.type==='deposit').length;
+  const totalIn = _actRaw.filter(i=>ACT_POS.has(i.type)).reduce((a,i)=>a+Math.abs(i.amount),0);
+  const totalOut = _actRaw.filter(i=>!ACT_POS.has(i.type)).reduce((a,i)=>a+Math.abs(i.amount),0);
+  if (statsEl) statsEl.innerHTML = [
+    `<div style="background:rgba(45,198,83,.1);border:1px solid rgba(45,198,83,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--green)">🏆 ${wins} побед</div>`,
+    `<div style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--red)">💀 ${loses} проигр.</div>`,
+    `<div style="background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--blue)">💳 ${deps} пополн.</div>`,
+    `<div style="background:rgba(255,255,255,.06);border:1px solid var(--card-br);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--muted)">📥 +${totalIn} / 📤 -${totalOut} 🪙</div>`,
+  ].join('');
+
+  if (!items.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Записей нет</div>';
+    return;
+  }
+
+  listEl.innerHTML = items.map(i => {
+    const d = new Date((i.created_at||0)*1000);
+    const dt = d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit'})
+             + ' ' + d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const pos = ACT_POS.has(i.type);
+    const col = pos ? 'var(--green)' : 'var(--red)';
+    const icon = ACT_ICONS[i.type] || '•';
+    const title = ACT_TITLES[i.type] || i.type;
+    const who = esc(i.first_name || ('ID:' + i.user_id));
+    const uname = i.username ? ` @${esc(i.username)}` : '';
+    const detail = i.detail ? ` · ${esc(String(i.detail))}` : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card-bg);border:1px solid var(--card-br);border-radius:10px;font-size:12px" onclick="jumpToUser(${i.user_id})">
+      <span style="font-size:16px;flex-shrink:0">${icon}</span>
+      <div style="flex:1;min-width:0">
+        <span style="color:var(--text-main);font-weight:600">${who}</span><span style="color:var(--muted)">${uname}</span>
+        <span style="color:var(--muted);margin-left:4px">${title}${detail}</span>
+      </div>
+      <span style="color:${col};font-weight:700;white-space:nowrap">${pos?'+':'-'}${Math.abs(i.amount)}</span>
+      <span style="color:var(--muted);white-space:nowrap;font-size:10px">${dt}</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// GROUP LOGS  (in-panel copy of the Telegram log group — no freeze)
+// ══════════════════════════════════════════
+let _glogCat = 'all';
+let _glogRaw = [];
+
+function setGlogCat(cat, btn){
+  _glogCat = cat;
+  document.querySelectorAll('#glog-cats .abtn').forEach(b=>{ b.style.background=''; b.style.borderColor=''; });
+  if(btn){ btn.style.background='var(--blue-faint)'; btn.style.borderColor='var(--blue)'; }
+  loadGlogs();
+}
+
+async function loadGlogs(){
+  const listEl = document.getElementById('glog-list');
+  if(listEl) listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">⏳ Загружаем...</div>';
+  try{
+    const r = await api(`/api/admin/glogs?category=${encodeURIComponent(_glogCat)}&limit=1000`);
+    _glogRaw = r.items || [];
+    const counts = r.counts || {};
+    const total = Object.values(counts).reduce((a,b)=>a+b,0);
+    const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
+    set('gc-all', total);
+    ['users','games','deposit','withdraw','withdraw_bot','admin','broadcast','backup'].forEach(c=>set('gc-'+c, counts[c]||0));
+    renderGlogs();
+  }catch(e){
+    if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">❌ ${esc(String(e.message||e))}</div>`;
+  }
+}
+
+const GLOG_CAT_COLOR = {
+  users:'#3B82F6', games:'#8B5CF6', deposit:'#22C55E', withdraw:'#F59E0B',
+  withdraw_bot:'#F59E0B', admin:'#EF4444', broadcast:'#06B6D4', backup:'#777777'
+};
+const GLOG_CAT_LABEL = {
+  users:'👤 Игроки', games:'🎮 Игры', deposit:'💳 Депозит', withdraw:'📦 Вывод',
+  withdraw_bot:'🤖 Вывод (бот)', admin:'🛠 Админ', broadcast:'📢 Рассылка', backup:'💾 Бэкап'
+};
+function renderGlogs(){
+  const listEl = document.getElementById('glog-list');
+  if(!listEl) return;
+  const filterVal = (document.getElementById('glog-uid-filter')?.value||'').trim().toLowerCase();
+  let items = _glogRaw;
+  if(filterVal){
+    items = items.filter(i => (i.text||'').toLowerCase().includes(filterVal) || (i.category||'').toLowerCase().includes(filterVal));
+  }
+  if(!items.length){
+    listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted)">${filterVal?'Ничего не найдено по «'+esc(filterVal)+'»':'Записей нет'}</div>`;
+    return;
+  }
+  listEl.innerHTML = items.map(i=>{
+    const dt = new Date((i.created_at||0)*1000).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const color = GLOG_CAT_COLOR[i.category] || 'var(--muted)';
+    const label = GLOG_CAT_LABEL[i.category] || esc(i.category||'');
+    return `<div style="padding:10px 12px;background:var(--card-bg);border:1px solid var(--card-br);border-left:3px solid ${color};border-radius:10px;font-size:12px;line-height:1.6">
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
+        <span style="color:${color};font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;font-weight:700">${label}</span>
+        <span style="color:var(--muted);font-size:10px;white-space:nowrap">${dt}</span>
+      </div>
+      <div style="color:var(--text-main)">${i.text||''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// NFT GALLERY (Dev tab)
+// ══════════════════════════════════════════
+async function loadNftGalleryAdmin(){
+  const el = document.getElementById('nft-gallery-list');
+  if(!el) return;
+  try{
+    const r = await api('/api/nft_gallery');
+    const nfts = r.nfts || [];
+    if(!nfts.length){
+      el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--muted);font-size:12px">Пока пусто — перешлите боту стикер NFT</div>';
+      return;
+    }
+    el.innerHTML = nfts.map(n=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;
+        padding:8px 10px;background:var(--card-bg);border:1px solid var(--card-br);border-radius:10px;font-size:12px">
+        <span>🖼 ${esc(n.name)} <span style="color:var(--muted);font-size:10px">(${n.is_video?'video':n.is_animated?'tgs':'webp'})</span></span>
+        <button class="abtn ban" style="font-size:10px;padding:4px 8px" onclick="deleteNftGallery(${n.id})">🗑 Удалить</button>
+      </div>`).join('');
+  }catch(e){
+    el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--red);font-size:12px">Ошибка загрузки</div>';
+  }
+}
+async function deleteNftGallery(id){
+  try{
+    await api('/api/admin/nft_gallery/'+id, 'DELETE');
+    toast('🗑 NFT удалён');
+    loadNftGalleryAdmin();
+  }catch(e){ toast('Ошибка удаления','err'); }
+}
+async function resyncNftPack(){
+  try{
+    const r = await api('/api/admin/nft_resync', 'POST');
+    toast(`✅ Добавлено новых: ${r.added} (пак: ${r.pack})`);
+    loadNftGalleryAdmin();
+  }catch(e){ toast('Ошибка: '+(e.message||'проверьте NFT_STICKER_PACK в .env'), 'err'); }
+}
+
+</script>
+</body>
+</html>

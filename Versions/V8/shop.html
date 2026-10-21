@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>TopLuck — Магазин</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
+<script>
+(function(){
+  try{
+    const _devUid=localStorage.getItem('__tl_dev_uid__');
+    if(!_devUid)return;
+    const _uid=parseInt(_devUid);if(!_uid)return;
+    const tg=window.Telegram?.WebApp;if(!tg)return;
+    if(!tg.initDataUnsafe)tg.initDataUnsafe={};
+    if(!tg.initDataUnsafe.user)tg.initDataUnsafe.user={};
+    tg.initDataUnsafe.user.id=_uid;
+  }catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="shared.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" onerror="console.error('[TopLuck] pako failed to load — animated .tgs gifts will fall back to emoji')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js" onerror="console.error('[TopLuck] lottie-web failed to load — animated .tgs gifts will fall back to emoji')"></script>
+<style>
+:root{--safe-top:env(safe-area-inset-top,0px);}
+.toast:not(.show){opacity:0!important;pointer-events:none!important;background:transparent!important;border-color:transparent!important;}
+.toast{transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .3s!important;}
+.nav{bottom:calc(10px + env(safe-area-inset-bottom,0px)) !important;}
+html,body{padding-bottom:0!important;}
+
+/* body always gets sky gradient so no black area anywhere on the page */
+html{background:#C2E8F8!important;}
+body{background:transparent!important;min-height:100vh;}
+
+/* ── SHOP base layout (same as main.html) ── */
+.shop-content{padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(var(--nav-h) + 24px);position:relative;z-index:1;}
+.shop-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.shop-title{font-family:'Nunito',sans-serif;font-style:normal;font-size:30px;font-weight:700;letter-spacing:0;color:#1A2040;}
+.shop-bal{display:flex;align-items:center;gap:5px;border-radius:10px;padding:7px 12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;background:rgba(255,255,255,0.90);border:1.5px solid rgba(255,210,40,0.45);color:#A87800;}
+
+/* ── SHOP sky theme (identical to what main.html used) ── */
+.hist-filter .hf{background:rgba(255,255,255,0.75);border:1.5px solid rgba(255,255,255,0.85);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:800;}
+.hist-filter .hf.a{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(40,80,200,0.25);}
+.owner-note{background:rgba(255,255,255,0.78);border:1.5px solid rgba(20,40,90,0.10);color:#445080;font-family:'Nunito',sans-serif;border-radius:18px;}
+.gift-card{background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.80);box-shadow:0 4px 14px rgba(20,40,90,0.09);border-radius:20px;}
+.gift-card:hover{border-color:rgba(68,80,160,0.26);}
+.gift-emoji-wrap{background:rgba(68,80,160,0.06);border:1.5px solid rgba(68,80,160,0.13);position:relative;}
+.gift-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+.gift-price{color:#A07800!important;font-family:'Nunito',sans-serif!important;font-weight:700!important;font-size:13px!important;}
+.gift-buy-btn{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 2px 8px rgba(40,80,200,0.22)!important;}
+.gift-loading{color:#8090B0;font-family:'Nunito',sans-serif;}
+
+/* ── Real animated Telegram sticker container — forced to fill its box
+     regardless of the sticker's own native size (this is what previously
+     broke the grid: an unconstrained sticker blew up the whole card) ── */
+.gift-lottie{position:absolute;inset:4px;display:none;overflow:hidden;}
+.gift-lottie svg,.gift-lottie video,.gift-lottie img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain;display:block;}
+
+/* ── NAV BAR (identical styling to main.html) ── */
+.nav{background:rgba(255,255,255,0.96);border:1.5px solid rgba(255,255,255,0.85);box-shadow:0 6px 22px rgba(20,40,90,0.16),inset 0 1px 0 rgba(255,255,255,0.6);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
+.nav-btn{color:#9AA6C0;font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.3px;gap:4px;text-decoration:none;cursor:pointer;}
+.nav-btn svg{display:none;}
+.nav-btn .nb-badge{width:30px;height:30px;display:block;transition:transform .15s;}
+.nav-btn.active{color:#1A2040;}
+.nav-btn.active .nb-badge{transform:translateY(-1px) scale(1.05);}
+.nav-ind{background:#FF6FA0;box-shadow:0 0 10px rgba(255,111,160,.65);height:3px;}
+
+/* ── TOAST (identical to main.html) ── */
+.toast{background:rgba(255,255,255,0.97);border:1.5px solid rgba(20,40,90,0.10);color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;box-shadow:0 8px 26px rgba(20,40,90,0.16);}
+.toast.ok{color:#1A9A50;border-color:rgba(26,154,80,.3);}
+.toast.err{color:#D8284A;border-color:rgba(216,40,74,.3);}
+.toast.info{color:#445080;border-color:rgba(68,80,128,.2);}
+
+/* ── MODALS (Buy gift / Topup) — identical to main.html ── */
+.ov{background:rgba(20,30,60,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.modal{background:rgba(244,248,255,0.98);border:2px solid rgba(255,255,255,0.9);border-radius:24px 24px 0 0;box-shadow:0 -8px 36px rgba(20,40,90,0.18);}
+.mh{background:rgba(20,40,90,0.14);}
+.mt{font-family:'Nunito',sans-serif;font-style:normal;font-size:26px;font-weight:700;letter-spacing:0;color:#1A2040;}
+.error-msg{background:rgba(216,40,74,0.08);border:1.5px solid rgba(216,40,74,0.28);color:#D8284A;font-family:'Nunito',sans-serif;}
+.form-label{color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.form-input{background:rgba(20,40,90,0.05);border:1.5px solid rgba(20,40,90,0.14);color:#1A2040;font-family:'Nunito',sans-serif;}
+.form-input:focus{border-color:rgba(60,90,200,0.45);}
+.toggle-label{color:#1A2040;font-family:'Nunito',sans-serif;font-weight:700;}
+.toggle-slider{background:rgba(20,40,90,0.10);}
+.toggle-slider::before{background:#fff;box-shadow:0 1px 3px rgba(20,40,90,0.3);}
+input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0);}
+.rc-btn{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.rc-btn.active{background:rgba(20,40,90,0.10);border-color:rgba(20,40,90,0.22);color:#1A2040;}
+.mqb{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);color:#8090B0;font-family:'Nunito',sans-serif;}
+.btn-cancel{background:rgba(20,40,90,0.06);border:1px solid rgba(20,40,90,0.12);color:#8090B0;font-family:'Nunito',sans-serif;font-weight:700;}
+.btn-confirm{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+.modal-gift-preview{background:rgba(20,40,90,0.05);border:1px solid rgba(20,40,90,0.10);}
+.mg-icon{background:rgba(68,80,160,0.07);border:1.5px solid rgba(68,80,160,0.14);position:relative;overflow:hidden;}
+.mg-name{color:#1A2040;font-family:'Nunito',sans-serif;}
+.mg-price{color:#A87800;font-family:'Nunito',sans-serif;font-weight:700;}
+.ta{background:rgba(20,40,90,0.04);border:1.5px solid rgba(20,40,90,0.12);}
+.ta.sel{background:rgba(20,40,90,0.08);border-color:rgba(20,40,90,0.24);}
+.ta-c{color:#A87800;font-family:'Nunito',sans-serif;font-weight:800;}
+.ta-s{color:#8090B0;font-family:'Nunito',sans-serif;}
+.ta-confirm{background:linear-gradient(135deg,#4898E0,#2060C0);color:#fff;font-family:'Nunito',sans-serif;font-weight:800;box-shadow:0 4px 14px rgba(40,80,200,0.28)!important;}
+#ta-custom{background:rgba(255,255,255,0.85)!important;border:1.5px solid rgba(20,40,90,0.14)!important;color:#1A2040!important;font-family:'Nunito',sans-serif!important;}
+.ov p[style]{color:#8090B0!important;}
+
+/* ── Loading text under the JS eyes animation ── */
+.g-loader{width:100%;padding:40px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.g-loader-txt{font-family:'Nunito',sans-serif;font-weight:800;font-size:13px;color:#5868A0;letter-spacing:.3px;}
+
+/* ── NFT carousel card (owner tab) ── */
+.nft-mystery{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.nft-carousel-item{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:scale(.7);transition:opacity .45s ease,transform .45s ease;}
+.nft-carousel-item.show{opacity:1;transform:scale(1);}
+.nft-mystery::before{content:'';position:absolute;width:140%;height:140%;
+  background:conic-gradient(from 0deg,transparent,rgba(160,80,240,.35),transparent 35%);
+  animation:nftSpin 3.5s linear infinite;}
+.nft-gem{position:relative;width:30px;height:30px;z-index:1;animation:nftFloat 2.4s ease-in-out infinite;
+  background:linear-gradient(135deg,#C080FF 0%,#7040C0 60%,#4820A0 100%);
+  clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+  box-shadow:0 0 12px rgba(140,80,240,.55);}
+.nft-spark{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.9);animation:nftTwinkle 1.6s ease-in-out infinite;}
+@keyframes nftSpin{to{transform:rotate(360deg);}}
+@keyframes nftFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(6deg);}}
+@keyframes nftTwinkle{0%,100%{opacity:.15;transform:scale(.6);}50%{opacity:1;transform:scale(1);}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="shop-content">
+  <div class="shop-header">
+    <div class="shop-title">МАГАЗИН</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="shop-bal"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="shop-bal">—</span></div>
+      <button onclick="openTopup()" style="background:linear-gradient(135deg,#4898E0,#2060C0);border:none;border-radius:10px;color:#fff;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(40,80,200,0.25);">+ ПОПОЛНИТЬ</button>
+    </div>
+  </div>
+
+  <div class="hist-filter" style="grid-template-columns:1fr 1fr;margin-bottom:12px">
+    <div class="hf a" onclick="shopTab('bot',this)">🤖 От бота</div>
+    <div class="hf" onclick="shopTab('owner',this)">👑 От владельца</div>
+  </div>
+
+  <div id="shop-bot">
+    <div class="owner-note" style="border-color:rgba(216,40,74,.25);background:rgba(255,230,230,0.75);color:#A01828;">🤖 <b>Подарок от бота</b> — настоящий Telegram-подарок, отправляется автоматически.<br>⛔ <b>Нельзя конвертировать в звёзды</b>.</div>
+    <div id="bot-gifts-inner">
+      <div class="g-loader">
+        <div id="shop-eyes-loader"></div>
+        <div class="g-loader-txt">Загружаем подарки...</div>
+      </div>
+    </div>
+  </div>
+  <div id="shop-owner" style="display:none">
+    <div class="owner-note">👑 <b>Подарок от владельца</b> — отправляет лично владелец.<br>✅ <b>Можно конвертировать в звёзды</b>.<br><br>После покупки владелец получит уведомление.</div>
+    <div class="gift-grid" id="owner-gifts-grid"></div>
+  </div>
+</div>
+
+<!-- BUY MODAL -->
+<div class="ov" id="buy-modal" onclick="closeBuyModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"></div>
+    <div class="mt">КУПИТЬ ПОДАРОК</div>
+    <div class="error-msg" id="buy-error"></div>
+    <div class="modal-gift-preview">
+      <div class="mg-icon" id="m-icon"><span id="m-icon-emoji">🎁</span><div id="m-lottie" class="gift-lottie" style="inset:0"></div></div>
+      <div>
+        <div class="mg-name" id="m-name">—</div>
+        <div class="mg-price"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="m-price">—</span> монет</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Кому:</label>
+      <div class="rc-btns">
+        <div class="rc-btn active" onclick="setRecipient('self',this)">🙋 Себе</div>
+        <div class="rc-btn" onclick="setRecipient('other',this)">👤 По ID</div>
+      </div>
+      <div id="m-recipient-wrap" style="display:none;margin-top:6px"><input class="form-input" id="m-recipient" type="number" placeholder="Telegram ID получателя" inputmode="numeric"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">🎭 Анонимно</span>
+      <label class="toggle"><input type="checkbox" id="m-anon"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Подпись (необязательно):</label>
+      <textarea class="form-input" id="m-msg" rows="2" placeholder="Текст подписи..."></textarea>
+      <div class="msg-quick">
+        <div class="mqb" onclick="document.getElementById('m-msg').value=''">Без подписи</div>
+        <div class="mqb" onclick="setAutoMsg()">Авто 🤖</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBuyModal()">Отмена</button>
+      <button class="btn-confirm" id="m-confirm" onclick="confirmPurchase()">КУПИТЬ ⭐</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPUP MODAL -->
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"></div>
+    <div class="mt">💳 ПОПОЛНЕНИЕ</div>
+    <p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p>
+    <div class="ta-grid">
+      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span>
+      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()" style="flex:1;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-align:center;"/>
+      <span style="color:var(--gold)">⭐</span>
+    </div>
+    <button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav" id="main-nav">
+  <div class="nav-ind" style="width:25%;left:75%"></div>
+  <a class="nav-btn" href="main.html?tab=home"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#4FAEEA"/><circle cx="18" cy="11.6" r="2.3" fill="#fff"/><rect x="15.7" y="16" width="4.6" height="11.4" rx="2.3" fill="#fff"/></svg>ИНФО</a>
+  <a class="nav-btn" href="main.html?tab=inventory"><svg class="nb-badge" viewBox="0 0 36 36"><defs><clipPath id="nbClipProf"><circle cx="18" cy="18" r="17"/></clipPath></defs><circle cx="18" cy="18" r="17" fill="#4CC97A"/><g clip-path="url(#nbClipProf)" fill="#fff"><circle cx="18" cy="15" r="5.6"/><ellipse cx="18" cy="31.5" rx="11.5" ry="9"/></g></svg>ПРОФИЛЬ</a>
+  <a class="nav-btn" href="main.html?tab=games"><svg class="nb-badge" viewBox="0 0 36 36"><rect x="1" y="1" width="34" height="34" rx="12" fill="#FFB020"/><rect x="8" y="14" width="20" height="12" rx="6" fill="#fff"/><rect x="12.2" y="18.7" width="4.4" height="1.8" rx="0.9" fill="#FFB020"/><rect x="13.8" y="17.1" width="1.8" height="4.4" rx="0.9" fill="#FFB020"/><circle cx="23" cy="18" r="1.5" fill="#FFB020"/><circle cx="25.6" cy="20.6" r="1.5" fill="#FFB020"/></svg>ИГРЫ</a>
+  <a class="nav-btn active" href="shop.html"><svg class="nb-badge" viewBox="0 0 36 36"><circle cx="18" cy="18" r="17" fill="#FF6FA0"/><path d="M11.2 14.5h13.6l-1.15 12.3a2 2 0 0 1-2 1.8h-7.3a2 2 0 0 1-2-1.8z" fill="#fff"/><path d="M14.3 14.2v-1.4a3.7 3.7 0 0 1 7.4 0v1.4" fill="none" stroke="#fff" stroke-width="2"/></svg>МАГАЗИН</a>
+</nav>
+
+<script>
+console.log('[TopLuck] shop.html build: nft-5s-sync-preload-v3');
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID=tg?.initDataUnsafe?.user?.id||0;
+const FIRST_NAME=tg?.initDataUnsafe?.user?.first_name||'Игрок';
+TL_startBanPoll(UID);
+
+let BOT_USERNAME='TopLuckBot';
+async function fetchBotInfo(){
+  try{
+    const r=await fetch('/api/bot_info').then(r=>r.json());
+    if(r?.username)BOT_USERNAME=r.username.replace('@','');
+  }catch(e){}
+}
+
+function toast(m,t='info'){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
+
+// ── Quiet logger (console only — no on-page UI/button) ──
+function _dbg(kind,url,extra){
+  console.debug(`[TopLuck ${kind}]`, url, extra||'');
+}
+
+async function get(url){
+  try{const r=await fetch(url);_dbg('GET',url,'HTTP '+r.status);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json();}
+  catch(e){_dbg('GET',url,'❌ '+e.message);throw e;}
+}
+async function post(url,d){
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+    _dbg('POST',url,'HTTP '+r.status);if(!r.ok)throw new Error('HTTP '+r.status);return await r.json();
+  }catch(e){_dbg('POST',url,'❌ '+e.message);throw e;}
+}
+
+async function loadUser(){
+  if(!UID)return;
+  const u=await get(`/api/user/${UID}`).catch(()=>null);
+  if(!u)return;
+  if(TL_guardBanned(u))return;
+  const el=document.getElementById('shop-bal');if(el)el.textContent=u.balance??0;
+  window._userData=u;
+}
+
+// ── Real animated Telegram gift stickers (video .webm / Lottie .tgs / static .webp) ──
+const _stickerJsonCache=new Map();
+const _stickerFailCache=new Set();
+async function renderGiftSticker(container,fileId,isVideo,isAnimated){
+  if(!fileId){_dbg('STICKER','(none)','⚠️ gift has no sticker_file_id');return false;}
+  if(_stickerFailCache.has(fileId))return false;
+  try{
+    const url='/api/sticker/'+fileId;
+    if(isVideo){
+      const v=document.createElement('video');
+      v.src=url;v.autoplay=true;v.loop=true;v.muted=true;v.playsInline=true;
+      await new Promise((res,rej)=>{v.onloadeddata=res;v.onerror=()=>rej(new Error('video load error'));setTimeout(()=>rej(new Error('video load timeout')),4000);});
+      container.appendChild(v);_dbg('STICKER',url,'✅ video rendered');return true;
+    }
+    if(isAnimated){
+      let json=_stickerJsonCache.get(fileId);
+      if(!json && typeof TL_idbGet==='function'){
+        json = await TL_idbGet(fileId).catch(()=>null);
+        if(json){ _stickerJsonCache.set(fileId,json); _dbg('STICKER',url,'⚡ from prefetch cache'); }
+      }
+      if(!json){
+        if(typeof pako==='undefined'){_dbg('STICKER',url,'❌ pako not loaded');return false;}
+        if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
+        const r=await fetch(url);if(!r.ok)throw new Error('sticker fetch failed: HTTP '+r.status);
+        const buf=await r.arrayBuffer();
+        json=JSON.parse(pako.inflate(new Uint8Array(buf),{to:'string'}));
+        _stickerJsonCache.set(fileId,json);
+      }
+      if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
+      lottie.loadAnimation({container,renderer:'svg',loop:true,autoplay:true,animationData:json});
+      _dbg('STICKER',url,'✅ tgs rendered');return true;
+    }
+    const img=document.createElement('img');
+    img.src=url;
+    await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(new Error('image load error'));setTimeout(()=>rej(new Error('image load timeout')),4000);});
+    container.appendChild(img);_dbg('STICKER',url,'✅ webp rendered');return true;
+  }catch(e){
+    _dbg('STICKER','/api/sticker/'+fileId,'❌ '+e.message);
+    _stickerFailCache.add(fileId);return false;
+  }
+}
+
+// ── Shop tabs / gift catalog (same behaviour as the old main.html shop tab) ──
+let shopGifts=[],shopLoaded=false;
+let pendingGift=null,pendingSource='bot',recipientMode='self';
+let topupAmt=50;
+
+function shopTab(tab,el){
+  document.querySelectorAll('[onclick^="shopTab"]').forEach(t=>t.classList.remove('a'));
+  el.classList.add('a');
+  document.getElementById('shop-bot').style.display=tab==='bot'?'':'none';
+  document.getElementById('shop-owner').style.display=tab==='owner'?'':'none';
+}
+
+let _shopLoaderCtrl=null;
+const SHOP_CACHE_MAX_AGE=10*60*1000; // 10 minutes
+function _readShopCache(key){
+  try{
+    const raw=sessionStorage.getItem(key);
+    if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    if(Date.now()-parsed.ts>SHOP_CACHE_MAX_AGE)return null;
+    return parsed;
+  }catch(e){ return null; }
+}
+// Decodes every animated (.tgs) sticker up front (checking the IndexedDB prefetch cache first)
+// so cards can mount their animation the instant they're created — no flash of plain emoji first.
+async function preloadAnimatedStickers(gifts){
+  const jobs = gifts
+    .filter(g => g.sticker_file_id && g.sticker_is_animated)
+    .map(async g => {
+      if(_stickerJsonCache.has(g.sticker_file_id)) return;
+      try{
+        let json = typeof TL_idbGet==='function' ? await TL_idbGet(g.sticker_file_id).catch(()=>null) : null;
+        if(!json){
+          if(typeof pako==='undefined') return;
+          const r = await fetch('/api/sticker/'+g.sticker_file_id);
+          if(!r.ok) return;
+          const buf = await r.arrayBuffer();
+          json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
+        }
+        _stickerJsonCache.set(g.sticker_file_id, json);
+      }catch(e){ /* this one gift falls back to the async path at render time */ }
+    });
+  await Promise.all(jobs);
+}
+
+async function loadShopGifts(){
+  shopLoaded=true;
+  const botInner=document.getElementById('bot-gifts-inner');
+
+  const cached=_readShopCache('tl_shop_gifts_cache');
+  if(cached){
+    shopGifts=cached.gifts||[];
+    _dbg('SHOP','cache','⚡ '+shopGifts.length+' gifts from prefetch cache');
+    await preloadAnimatedStickers(shopGifts);
+    if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}
+    else renderBotGifts();
+    renderOwnerGifts();
+    return;
+  }
+
+  const eyesEl=document.getElementById('shop-eyes-loader');
+  if(eyesEl) _shopLoaderCtrl=TL_mountEyesLoader(eyesEl);
+  try{
+    const data=await get('/api/gifts');
+    shopGifts=data.gifts||[];
+    _dbg('SHOP','/api/gifts',shopGifts.length+' gifts loaded');
+    await preloadAnimatedStickers(shopGifts); // keep the loader up until animations are actually ready
+    if(_shopLoaderCtrl){_shopLoaderCtrl.stop();_shopLoaderCtrl=null;}
+    if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}
+    else renderBotGifts();
+  }catch(e){
+    if(_shopLoaderCtrl){_shopLoaderCtrl.stop();_shopLoaderCtrl=null;}
+    if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Не удалось загрузить подарки</p></div>';
+  }
+  renderOwnerGifts();
+}
+
+// Card click (anywhere on the card, including the button — same as the original) opens the buy modal.
+function giftCard(gift,source){
+  const limited=gift.is_limited&&gift.remaining_count!==null&&gift.remaining_count!==undefined;
+  const cls=limited?'gift-card limited':'gift-card';
+  const emoji=gift.emoji||'🎁';
+  const remaining=limited?`<div class="gift-remaining">Осталось: ${gift.remaining_count}</div>`:'';
+  const displayCost=gift.coin_cost||(gift.star_count*10);
+  const gd=JSON.stringify({
+    id:gift.id||'',emoji,name:gift.name||emoji,star_count:gift.star_count,coin_cost:displayCost,
+    is_limited:gift.is_limited||false,sticker_file_id:gift.sticker_file_id||null,
+    sticker_is_video:gift.sticker_is_video||false,sticker_is_animated:gift.sticker_is_animated||false,
+  }).replace(/"/g,'&quot;');
+  return `<div class="${cls}" onclick="openBuyModal(${gd},'${source}')">
+    <div class="gift-emoji-wrap" id="gw-${source}-${gift.id}"><span class="gift-emoji">${emoji}</span></div>
+    <div class="gift-name">${gift.name||'Подарок'}</div>
+    <div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> ${displayCost} монет</div>
+    ${remaining}
+    <button class="gift-buy-btn">КУПИТЬ</button>
+  </div>`;
+}
+
+function mountGiftStickers(gifts,source){
+  gifts.forEach(gift=>{
+    if(!gift.sticker_file_id)return;
+    const wrap=document.getElementById(`gw-${source}-${gift.id}`);
+    if(!wrap)return;
+    const emojiEl=wrap.querySelector('.gift-emoji');
+    const box=document.createElement('div');
+    box.className='gift-lottie';
+    wrap.appendChild(box);
+
+    const cachedJson = gift.sticker_is_animated ? _stickerJsonCache.get(gift.sticker_file_id) : null;
+    if(cachedJson && typeof lottie!=='undefined'){
+      // Fully synchronous — the animation exists before this card is ever painted, zero flash.
+      if(emojiEl) emojiEl.style.display='none';
+      box.style.display='block';
+      lottie.loadAnimation({container:box,renderer:'svg',loop:true,autoplay:true,animationData:cachedJson});
+      return;
+    }
+    renderGiftSticker(box,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
+      if(ok){if(emojiEl)emojiEl.style.display='none';box.style.display='block';}
+    });
+  });
+}
+
+function renderBotGifts(){
+  const inner=document.getElementById('bot-gifts-inner');
+  if(inner)inner.innerHTML=`<div class="gift-grid">${shopGifts.map(g=>giftCard(g,'bot')).join('')}</div>`;
+  mountGiftStickers(shopGifts,'bot');
+}
+let nftGallery=[];
+let _gridNftCarousel=null, _modalNftCarousel=null;
+async function loadNftGallery(){
+  const cached=_readShopCache('tl_shop_nft_cache');
+  if(cached){ nftGallery=cached.nfts||[]; _dbg('SHOP','cache','⚡ '+nftGallery.length+' NFTs from prefetch cache'); return; }
+  try{
+    const data=await get('/api/nft_gallery');
+    nftGallery=data.nfts||[];
+  }catch(e){ nftGallery=[]; }
+}
+
+function renderOwnerGifts(){
+  const g=document.getElementById('owner-gifts-grid');
+  if(!shopGifts.length){g.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';return;}
+  const nftCardHtml=`<div class="gift-card" onclick="openBuyModal(${JSON.stringify({id:'random_nft',emoji:'💎',name:'Рандомный НФТ',star_count:400,coin_cost:4000,is_limited:false,is_static:true}).replace(/"/g,'&quot;')},'owner')">
+    <div class="gift-emoji-wrap" id="gw-owner-random_nft">
+      <div class="nft-mystery" id="nft-mystery-fallback"><div class="nft-gem"></div>
+        <div class="nft-spark" style="width:4px;height:4px;top:8%;left:70%;animation-delay:.1s"></div>
+        <div class="nft-spark" style="width:3px;height:3px;top:70%;left:20%;animation-delay:.6s"></div>
+        <div class="nft-spark" style="width:3px;height:3px;top:20%;left:15%;animation-delay:1.1s"></div>
+      </div>
+    </div>
+    <div class="gift-name">Рандомный НФТ</div>
+    <div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> 4000 монет</div>
+    <button class="gift-buy-btn">КУПИТЬ</button>
+  </div>`;
+  g.innerHTML=nftCardHtml+shopGifts.map(gift=>giftCard(gift,'owner')).join('');
+  mountGiftStickers(shopGifts,'owner');
+  if(nftGallery.length){
+    if(_gridNftCarousel) _gridNftCarousel.stop();
+    const fallback=document.getElementById('nft-mystery-fallback');
+    if(fallback)fallback.style.display='none';
+    _gridNftCarousel=mountRealNftCarousel(document.getElementById('gw-owner-random_nft'),5000,false);
+  }
+}
+
+// Cycles through the real admin-added NFT collectibles (Pepe, Torch, Statue, etc.) — each one
+// is a genuine sticker forwarded to the bot, since Telegram has no public catalog of all NFTs.
+let _nftTimer=null;
+let _nftSharedIndex=0; // shared position across grid + modal carousels
+function mountRealNftCarousel(wrap, intervalMs, startAtShared){
+  if(!wrap || !nftGallery.length) return null;
+  let idx = startAtShared ? _nftSharedIndex : 0, timer=null;
+  function frame(){
+    const nft=nftGallery[idx%nftGallery.length];
+    _nftSharedIndex=idx;
+    idx++;
+    const item=document.createElement('div');
+    item.className='nft-carousel-item';
+    const box=document.createElement('div');
+    box.className='gift-lottie';
+    item.appendChild(box);
+    wrap.appendChild(item);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>item.classList.add('show')));
+    renderGiftSticker(box,nft.sticker_file_id,nft.is_video,nft.is_animated).then(ok=>{
+      box.style.display=ok?'block':'none';
+    });
+    wrap.querySelectorAll('.nft-carousel-item').forEach(el=>{
+      if(el!==item){el.classList.remove('show');setTimeout(()=>el.remove(),500);}
+    });
+  }
+  frame();
+  timer=setInterval(frame,intervalMs||5000);
+  return {stop(){clearInterval(timer);}};
+}
+
+function openBuyModal(gift,source){
+  pendingGift=gift;pendingSource=source;
+  const emojiEl=document.getElementById('m-icon-emoji');
+  emojiEl.textContent=gift.emoji;emojiEl.style.display='';
+  const mLottie=document.getElementById('m-lottie');
+  mLottie.style.display='none';mLottie.innerHTML='';
+  if(_modalNftCarousel){_modalNftCarousel.stop();_modalNftCarousel=null;}
+  if(gift.id==='random_nft' && nftGallery.length){
+    if(_gridNftCarousel){_gridNftCarousel.stop();_gridNftCarousel=null;}
+    emojiEl.style.display='none';mLottie.style.display='block';
+    _modalNftCarousel=mountRealNftCarousel(mLottie,5000,true);
+  } else if(gift.sticker_file_id){
+    renderGiftSticker(mLottie,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
+      if(ok){emojiEl.style.display='none';mLottie.style.display='block';}
+    });
+  }
+  document.getElementById('m-name').textContent=gift.name||gift.emoji;
+  document.getElementById('m-price').textContent=gift.coin_cost||(gift.star_count*10);
+  document.getElementById('m-msg').value='';
+  document.getElementById('m-anon').checked=false;
+  document.getElementById('buy-error').classList.remove('show');
+  setRecipient('self',document.querySelector('.rc-btn'));
+  document.getElementById('buy-modal').classList.add('open');
+}
+function closeBuyModal(e){
+  if(!e||e.target.id==='buy-modal'){
+    document.getElementById('buy-modal').classList.remove('open');
+    if(_modalNftCarousel){_modalNftCarousel.stop();_modalNftCarousel=null;}
+    const gridWrap=document.getElementById('gw-owner-random_nft');
+    if(gridWrap && nftGallery.length && !_gridNftCarousel){
+      _gridNftCarousel=mountRealNftCarousel(gridWrap,5000,true);
+    }
+  }
+}
+function setRecipient(mode,el){
+  recipientMode=mode;
+  document.querySelectorAll('.rc-btn').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('m-recipient-wrap').style.display=mode==='other'?'block':'none';
+}
+function setAutoMsg(){document.getElementById('m-msg').value=`🎁 Подарок от ${FIRST_NAME}!`;}
+
+async function confirmPurchase(){
+  if(!pendingGift)return;
+  const errEl=document.getElementById('buy-error');errEl.classList.remove('show');
+  const bal=window._userData?.balance||0;
+  const costCoins=pendingGift.coin_cost||(pendingGift.star_count*10);
+  if(bal<costCoins){errEl.textContent='Недостаточно монет!';errEl.classList.add('show');return;}
+  const anon=document.getElementById('m-anon').checked;
+  const msg=document.getElementById('m-msg').value.trim();
+  let recipientId=UID;
+  if(recipientMode==='other'){
+    const rid=parseInt(document.getElementById('m-recipient').value)||0;
+    if(!rid){errEl.textContent='Введите ID получателя';errEl.classList.add('show');return;}
+    recipientId=rid;
+  }
+  const btn=document.getElementById('m-confirm');btn.disabled=true;btn.textContent='Покупаем...';
+  const res=await post('/api/gift/buy',{
+    user_id:UID,gift_id:pendingGift.id||'',star_count:pendingGift.star_count,coin_cost:costCoins,
+    source:pendingSource,recipient_id:recipientId,anonymous:anon,message:msg||null,
+    sender_name:anon?null:FIRST_NAME,gift_name:pendingGift.name||pendingGift.emoji,gift_emoji:pendingGift.emoji,
+  }).catch(()=>null);
+  btn.disabled=false;btn.textContent='КУПИТЬ ⭐';
+  if(!res){errEl.textContent='Ошибка соединения';errEl.classList.add('show');return;}
+  if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
+  document.getElementById('buy-modal').classList.remove('open');
+  if(pendingSource==='bot'){toast('🎁 Подарок отправлен!','ok');}
+  else{
+    toast('📨 Заявка отправлена владельцу!','ok');
+    setTimeout(()=>{if(tg?.openTelegramLink)tg.openTelegramLink(`https://t.me/${BOT_USERNAME}?start=gift_request`);},1500);
+  }
+  if(window._userData)window._userData.balance=res.new_balance??(bal-costCoins);
+  const el=document.getElementById('shop-bal');if(el)el.textContent=window._userData?.balance??0;
+}
+
+// ── Topup ──
+function openTopup(){document.getElementById('ov-topup').classList.add('open');}
+function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
+function selAmt(el,v){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');topupAmt=v;document.getElementById('ta-custom').value='';document.getElementById('ta-amt').textContent=v;}
+function onCustomInput(){const v=parseInt(document.getElementById('ta-custom').value)||0;if(v>=1){document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));topupAmt=v;document.getElementById('ta-amt').textContent=v;}}
+async function confirmTopup(){
+  if(!UID){toast('Войдите через Telegram','err');return;}
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;if(custom>=1)topupAmt=custom;
+  if(topupAmt<1){toast('Введите сумму','err');return;}
+  document.getElementById('ov-topup').classList.remove('open');
+  const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
+  if(res?.ok)toast('Инвойс отправлен в чат с ботом!','ok');else toast('Откройте чат с ботом для оплаты','info');
+}
+
+// ── INIT ──
+fetchBotInfo();
+loadUser();
+loadShopGifts();
+loadNftGallery().then(()=>{ if(shopLoaded) renderOwnerGifts(); });
+</script>
+</body>
+</html>

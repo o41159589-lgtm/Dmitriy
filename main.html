@@ -130,9 +130,9 @@
 .games-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .games-title{font-family:var(--font-display);font-size:24px;color:var(--text);letter-spacing:1px;}
 .coin-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,214,0,0.1);border:1px solid rgba(255,214,0,0.2);border-radius:12px;padding:8px 14px;font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--gold);}
-.game-card{display:flex;align-items:flex-end;border-radius:22px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .12s,box-shadow .15s;position:relative;min-height:140px;text-decoration:none;}
+.game-card{display:flex;align-items:flex-end;border-radius:22px;overflow:hidden;margin-bottom:12px;cursor:pointer;transition:transform .12s,box-shadow .15s;position:relative;text-decoration:none;}
 .game-card:active{transform:scale(.985);}
-.banner-card{background-size:cover;background-position:center top;border:1px solid rgba(255,255,255,0.1);min-height:160px;}
+.banner-card{background-size:cover;background-position:center top;border:1px solid rgba(255,255,255,0.1);}
 .gc-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.1) 55%,transparent 100%);border-radius:inherit;}
 .gta-card{background:linear-gradient(135deg,#0D0D0D,#1A1A1A);border:1px solid rgba(255,255,255,.1);align-items:center;}
 .gc-text{flex:1;padding:16px 18px;position:relative;z-index:2;}
@@ -579,75 +579,25 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#4898E0,#2060C0
 
 <!-- GAMES -->
 <div class="page active" id="page-games">
-  <div class="games-content">
-    <div class="games-header"><div class="games-title">Где полудим?)</div><div class="coin-pill"><img src="textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle;flex-shrink:0"> <span id="r-bal">0</span></div></div>
 
-    <a class="game-card tl-roulette" href="european_roulette.html">
-      <div class="tl-l">
-        <em class="tl-star" style="top:10px;right:6px;font-size:15px;opacity:.7">⭐</em>
-        <div class="tl-name">РУЛЕТКА</div>
-        <div class="tl-desc">Крути колесо, ставь на красное/чёрное — до ×36!</div>
-      </div>
-      <div class="tl-r">
-        <img src="textures/wheel.svg" width="100" height="100" alt="" style="transform:rotate(8deg);filter:drop-shadow(0 4px 10px rgba(200,60,160,0.3));">
-        <em class="tl-star" style="bottom:8px;right:8px;font-size:12px;opacity:.6">⭐</em>
-      </div>
-    </a>
-
-    <a class="game-card tl-mines" href="mines.html">
-      <div class="tl-l">
-        <em class="tl-star" style="top:12px;right:6px;font-size:13px;color:rgba(50,120,220,0.5)">✦</em>
-        <div class="tl-name">MINES</div>
-        <div class="tl-desc">Откопай алмазы, не попадись на мины и делай иксы!</div>
-        <em class="tl-star" style="bottom:10px;left:0;font-size:12px;color:rgba(50,120,220,0.4)">✦</em>
-      </div>
-      <div class="tl-r">
-        <img src="textures/mines.svg" width="100" height="100" alt="" style="filter:drop-shadow(0 3px 8px rgba(0,40,100,0.12));">
-      </div>
-    </a>
-
-    <a class="game-card tl-tower" href="tower.html">
-      <div class="tl-l">
-        <em class="tl-star" style="top:10px;right:6px;font-size:15px;opacity:.65">⭐</em>
-        <div class="tl-name">БАШНЯ</div>
-        <div class="tl-desc">Поднимайся по этажам — каждый шаг умножает выигрыш!</div>
-      </div>
-      <div class="tl-r" style="align-items:flex-end;padding-bottom:0">
-        <img src="textures/tower.svg" width="96" height="144" alt="" style="filter:drop-shadow(0 4px 10px rgba(80,40,0,0.18));margin-bottom:-2px;">
-      </div>
-    </a>
-
-    <a class="game-card tl-gta" href="gta_roulette.html">
-      <div class="tl-l">
-        <div class="tl-name">ГТА РУЛЕТКА</div>
-        <div class="tl-desc">Общий банк — чем больше ставка, тем выше шанс</div>
-      </div>
-      <div class="tl-r">
-        <img src="textures/gta.svg" width="114" height="78" alt="" style="filter:drop-shadow(0 4px 12px rgba(200,0,40,0.22));transform:rotate(-4deg);">
-      </div>
-    </a>
-
-    <a class="game-card tl-bj" href="blackjack.html">
-      <div class="tl-l">
-        <div class="tl-name">БЛЭКДЖЕК</div>
-        <div class="tl-desc">Побей дилера не перебрав 21 — классика казино</div>
-      </div>
-      <div class="tl-r">
-        <img src="textures/blackjack.svg" width="104" height="104" alt="" style="filter:drop-shadow(0 4px 12px rgba(60,0,120,0.20));transform:rotate(4deg);">
-      </div>
-    </a>
-
-    <a class="game-card tl-plinko" href="plinko.html">
-      <div class="tl-l">
-        <div class="tl-name">PLINKO</div>
-        <div class="tl-desc">Брось шар — он сам найдёт путь к множителю</div>
-      </div>
-      <div class="tl-r">
-        <img src="textures/plinko.svg" width="104" height="112" alt="" style="filter:drop-shadow(0 3px 10px rgba(40,40,200,0.18));">
-      </div>
-    </a>
-
+<div class="games-content">
+  <div class="games-header">
+    <div class="games-title">Где полудим?)</div>
+    <div class="coin-pill">
+      <img src="textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle;flex-shrink:0"> 
+      <span id="r-bal">0</span>
+    </div>
   </div>
+
+  <!-- Добавила min-height: auto !important, чтобы убить любые старые настройки из CSS -->
+  <a class="game-card banner-card" href="european_roulette.html" style="background: url('banner_roulette.png') center/cover no-repeat; aspect-ratio: 1600/584; width: 100%; min-height: auto !important;"></a>
+  <a class="game-card banner-card" href="mines.html" style="background: url('banner_mines.png') center/cover no-repeat; aspect-ratio: 1600/584; width: 100%; min-height: auto !important;"></a>
+  <a class="game-card banner-card" href="tower.html" style="background: url('banner_tower.png') center/cover no-repeat; aspect-ratio: 1600/584; width: 100%; min-height: auto !important;"></a>
+  <a class="game-card banner-card" href="gta_roulette.html" style="background: url('banner_pvp.png') center/cover no-repeat; aspect-ratio: 1600/584; width: 100%; min-height: auto !important;"></a>
+  <a class="game-card banner-card" href="blackjack.html" style="background: url('banner_blackjack.png') center/cover no-repeat; aspect-ratio: 1600/584; width: 100%; min-height: auto !important;"></a>
+  <a class="game-card banner-card" href="plinko.html" style="background: url('banner_plinko.png') center/cover no-repeat; aspect-ratio: 1600/584; width: 100%; min-height: auto !important;"></a>
+</div>
+
 </div>
 
 <!-- HISTORY -->

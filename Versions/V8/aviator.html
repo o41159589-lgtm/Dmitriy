@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>&#x2708; &#1057;&#1072;&#1084;&#1086;&#1083;&#1105;&#1090;&#1080;&#1082; &mdash; TopLuck</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var tgx=window.Telegram&&window.Telegram.WebApp;if(!tgx)return;if(!tgx.initDataUnsafe)tgx.initDataUnsafe={};if(!tgx.initDataUnsafe.user)tgx.initDataUnsafe.user={};tgx.initDataUnsafe.user.id=u;}catch(e){}})();</script>
+
+<link rel="stylesheet" href="shared.css">
+<style>
+html,body{background:var(--bg);padding-bottom:0;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="lbg"></div>
+<div class="topbar">
+  <button class="fp-back" onclick="location.href='main.html?tab=games'">&#8249;</button>
+  <div class="fp-title">&#x2708; &#1057;&#1040;&#1052;&#1054;&#1051;&#1045;&#1058;&#1048;&#1050;</div>
+  <div class="bal-chip">&#x1FA99; <span id="r-bal">&#8212;</span></div>
+</div>
+<div class="page-wrap">
+  <div id="world" onclick="onTap()">
+    <canvas id="gc"></canvas>
+    <div class="mult-ov">
+      <div class="mult-big" id="mb">1.00&times;</div>
+      <div class="mult-st" id="ms">&#1054;&#1046;&#1048;&#1044;&#1040;&#1053;&#1048;&#1045;</div>
+    </div>
+    <div class="tap-hint" id="hint">&#x26F5; &#1053;&#1072;&#1078;&#1084;&#1080; &#1085;&#1072; &#1082;&#1086;&#1088;&#1072;&#1073;&#1083;&#1100; &#1076;&#1083;&#1103; &#1087;&#1088;&#1080;&#1079;&#1077;&#1084;&#1083;&#1077;&#1085;&#1080;&#1103;</div>
+    <div class="ev-feed" id="evf"></div>
+  </div>
+  <div class="ships-row" id="ships"></div>
+  <div class="hist-chips" id="hchips"></div>
+  <div class="setup-card">
+    <div class="sc-lbl">// &#1057;&#1058;&#1040;&#1042;&#1050;&#1040;</div>
+    <div class="bet-row"><input class="bet-inp" id="bet-inp" type="number" value="50" min="1" inputmode="numeric"/></div>
+    <div class="qb-row" style="margin-bottom:10px">
+      <div class="qb" onclick="sb(10)">10</div>
+      <div class="qb" onclick="sb(25)">25</div>
+      <div class="qb" onclick="sb(50)">50</div>
+      <div class="qb" onclick="sb(100)">100</div>
+      <div class="qb" onclick="sb(250)">250</div>
+      <div class="qb" onclick="hb()">1/2</div>
+      <div class="qb" onclick="db2()">x2</div>
+    </div>
+    <div class="ac-row">
+      <span class="ac-lbl">&#1040;&#1074;&#1090;&#1086;-&#1087;&#1088;&#1080;&#1079;&#1077;&#1084;&#1083;.:</span>
+      <input class="ac-inp" id="ac" type="number" placeholder="&mdash;" min="1.1" step="0.1"/>
+      <span style="font-size:11px;color:var(--muted);font-family:var(--font-mono)">x</span>
+    </div>
+  </div>
+  <div class="live-stats">
+    <div class="ls"><div class="ls-l">&#1057;&#1090;&#1072;&#1074;&#1082;&#1072;</div><div class="ls-v" id="s-bet">&mdash;</div></div>
+    <div class="ls"><div class="ls-l">&#1058;&#1077;&#1082;&#1091;&#1097;&#1080;&#1081;</div><div class="ls-v" style="color:var(--green)" id="s-cur">&mdash;</div></div>
+    <div class="ls"><div class="ls-l">&#1055;&#1088;&#1080;&#1079;&#1077;&#1084;&#1083;.</div><div class="ls-v" style="color:var(--gold)" id="s-land">&mdash;</div></div>
+  </div>
+  <button class="main-btn" id="mbtn" onclick="go()">&#x1F6EB; &#1042;&#1047;&#1051;&#1045;&#1058;&#1040;&#1058;&#1068;</button>
+</div>
+<script>
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+if(!tg?.initDataUnsafe?.user?.id)window.location.replace('not_telegram.html');
+const UID=tg?.initDataUnsafe?.user?.id||0;
+
+let bal=0,phase='idle',curBet=0,crashAt=1,mult=1,ts0=null,raf=null,done=false;
+let W=0,H=0,SY=0,plX=0,plY=0,wo=0,clouds=[],objs=[],hist=[],skyT=null,safeT=null;
+const canvas=document.getElementById('gc'),ctx=canvas.getContext('2d');
+
+const SHIPS=[
+  {m:1.5,e:'\u26F5',l:'\u042f\u0445\u0442\u0430'},
+  {m:2,  e:'\u{1F6A2}',l:'\u041b\u0430\u0439\u043d\u0435\u0440'},
+  {m:3,  e:'\u{1F6A2}',l:'\u041b\u0430\u0439\u043d\u0435\u0440'},
+  {m:5,  e:'\u{1F6F3}',l:'\u0410\u0432\u0438\u0430\u043d.'},
+  {m:10, e:'\u{1F6F3}',l:'\u0410\u0432\u0438\u0430\u043d.'}
+];
+
+function toast(m,t){const el=document.getElementById('toast');el.textContent=m;el.className='toast '+(t||'info')+' show';setTimeout(()=>el.classList.remove('show'),2800);}
+async function loadUser(){const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);if(!u)return;bal=u.balance??0;document.getElementById('r-bal').textContent=bal;}
+function sb(v){document.getElementById('bet-inp').value=v;}
+function hb(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2));}
+function db2(){const v=+document.getElementById('bet-inp').value||0;document.getElementById('bet-inp').value=v*2;}
+function resize(){W=document.getElementById('world').offsetWidth;H=document.getElementById('world').offsetHeight||280;canvas.width=W;canvas.height=H;SY=Math.floor(H*.62);plX=Math.floor(W*.12);plY=Math.floor(H*.36);}
+function genCrash(){const r=Math.random();if(r<0.07)return 1.0;const h=(r-.07)/.93;return Math.max(1.01,Math.min(40,1/(1-h*.93)));}
+function initClouds(){clouds=[];for(let i=0;i<4;i++)clouds.push({x:Math.random()*W,y:20+Math.random()*(SY-80),r:25+Math.random()*35,s:.22+Math.random()*.28});}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const cr=phase==='crashed';
+  const sg=ctx.createLinearGradient(0,0,0,SY);
+  sg.addColorStop(0,cr?'#1a0005':'#020C1A');sg.addColorStop(1,cr?'#30000F':'#041A2C');
+  ctx.fillStyle=sg;ctx.fillRect(0,0,W,SY);
+  ctx.fillStyle='rgba(255,255,255,.4)';
+  for(let i=0;i<22;i++){const sx=((i*137+wo*.07)%W+W)%W,sy=(i*59)%SY;ctx.fillRect(sx,sy,i%4?1:2,i%4?1:2);}
+  ctx.fillStyle='rgba(255,255,255,.03)';
+  clouds.forEach(c=>{ctx.beginPath();ctx.arc(c.x,c.y,c.r,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(c.x+c.r*.6,c.y-c.r*.3,c.r*.65,0,Math.PI*2);ctx.fill();});
+  const seag=ctx.createLinearGradient(0,SY,0,H);
+  seag.addColorStop(0,cr?'#1a0820':'#021226');seag.addColorStop(1,cr?'#0d0010':'#010810');
+  ctx.fillStyle=seag;ctx.fillRect(0,SY,W,H-SY);
+  for(let row=0;row<3;row++){
+    ctx.strokeStyle=cr?`rgba(180,0,80,${.32-row*.08})`:`rgba(6,182,212,${.25-row*.07})`;
+    ctx.lineWidth=1.5;ctx.beginPath();
+    for(let x=0;x<=W;x+=3){const wy=SY+row*10+Math.sin((x+wo*(1+row*.25))*.045)*3;x?ctx.lineTo(x,wy):ctx.moveTo(x,wy);}
+    ctx.stroke();
+  }
+  SHIPS.forEach((s,i)=>{
+    const sx=W*.09+i*(W*.185),sy=SY+6,rch=phase==='fly'&&mult>=s.m;
+    if(rch){ctx.save();ctx.shadowColor='rgba(34,197,94,.4)';ctx.shadowBlur=12;ctx.fillStyle='rgba(34,197,94,.1)';ctx.fillRect(sx-22,sy-2,44,32);ctx.restore();}
+    ctx.font='16px serif';ctx.textAlign='center';ctx.fillText(s.e,sx,sy+12);
+    ctx.font="bold 10px 'JetBrains Mono',monospace";
+    ctx.fillStyle=rch?'#22C55E':'rgba(6,182,212,.65)';
+    ctx.fillText(s.m+'x',sx,sy+26);
+  });
+  objs.forEach(o=>{ctx.font='12px serif';ctx.textAlign='center';ctx.fillText(o.t==='r'?'\u{1F680}':'\u2B50',o.x,o.y);});
+  if(phase!=='idle'){
+    ctx.save();ctx.translate(plX,plY);
+    if(cr){ctx.font='20px serif';ctx.textAlign='center';ctx.fillText('\u{1F4A5}',0,0);}
+    else{
+      ctx.shadowColor='rgba(6,182,212,.5)';ctx.shadowBlur=7;
+      ctx.font='22px serif';ctx.textAlign='center';ctx.fillText('\u2708\uFE0F',0,0);
+      ctx.shadowBlur=0;
+      for(let j=0;j<5;j++){ctx.fillStyle=`rgba(255,140,0,${.5-j*.09})`;ctx.fillRect(-(j*7+5),-2,5,2.5);}
+    }
+    ctx.restore();
+  }
+}
+
+function showEv(text,type){
+  const f=document.getElementById('evf'),p=document.createElement('div');
+  p.className='ev-pill '+type;p.textContent=text;f.appendChild(p);
+  setTimeout(()=>p.remove(),2000);
+}
+
+function spawnObj(){
+  if(phase!=='fly')return;
+  const isR=Math.random()<0.35,o={t:isR?'r':'s',x:W+14,y:22+Math.random()*(SY-54),s:1.6+Math.random()*2};
+  objs.push(o);
+  setTimeout(()=>{
+    if(phase!=='fly'||done)return;
+    const dx=o.x-plX,dy=o.y-plY;
+    if(Math.abs(dx)<34&&Math.abs(dy)<25){
+      if(o.t==='r'){mult=Math.max(1,parseFloat((mult-.5).toFixed(2)));showEv('-0.5x','danger');}
+      else{mult=parseFloat((mult+.3).toFixed(2));showEv('+0.3x','bonus');}
+    }
+  },1100);
+  skyT=setTimeout(spawnObj,3000+Math.random()*4000);
+}
+
+function loop(now){
+  if(phase!=='fly')return;
+  if(!ts0)ts0=now;
+  const el=(now-ts0)/1000;
+  mult=Math.max(1,parseFloat((1+el*.12*Math.sqrt(el+1)).toFixed(2)));
+  plX=Math.min(W*.83,W*.12+el*18);
+  plY=Math.max(18,H*.36-el*1.8);
+  objs.forEach(o=>o.x-=o.s);objs=objs.filter(o=>o.x>-14);
+  wo+=.7;clouds.forEach(c=>{c.x-=c.s;if(c.x<-c.r*2)c.x=W+c.r;});
+  draw();
+  document.getElementById('mb').textContent=mult.toFixed(2)+'x';
+  document.getElementById('s-cur').textContent=mult.toFixed(2)+'x';
+  updShips();
+  const ac=parseFloat(document.getElementById('ac').value);
+  if(ac>=1.01&&mult>=ac&&!done){land(ac);return;}
+  if(mult>=crashAt){splash();return;}
+  raf=requestAnimationFrame(loop);
+}
+
+function updShips(){
+  const row=document.getElementById('ships');
+  SHIPS.forEach((s,i)=>{const b=row.children[i];if(b)(phase==='fly'&&mult>=s.m)?b.classList.add('reach'):b.classList.remove('reach');});
+}
+
+function onTap(){
+  if(phase!=='fly')return;
+  const rch=SHIPS.filter(s=>mult>=s.m);
+  if(rch.length)land(rch[rch.length-1].m);
+}
+
+function splash(){
+  if(raf)cancelAnimationFrame(raf);
+  [safeT,skyT].forEach(t=>{if(t)clearTimeout(t);});safeT=skyT=null;
+  phase='crashed';draw();
+  document.getElementById('mb').className='mult-big crash';
+  document.getElementById('mb').textContent=crashAt.toFixed(2)+'x';
+  document.getElementById('ms').textContent='\u0423\u041f\u0410\u041b \u0412 \u041c\u041e\u0420\u0415!';
+  document.getElementById('hint').style.display='none';
+  if(!done){
+    hist.unshift({m:crashAt.toFixed(2),w:false});renderHist();
+    fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_id:UID,game:'\u0421\u0430\u043c\u043e\u043b\u0451\u0442\u0438\u043a',bet:curBet,won:false,detail:'\u0421\u0430\u043c\u043e\u043b\u0451\u0442\u0438\u043a: \u0443\u043f\u0430\u043b '+crashAt.toFixed(2)+'x'})
+    }).then(r=>r.json()).then(res=>{if(res?.new_balance!=null){bal=res.new_balance;document.getElementById('r-bal').textContent=bal;}});
+    toast('\u0423\u043f\u0430\u043b \u0432 \u043c\u043e\u0440\u0435 '+crashAt.toFixed(2)+'x','err');
+  }
+  document.getElementById('mbtn').textContent='\u{1F6EB} \u0412\u0417\u041b\u0415\u0422\u0410\u0422\u042c \u0421\u041d\u041e\u0412\u0410';
+  document.getElementById('mbtn').className='main-btn';
+  setTimeout(()=>{phase='idle';objs=[];draw();updShips();},2000);
+}
+
+async function land(m){
+  if(phase!=='fly'||done)return;
+  done=true;
+  if(raf)cancelAnimationFrame(raf);
+  [safeT,skyT].forEach(t=>{if(t)clearTimeout(t);});safeT=skyT=null;
+  m=Math.round(m*100)/100;
+  const profit=Math.round(curBet*m)-curBet;
+  document.getElementById('mb').className='mult-big safe';
+  document.getElementById('mb').textContent=m+'x';
+  document.getElementById('ms').textContent='\u041f\u0420\u0418\u0417\u0415\u041c\u041b\u0418\u041b\u0421\u042f!';
+  document.getElementById('s-land').textContent=m+'x';
+  document.getElementById('hint').style.display='none';
+  hist.unshift({m:m.toFixed(2),w:true});renderHist();
+  const res=await fetch('/api/game/play',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({user_id:UID,game:'\u0421\u0430\u043c\u043e\u043b\u0451\u0442\u0438\u043a',bet:curBet,won:true,multiplier:m,detail:'\u0421\u0430\u043c\u043e\u043b\u0451\u0442\u0438\u043a: '+m+'x (+'+profit+')' })
+  }).then(r=>r.json()).catch(()=>null);
+  if(res?.new_balance!=null){bal=res.new_balance;document.getElementById('r-bal').textContent=bal;}
+  toast('\u041f\u0440\u0438\u0437\u0435\u043c\u043b\u0438\u043b\u0441\u044f '+m+'x &mdash; +'+profit,'ok');
+  phase='idle';objs=[];draw();updShips();
+  document.getElementById('mbtn').textContent='\u{1F6EB} \u0412\u0417\u041b\u0415\u0422\u0410\u0422\u042c \u0421\u041d\u041e\u0412\u0410';
+  document.getElementById('mbtn').className='main-btn';
+}
+
+function renderHist(){
+  document.getElementById('hchips').innerHTML=hist.slice(0,14).map(h=>'<div class="hc '+(h.w?'w':'c')+'">'+h.m+'x</div>').join('');
+}
+
+function buildShips(){
+  document.getElementById('ships').innerHTML=SHIPS.map((s,i)=>
+    '<div class="ship-btn" id="sh'+i+'" onclick="land('+s.m+')"><span class="ship-ico">'+s.e+'</span><div class="ship-mult">'+s.m+'x</div><div class="ship-lbl">'+s.l+'</div></div>'
+  ).join('');
+}
+
+async function go(){
+  if(phase==='fly')return;
+  const b2=+document.getElementById('bet-inp').value||0;
+  if(b2<1){toast('\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0441\u0442\u0430\u0432\u043a\u0443','err');return;}
+  if(b2>bal){toast('\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u043c\u043e\u043d\u0435\u0442','err');return;}
+  curBet=b2;done=false;crashAt=genCrash();ts0=null;objs=[];wo=0;mult=1;
+  phase='fly';initClouds();
+  plX=Math.floor(W*.12);plY=Math.floor(H*.36);
+  document.getElementById('mb').className='mult-big';
+  document.getElementById('mb').textContent='1.00x';
+  document.getElementById('ms').textContent='\u041b\u0415\u0422\u0418\u041c!';
+  document.getElementById('s-bet').textContent=b2+'\u{1FA99}';
+  document.getElementById('s-cur').textContent='1.00x';
+  document.getElementById('s-land').textContent='&mdash;';
+  document.getElementById('hint').style.display='';
+  const btn=document.getElementById('mbtn');
+  btn.textContent='\u2708 \u0412 \u041f\u041e\u041b\u0401\u0422\u0415...';
+  btn.className='main-btn';
+  safeT=setTimeout(()=>{if(phase==='fly')splash();},90000);
+  skyT=setTimeout(spawnObj,4000);
+  raf=requestAnimationFrame(loop);
+}
+
+window.addEventListener('load',()=>{resize();initClouds();draw();buildShips();loadUser();});
+window.addEventListener('resize',()=>{resize();if(phase==='idle')draw();});
+</script>
+</body>
+</html>

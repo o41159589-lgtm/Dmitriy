@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Casino</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#08080f;--bg2:#0e0e1a;--bg3:#141424;
+  --card:#1a1a2e;--card2:#222238;
+  --gold:#f5c542;--gold2:#e8a800;
+  --red:#e63946;--green:#2dc653;--blue:#4cc9f0;--purple:#7b2fff;
+  --text:#e8e8f0;--muted:#6060a0;
+  --border:rgba(245,197,66,0.15);--nav-h:64px;
+  /* Liquid Glass */
+  --glass-bg:rgba(255,255,255,0.04);
+  --glass-border:rgba(255,255,255,0.10);
+  --glass-blur:18px;
+  --glass-shine:rgba(255,255,255,0.06);
+}
+
+/* ── LIQUID GLASS ── */
+.glass{
+  background:var(--glass-bg);
+  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  border:1px solid var(--glass-border);
+  position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(135deg,var(--glass-shine) 0%,transparent 60%);
+  border-radius:inherit;
+}
+/* Применяем glass к картам */
+.card,.banner,.sc,.hstat,.hist-item,.gp-row,.rev-card,.hi,.sbar .sb{
+  background:var(--glass-bg) !important;
+  backdrop-filter:blur(12px) saturate(1.3);
+  -webkit-backdrop-filter:blur(12px) saturate(1.3);
+  border-color:var(--glass-border) !important;
+  position:relative;overflow:hidden;
+}
+.card::before,.banner::before,.sc::before,.hi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);
+  pointer-events:none;
+}
+/* NAV glass */
+.nav{
+  background:rgba(8,8,15,0.7) !important;
+  backdrop-filter:blur(20px) saturate(1.5);
+  -webkit-backdrop-filter:blur(20px) saturate(1.5);
+}
+/* Header chips glass */
+.bal-chip{
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+/* Roulette banners */
+.banner-top{background:transparent;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;
+  font-size:16px;min-height:100vh;overflow-x:hidden;padding-bottom:var(--nav-h);}
+
+/* ── NAV ── */
+.nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);
+  background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:100;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;background:none;border:none;color:var(--muted);cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:.5px;transition:color .2s;}
+.nav-btn svg{width:22px;height:22px;}
+.nav-btn.active{color:var(--gold);}
+@keyframes spin-once{to{transform:rotate(360deg)}}
+.nav-ind{position:absolute;bottom:0;height:2px;
+  background:linear-gradient(90deg,var(--gold2),var(--gold));
+  width:33.33%;transition:left .25s cubic-bezier(.4,0,.2,1);border-radius:2px 2px 0 0;}
+
+/* ── PAGES ── */
+.page{display:none;min-height:calc(100vh - var(--nav-h));padding:16px;}
+.page.active{display:block;}
+
+/* ── UNIVERSAL CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;
+  overflow:hidden;margin-bottom:14px;}
+.card-head{padding:16px 18px 12px;font-family:'Orbitron',monospace;font-size:13px;
+  color:var(--gold);letter-spacing:1px;border-bottom:1px solid var(--border);}
+.card-body{padding:16px 18px;}
+
+/* ── HOME ── */
+.hero{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
+  border:1px solid var(--border);border-radius:20px;padding:26px 20px;
+  text-align:center;margin-bottom:14px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(245,197,66,.12),transparent 70%);}
+.hero h1{font-family:'Orbitron',monospace;font-size:24px;font-weight:900;
+  background:linear-gradient(135deg,var(--gold),#fff 60%,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.hero p{color:var(--muted);font-size:13px;line-height:1.5;position:relative;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:14px;text-align:center;}
+.sc-ico{font-size:22px;margin-bottom:4px;}
+.sc-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.sc-val{font-family:'Orbitron',monospace;font-size:18px;color:var(--gold);font-weight:700;}
+.irow{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.irow:last-child{border-bottom:none;}
+.irow-l{color:var(--muted);font-size:14px;}
+.irow-r{color:var(--text);font-weight:600;}
+.topup-btn{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:15px;background:linear-gradient(135deg,#7b2fff,#4361ee);
+  border:none;border-radius:16px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;margin-bottom:14px;
+  box-shadow:0 4px 20px rgba(124,47,255,.3);}
+
+/* ── ROULETTE PAGE ── */
+.rp-header{display:flex;justify-content:space-between;align-items:center;
+  padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.ref-btn{display:flex;align-items:center;gap:6px;background:var(--card);
+  border:1px solid var(--border);border-radius:10px;padding:8px 12px;
+  color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;}
+.bal-chip{display:flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border-radius:10px;padding:8px 14px;color:#000;
+  font-family:'Orbitron',monospace;font-size:14px;font-weight:700;}
+.roul-scroll{padding:12px 16px;display:flex;flex-direction:column;gap:12px;}
+
+/* ── BANNER BLOCK (inventory + roulette cards) ── */
+.banner{border:1px solid var(--border);border-radius:20px;overflow:hidden;
+  background:var(--card);}
+.banner-top{display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;cursor:pointer;user-select:none;}
+.banner-top-l{display:flex;align-items:center;gap:14px;}
+.banner-ico{font-size:30px;}
+.banner-title{font-weight:700;font-size:17px;}
+.banner-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.banner-arrow{color:var(--muted);font-size:22px;transition:transform .25s;}
+.banner.open .banner-arrow{transform:rotate(90deg);}
+.banner-content{display:none;border-top:1px solid var(--border);}
+.banner.open .banner-content{display:block;}
+
+/* ── WHEEL ── */
+.wheel-wrap{position:relative;height:88px;overflow:hidden;
+  background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.wheel-strip{display:flex;height:100%;will-change:transform;}
+.wc{flex-shrink:0;width:70px;height:88px;display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:18px;font-weight:700;
+  border-right:1px solid rgba(255,255,255,.06);}
+.wc.red{background:rgba(230,57,70,.35);color:#ff9090;}
+.wc.black{background:rgba(15,15,22,.95);color:#bbb;}
+.wc.green{background:rgba(45,198,83,.25);color:#2dc653;}
+.wheel-ptr{position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);
+  width:2px;background:var(--gold);z-index:5;box-shadow:0 0 8px var(--gold);pointer-events:none;}
+.wheel-ptr::before,.wheel-ptr::after{content:'';position:absolute;left:50%;
+  transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;}
+.wheel-ptr::before{top:-1px;border-top:9px solid var(--gold);}
+.wheel-ptr::after{bottom:-1px;border-bottom:9px solid var(--gold);}
+
+/* ── BET UI ── */
+.bet-ui{padding:16px 18px;}
+.bet-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.bet-lbl{color:var(--muted);font-size:13px;white-space:nowrap;}
+.bet-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:15px;
+  outline:none;text-align:center;width:0;}
+.bet-inp:focus{border-color:var(--gold);}
+.qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.qb{background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:5px 10px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.qb:active,.qb.a{background:var(--gold);color:#000;border-color:var(--gold);}
+.btypes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.bt{border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;
+  border:2px solid transparent;transition:all .2s;font-weight:700;font-size:13px;background:var(--bg3);}
+.bt-s{font-size:11px;color:var(--muted);margin-top:2px;}
+.bt.r{border-color:rgba(230,57,70,.4);color:#ff9090;}
+.bt.bl{border-color:rgba(200,200,220,.2);color:#ccc;}
+.bt.g{border-color:rgba(45,198,83,.4);color:var(--green);}
+.bt.o{border-color:rgba(76,201,240,.25);color:var(--blue);}
+.bt.active.r{border-color:var(--red);background:rgba(230,57,70,.15);}
+.bt.active.bl{border-color:#aaa;background:rgba(200,200,220,.1);}
+.bt.active.g{border-color:var(--green);background:rgba(45,198,83,.12);}
+.bt.active.o{border-color:var(--blue);background:rgba(76,201,240,.1);}
+.res-box{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:13px;text-align:center;margin-bottom:12px;min-height:50px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;}
+.res-box.win{border-color:var(--green);background:rgba(45,198,83,.08);color:var(--green);}
+.res-box.lose{border-color:var(--red);background:rgba(230,57,70,.08);color:var(--red);}
+.spin-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:15px;font-weight:900;letter-spacing:2px;cursor:pointer;
+  box-shadow:0 4px 20px rgba(245,197,66,.3);}
+.spin-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── GTA ── */
+.gta-ui{padding:16px 18px;}
+.gta-desc{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:16px;}
+.gta-wheel-row{display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.gta-canvas{border-radius:50%;display:block;filter:drop-shadow(0 0 18px rgba(245,197,66,.25));}
+.gta-wheel-outer{position:relative;width:220px;height:220px;margin:0 auto 20px;}
+.gta-wheel-outer canvas{border-radius:50%;position:absolute;top:0;left:0;}
+.gta-pot-block{text-align:center;margin-bottom:6px;}
+.gta-pot{font-family:'Orbitron',monospace;font-size:32px;color:var(--gold);font-weight:900;
+  text-shadow:0 0 20px rgba(245,197,66,.4);}
+.gta-pot-lbl{font-size:12px;color:var(--muted);margin-bottom:16px;letter-spacing:.5px;text-transform:uppercase;}
+.gta-pot-block{text-align:center;margin-bottom:4px;}
+.gta-pot{font-family:'Orbitron',monospace;font-size:28px;color:var(--gold);font-weight:900;}
+.gta-pot-lbl{font-size:12px;color:var(--muted);margin-bottom:14px;}
+.timer-wrap{background:var(--bg3);border-radius:6px;height:6px;overflow:hidden;margin-bottom:10px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}
+.timer-bar{height:100%;background:linear-gradient(90deg,#e63946,#f5c542,#2dc653);
+  border-radius:6px;transition:width .8s linear;box-shadow:0 0 8px rgba(245,197,66,.4);}
+.gta-status{text-align:center;font-size:13px;color:var(--muted);margin-bottom:14px;
+  padding:10px 14px;background:var(--bg3);border-radius:12px;line-height:1.5;}
+.gta-players{margin-bottom:14px;display:flex;flex-direction:column;gap:6px;}
+.gp-row{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  background:var(--bg3);border-radius:12px;border:1px solid transparent;transition:border-color .3s;}
+.gp-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor;}
+.gp-name{flex:1;font-weight:600;font-size:14px;}
+.gp-right{text-align:right;}
+.gp-bet{font-family:'Orbitron',monospace;color:var(--gold);font-size:13px;font-weight:700;}
+.gp-pct{font-size:11px;color:var(--muted);margin-top:2px;}
+.gta-bet-btn{width:100%;padding:16px;background:linear-gradient(135deg,#7b2fff,#4361ee);
+  border:none;border-radius:16px;color:#fff;font-family:'Orbitron',monospace;
+  font-size:15px;font-weight:700;cursor:pointer;margin-bottom:0;letter-spacing:1px;
+  box-shadow:0 6px 24px rgba(124,47,255,.4);transition:transform .15s,box-shadow .2s;}
+.gta-bet-btn:active{transform:scale(.97);box-shadow:0 2px 12px rgba(124,47,255,.3);}
+.gta-bet-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* ── HISTORY ── */
+.filt{display:flex;gap:8px;margin-bottom:14px;}
+.fb{flex:1;padding:10px 6px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;color:var(--muted);font-weight:700;font-size:12px;
+  cursor:pointer;text-align:center;transition:all .2s;}
+.fb.a{background:var(--gold);color:#000;border-color:var(--gold);}
+.hstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.hs{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
+.hs-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.hs-v{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;}
+.hs-v.gr{color:var(--green);}.hs-v.re{color:var(--red);}
+.hi{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;}
+.hi-ic{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0;}
+.hi-ic.win{background:rgba(45,198,83,.15);}
+.hi-ic.lose{background:rgba(230,57,70,.15);}
+.hi-ic.deposit,.hi-ic.ref{background:rgba(76,201,240,.15);}
+.hi-ic.sub{background:rgba(230,57,70,.08);}
+.hi-b{flex:1;}
+.hi-t{font-weight:600;font-size:14px;}
+.hi-s{font-size:12px;color:var(--muted);margin-top:2px;}
+.hi-a{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;}
+.hi-a.p{color:var(--green);}.hi-a.n{color:var(--red);}
+.empty{text-align:center;padding:48px 20px;color:var(--muted);}
+.empty-i{font-size:48px;margin-bottom:12px;}
+
+/* ── MODALS ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  display:none;align-items:flex-end;}
+.ov.open{display:flex;}
+.modal{background:var(--bg2);border-radius:24px 24px 0 0;border-top:1px solid var(--border);
+  padding:20px 20px calc(var(--nav-h) + 16px);width:100%;max-height:80vh;overflow-y:auto;
+  animation:su .3s ease;}
+@keyframes su{from{transform:translateY(100%)}}
+.mh{width:40px;height:4px;background:var(--muted);border-radius:2px;margin:0 auto 16px;}
+.mt{font-family:'Orbitron',monospace;font-size:16px;color:var(--gold);
+  margin-bottom:16px;text-align:center;}
+.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.ta{padding:18px;background:var(--card);border:2px solid var(--border);border-radius:14px;
+  text-align:center;cursor:pointer;transition:all .2s;}
+.ta.sel{border-color:var(--gold);}
+.ta-c{font-family:'Orbitron',monospace;font-size:20px;color:var(--gold);font-weight:700;}
+.ta-s{font-size:13px;color:var(--muted);margin-top:4px;}
+.ta-confirm{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold2),var(--gold));
+  border:none;border-radius:14px;color:#000;font-family:'Orbitron',monospace;
+  font-size:15px;font-weight:700;cursor:pointer;}
+.inv-empty{color:var(--muted);text-align:center;padding:30px;}
+.inv-item{display:flex;align-items:center;gap:14px;background:var(--card);
+  border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border);}
+
+/* ── TOAST ── */
+.toast{position:fixed;top:16px;left:16px;right:16px;background:var(--card2);
+  border:1px solid var(--border);border-radius:12px;padding:12px 16px;
+  font-size:14px;font-weight:600;z-index:500;text-align:center;
+  transform:translateY(-80px);transition:transform .3s;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.toast.show{transform:translateY(0);}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
+.toast.info{border-color:var(--blue);color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ HOME ═══════════ -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h1>🎰 CASINO</h1>
+    <p>Добро пожаловать! Испытай удачу.</p>
+  </div>
+  <div class="sgrid">
+    <div class="sc"><div class="sc-ico">🪙</div><div class="sc-lbl">Баланс</div><div class="sc-val" id="h-bal">—</div></div>
+    <div class="sc"><div class="sc-ico">🎲</div><div class="sc-lbl">Игр</div><div class="sc-val" id="h-spins">—</div></div>
+    <div class="sc"><div class="sc-ico">🏆</div><div class="sc-lbl">Побед</div><div class="sc-val" id="h-wins">—</div></div>
+    <div class="sc"><div class="sc-ico">📈</div><div class="sc-lbl">Выиграно</div><div class="sc-val" id="h-won">—</div></div>
+  </div>
+
+  <button class="topup-btn" onclick="openTopup()">
+    <span style="font-size:20px">⭐</span> Пополнить баланс (1 монета = 1 Star)
+  </button>
+
+  <div class="card">
+    <div class="card-head">💰 Выплаты</div>
+    <div class="card-body">
+      <div class="irow"><span class="irow-l">🔴 Красное / ⚫ Чёрное</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+      <div class="irow"><span class="irow-l">Чёт / Нечёт · 1–18 / 19–36</span><span class="irow-r" style="color:var(--gold)">×2</span></div>
+      <div class="irow"><span class="irow-l">Дюжина (1–12 / 13–24)</span><span class="irow-r" style="color:var(--gold)">×3</span></div>
+      <div class="irow"><span class="irow-l">🟢 Зеро</span><span class="irow-r" style="color:var(--gold)">×14</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">🔗 Реферальная программа</div>
+    <div class="card-body">
+      <div class="irow"><span class="irow-l">За каждого друга</span><span class="irow-r" style="color:var(--green)">+10 монет</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ROULETTE ═══════════ -->
+<div class="page" id="page-roulette">
+  <div class="rp-header">
+    <button class="ref-btn" onclick="copyRef()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+      </svg>Реф.ссылка
+    </button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="refresh-btn" onclick="refreshBalance()" title="Обновить баланс"
+        style="background:var(--card);border:1px solid var(--border);border-radius:10px;
+          width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+          cursor:pointer;color:var(--muted);font-size:16px;">↻</button>
+      <div class="bal-chip">🪙 <span id="r-bal">0</span></div>
+    </div>
+  </div>
+
+  <div class="roul-scroll">
+
+    <!-- Инвентарь -->
+    <div class="banner" id="inv-banner">
+      <div class="banner-top" onclick="toggleBanner('inv-banner')">
+        <div class="banner-top-l">
+          <span class="banner-ico">🎒</span>
+          <div><div class="banner-title">Инвентарь</div><div class="banner-sub">Ваши предметы</div></div>
+        </div>
+        <span class="banner-arrow">›</span>
+      </div>
+      <div class="banner-content">
+        <div style="padding:16px;" id="inv-content">
+          <div class="inv-empty">📭 Инвентарь пуст</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Европейская рулетка -->
+    <div class="banner" id="euro-banner">
+      <div class="banner-top" onclick="toggleBanner('euro-banner')">
+        <div class="banner-top-l">
+          <span class="banner-ico">🎰</span>
+          <div><div class="banner-title">Европейская рулетка</div><div class="banner-sub">Классика казино · выплаты до ×14</div></div>
+        </div>
+        <span class="banner-arrow">›</span>
+      </div>
+      <div class="banner-content">
+        <!-- Wheel -->
+        <div class="wheel-wrap">
+          <div class="wheel-strip" id="wheel-strip"></div>
+          <div class="wheel-ptr"></div>
+        </div>
+        <!-- Bet UI -->
+        <div class="bet-ui">
+          <div class="bet-row">
+            <span class="bet-lbl">Ставка:</span>
+            <input class="bet-inp" id="bet-inp" type="number" min="1" value="10" inputmode="numeric">
+          </div>
+          <div class="qb-row">
+            <div class="qb" onclick="sb(10)">10</div>
+            <div class="qb" onclick="sb(25)">25</div>
+            <div class="qb" onclick="sb(50)">50</div>
+            <div class="qb" onclick="sb(100)">100</div>
+            <div class="qb" onclick="sbAll()">ВСЁ</div>
+            <div class="qb" onclick="sbHalf()">1/2</div>
+          </div>
+          <div class="btypes">
+            <div class="bt r" data-bet="red"    onclick="selBet(this)">🔴 Красное<div class="bt-s">×2</div></div>
+            <div class="bt bl" data-bet="black" onclick="selBet(this)">⚫ Чёрное<div class="bt-s">×2</div></div>
+            <div class="bt g" data-bet="green"  onclick="selBet(this)">🟢 Зеро<div class="bt-s">×14</div></div>
+          </div>
+          <div class="btypes">
+            <div class="bt o" data-bet="even"   onclick="selBet(this)">Чётное<div class="bt-s">×2</div></div>
+            <div class="bt o" data-bet="odd"    onclick="selBet(this)">Нечётное<div class="bt-s">×2</div></div>
+            <div class="bt o" data-bet="low"    onclick="selBet(this)">1–18<div class="bt-s">×2</div></div>
+            <div class="bt o" data-bet="high"   onclick="selBet(this)">19–36<div class="bt-s">×2</div></div>
+            <div class="bt o" data-bet="dozen1" onclick="selBet(this)">1–12<div class="bt-s">×3</div></div>
+            <div class="bt o" data-bet="dozen2" onclick="selBet(this)">13–24<div class="bt-s">×3</div></div>
+          </div>
+          <div class="res-box" id="res-box">Выберите ставку и крутите!</div>
+          <button class="spin-btn" id="spin-btn" onclick="spinEuro()">🎰 КРУТИТЬ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GTA RP рулетка -->
+    <div class="banner" id="gta-banner">
+      <div class="banner-top" onclick="toggleBanner('gta-banner');if(document.getElementById('gta-banner').classList.contains('open'))pollGta()">
+        <div class="banner-top-l">
+          <span class="banner-ico">🏙</span>
+          <div><div class="banner-title">GTA RP Рулетка</div><div class="banner-sub">Общий банк · шанс = ставка</div></div>
+        </div>
+        <span class="banner-arrow">›</span>
+      </div>
+      <div class="banner-content">
+        <div class="gta-ui">
+          <p class="gta-desc">Ставь монеты в общий банк. Чем больше ставка — тем выше шанс выиграть всё. Мин. 2 игрока. Комиссия 3–8%.</p>
+
+          <div class="gta-pot-block">
+            <div class="gta-pot" id="gta-pot">0</div>
+            <div class="gta-pot-lbl">монет в банке</div>
+          </div>
+
+          <div class="gta-wheel-outer">
+            <canvas id="gta-canvas" width="220" height="220" style="border-radius:50%;display:block;"></canvas>
+          </div>
+
+          <div class="timer-wrap" id="t-wrap" style="display:none"><div class="timer-bar" id="t-bar" style="width:100%"></div></div>
+          <div class="gta-status" id="gta-status">Ожидаем игроков...</div>
+
+          <div class="gta-players" id="gta-players"></div>
+
+          <div class="bet-row" style="margin-bottom:10px">
+            <span class="bet-lbl">Ставка:</span>
+            <input class="bet-inp" id="gta-inp" type="number" min="1" value="10" inputmode="numeric">
+          </div>
+          <div class="qb-row">
+            <div class="qb" onclick="sgb(10)">10</div>
+            <div class="qb" onclick="sgb(50)">50</div>
+            <div class="qb" onclick="sgb(100)">100</div>
+            <div class="qb" onclick="sgbAll()">ВСЁ</div>
+          </div>
+          <button class="gta-bet-btn" id="gta-btn" onclick="placeGtaBet()">🎲 ПОСТАВИТЬ</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /roul-scroll -->
+</div>
+
+<!-- ═══════════ HISTORY ═══════════ -->
+<div class="page" id="page-history">
+  <div class="filt">
+    <div class="fb a" onclick="setF(this,'all')">Все</div>
+    <div class="fb"   onclick="setF(this,'win')">Победы</div>
+    <div class="fb"   onclick="setF(this,'lose')">Проиг.</div>
+    <div class="fb"   onclick="setF(this,'deposit')">Пополн.</div>
+  </div>
+  <div class="hstats">
+    <div class="hs"><div class="hs-l">Выиграно</div><div class="hs-v gr" id="s-won">0</div></div>
+    <div class="hs"><div class="hs-l">Проиграно</div><div class="hs-v re" id="s-lost">0</div></div>
+  </div>
+  <div id="hist-list"></div>
+</div>
+
+<!-- Topup Modal -->
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)">
+  <div class="modal">
+    <div class="mh"></div>
+    <div class="mt">💳 ПОПОЛНЕНИЕ</div>
+    <p style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:14px">1 монета = 1 ⭐ Telegram Star</p>
+    <div class="ta-grid">
+      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50</div><div class="ta-s">50 ⭐</div></div>
+      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100</div><div class="ta-s">100 ⭐</div></div>
+      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250</div><div class="ta-s">250 ⭐</div></div>
+      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500</div><div class="ta-s">500 ⭐</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="color:var(--muted);font-size:13px;white-space:nowrap">Или введите:</span>
+      <input id="ta-custom" type="number" min="1" max="10000" placeholder="Своя сумма..."
+        oninput="onCustomInput()"
+        style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+          padding:9px 12px;color:var(--text);font-family:'Orbitron',monospace;font-size:14px;
+          outline:none;text-align:center;" />
+      <span style="color:var(--gold);font-size:14px">⭐</span>
+    </div>
+    <button class="ta-confirm" onclick="confirmTopup()">Оплатить <span id="ta-amt">50</span> ⭐</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-ind" id="nav-ind"></div>
+  <button class="nav-btn active" onclick="showPage('home',this,0)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Главная
+  </button>
+  <button class="nav-btn" onclick="showPage('roulette',this,1)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+    Рулетка
+  </button>
+  <button class="nav-btn" onclick="showPage('history',this,2)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    История
+  </button>
+</nav>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();}
+const UID   = tg?.initDataUnsafe?.user?.id || 0;
+const BOT   = 'DmitriyProjectBot';
+const REF   = `https://t.me/${BOT}?start=ref_${UID}`;
+const GTA_COLORS = ['#e63946','#2dc653','#4cc9f0','#f5c542','#7b2fff','#ff9f1c','#e9c46a','#2a9d8f'];
+// Helper: hex → rgba
+function hexAlpha(hex, alpha){
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+let userData = null;
+let history  = [];
+let curF     = 'all';
+let selBetType = null;
+let spinning = false;
+let gtaLobbyId = null;
+let gtaPollTimer = null;
+let gtaTimerInterval = null;
+let gtaDeadline = 0;
+let gtaSpinAnim = null;
+let gtaWinnerId = null;
+
+// ── NAV ──
+function showPage(n,btn,i){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('nav-ind').style.left=(i*33.33)+'%';
+  if(n==='history')renderHistory();
+  if(n==='roulette'){loadUser();if(!gtaPollTimer)startGtaPoll();}
+}
+
+function toggleBanner(id){
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ── TOAST ──
+function toast(m,t='info'){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.className='toast '+t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ── API ──
+async function get(url){const r=await fetch(url);return r.json();}
+async function post(url,d){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  return r.json();
+}
+
+async function loadUser(){
+  if(!UID)return;
+  userData = await get(`/api/user/${UID}`).catch(()=>null);
+  updateUI();
+}
+
+function updateUI(){
+  if(!userData)return;
+  document.getElementById('h-bal').textContent   = userData.balance??0;
+  document.getElementById('h-spins').textContent = userData.spins??0;
+  document.getElementById('h-wins').textContent  = userData.wins??0;
+  document.getElementById('h-won').textContent   = userData.total_won??0;
+  document.getElementById('r-bal').textContent   = userData.balance??0;
+}
+
+function copyRef(){
+  navigator.clipboard?.writeText(REF).then(()=>toast('Ссылка скопирована!','ok'))
+    .catch(()=>toast(REF,'info'));
+}
+
+// ══════════════════════════
+//  EUROPEAN ROULETTE — фиксированная сила прокрута
+// ══════════════════════════
+const NUMS = [
+  {n:0,c:'green'},{n:32,c:'red'},{n:15,c:'black'},{n:19,c:'red'},{n:4,c:'black'},
+  {n:21,c:'red'},{n:2,c:'black'},{n:25,c:'red'},{n:17,c:'black'},{n:34,c:'red'},
+  {n:6,c:'black'},{n:27,c:'red'},{n:13,c:'black'},{n:36,c:'red'},{n:11,c:'black'},
+  {n:30,c:'red'},{n:8,c:'black'},{n:23,c:'red'},{n:10,c:'black'},{n:5,c:'red'},
+  {n:24,c:'black'},{n:16,c:'red'},{n:33,c:'black'},{n:1,c:'red'},{n:20,c:'black'},
+  {n:14,c:'red'},{n:31,c:'black'},{n:9,c:'red'},{n:22,c:'black'},{n:18,c:'red'},
+  {n:29,c:'black'},{n:7,c:'red'},{n:28,c:'black'},{n:12,c:'red'},{n:35,c:'black'},
+  {n:3,c:'red'},{n:26,c:'black'}
+];
+const CW=70, REPS=20;
+// Фиксированное количество оборотов — всегда одинаковое, не зависит от позиции
+const FIXED_EXTRA_SPINS = 7; // ровно 7 полных оборотов каждый раз
+
+function buildStrip(){
+  const s=document.getElementById('wheel-strip');
+  s.innerHTML='';
+  for(let i=0;i<REPS;i++) NUMS.forEach(({n,c})=>{
+    const el=document.createElement('div');
+    el.className='wc '+c; el.textContent=n; s.appendChild(el);
+  });
+}
+
+// Стартовая позиция — всегда начинаем с одной точки (индекс 0 в середине)
+const ANCHOR_REP = 4; // начальный повтор
+function resetStrip(){
+  const s=document.getElementById('wheel-strip');
+  const ww=document.querySelector('.wheel-wrap');
+  if(!ww)return;
+  const cw=ww.offsetWidth;
+  // Всегда начинаем с позиции где ячейка 0 (индекс 0) первого рабочего повтора стоит по центру
+  const startCell = ANCHOR_REP * NUMS.length; // позиция "0 зеро" в начале
+  const off = cw/2 - startCell*CW - CW/2;
+  s.style.transition='none';
+  void s.offsetWidth;
+  s.style.transform=`translateX(${off}px)`;
+}
+
+function selBet(el){
+  document.querySelectorAll('.bt').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  selBetType=el.dataset.bet;
+}
+function sb(v){document.getElementById('bet-inp').value=v;}
+function sbAll(){document.getElementById('bet-inp').value=userData?.balance||0;}
+function sbHalf(){document.getElementById('bet-inp').value=Math.max(1,Math.floor((userData?.balance||0)/2));}
+
+async function spinEuro(){
+  if(spinning)return;
+  if(!selBetType){toast('Выберите ставку!','err');return;}
+  const bet=parseInt(document.getElementById('bet-inp').value)||0;
+  if(bet<1){toast('Введите ставку!','err');return;}
+  if(bet>(userData?.balance||0)){toast('Недостаточно монет!','err');return;}
+
+  spinning=true;
+  document.getElementById('spin-btn').disabled=true;
+  const rb=document.getElementById('res-box');
+  rb.className='res-box'; rb.textContent='🎰 Крутим...';
+
+  // Сначала сбрасываем в начальную позицию (без анимации)
+  resetStrip();
+
+  const res=await post('/api/spin',{user_id:UID,bet,bet_type:selBetType}).catch(()=>null);
+  if(!res||res.error){
+    toast(res?.error||'Ошибка сервера','err');
+    spinning=false; document.getElementById('spin-btn').disabled=false; return;
+  }
+
+  const strip=document.getElementById('wheel-strip');
+  const ww=document.querySelector('.wheel-wrap');
+  const cw=ww.offsetWidth;
+
+  // Целевая ячейка — в повторе ANCHOR_REP + FIXED_EXTRA_SPINS
+  const targetRep = ANCHOR_REP + FIXED_EXTRA_SPINS;
+  const tCell = targetRep * NUMS.length + res.result_index;
+  const finalOff = cw/2 - tCell*CW - CW/2;
+
+  // force reflow перед анимацией
+  void strip.offsetWidth;
+  strip.style.transition='transform 5s cubic-bezier(.17,.67,.12,1)';
+  strip.style.transform=`translateX(${finalOff}px)`;
+
+  setTimeout(()=>{
+    const ico=res.result_c==='green'?'🟢':res.result_c==='red'?'🔴':'⚫';
+    if(res.won){
+      rb.className='res-box win';
+      rb.textContent=`${ico} ${res.result_n} — Выигрыш! +${res.gain} 🪙`;
+      toast(`+${res.gain} монет! 🎉`,'ok');
+    } else {
+      rb.className='res-box lose';
+      rb.textContent=`${ico} ${res.result_n} — Проигрыш -${bet} 🪙`;
+      toast(`-${bet} монет 😢`,'err');
+    }
+    if(userData) userData.balance=res.new_balance;
+    updateUI();
+    // Полоса остаётся где остановилась — НЕ сбрасываем
+    spinning=false;
+    document.getElementById('spin-btn').disabled=false;
+  },5300);
+}
+
+// ══════════════════════════
+//  GTA ROULETTE
+// ══════════════════════════
+function sgb(v){document.getElementById('gta-inp').value=v;}
+function sgbAll(){document.getElementById('gta-inp').value=userData?.balance||0;}
+
+function startGtaPoll(){
+  clearTimeout(gtaPollTimer);
+  gtaPollTimer = null;
+  pollGta();
+}
+
+async function pollGta(){
+  try {
+    if(!gtaLobbyId){
+      const d=await get('/api/gta/lobby');
+      if(d&&d.lobby){gtaLobbyId=d.lobby.id;renderGta(d.lobby,d.bets);}
+    } else {
+      const d=await get(`/api/gta/status/${gtaLobbyId}`);
+      if(!d||d.error){gtaLobbyId=null;}
+      else {
+        renderGta(d.lobby,d.bets);
+        if(d.lobby.status==='done') return;
+      }
+    }
+  } catch(e){}
+  gtaPollTimer = setTimeout(pollGta, 2000);
+}
+
+async function placeGtaBet(){
+  const amount=parseInt(document.getElementById('gta-inp').value)||0;
+  if(amount<1){toast('Введите ставку!','err');return;}
+  // Загружаем свежий баланс с сервера перед проверкой
+  await loadUser();
+  if(amount>(userData?.balance||0)){toast('Недостаточно монет!','err');return;}
+  document.getElementById('gta-btn').disabled=true;
+  const res=await post('/api/gta/bet',{user_id:UID,amount}).catch(()=>null);
+  document.getElementById('gta-btn').disabled=false;
+  if(!res||res.error){toast(res?.error||'Ошибка','err');return;}
+  toast(`Ставка ${amount} монет принята!`,'ok');
+  if(userData)userData.balance=res.new_balance;
+  gtaLobbyId=res.lobby_id;
+  // Дедлайн: сервер всегда сбрасывает на +15с при новой ставке
+  if(res.deadline) gtaDeadline=res.deadline*1000;
+  // Сбросить таймер UI чтобы он пересчитался от нового deadline
+  if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+  updateUI();
+  clearTimeout(gtaPollTimer);gtaPollTimer=null;
+  pollGta();
+}
+
+let lastLobbyStatus = null;
+// Сохраняем игроков во время spinning чтобы анимация продолжала работать
+let gtaSpinPlayers = [];
+let gtaSpinTotal = 1;
+// Финальный угол где останавливается колесо
+let gtaFinalAngle = 0;
+// Флаг: идёт замедляющая анимация до победителя
+let gtaBrakingAnim = false;
+
+function renderGta(lobby, bets){
+  const pot = lobby.pot || 0;
+  document.getElementById('gta-pot').textContent = pot;
+
+  const byUser = {};
+  bets.forEach(b=>{
+    // Экранируем HTML спецсимволы в имени
+    const safeName = (b.player_name||`ID${b.user_id}`)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if(!byUser[b.user_id]) byUser[b.user_id]={uid:b.user_id,name:safeName,amount:0};
+    byUser[b.user_id].amount += b.amount;
+  });
+  const players = Object.values(byUser);
+  const total   = players.reduce((s,p)=>s+p.amount,0)||1;
+
+  const prevStatus = lastLobbyStatus;
+  const statusChanged = prevStatus !== lobby.status;
+  lastLobbyStatus = lobby.status;
+
+  const st = document.getElementById('gta-status');
+  const tw = document.getElementById('t-wrap');
+
+  // ── DONE ──
+  if(lobby.status==='done'){
+    if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+    tw.style.display='none';
+
+    // Если анимация вращения ЕЩЁ ИДЁТ (или не запускалась) — запускаем доворот до победителя
+    if(statusChanged || (!gtaSpinAnim && prevStatus==='spinning')){
+      // Останавливаем текущую свободную прокрутку и запускаем финальную с остановкой
+      if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
+      st.textContent='🎰 Определяем победителя...';
+      const finalAngle = calcWinnerAngle(players, total, lobby.winner_id);
+      spinAndStop(players, total, finalAngle, ()=>{
+        // Колесо остановилось — показываем победителя
+        drawGtaWheel(players, total, lobby.winner_id, gtaAngleOffset);
+        st.innerHTML='🏆 Победитель определён! Перезапуск через <b id="restart-cnt">5</b> сек...';
+        renderPlayers(players, total, lobby.winner_id);
+        loadUser();
+        let cnt=5;
+        const iv=setInterval(()=>{
+          cnt--;
+          const el=document.getElementById('restart-cnt');
+          if(el) el.textContent=cnt;
+          if(cnt<=0){
+            clearInterval(iv);
+            gtaLobbyId=null; lastLobbyStatus=null; gtaAngleOffset=0;
+            clearTimeout(gtaPollTimer);gtaPollTimer=null;
+            pollGta();
+          }
+        },1000);
+      });
+    }
+    return;
+  }
+
+  // ── SPINNING ──
+  if(lobby.status==='spinning'){
+    if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+    tw.style.display='none';
+    st.textContent='🎰 Колесо крутится!';
+    // Запускаем свободное вращение (без остановки — остановимся когда придёт done)
+    if(!gtaSpinAnim){
+      startFreeSpinning(players, total);
+    }
+    renderPlayers(players, total, null);
+    return;
+  }
+
+  // ── OPEN ──
+  if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;gtaAngleOffset=0;}
+  drawGtaWheel(players, total, null, 0);
+  renderPlayers(players, total, null);
+
+  if(players.length>=2){
+    tw.style.display='block';
+    const deadline = (lobby.deadline && lobby.deadline > Date.now()/1000)
+      ? lobby.deadline*1000 : (gtaDeadline||Date.now()+15000);
+    if(statusChanged || !gtaTimerInterval){
+      if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      gtaTimerInterval=setInterval(()=>{
+        const now=Date.now();
+        const rem=Math.max(0,Math.ceil((deadline-now)/1000));
+        const pct=Math.max(0,Math.min(100,(deadline-now)/15000*100));
+        document.getElementById('t-bar').style.width=pct+'%';
+        st.textContent=`⏳ Розыгрыш через ${rem} сек...`;
+        if(rem<=0){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+      },200);
+    }
+  } else {
+    tw.style.display='none';
+    if(gtaTimerInterval){clearInterval(gtaTimerInterval);gtaTimerInterval=null;}
+    st.textContent=`👥 Ждём ещё игроков (${players.length}/2)`;
+  }
+}
+
+// Вычисляем угол, при котором сектор победителя окажется под указателем (сверху = -PI/2)
+// Вычисляет случайный угол в секторе победителя (не середина)
+function calcWinnerAngle(players, total, winnerId){
+  // Вычисляем случайный угол внутри сектора победителя
+  // Используем сид на основе lobby winner для одинаковости у всех клиентов
+  let a = 0;
+  for(let i=0;i<players.length;i++){
+    const sl = players[i].amount / total * Math.PI*2;
+    if(String(players[i].uid) === String(winnerId)){
+      // Берём "псевдослучайный" offset внутри сектора (детерминированный по winnerId)
+      // чтобы все игроки видели одинаковое место остановки
+      const seed   = (parseInt(String(winnerId).slice(-4))||1234) % 1000;
+      const frac   = (seed / 1000) * 0.7 + 0.15; // 0.15..0.85 от сектора
+      const target = a + sl * frac;
+      // offset такой что -PI/2 + offset + target = -PI/2  =>  offset = -target
+      return ((-target) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+    }
+    a += sl;
+  }
+  return 0;
+}
+
+let gtaAngleOffset = 0;
+
+// Фаза 1: быстрое свободное вращение (пока сервер считает победителя)
+function startFreeSpinning(players, total){
+  if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
+  const ACCEL = 800; // мс разгона
+  const SPEED = 0.16; // рад/фрейм
+  const t0 = performance.now();
+  function frame(now){
+    const e = now-t0;
+    const spd = e < ACCEL ? SPEED*(e/ACCEL)*(e/ACCEL) : SPEED;
+    gtaAngleOffset = (gtaAngleOffset + spd) % (Math.PI*2);
+    drawGtaWheelAnimated(players, total, gtaAngleOffset);
+    gtaSpinAnim = requestAnimationFrame(frame);
+  }
+  gtaSpinAnim = requestAnimationFrame(frame);
+}
+
+// Фаза 2: торможение и остановка на победителе
+function spinAndStop(players, total, finalAngle, onDone){
+  if(gtaSpinAnim){cancelAnimationFrame(gtaSpinAnim);gtaSpinAnim=null;}
+  const START    = gtaAngleOffset;
+  const EXTRA    = (5 + Math.floor( (parseInt(String(finalAngle*1000|0).slice(-1))||3) )) * Math.PI*2;
+  const delta    = ((finalAngle - START) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const safeDelta = delta < 0.3 ? delta + Math.PI*2 : delta;
+  const TARGET   = START + EXTRA + safeDelta;
+  const DURATION = 5500;
+  const t0 = performance.now();
+
+  function ease(t){
+    // Две фазы: быстро до 20% потом очень плавно тормозит
+    if(t < 0.05) return t * 0.8; // небольшой доразгон
+    const u = (t-0.05)/0.95;
+    return 0.04 + 0.96*(1-Math.pow(1-u,4.5));
+  }
+
+  function frame(now){
+    const t = Math.min((now-t0)/DURATION, 1);
+    gtaAngleOffset = START + (TARGET-START)*ease(t);
+    if(t < 1){
+      drawGtaWheelAnimated(players, total, gtaAngleOffset);
+      gtaSpinAnim = requestAnimationFrame(frame);
+    } else {
+      gtaAngleOffset = TARGET % (Math.PI*2);
+      drawGtaWheelAnimated(players, total, gtaAngleOffset);
+      gtaSpinAnim = null;
+      if(onDone) onDone();
+    }
+  }
+  gtaSpinAnim = requestAnimationFrame(frame);
+}
+
+// Рисует анимированный кадр (вращение)
+function drawGtaWheelAnimated(players, total, off){
+  const canvas = document.getElementById('gta-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, r=W/2-8;
+  ctx.clearRect(0,0,W,H);
+
+  // Тёмный фон с свечением
+  ctx.save();
+  ctx.shadowColor='rgba(100,60,200,0.3)'; ctx.shadowBlur=20;
+  ctx.fillStyle='#080812';
+  ctx.beginPath(); ctx.arc(cx,cy,r+5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  let a=-Math.PI/2+off;
+  players.forEach((p,i)=>{
+    const sl=p.amount/total*Math.PI*2;
+    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
+    // Тонкие разделители
+    ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r); ctx.stroke();
+    a+=sl;
+  });
+
+  drawWheelShine(ctx,cx,cy,r,off);
+  drawWheelCenter(ctx,cx,cy,r);
+  drawPointerNew(ctx,cx,cy,r);
+}
+
+// Блик на колесе (liquid-glass эффект)
+function drawWheelShine(ctx,cx,cy,r,off){
+  const grad = ctx.createRadialGradient(cx-r*0.3, cy-r*0.3, r*0.05, cx, cy, r);
+  grad.addColorStop(0,'rgba(255,255,255,0.18)');
+  grad.addColorStop(0.35,'rgba(255,255,255,0.04)');
+  grad.addColorStop(1,'rgba(0,0,0,0.2)');
+  ctx.fillStyle=grad;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+
+  // Горизонтальный блик сверху
+  const shineGrad = ctx.createLinearGradient(cx-r,cy-r,cx+r,cy-r*0.2);
+  shineGrad.addColorStop(0,'rgba(255,255,255,0)');
+  shineGrad.addColorStop(0.4,'rgba(255,255,255,0.12)');
+  shineGrad.addColorStop(0.6,'rgba(255,255,255,0.12)');
+  shineGrad.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=shineGrad;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+}
+
+// Центральный круг с metallic gradient
+function drawWheelCenter(ctx,cx,cy,r){
+  const cR = r*0.2;
+  // Внешний кант
+  ctx.strokeStyle='rgba(245,197,66,0.5)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+
+  // Центр — metallic
+  const g=ctx.createRadialGradient(cx-cR*0.4,cy-cR*0.4,cR*0.1,cx,cy,cR);
+  g.addColorStop(0,'#4a4a6a'); g.addColorStop(0.6,'#1e1e32'); g.addColorStop(1,'#0e0e1e');
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.arc(cx,cy,cR,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(245,197,66,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,cy,cR,0,Math.PI*2); ctx.stroke();
+
+  // Иконка
+  ctx.font=`${Math.round(cR*1.1)}px serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🎰',cx,cy+1);
+}
+
+// Рисует финальный кадр (= drawGtaWheelFinal)
+function drawGtaWheelFinal(players, total, off){
+  drawGtaWheel(players, total, null, off);
+}
+
+// Рисует статичное колесо (с опциональной обводкой победителя)
+function drawGtaWheel(players, total, winnerId, angleOff){
+  const canvas=document.getElementById('gta-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, r=W/2-8;
+  ctx.clearRect(0,0,W,H);
+
+  ctx.fillStyle='#080812';
+  ctx.beginPath(); ctx.arc(cx,cy,r+5,0,Math.PI*2); ctx.fill();
+
+  if(!players.length){
+    ctx.fillStyle='#1a1a2e';
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#6060a0'; ctx.font='13px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Нет ставок',cx,cy);
+    drawPointerNew(ctx,cx,cy,r); return;
+  }
+
+  const off=angleOff||0;
+  let a=-Math.PI/2+off;
+  players.forEach((p,i)=>{
+    const sl=p.amount/total*Math.PI*2;
+    const isW=winnerId&&String(p.uid)===String(winnerId);
+    ctx.fillStyle=GTA_COLORS[i%GTA_COLORS.length];
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
+    // Разделитель
+    ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r); ctx.stroke();
+    if(isW){
+      // Мягкая белая подсветка победного сектора
+      ctx.save();
+      ctx.globalAlpha=0.22;
+      ctx.fillStyle='#ffffff';
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sl); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=1;
+      // Белая обводка (не золотая — более элегантно)
+      ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=3;
+      ctx.shadowColor='rgba(255,255,255,0.6)'; ctx.shadowBlur=14;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r-1,a,a+sl); ctx.closePath(); ctx.stroke();
+      ctx.shadowBlur=0;
+      ctx.restore();
+    }
+    // Процент
+    if(sl>0.25){
+      const ma=a+sl/2;
+      ctx.save();
+      ctx.fillStyle='rgba(255,255,255,0.9)';
+      ctx.font='bold 11px Rajdhani,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=4;
+      ctx.fillText(Math.round(p.amount/total*100)+'%',cx+Math.cos(ma)*(r*0.62),cy+Math.sin(ma)*(r*0.62));
+      ctx.restore();
+    }
+    a+=sl;
+  });
+
+  drawWheelShine(ctx,cx,cy,r,off);
+  drawWheelCenter(ctx,cx,cy,r);
+  drawPointerNew(ctx,cx,cy,r);
+}
+
+// Треугольный указатель — чистый белый с тенью
+function drawPointerNew(ctx,cx,cy,r){
+  const tipY = cy - r + 1;
+  const baseY = tipY - 20;
+  const hw = 12;
+  ctx.save();
+  ctx.shadowColor='rgba(255,255,255,0.9)'; ctx.shadowBlur=16;
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(cx, tipY);
+  ctx.lineTo(cx-hw, baseY);
+  ctx.lineTo(cx+hw, baseY);
+  ctx.closePath(); ctx.fill();
+  // Тёмный контур
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+
+function renderPlayers(players, total, winnerId){
+  const pl=document.getElementById('gta-players');
+  if(!players.length){
+    pl.innerHTML='<div style="color:var(--muted);text-align:center;padding:16px;font-size:13px">Ждём ставок...</div>';
+    return;
+  }
+  // Сортируем по сумме ставки (больше = выше)
+  const sorted=[...players].sort((a,b)=>b.amount-a.amount);
+  pl.innerHTML=sorted.map((p,i)=>{
+    const origIdx=players.indexOf(p);
+    const pct=Math.round(p.amount/total*100);
+    const barW=Math.max(4,pct);
+    const you=p.uid==UID;
+    const isWinner=winnerId&&p.uid==winnerId;
+    const color=GTA_COLORS[players.indexOf(p)%GTA_COLORS.length];
+    const borderStyle=isWinner?`border-color:var(--gold);background:rgba(245,197,66,.08);`:you?`border-color:${hexAlpha(color,0.2)};`:'';
+    return `<div class="gp-row" style="${borderStyle}">
+      <div class="gp-dot" style="background:${color};box-shadow:0 0 8px ${hexAlpha(color,0.53)}"></div>
+      <div class="gp-name">${p.name}${you?' <span style="color:var(--muted);font-size:11px">(вы)</span>':''}${isWinner?' <span style="color:var(--gold)">🏆</span>':''}</div>
+      <div class="gp-right">
+        <div class="gp-bet">${p.amount} 🪙</div>
+        <div class="gp-pct" style="color:${color};opacity:.8">${pct}% шанс</div>
+      </div>
+    </div>
+    <div style="height:3px;background:var(--bg);border-radius:2px;margin:-2px 14px 4px;overflow:hidden">
+      <div style="height:100%;width:${barW}%;background:${color};border-radius:2px;opacity:.6;transition:width .5s"></div>
+    </div>`;
+  }).join('');
+}
+
+
+function drawPointer(ctx,cx,cy,r){
+  // Указатель сверху — внутри холста, острый конец вниз (к центру колеса)
+  const tipY = cy - r + 2;       // кончик указателя у края колеса
+  const baseY = tipY - 14;
+  ctx.save();
+  ctx.fillStyle='#f5c542';
+  ctx.shadowBlur=10;ctx.shadowColor='#f5c542';
+  ctx.beginPath();
+  ctx.moveTo(cx, tipY);           // острый конец (смотрит на колесо)
+  ctx.lineTo(cx-10, baseY);
+  ctx.lineTo(cx+10, baseY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// ══════════════════════════
+//  HISTORY
+// ══════════════════════════
+async function renderHistory(){
+  history=await get(`/api/history/${UID}`).catch(()=>[]);
+  let items=curF==='all'?history:history.filter(i=>i.type===curF);
+  let won=0,lost=0;
+  history.forEach(i=>{
+    if(['win','deposit','ref'].includes(i.type)) won+=i.amount;
+    if(['lose'].includes(i.type)) lost+=i.amount;
+  });
+  document.getElementById('s-won').textContent=won;
+  document.getElementById('s-lost').textContent=lost;
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🔗'};
+  const TITLES={win:'Выигрыш',lose:'Проигрыш',deposit:'Пополнение',ref:'Реферал'};
+  const list=document.getElementById('hist-list');
+  if(!items.length){
+    list.innerHTML='<div class="empty"><div class="empty-i">📭</div><p>История пуста</p></div>';return;
+  }
+  list.innerHTML=items.map(i=>{
+    const d=new Date(i.created_at*1000);
+    const dt=d.toLocaleDateString('ru',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
+    const pos=['win','deposit','ref'].includes(i.type);
+    return `<div class="hi">
+      <div class="hi-ic ${i.type}">${ICONS[i.type]||'•'}</div>
+      <div class="hi-b"><div class="hi-t">${TITLES[i.type]||i.type}</div><div class="hi-s">${i.detail||''} · ${dt}</div></div>
+      <div class="hi-a ${pos?'p':'n'}">${pos?'+':'-'}${i.amount}</div>
+    </div>`;
+  }).join('');
+}
+function setF(el,f){
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));
+  el.classList.add('a');curF=f;renderHistory();
+}
+
+// ══════════════════════════
+//  TOPUP
+// ══════════════════════════
+let topupAmt=50;
+function openTopup(){document.getElementById('ov-topup').classList.add('open');}
+function closeOv(id,e){if(e.target.id===id)document.getElementById(id).classList.remove('open');}
+function selAmt(el,v){
+  document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+  topupAmt=v;
+  document.getElementById('ta-custom').value='';
+  document.getElementById('ta-amt').textContent=v;
+}
+function onCustomInput(){
+  const v=parseInt(document.getElementById('ta-custom').value)||0;
+  if(v>=1){
+    document.querySelectorAll('.ta').forEach(t=>t.classList.remove('sel'));
+    topupAmt=v;
+    document.getElementById('ta-amt').textContent=v;
+  }
+}
+async function confirmTopup(){
+  if(!UID){toast('Войдите через Telegram','err');return;}
+  const custom=parseInt(document.getElementById('ta-custom').value)||0;
+  if(custom>=1) topupAmt=custom;
+  if(topupAmt<1){toast('Введите сумму','err');return;}
+  document.getElementById('ov-topup').classList.remove('open');
+  const res=await get(`/api/invoice?uid=${UID}&amount=${topupAmt}`).catch(()=>null);
+  if(res?.ok){
+    toast('Инвойс отправлен в чат с ботом!','ok');
+  } else {
+    toast('Откройте чат с ботом для оплаты','info');
+  }
+}
+
+// ══════════════════════════
+//  REFRESH (обновление баланса)
+// ══════════════════════════
+async function refreshBalance(){
+  const btn=document.getElementById('refresh-btn');
+  if(btn){btn.style.animation='spin-once .6s ease';setTimeout(()=>btn.style.animation='',700);}
+  await loadUser();
+  toast('Баланс обновлён','ok');
+}
+
+// ══════════════════════════
+//  INIT
+// ══════════════════════════
+buildStrip();
+window.addEventListener('load',()=>{
+  setTimeout(resetStrip,150);
+  if(UID){
+    loadUser();
+    startGtaPoll();
+  }
+  // Авто-обновление баланса каждые 15 сек (подхватывает начисления от админа)
+  setInterval(loadUser, 15000);
+});
+
+</script>
+</body>
+</html>
