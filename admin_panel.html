@@ -560,6 +560,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
+  <!-- Luck for the remaining modes -->
+  <div class="settings-block">
+    <div class="settings-title">🎲 УДАЧА: БЛЭКДЖЕК · PLINKO · РАКЕТА · GTA</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Коэффициент режима умножается на глобальный. <b>1.00 — нейтрально</b>, ниже — игрокам сложнее, выше — легче.<br/>
+      Личная удача игрока (0 — всегда проигрыш, 100 — всегда выигрыш, 50 — нейтрально) работает во всех режимах одинаково.
+    </p>
+    <div id="gl2-list"></div>
+    <div id="gl2-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
+  </div>
+
   <!-- Maintenance / game switches -->
   <div class="settings-block">
     <div class="settings-title">🛠️ ТЕХРАБОТЫ И ЗАКРЫТИЕ ИГР</div>
@@ -2056,6 +2067,29 @@ async function saveBjCoeff(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
+// Luck coefficients for blackjack / plinko / rocket / gta
+const LUCK2=[['blackjack','🃏 Блэкджек'],['plinko','🟣 Plinko'],['rocket','🚀 Ракета'],['gta_roulette','🔫 GTA рулетка']];
+const luck2={};
+async function loadLuck2(){
+  const box=document.getElementById('gl2-list'); if(!box) return;
+  for(const [g] of LUCK2){ try{ luck2[g]=(await api('/api/admin/game_luck?game='+g)).coeff ?? 1; }catch{ luck2[g]=1; } }
+  box.innerHTML=LUCK2.map(([g,l])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><b>${l}</b><span id="gl2-v-${g}">${luck2[g].toFixed(2)}</span></div>
+      <input type="range" min="0" max="200" value="${Math.round(luck2[g]*100)}" style="width:100%"
+        oninput="luck2['${g}']=this.value/100;document.getElementById('gl2-v-${g}').textContent=(this.value/100).toFixed(2)"
+        onchange="saveLuck2('${g}')"/>
+    </div>`).join('');
+}
+async function saveLuck2(g){
+  const st=document.getElementById('gl2-status');
+  try{
+    await api('/api/admin/game_luck','POST',{game:g,coeff:luck2[g],incognito:(typeof incognitoMode!=='undefined')?incognitoMode:false});
+    st.textContent='✅ Сохранено: '+g+' = '+luck2[g].toFixed(2); st.style.color='var(--green)';
+  }catch{ st.textContent='❌ Ошибка'; st.style.color='var(--red)'; }
+  setTimeout(()=>st.textContent='',3000);
+}
+
 // Maintenance / per-game switches
 const GAME_LABELS={european_roulette:'🎡 Евр. рулетка',gta_roulette:'🔫 GTA рулетка',mines:'💣 Мины',tower:'🗼 Башня',
   blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета'};
@@ -2102,6 +2136,7 @@ async function loadGl(){
   towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
   bjCoeff         = await load('/api/admin/blackjack_luck', 'coeff', document.getElementById('bj-slider'), document.getElementById('bj-val'));
   await loadMaintenance();
+  await loadLuck2();
   try{
     const d = await api('/api/admin/mines_max_mult');
     minesMaxMult = d.max_mult ?? d.value ?? 25;

@@ -2,306 +2,326 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Ракета — TopLuck</title>
-<script src="shared.js"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="shared.js"></script>
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})();</script>
-
-<link rel="stylesheet" href="shared.css">
 <style>
-html,body{background:var(--bg);padding-bottom:0;}
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{--text:#1A2040;--muted:#7A8AAA;--green:#1A9A50;--red:#D02840;--gold:#B88000;}
+html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden;overscroll-behavior-y:none;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('textures/sky.svg') top center/100% auto no-repeat;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(255,255,255,.93);box-shadow:0 2px 14px rgba(0,30,80,.11);}
+.fp-back{width:38px;height:38px;border-radius:12px;background:rgba(20,40,90,.06);border:1.5px solid rgba(20,40,90,.12);display:flex;align-items:center;justify-content:center;color:#1A2040;font-size:22px;cursor:pointer;font-weight:700;}
+.fp-title{font-size:16px;font-weight:900;letter-spacing:1px;text-transform:uppercase;}
+.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.96);border:2px solid #FFD028;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:800;color:#A07800;}
+.toast{position:fixed;top:80px;left:14px;right:14px;z-index:500;background:rgba(255,255,255,.97);border:1.5px solid rgba(20,40,90,.10);box-shadow:0 6px 24px rgba(0,30,80,.15);border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-140%);opacity:0;transition:.3s;}
+.toast.show{transform:none;opacity:1}.toast.ok{color:var(--green)}.toast.err{color:var(--red)}
+.page{position:relative;z-index:1;padding:12px 14px 40px;max-width:520px;margin:0 auto;}
+
+/* ── сцена ── */
+#stage{position:relative;height:310px;border-radius:26px;overflow:hidden;border:3px solid rgba(255,255,255,.9);
+  box-shadow:0 10px 30px rgba(0,40,110,.22);margin-bottom:12px;
+  background:radial-gradient(120% 90% at 20% 100%,#2B2F77 0%,#151a45 45%,#0a0d26 100%);}
+#stars{position:absolute;inset:0}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;opacity:.7;animation:tw 3s ease-in-out infinite}
+@keyframes tw{50%{opacity:.15}}
+#cv{position:absolute;inset:0;width:100%;height:100%}
+.mult{position:absolute;top:16px;left:0;right:0;text-align:center;pointer-events:none;z-index:3}
+.mult-val{font-size:56px;font-weight:900;line-height:1;color:#fff;text-shadow:0 4px 24px rgba(120,160,255,.55);transition:color .2s}
+.mult-val.safe{color:#7CF5B0;text-shadow:0 4px 26px rgba(60,220,140,.55)}
+.mult-val.crashed{color:#FF6B7A;text-shadow:0 4px 26px rgba(255,60,80,.6)}
+.mult-val.cashed{color:#FFD84D;text-shadow:0 4px 26px rgba(255,200,40,.6)}
+.mult-status{margin-top:6px;font-size:12px;font-weight:800;letter-spacing:2.5px;color:rgba(255,255,255,.65)}
+
+/* ── ракета (нос смотрит по касательной к графику) ── */
+#rocket{position:absolute;left:0;top:0;width:36px;height:70px;z-index:4;will-change:transform;transform-origin:50% 26px;}
+#rocket svg{position:absolute;left:0;top:0;filter:drop-shadow(0 0 10px rgba(130,170,255,.65))}
+#flame{position:absolute;left:9px;top:50px;width:18px;height:40px;transform-origin:50% 0;animation:flick .12s linear infinite alternate;}
+#flame::before{content:'';position:absolute;inset:0;border-radius:50% 50% 60% 60%/20% 20% 90% 90%;background:linear-gradient(180deg,#fff 0%,#FFE680 25%,#FF9A2E 65%,rgba(255,80,20,0) 100%);filter:blur(.6px)}
+@keyframes flick{from{transform:scaleY(.8) scaleX(.92);opacity:.9}to{transform:scaleY(1.15) scaleX(1.05);opacity:1}}
+#rocket.idle #flame{opacity:.0;animation:none}
+#rocket.away{transition:transform .9s cubic-bezier(.5,0,1,.6),opacity .9s;opacity:0}
+#boom{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;z-index:5;pointer-events:none;display:none}
+#boom.go{display:block}
+#boom i{position:absolute;inset:0;border-radius:50%;border:3px solid #FFB347;animation:ring .7s ease-out forwards}
+#boom i:nth-child(2){border-color:#FF5A5A;animation-delay:.08s}
+#boom b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:54px;animation:pop .6s ease-out forwards}
+@keyframes ring{from{transform:scale(.1);opacity:1}to{transform:scale(1.5);opacity:0}}
+@keyframes pop{0%{transform:scale(.2)}40%{transform:scale(1.25)}100%{transform:scale(1);opacity:.0}}
+
+/* ── история ── */
+#hist{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:none}
+#hist::-webkit-scrollbar{display:none}
+.hc{flex:0 0 auto;padding:6px 11px;border-radius:99px;font-size:12px;font-weight:900;background:rgba(255,255,255,.9);border:1.5px solid rgba(20,40,90,.1)}
+.hc.low{color:#D02840}.hc.mid{color:#2060B0}.hc.high{color:#B88000;border-color:#FFD028}.hc.won{box-shadow:inset 0 0 0 2px rgba(26,154,80,.45)}
+
+/* ── управление ── */
+.card{background:rgba(255,255,255,.92);border:2px solid rgba(255,255,255,.8);border-radius:22px;box-shadow:0 5px 20px rgba(0,30,80,.11);padding:14px;margin-bottom:12px}
+.stag{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
+.bet-inp{background:rgba(255,255,255,.88);border:1.5px solid rgba(20,40,90,.13);border-radius:12px;padding:10px 14px;color:#1A2040;font-family:inherit;font-weight:800;font-size:18px;outline:none;text-align:center;width:100%;margin-bottom:10px}
+.bet-inp:focus{border-color:rgba(40,100,220,.4)}
+.qb-row{display:flex;gap:6px;flex-wrap:wrap}
+.qb{padding:7px 12px;background:rgba(255,255,255,.85);border:1.5px solid rgba(20,40,90,.12);font-weight:700;font-size:11px;border-radius:10px;cursor:pointer}
+.qb:active{background:rgba(20,40,90,.1)}
+.ac-row{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;font-weight:700;color:var(--muted)}
+.ac-inp{width:84px;background:rgba(255,255,255,.88);border:1.5px solid rgba(20,40,90,.13);border-radius:10px;padding:7px 10px;font-family:inherit;font-weight:800;font-size:14px;color:#1A2040;text-align:center;outline:none}
+.live{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.ls{background:rgba(255,255,255,.88);border:1.5px solid rgba(20,40,90,.1);border-radius:14px;padding:10px 8px;text-align:center}
+.ls-l{color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.ls-v{font-size:16px;font-weight:800}
+.go-btn{width:100%;padding:16px;font-family:inherit;font-size:22px;font-weight:900;letter-spacing:.5px;border-radius:18px;border:none;color:#fff;cursor:pointer;
+  background:linear-gradient(180deg,#46D98A 0%,#1FA75C 100%);border-bottom:4px solid #137A42;box-shadow:0 8px 20px rgba(20,150,80,.35);transition:transform .08s}
+.go-btn:active{transform:translateY(3px);border-bottom-width:1px}
+.go-btn.cash{background:linear-gradient(180deg,#FFD84D 0%,#F2A900 100%);border-bottom-color:#B87A00;color:#3A2A00;box-shadow:0 8px 20px rgba(230,160,0,.4)}
+.go-btn:disabled{opacity:.6}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<div class="lbg"></div>
-
 <div class="topbar">
   <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
-  <div class="fp-title">РАКЕТА</div>
-  <div class="bal-chip">🪙 <span id="r-bal">—</span></div>
+  <div class="fp-title">Ракета</div>
+  <div class="bal-chip"><img src="textures/coin.svg" width="20" height="20" alt="" style="vertical-align:middle;margin-right:2px"> <span id="r-bal">—</span></div>
 </div>
 
-<div class="page-wrap">
-  <!-- STAGE -->
-  <div class="rocket-stage" id="stage">
-    <div class="stars" id="stars"></div>
-    <canvas id="trail-canvas"></canvas>
-
-    <div class="mult-display">
-      <div class="mult-val" id="mult-display">1.00×</div>
-      <div class="mult-status" id="mult-status">WAITING</div>
-    </div>
-
-    <div class="rocket-wrap" id="rocket-wrap" style="bottom:30px;left:calc(50% - 18px)">
-      <div class="exhaust-glow"></div>
-      <div class="exhaust" id="exhaust" style="display:none"></div>
-      <svg class="rocket-svg" width="36" height="52" viewBox="0 0 36 52">
-        <ellipse cx="18" cy="24" rx="10" ry="18" fill="#E0E0E0"/>
-        <path d="M8 30 L0 46 L18 40 L36 46 L28 30 Z" fill="#AAAAAA"/>
-        <ellipse cx="18" cy="22" rx="6" ry="10" fill="#3B82F6" opacity=".7"/>
-        <circle cx="18" cy="20" r="4" fill="#60A5FA" opacity=".9"/>
-        <path d="M0 46 L8 36 Z" fill="#888" stroke="#888" stroke-width="1"/>
-        <path d="M36 46 L28 36 Z" fill="#888" stroke="#888" stroke-width="1"/>
+<div class="page">
+  <div id="stage">
+    <div id="stars"></div>
+    <canvas id="cv"></canvas>
+    <div class="mult"><div class="mult-val" id="mv">1.00×</div><div class="mult-status" id="ms">ОЖИДАНИЕ</div></div>
+    <div id="rocket" class="idle">
+      <div id="flame"></div>
+      <svg width="36" height="52" viewBox="0 0 36 52">
+        <path d="M18 0C26 9 29 20 28 34H8C7 20 10 9 18 0Z" fill="#F4F6FF"/>
+        <path d="M18 0C22 5 24.500 10 25.500 16H10.500C11.500 10 14 5 18 0Z" fill="#FF5A6A"/>
+        <circle cx="18" cy="22" r="5.200" fill="#2E4FA8"/><circle cx="18" cy="22" r="3.600" fill="#7FB4FF"/><circle cx="16.700" cy="20.700" r="1.200" fill="#fff" opacity=".8"/>
+        <path d="M8 28L0 44L8 40Z" fill="#FF5A6A"/><path d="M28 28L36 44L28 40Z" fill="#FF5A6A"/>
+        <path d="M13 34h10l-2 6h-6z" fill="#8A93B8"/>
       </svg>
     </div>
+    <div id="boom"><i></i><i></i><b>💥</b></div>
   </div>
 
-  <!-- HISTORY CHIPS -->
-  <div class="hist-row" id="hist-row"></div>
+  <div id="hist"></div>
 
-  <!-- CONTROLS -->
-  <div class="controls-card">
-    <div class="bet-row">
-      <input class="bet-inp" id="bet-inp" type="number" value="50" min="1"/>
-    </div>
+  <div class="card">
+    <div class="stag">// ставка</div>
+    <input class="bet-inp" id="bet-inp" type="number" value="50" min="1" inputmode="numeric"/>
     <div class="qb-row">
-      <div class="qb" onclick="setBet(10)">10</div>
-      <div class="qb" onclick="setBet(25)">25</div>
-      <div class="qb" onclick="setBet(50)">50</div>
-      <div class="qb" onclick="setBet(100)">100</div>
-      <div class="qb" onclick="setBet(250)">250</div>
-      <div class="qb" onclick="halfBet()">½</div>
-      <div class="qb" onclick="doubleBet()">×2</div>
+      <div class="qb" onclick="setBet(10)">10</div><div class="qb" onclick="setBet(25)">25</div>
+      <div class="qb" onclick="setBet(50)">50</div><div class="qb" onclick="setBet(100)">100</div>
+      <div class="qb" onclick="setBet(250)">250</div><div class="qb" onclick="halfBet()">½</div><div class="qb" onclick="doubleBet()">×2</div>
     </div>
-    <div class="ac-row">
-      <span class="ac-lbl">Авто-кешаут:</span>
-      <input class="ac-inp" id="ac-inp" type="number" value="" placeholder="—" min="1.1" step="0.1"/>
-      <span class="ac-hint">× (пусто = выкл)</span>
-    </div>
+    <div class="ac-row"><span>Авто-кешаут:</span><input class="ac-inp" id="ac-inp" type="number" placeholder="—" min="1.1" step="0.1" inputmode="decimal"/><span>× (пусто = выкл)</span></div>
   </div>
 
-  <div class="live-stats">
+  <div class="live">
     <div class="ls"><div class="ls-l">Ставка</div><div class="ls-v" id="st-bet">—</div></div>
-    <div class="ls"><div class="ls-l">Текущий</div><div class="ls-v" style="color:var(--green)" id="st-curr">—</div></div>
+    <div class="ls"><div class="ls-l">Сейчас</div><div class="ls-v" style="color:var(--green)" id="st-curr">—</div></div>
     <div class="ls"><div class="ls-l">Кешаут</div><div class="ls-v" style="color:var(--gold)" id="st-cashout">—</div></div>
   </div>
 
-  <button class="launch-btn" id="main-btn" onclick="mainAction()">🚀 ЗАПУСТИТЬ</button>
+  <button class="go-btn" id="main-btn" onclick="mainAction()">🚀 ЗАПУСТИТЬ</button>
 </div>
 
 <script>
 const tg = window.Telegram?.WebApp;
-if(tg){tg.ready();tg.expand();}
+if(tg){tg.ready();tg.expand();try{tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}}
 if(!tg?.initDataUnsafe?.user?.id) window.location.replace('not_telegram.html');
 const UID = tg?.initDataUnsafe?.user?.id || 0;
 
-let balance = 0, currentBet = 0, gamePhase = 'idle';
-// idle | running | crashed | cashed
-let crashPoint = 1, currentMult = 1, animFrame = null, startTime = null;
-let cashedOut = false, autoCashout = 0;
-let trailPoints = [], rocketX = 0, rocketY = 0;
-const history = [];
+let balance=0, currentBet=0, phase='idle';          // idle | running
+let RATE=0.15, startTime=0, finished=true, animFrame=null, pollTimer=null, autoMult=0;
+let hist=[], lastAngle=63, curMult=1, curT=0;
+const MAXM=100;
+const $=id=>document.getElementById(id);
+const cv=$('cv'), ctx=cv.getContext('2d'), stage=$('stage'), rocket=$('rocket');
+let W=360,H=310;
+const PL=38,PR=22,PT=78,PB=26;     // PT — запас под крупный множитель
 
-const canvas = document.getElementById('trail-canvas');
-const ctx = canvas.getContext('2d');
+/* звёзды */
+(function(){const s=$('stars');for(let i=0;i<46;i++){const e=document.createElement('i');e.className='star';
+  e.style.left=Math.random()*100+'%';e.style.top=Math.random()*100+'%';e.style.animationDelay=(Math.random()*3)+'s';
+  e.style.transform='scale('+(.6+Math.random()*1.2)+')';s.appendChild(e);}})();
 
-function toast(m,t='info'){
-  const el=document.getElementById('toast');
-  el.textContent=m;el.className='toast '+t;el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2800);
-}
+function toast(m,t='info'){const el=$('toast');el.textContent=m;el.className='toast '+t+' show';setTimeout(()=>el.classList.remove('show'),2800);}
 async function loadUser(){
-  const u = await fetch(`/api/user/${UID}`).then(r=>r.json()).catch(()=>null);
-  if(!u) return;
-  balance = u.balance ?? 0;
-  document.getElementById('r-bal').textContent = balance;
+  const u=await fetch('/api/user/'+UID).then(r=>r.json()).catch(()=>null);
+  if(!u) return; balance=u.balance??0; $('r-bal').textContent=balance;
 }
-function setBet(v){ document.getElementById('bet-inp').value = v; }
-function halfBet(){ const v=parseInt(document.getElementById('bet-inp').value)||0; document.getElementById('bet-inp').value=Math.max(1,Math.floor(v/2)); }
-function doubleBet(){ const v=parseInt(document.getElementById('bet-inp').value)||0; document.getElementById('bet-inp').value=v*2; }
+function setBet(v){$('bet-inp').value=v;}
+function halfBet(){const v=parseInt($('bet-inp').value)||0;$('bet-inp').value=Math.max(1,Math.floor(v/2));}
+function doubleBet(){const v=parseInt($('bet-inp').value)||0;$('bet-inp').value=v*2;}
 
-// Точка краха известна ТОЛЬКО серверу. Клиент рисует полёт по формуле m(t)=e^(rate·t) и сверяется с сервером.
-let RATE=0.15, pollTimer=null, finished=false;
-
-function resizeCanvas(){
-  const stage = document.getElementById('stage');
-  canvas.width = stage.offsetWidth;
-  canvas.height = stage.offsetHeight;
+/* ── геометрия графика: окно масштабируется вместе с полётом ── */
+function viewFor(t,m){return {Tv:Math.max(6,t*1.15), Mv:Math.max(2,m*1.15)};}
+function pt(t,m,v){
+  return {x:PL+(t/v.Tv)*(W-PL-PR), y:H-PB-((m-1)/(v.Mv-1))*(H-PT-PB)};
 }
+function resize(){
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  W=stage.clientWidth;H=stage.clientHeight;
+  cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  frame(curT,curMult,true);
+}
+window.addEventListener('resize',resize);
 
-function drawTrail(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(trailPoints.length < 2) return;
-  ctx.beginPath();
-  ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
-  for(let i=1;i<trailPoints.length;i++){
-    ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+function niceStep(range){for(const s of [.25,.5,1,2,5,10,20,50])if(range/s<=5)return s;return 100;}
+function drawGrid(v){
+  ctx.font='700 10px Nunito,sans-serif';ctx.textBaseline='middle';
+  const step=niceStep(v.Mv-1);
+  for(let m=1;m<=v.Mv;m+=step){
+    const y=pt(0,m,v).y; if(y<PT-30) break;
+    ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(W-PR,y);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillText((Math.round(m*100)/100)+'×',6,y);
   }
-  ctx.strokeStyle = gamePhase==='crashed' ? 'rgba(239,68,68,0.6)' : 'rgba(59,130,246,0.5)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  // Glow
-  ctx.beginPath();
-  ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
-  for(let i=1;i<trailPoints.length;i++) ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
-  ctx.strokeStyle = gamePhase==='crashed' ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)';
-  ctx.lineWidth = 6;
-  ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.12)';ctx.beginPath();ctx.moveTo(PL,PT-30);ctx.lineTo(PL,H-PB);ctx.lineTo(W-PR,H-PB);ctx.stroke();
+}
+function colorFor(state){return state==='crashed'?['#FF4D5E','rgba(255,77,94,'] : state==='cashed'?['#FFC83D','rgba(255,200,61,'] : ['#35E08C','rgba(53,224,140,'];}
+let state='idle';
+function frame(t,m,redrawOnly){
+  ctx.clearRect(0,0,W,H);
+  const v=viewFor(t,m); drawGrid(v);
+  if(autoMult>1 && state==='running'){
+    const y=pt(0,autoMult,v).y; if(y>PT-34){ctx.setLineDash([5,5]);ctx.strokeStyle='rgba(255,216,77,.7)';ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(W-PR,y);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='#FFD84D';ctx.fillText('авто '+autoMult+'×',W-PR-56,y-8);}
+  }
+  let tip=pt(0,1,v), ang=lastAngle;
+  if(hist.length>1){
+    const [c,rgba]=colorFor(state);
+    ctx.beginPath();hist.forEach((p,i)=>{const q=pt(p.t,p.m,v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});
+    tip=pt(hist[hist.length-1].t,hist[hist.length-1].m,v);
+    const area=new Path2D();                       // заливка под кривой
+    hist.forEach((p,i)=>{const q=pt(p.t,p.m,v);i?area.lineTo(q.x,q.y):area.moveTo(q.x,q.y);});
+    area.lineTo(tip.x,H-PB);area.lineTo(PL,H-PB);area.closePath();
+    const g=ctx.createLinearGradient(0,tip.y,0,H-PB);g.addColorStop(0,rgba+'.28)');g.addColorStop(1,rgba+'0)');
+    ctx.fillStyle=g;ctx.fill(area);
+    ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeStyle=rgba+'.25)';ctx.lineWidth=9;ctx.stroke();
+    ctx.strokeStyle=c;ctx.lineWidth=3;ctx.stroke();
+  }
+  if(state==='running'||state==='idle'){
+    // касательная к кривой в текущей точке → нос ракеты смотрит туда же, куда идёт график
+    const dx=(W-PL-PR)/v.Tv, dyUp=(H-PT-PB)*RATE*Math.max(1,m)/(v.Mv-1);
+    const target=Math.atan2(dx,dyUp)*180/Math.PI;
+    lastAngle += (target-lastAngle)*(redrawOnly?1:.18); ang=lastAngle;
+    rocket.style.transform=`translate(${tip.x-18}px,${tip.y-26}px) rotate(${ang}deg)`;
+  }
+  return {tip,ang};
+}
+function placeIdle(){
+  state='idle';hist=[];curT=0;curMult=1;lastAngle=63;
+  rocket.className='idle';rocket.style.opacity=1;rocket.style.transition='none';
+  $('boom').className='';frame(0,1,true);
 }
 
-function multToPos(mult){
-  const stageH = canvas.height || 260;
-  const stageW = canvas.width || 360;
-  const progress = 1 - 1/(1 + 0.9*Math.log(Math.max(1,mult)));
-  const x = 30 + progress * (stageW - 80);
-  const y = stageH - 30 - progress * (stageH - 80);
-  return {x, y};
+function animate(){
+  if(finished||phase!=='running') return;
+  const t=(performance.now()-startTime)/1000;
+  curT=t; curMult=Math.min(MAXM,Math.floor(Math.exp(t*RATE)*100)/100);
+  if(!hist.length||t>hist[hist.length-1].t+.04) hist.push({t,m:Math.exp(t*RATE)});
+  if(hist.length>700) hist.splice(1,2);
+  const mEl=$('mv');mEl.textContent=curMult.toFixed(2)+'×';mEl.className='mult-val safe';
+  $('st-curr').textContent=curMult.toFixed(2)+'×';
+  const btn=$('main-btn');btn.textContent='💰 ЗАБРАТЬ '+Math.floor(currentBet*curMult);
+  frame(t,Math.exp(t*RATE));
+  animFrame=requestAnimationFrame(animate);
 }
 
-function animate(ts){
-  if(finished || gamePhase!=='running') return;
-  const elapsed = (performance.now() - startTime) / 1000;
-  currentMult = Math.floor(Math.pow(Math.E, elapsed * RATE) * 100) / 100;
-  currentMult = Math.min(currentMult, 100);
-
-  const mEl = document.getElementById('mult-display');
-  mEl.textContent = currentMult.toFixed(2) + '×';
-  mEl.className = 'mult-val safe';
-  document.getElementById('st-curr').textContent = currentMult.toFixed(2) + '×';
-
-  const pos = multToPos(currentMult);
-  const rocket = document.getElementById('rocket-wrap');
-  const stageH = canvas.height || 260;
-  rocket.style.bottom = (stageH - pos.y - 26) + 'px';
-  rocket.style.left = (pos.x - 18) + 'px';
-  trailPoints.push({x:pos.x, y:pos.y});
-  if(trailPoints.length > 200) trailPoints.shift();
-  drawTrail();
-  animFrame = requestAnimationFrame(animate);
+async function api(path,method,body){
+  const o={method:method||'GET',headers:{'Content-Type':'application/json'}};
+  if(body)o.body=JSON.stringify(body);
+  const r=await fetch(path,o);let j=null;try{j=await r.json();}catch(e){}
+  return j||{error:'Ошибка сервера'};
 }
-
-async function api(path, method, body){
-  const o = {method:method||'GET', headers:{'Content-Type':'application/json'}};
-  if(body) o.body = JSON.stringify(body);
-  const r = await fetch(path, o);
-  let j = null; try{ j = await r.json(); }catch(e){}
-  return j || {error:'Ошибка сервера'};
-}
-
-async function mainAction(){
-  if(gamePhase === 'idle'){ launchRocket(); }
-  else if(gamePhase === 'running'){ doCashout(); }
-}
+async function mainAction(){ if(phase==='idle')launchRocket(); else if(phase==='running')doCashout(); }
 
 async function launchRocket(){
-  const bet = parseInt(document.getElementById('bet-inp').value)||0;
-  if(bet < 1){ toast('Введите ставку','err'); return; }
-  if(bet > balance){ toast('Недостаточно монет','err'); return; }
-  const ac = parseFloat(document.getElementById('ac-inp').value) || 0;
-  const btn = document.getElementById('main-btn'); btn.disabled = true;
-  const r = await api('/api/rocket/start','POST',{bet, auto: ac>=1.01 ? ac : 0});
-  btn.disabled = false;
-  if(r.error){ toast(r.error,'err'); return; }
-  RATE = r.rate || RATE;
-  balance = r.new_balance; document.getElementById('r-bal').textContent = balance;
-  currentBet = bet; cashedOut = false; finished = false;
-  trailPoints = []; startTime = performance.now();
-  gamePhase = 'running';
-
-  resizeCanvas();
-  document.getElementById('exhaust').style.display = '';
-  document.getElementById('mult-status').textContent = 'ПОЛЁТ...';
-  document.getElementById('st-bet').textContent = currentBet;
-  document.getElementById('st-curr').textContent = '1.00×';
-  document.getElementById('st-cashout').textContent = '—';
-  const rocket = document.getElementById('rocket-wrap');
-  rocket.style.bottom = '30px';
-  rocket.style.left = 'calc(50% - 18px)';
-  btn.textContent = '💰 КЕШАУТ';
-  btn.className = 'launch-btn cashout-btn';
-
-  animFrame = requestAnimationFrame(animate);
-  pollTimer = setInterval(pollState, 200);
+  const bet=parseInt($('bet-inp').value)||0;
+  if(bet<1){toast('Введите ставку','err');return;}
+  if(bet>balance){toast('Недостаточно монет','err');return;}
+  const ac=parseFloat($('ac-inp').value)||0;
+  const btn=$('main-btn');btn.disabled=true;
+  const r=await api('/api/rocket/start','POST',{bet,auto:ac>=1.01?ac:0});
+  btn.disabled=false;
+  if(r.error){toast(r.error,'err');return;}
+  RATE=r.rate||RATE;balance=r.new_balance;$('r-bal').textContent=balance;
+  currentBet=bet;autoMult=ac>=1.01?ac:0;finished=false;phase='running';state='running';
+  hist=[];startTime=performance.now();lastAngle=63;
+  rocket.className='';rocket.style.opacity=1;rocket.style.transition='none';$('boom').className='';
+  $('ms').textContent='ПОЛЁТ';$('st-bet').textContent=bet;$('st-curr').textContent='1.00×';$('st-cashout').textContent='—';
+  btn.className='go-btn cash';
+  animFrame=requestAnimationFrame(animate);
+  pollTimer=setInterval(pollState,200);
 }
-
 async function pollState(){
-  if(finished) return;
-  const r = await api('/api/rocket/state');
-  if(finished) return;
-  if(r.status === 'running'){
-    startTime = performance.now() - r.t*1000;      // подстраиваем наши часы под серверные
-  } else if(r.status === 'crashed'){ endRound(r); }
-  else if(r.status === 'cashed'){ endRound(r); }
-  else if(r.status === 'idle'){ endRound({status:'crashed', crash:currentMult}); }
+  if(finished)return;
+  const r=await api('/api/rocket/state');
+  if(finished)return;
+  if(r.status==='running'){startTime=performance.now()-r.t*1000;}
+  else if(r.status==='crashed'||r.status==='cashed'){endRound(r);}
+  else if(r.status==='idle'){endRound({status:'crashed',crash:curMult});}
 }
+function stopLoops(){finished=true;if(animFrame)cancelAnimationFrame(animFrame);if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
 
-function stopLoops(){
-  finished = true;
-  if(animFrame) cancelAnimationFrame(animFrame);
-  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+function addHist(m,won){
+  const arr=JSON.parse(sessionStorage.getItem('rk_hist')||'[]');arr.unshift({m,won});arr.length=Math.min(arr.length,20);
+  sessionStorage.setItem('rk_hist',JSON.stringify(arr));renderHist();
+}
+function renderHist(){
+  const arr=JSON.parse(sessionStorage.getItem('rk_hist')||'[]');
+  $('hist').innerHTML=arr.map(h=>`<div class="hc ${h.m<2?'low':h.m<10?'mid':'high'} ${h.won?'won':''}">${(+h.m).toFixed(2)}×</div>`).join('');
 }
 
 function endRound(r){
-  if(finished) return;
+  if(finished)return;
   stopLoops();
-  if(r.new_balance != null){ balance = r.new_balance; document.getElementById('r-bal').textContent = balance; }
-  const mEl = document.getElementById('mult-display');
-  document.getElementById('exhaust').style.display = 'none';
-  if(r.status === 'cashed'){
-    cashedOut = true;
-    mEl.textContent = r.mult.toFixed(2) + '×'; mEl.className = 'mult-val safe';
-    document.getElementById('mult-status').textContent = '💰 КЕШАУТ';
-    document.getElementById('st-cashout').textContent = r.mult.toFixed(2) + '×';
-    history.unshift({mult:r.mult.toFixed(2), won:true});
-    toast(`💰 Кешаут ${r.mult.toFixed(2)}× · ${r.profit>=0?'+':''}${r.profit}🪙`, 'ok');
-  } else {
-    gamePhase = 'crashed';
-    mEl.textContent = r.crash.toFixed(2) + '×'; mEl.className = 'mult-val crashed';
-    document.getElementById('mult-status').textContent = '💥 CRASHED';
-    history.unshift({mult:r.crash.toFixed(2), won:false});
-    toast(`💥 Крэш на ${r.crash.toFixed(2)}× — потеряно ${currentBet}🪙`, 'err');
+  if(r.new_balance!=null){balance=r.new_balance;$('r-bal').textContent=balance;}
+  const mEl=$('mv'),btn=$('main-btn');
+  const final=r.status==='cashed'?r.mult:r.crash;
+  hist.push({t:Math.max(curT,hist.length?hist[hist.length-1].t:0)+.01,m:Math.max(1,final)});
+  if(r.status==='cashed'){
+    state='cashed';mEl.textContent=r.mult.toFixed(2)+'×';mEl.className='mult-val cashed';$('ms').textContent='КЕШАУТ  +'+r.profit;
+    $('st-cashout').textContent=r.mult.toFixed(2)+'×';
+    const {ang}=frame(curT,Math.max(1,final),true);
+    // улетает дальше по траектории
+    const a=lastAngle*Math.PI/180;
+    rocket.style.transition='';rocket.classList.add('away');
+    const m=rocket.style.transform;rocket.style.transform=m+` translateY(-320px)`;
+    addHist(r.mult,true);
+    toast(`💰 ${r.mult.toFixed(2)}× · ${r.profit>=0?'+':''}${r.profit}`,'ok');
+  }else{
+    state='crashed';mEl.textContent=r.crash.toFixed(2)+'×';mEl.className='mult-val crashed';$('ms').textContent='КРЭШ';
+    const {tip}=frame(curT,Math.max(1,r.crash),true);
+    rocket.style.opacity=0;
+    const b=$('boom');b.style.left=tip.x+'px';b.style.top=tip.y+'px';b.className='go';
+    addHist(r.crash,false);
+    toast(`💥 Крэш на ${r.crash.toFixed(2)}× · −${currentBet}`,'err');
   }
-  renderHistory();
-  const btn = document.getElementById('main-btn');
-  btn.textContent = '🚀 ЗАПУСТИТЬ СНОВА';
-  btn.className = 'launch-btn';
-  gamePhase = 'idle';
+  phase='idle';btn.className='go-btn';btn.textContent='🚀 ЗАПУСТИТЬ СНОВА';btn.disabled=false;
 }
-
 async function doCashout(){
-  if(gamePhase !== 'running' || finished) return;
-  const btn = document.getElementById('main-btn'); btn.disabled = true;
-  const r = await api('/api/rocket/cashout','POST',{});
-  btn.disabled = false;
-  if(r.error){ toast(r.error,'err'); return; }
+  if(phase!=='running'||finished)return;
+  const btn=$('main-btn');btn.disabled=true;
+  const r=await api('/api/rocket/cashout','POST',{});
+  btn.disabled=false;
+  if(r.error){toast(r.error,'err');return;}
   endRound(r);
 }
-
-function renderHistory(){
-  const row = document.getElementById('hist-row');
-  row.innerHTML = history.slice(0,12).map(h=>
-    `<div class="hr-chip ${h.won?'win':'crash'}">${h.mult}×</div>`
-  ).join('');
-}
-
-// Stars
-function initStars(){
-  const s = document.getElementById('stars');
-  for(let i=0;i<40;i++){
-    const d = document.createElement('div');
-    d.className = 'star';
-    const sz = Math.random()*2+1;
-    d.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*3}s;--dl:${Math.random()*3}s`;
-    s.appendChild(d);
-  }
-}
-initStars();
 async function resumeRound(){
-  const r = await api('/api/rocket/state');
-  if(r.status === 'running'){
-    RATE = r.rate || RATE; currentBet = r.bet; finished = false; cashedOut = false;
-    startTime = performance.now() - r.t*1000; trailPoints = []; gamePhase = 'running';
-    resizeCanvas();
-    document.getElementById('st-bet').textContent = currentBet;
-    document.getElementById('exhaust').style.display = '';
-    document.getElementById('mult-status').textContent = 'ПОЛЁТ...';
-    const btn = document.getElementById('main-btn');
-    btn.textContent = '💰 КЕШАУТ'; btn.className = 'launch-btn cashout-btn';
-    animFrame = requestAnimationFrame(animate); pollTimer = setInterval(pollState, 200);
-  } else if(r.status === 'crashed' || r.status === 'cashed'){ gamePhase='running'; finished=false; endRound(r); }
+  const r=await api('/api/rocket/state');
+  if(r.status==='running'){
+    RATE=r.rate||RATE;currentBet=r.bet;autoMult=r.auto||0;finished=false;phase='running';state='running';
+    startTime=performance.now()-r.t*1000;hist=[];
+    rocket.className='';$('ms').textContent='ПОЛЁТ';$('st-bet').textContent=currentBet;
+    $('main-btn').className='go-btn cash';
+    animFrame=requestAnimationFrame(animate);pollTimer=setInterval(pollState,200);
+  }else if(r.status==='crashed'||r.status==='cashed'){finished=false;phase='running';endRound(r);}
 }
+resize();placeIdle();renderHist();
 loadUser().then(resumeRound);
 </script>
 </body>
