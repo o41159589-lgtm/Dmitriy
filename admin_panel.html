@@ -486,24 +486,103 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-luck-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
-  <!-- Blackjack luck — INDEPENDENT -->
-    <!-- ═══ Everything below is NOT a luck coefficient ═══ -->
-
-  <!-- Incognito mode -->
-  <div class="settings-block" id="incognito-block" style="display:none">
-    <div class="settings-title">🥷 РЕЖИМ ИНКОГНИТО</div>
-    <div class="incognito-toggle">
-      <div>
-        <div class="it-label">Режим инкогнито</div>
-        <div class="it-sub">Действия не логируются в группу логов</div>
+  <!-- БЛЭКДЖЕК luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🃏 БЛЭКДЖЕК — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Блэкджека. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="lk-val-blackjack" style="font-family:Orbitron,monospace;font-size:20px;color:var(--purple);font-weight:700">1.00</span>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)"/>
-        <span class="toggle-slider"></span>
-      </label>
+      <input type="range" id="lk-sl-blackjack" min="0" max="200" value="100" oninput="lkSlider('blackjack',this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--purple);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="lkSet('blackjack',0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="lkSet('blackjack',0.5)">0.5</div>
+        <div class="pb" onclick="lkSet('blackjack',1.0)">1.0 — Честно</div>
+        <div class="pb" onclick="lkSet('blackjack',1.5)">1.5</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="lkSave('blackjack')">💾 Сохранить (только блэкджека)</button>
     </div>
-    <div id="incognito-status" style="font-size:12px;color:var(--muted);text-align:center"></div>
+    <div id="lk-st-blackjack" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
+
+  <!-- PLINKO luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🟣 PLINKO — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Plinko. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="lk-val-plinko" style="font-family:Orbitron,monospace;font-size:20px;color:var(--cyan);font-weight:700">1.00</span>
+      </div>
+      <input type="range" id="lk-sl-plinko" min="0" max="200" value="100" oninput="lkSlider('plinko',this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--cyan);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="lkSet('plinko',0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="lkSet('plinko',0.5)">0.5</div>
+        <div class="pb" onclick="lkSet('plinko',1.0)">1.0 — Честно</div>
+        <div class="pb" onclick="lkSet('plinko',1.5)">1.5</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="lkSave('plinko')">💾 Сохранить (только plinko)</button>
+    </div>
+    <div id="lk-st-plinko" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- РАКЕТА luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🚀 РАКЕТА — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Ракеты. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="lk-val-rocket" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.00</span>
+      </div>
+      <input type="range" id="lk-sl-rocket" min="0" max="200" value="100" oninput="lkSlider('rocket',this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="lkSet('rocket',0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="lkSet('rocket',0.5)">0.5</div>
+        <div class="pb" onclick="lkSet('rocket',1.0)">1.0 — Честно</div>
+        <div class="pb" onclick="lkSet('rocket',1.5)">1.5</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="lkSave('rocket')">💾 Сохранить (только ракеты)</button>
+    </div>
+    <div id="lk-st-rocket" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- GTA РУЛЕТКА luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🔫 GTA РУЛЕТКА — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для GTA рулетки. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="lk-val-gta_roulette" style="font-family:Orbitron,monospace;font-size:20px;color:var(--green);font-weight:700">1.00</span>
+      </div>
+      <input type="range" id="lk-sl-gta_roulette" min="0" max="200" value="100" oninput="lkSlider('gta_roulette',this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--green);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="lkSet('gta_roulette',0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="lkSet('gta_roulette',0.5)">0.5</div>
+        <div class="pb" onclick="lkSet('gta_roulette',1.0)">1.0 — Честно</div>
+        <div class="pb" onclick="lkSet('gta_roulette',1.5)">1.5</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="lkSave('gta_roulette')">💾 Сохранить (только gta рулетки)</button>
+    </div>
+    <div id="lk-st-gta_roulette" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+    <!-- ═══ Everything below is NOT a luck coefficient ═══ -->
 
   <!-- Mines max multiplier -->
   <div class="settings-block">
@@ -560,17 +639,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-mult-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
-  <!-- Luck for the remaining modes -->
-  <div class="settings-block">
-    <div class="settings-title">🎲 УДАЧА: БЛЭКДЖЕК · PLINKO · РАКЕТА · GTA</div>
-    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
-      Коэффициент режима умножается на глобальный. <b>1.00 — нейтрально</b>, ниже — игрокам сложнее, выше — легче.<br/>
-      Личная удача игрока (0 — всегда проигрыш, 100 — всегда выигрыш, 50 — нейтрально) работает во всех режимах одинаково.
-    </p>
-    <div id="gl2-list"></div>
-    <div id="gl2-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
-  </div>
-
   <!-- Maintenance / game switches -->
   <div class="settings-block">
     <div class="settings-title">🛠️ ТЕХРАБОТЫ И ЗАКРЫТИЕ ИГР</div>
@@ -588,6 +656,23 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="maint-games" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px"></div>
     <button class="abtn set" style="width:100%;padding:11px" onclick="saveMaintenance()">💾 Применить</button>
     <div id="maint-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px"></div>
+  </div>
+
+
+  <!-- Incognito mode -->
+  <div class="settings-block" id="incognito-block" style="display:none">
+    <div class="settings-title">🥷 РЕЖИМ ИНКОГНИТО</div>
+    <div class="incognito-toggle">
+      <div>
+        <div class="it-label">Режим инкогнито</div>
+        <div class="it-sub">Действия не логируются в группу логов</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="incognito-chk" onchange="toggleIncognito(this.checked)"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div id="incognito-status" style="font-size:12px;color:var(--muted);text-align:center"></div>
   </div>
 
 </div>
@@ -1919,16 +2004,18 @@ async function loadRev(){
     const ep=d.euro_losses-d.euro_wins;
     const mp=d.mines_losses-d.mines_wins;
     const tp=d.tower_losses-d.tower_wins;
+    const op=(d.other_losses||0)-(d.other_wins||0);
     grid.innerHTML=`
       <div class="ri"><div class="ri-l">🏙 GTA комиссии</div><div class="ri-v g">+${d.gta_commission}</div></div>
       <div class="ri"><div class="ri-l">🎰 Европ. (виртуально)</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
       <div class="ri"><div class="ri-l">💣 Мины (виртуально)</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
       <div class="ri"><div class="ri-l">🗼 Башня (виртуально)</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
-      <div class="ri"><div class="ri-l">📉 Проиграно игр. (виртуально)</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
-      <div class="ri"><div class="ri-l">📈 Выплачено игр. (виртуально)</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
-      <div class="ri"><div class="ri-l">💳 Куплено монет (⭐)</div><div class="ri-v gold">+${d.deposits}</div></div>
+      <div class="ri"><div class="ri-l">📉 Проиграно игр. (виртуально)</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses+(d.other_losses||0)}</div></div>
+      <div class="ri"><div class="ri-l">📈 Выплачено игр. (виртуально)</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins+(d.other_wins||0)}</div></div>
+      <div class="ri"><div class="ri-l">🃏 Блэкджек / Plinko / Ракета (виртуально)</div><div class="ri-v ${op>=0?'g':'r'}">${op>=0?'+':''}${op}</div></div>
+      <div class="ri"><div class="ri-l">💳 Куплено монет (только за ⭐)</div><div class="ri-v gold">+${d.deposits}</div></div>
       <div class="ri"><div class="ri-l">🎁 Выведено подарками</div><div class="ri-v r">-${d.withdrawals||0}</div></div>
-      <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${users.length}</div></div>
+      <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${d.players ?? users.length}</div></div>
       <div class="rev-total">
         <div class="rt-l">Итого реальный доход (⭐ купили − ⭐ выплатили подарками)</div>
         <div class="rt-v" style="color:${d.total_revenue>=0?'var(--gold)':'var(--red)'}">
@@ -2067,26 +2154,30 @@ async function saveBjCoeff(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
-// Luck coefficients for blackjack / plinko / rocket / gta
-const LUCK2=[['blackjack','🃏 Блэкджек'],['plinko','🟣 Plinko'],['rocket','🚀 Ракета'],['gta_roulette','🔫 GTA рулетка']];
-const luck2={};
-async function loadLuck2(){
-  const box=document.getElementById('gl2-list'); if(!box) return;
-  for(const [g] of LUCK2){ try{ luck2[g]=(await api('/api/admin/game_luck?game='+g)).coeff ?? 1; }catch{ luck2[g]=1; } }
-  box.innerHTML=LUCK2.map(([g,l])=>`
-    <div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><b>${l}</b><span id="gl2-v-${g}">${luck2[g].toFixed(2)}</span></div>
-      <input type="range" min="0" max="200" value="${Math.round(luck2[g]*100)}" style="width:100%"
-        oninput="luck2['${g}']=this.value/100;document.getElementById('gl2-v-${g}').textContent=(this.value/100).toFixed(2)"
-        onchange="saveLuck2('${g}')"/>
-    </div>`).join('');
+// ── Независимые коэффициенты удачи: блэкджек / plinko / ракета / GTA ──
+const LK_GAMES=['blackjack','plinko','rocket','gta_roulette'];
+const lkCoeff={};
+async function loadGameLucks(){
+  for(const g of LK_GAMES){
+    try{ const r=await api('/api/admin/game_luck?game='+g); lkCoeff[g]=r.coeff ?? 1; }catch{ lkCoeff[g]=1; }
+    lkRender(g);
+  }
 }
-async function saveLuck2(g){
-  const st=document.getElementById('gl2-status');
+function lkRender(g){
+  const v=document.getElementById('lk-val-'+g), sl=document.getElementById('lk-sl-'+g);
+  if(v) v.textContent=(+lkCoeff[g]).toFixed(2);
+  if(sl) sl.value=Math.round(lkCoeff[g]*100);
+}
+function lkSlider(g,v){ lkCoeff[g]=parseInt(v)/100; lkRender(g); }
+function lkSet(g,v){ lkCoeff[g]=v; lkRender(g); }
+async function lkSave(g){
+  const st=document.getElementById('lk-st-'+g);
+  st.style.color='var(--muted)'; st.textContent='⏳ Сохранение...';
   try{
-    await api('/api/admin/game_luck','POST',{game:g,coeff:luck2[g],incognito:(typeof incognitoMode!=='undefined')?incognitoMode:false});
-    st.textContent='✅ Сохранено: '+g+' = '+luck2[g].toFixed(2); st.style.color='var(--green)';
-  }catch{ st.textContent='❌ Ошибка'; st.style.color='var(--red)'; }
+    const r=await api('/api/admin/game_luck','POST',{game:g,coeff:lkCoeff[g]});
+    st.style.color=r.ok?'var(--green)':'var(--red)';
+    st.textContent=r.ok?('✅ Применено: '+lkCoeff[g].toFixed(2)):('❌ '+(r.error||'ошибка'));
+  }catch{ st.style.color='var(--red)'; st.textContent='❌ Ошибка'; }
   setTimeout(()=>st.textContent='',3000);
 }
 
@@ -2136,7 +2227,7 @@ async function loadGl(){
   towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
   bjCoeff         = await load('/api/admin/blackjack_luck', 'coeff', document.getElementById('bj-slider'), document.getElementById('bj-val'));
   await loadMaintenance();
-  await loadLuck2();
+  await loadGameLucks();
   try{
     const d = await api('/api/admin/mines_max_mult');
     minesMaxMult = d.max_mult ?? d.value ?? 25;

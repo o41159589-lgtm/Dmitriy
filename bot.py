@@ -95,6 +95,26 @@ def bet_luck_factor(bet: int) -> float:
     if bet <= 100: return 1.0
     return max(0.15, 1.0 - 0.17 * math.log10(bet / 100))
 
+# ════════════════════════════════════════
+#  ЕДИНАЯ СИСТЕМА УДАЧИ (одинаково во ВСЕХ режимах)
+#  luck игрока:  -1 = авто (только коэффициенты) · 0 = всегда проигрыш · 100 = всегда выигрыш
+#                1..99: 50 = нейтрально, >50 — подкрутка в плюс, <50 — в минус
+#  k = глобальный коэффициент × коэффициент режима (0…2, 1.0 = нейтрально):
+#      для «авто»: k<1 → с шансом (1-k) раунд проигрышный; k>1 → с шансом (k-1) выигрышный
+#      для 1..99:  шанс подкрутки = |luck-50|/50 × k
+#  Результат решается ОДИН раз на раунд и на сервере: "win" | "lose" | None (честная игра).
+# ════════════════════════════════════════
+async def luck_roll(uid: int, game: str):
+    luck = await db.get_luck(uid)
+    if luck == 100: return "win"
+    if luck == 0:   return "lose"
+    k = (await db.get_global_luck_coeff()) * (await db.get_game_luck_coeff(game))
+    dev = (k - 1.0) if luck < 0 else ((luck - 50) / 50.0) * k
+    p = min(1.0, abs(dev))
+    res = None if (p <= 0 or _rng.random() >= p) else ("win" if dev > 0 else "lose")
+    logger.info(f"luck_roll uid={uid} game={game} luck={luck} k={k:.2f} p={p:.2f} -> {res}")
+    return res
+
 _QM = "?"
 _EMPTY = ""
 
@@ -1014,9 +1034,7 @@ async def api_spin(req: web.Request):
     if total_cost <= 0 or await db.try_debit(uid, total_cost) is None:
         return web.json_response({"error":"invalid bet"}, status=400)
 
-    luck, global_k = await db.get_luck(uid), await db.get_global_luck_coeff()
-    euro_k = await db.get_euro_luck_coeff()
-    effective_global_k = global_k * euro_k
+    roll = await luck_roll(uid, "european_roulette")
 
     def net_profit(n, c):
         return sum((b["amount"] * EURO_MULT[b["type"]] - b["amount"]) if _euro_check(n,c,b["type"]) else -b["amount"]
@@ -1025,21 +1043,9 @@ async def api_spin(req: web.Request):
     favorable   = [(n,c) for n,c in ROULETTE_NUMBERS if net_profit(n,c) > 0]
     unfavorable = [(n,c) for n,c in ROULETTE_NUMBERS if net_profit(n,c) <= 0]
 
-    if luck == 100:
-        rn, rc = random.choice(favorable) if favorable else random.choice(ROULETTE_NUMBERS)
-    elif luck == 0:
-        rn, rc = random.choice(unfavorable) if unfavorable else random.choice(ROULETTE_NUMBERS)
-    elif luck == -1:
-        if effective_global_k >= 1.0 or random.random() < effective_global_k:
-            rn, rc = random.choice(ROULETTE_NUMBERS)
-        else:
-            rn, rc = random.choice(unfavorable) if unfavorable else random.choice(ROULETTE_NUMBERS)
-    else:
-        effective = min(100, int(luck * effective_global_k))
-        will_win = random.randint(0, 99) < effective
-        if will_win and favorable: rn, rc = random.choice(favorable)
-        elif unfavorable:          rn, rc = random.choice(unfavorable)
-        else:                      rn, rc = random.choice(ROULETTE_NUMBERS)
+    if roll == "win" and favorable:      rn, rc = _rng.choice(favorable)
+    elif roll == "lose" and unfavorable: rn, rc = _rng.choice(unfavorable)
+    else:                                rn, rc = _rng.choice(ROULETTE_NUMBERS)
 
     ridx = next(i for i,(n,c) in enumerate(ROULETTE_NUMBERS) if n==rn and c==rc)
 
@@ -1138,7 +1144,7 @@ async def _gta_run(lid):
     if not bets: return
     await db.set_lobby_spinning(lid)
     pot, total = lobby["pot"], sum(b["amount"] for b in bets)
-    global_k = await db.get_global_luck_coeff()
+    global_k = (await db.get_global_luck_coeff()) * (await db.get_game_luck_coeff("gta_roulette"))
 
     luck_map = {}
     for b in bets:
@@ -1244,7 +1250,9 @@ async def api_mines_start(req: web.Request):
         "bomb_set":  bomb_set,
         "revealed":  [],
         "created_at": time.time(),
+        "roll":       await luck_roll(uid, "mines"),
     }
+    active_mines[uid]["force_step"] = 1 if await db.get_luck(uid) == 0 else _rng.randint(1, 3)
 
     _max_mult = await db.get_mines_max_mult()
     next_mult = mines_mult(1, bombs, _max_mult)
@@ -1276,53 +1284,19 @@ async def api_mines_reveal(req: web.Request):
     if cell in game["revealed"]:
         return web.json_response({"error": "already revealed"}, status=400)
 
-    luck     = await db.get_luck(uid)
-    global_k = await db.get_global_luck_coeff()
-    mines_k  = await db.get_mines_luck_coeff()
-    bet_factor = bet_luck_factor(game["bet"])
-    effective_k = global_k * mines_k * bet_factor
-    is_bomb  = cell in game["bomb_set"]
-
-    # ── Apply luck override ──
-    if is_bomb and luck == 100:
-        # Force safe: move this bomb to a random unrevealed safe cell swap
+    is_bomb = cell in game["bomb_set"]
+    roll    = game.get("roll")
+    step    = len(game["revealed"]) + 1
+    if roll == "win" and is_bomb:
+        # раунд выигрышный: бомба переезжает на случайную закрытую безопасную клетку
         safe_cells = [i for i in range(25)
                       if i not in game["bomb_set"] and i not in game["revealed"] and i != cell]
         if safe_cells:
-            swap = random.choice(safe_cells)
-            game["bomb_set"].discard(cell)
-            game["bomb_set"].add(swap)
-            is_bomb = False
-    elif not is_bomb and luck == 0:
-        # Force bomb: swap this safe cell with a random unrevealed bomb
-        bomb_unrevealed = [b for b in game["bomb_set"]]
-        if bomb_unrevealed:
-            swap = random.choice(bomb_unrevealed)
-            game["bomb_set"].discard(swap)
-            game["bomb_set"].add(cell)
-            is_bomb = True
-    elif luck == -1 and effective_k < 1.0:
-        # Global luck debuff scaled by bet size
-        if not is_bomb:
-            debuff_chance = (1.0 - effective_k) * (game["bombs"] / 25.0)
-            if random.random() < debuff_chance:
-                bomb_unrevealed = [b for b in game["bomb_set"]]
-                if bomb_unrevealed:
-                    swap = random.choice(bomb_unrevealed)
-                    game["bomb_set"].discard(swap)
-                    game["bomb_set"].add(cell)
-                    is_bomb = True
-    elif luck > 0:
-        # Custom luck%: chance to dodge a bomb, scaled by bet
-        if is_bomb:
-            dodge_chance = (luck / 100.0) * effective_k
-            safe_cells = [i for i in range(25)
-                          if i not in game["bomb_set"] and i not in game["revealed"] and i != cell]
-            if random.random() < dodge_chance and safe_cells:
-                swap = random.choice(safe_cells)
-                game["bomb_set"].discard(cell)
-                game["bomb_set"].add(swap)
-                is_bomb = False
+            game["bomb_set"].discard(cell); game["bomb_set"].add(_rng.choice(safe_cells)); is_bomb = False
+    elif roll == "lose" and not is_bomb and step >= game.get("force_step", 1):
+        # раунд проигрышный: бомба «находит» игрока на заранее выбранном шаге
+        if game["bomb_set"]:
+            game["bomb_set"].discard(_rng.choice(list(game["bomb_set"]))); game["bomb_set"].add(cell); is_bomb = True
 
     if is_bomb:
         # Lose — reveal all bombs
@@ -1731,6 +1705,24 @@ async def api_admin_set_maintenance(req):
             f"({', '.join(st['disabled_games']) or '—'})", incognito=False))
     return web.json_response({"ok": True, **st})
 
+async def api_admin_get_game_luck(req):
+    game = req.rel_url.query.get("game", "")
+    if game not in db.LUCK_KEYS: return web.json_response({"error": "unknown game"}, status=400)
+    return web.json_response({"game": game, "coeff": await db.get_game_luck_coeff(game)})
+
+async def api_admin_set_game_luck(req):
+    data = await req.json()
+    game = str(data.get("game", ""))
+    if game not in db.LUCK_KEYS: return web.json_response({"error": "unknown game"}, status=400)
+    try: coeff = float(data.get("coeff", 1.0))
+    except Exception: return web.json_response({"error": "bad coeff"}, status=400)
+    await db.set_game_luck_coeff(game, coeff)
+    if not bool(data.get("incognito", False)):
+        uid = _actor_uid(req); u = await db.get_user(uid)
+        fire_log(log_admin_action(uid, u.get("first_name", "Admin") if u else "Admin", "SET_GAME_LUCK", 0,
+                 "Все игроки", f"Удача {game} → {coeff}", incognito=False))
+    return web.json_response({"ok": True, "game": game, "coeff": await db.get_game_luck_coeff(game)})
+
 # Static
 BASE = Path(__file__).parent
 async def serve_html(f):
@@ -1832,7 +1824,9 @@ async def api_tower_start(req: web.Request):
         "bet":        bet,
         "floor":      1,
         "created_at": time.time(),
+        "roll":       await luck_roll(uid, "tower"),
     }
+    active_towers[uid]["force_step"] = 1 if await db.get_luck(uid) == 0 else _rng.randint(1, 3)
 
     tower_max_start = await db.get_tower_max_floors()
     return web.json_response({
@@ -1866,23 +1860,14 @@ async def api_tower_step(req: web.Request):
     bomb_idx = random.randint(0, TOWER_CELLS - 1)  # fresh random each floor
 
     # Apply luck
-    luck      = await db.get_luck(uid)
-    global_k  = await db.get_global_luck_coeff()
-    tower_k   = await db.get_tower_luck_coeff()
-    bet_factor = bet_luck_factor(game["bet"])
-    effective_k = global_k * tower_k * bet_factor  # combined luck multiplier
-    is_bomb   = (cell == bomb_idx)
+    roll       = game.get("roll")
+    is_bomb    = (cell == bomb_idx)
     luck_saved = False
-
-    if is_bomb and luck == 100:
+    if roll == "win" and is_bomb:
         is_bomb    = False
-        luck_saved = True   # bomb was on the clicked cell — hide indicator
-    elif not is_bomb and luck == 0:
+        luck_saved = True   # бомба была под нажатой клеткой — скрываем её у клиента
+    elif roll == "lose" and not is_bomb and floor >= game.get("force_step", 1):
         is_bomb = True
-    elif luck == -1 and effective_k < 1.0 and not is_bomb:
-        extra_chance = (1.0 - effective_k) * (1.0 / TOWER_CELLS)
-        if random.random() < extra_chance:
-            is_bomb = True
 
     # bomb_cell to send to client (-1 = hidden because luck saved the player)
     display_bomb_cell = -1 if luck_saved else bomb_idx
@@ -2431,8 +2416,16 @@ async def api_plinko_drop(req):
     if err: return err
     if await db.try_debit(uid, bet) is None:
         return web.json_response({"error": "Недостаточно монет"}, status=400)
-    path = [_rng.getrandbits(1) for _ in range(PLINKO_ROWS)]   # 0=влево, 1=вправо на каждом колышке
-    slot = sum(path)
+    roll = await luck_roll(uid, "plinko")
+    if roll:
+        from math import comb
+        pool = [k for k in range(PLINKO_ROWS + 1)
+                if (PLINKO_MULTS[k] > 1) == (roll == "win")]
+        slot = _rng.choices(pool, weights=[comb(PLINKO_ROWS, k) for k in pool])[0]
+        path = [1] * slot + [0] * (PLINKO_ROWS - slot); _rng.shuffle(path)
+    else:
+        path = [_rng.getrandbits(1) for _ in range(PLINKO_ROWS)]   # 0=влево, 1=вправо на каждом колышке
+        slot = sum(path)
     mult = PLINKO_MULTS[slot]
     payout = int(bet * mult + 0.5)
     new_bal = await _finish_game(uid, "Plinko", bet, payout,
@@ -2458,10 +2451,40 @@ def _bj_public(g, done=False):
             "can_double": (not done) and not g["doubled"] and len(g["ph"]) == 2,
             "ps": _bj_score(g["ph"]), "ds": _bj_score(g["dh"]) if done else None}
 
+def _bj_draw_player(g):
+    """Карта игроку. Выигрышный раунд: без перебора. Проигрышный: перебор, как только он возможен."""
+    if g.get("roll") == "win":
+        safe = [i for i, c in enumerate(g["deck"]) if _bj_score(g["ph"] + [c]) <= 21]
+        if safe:
+            return g["deck"].pop(_rng.choice(safe))
+    if g.get("roll") == "lose" and _bj_score(g["ph"]) >= 12:
+        bust = [i for i, c in enumerate(g["deck"]) if _bj_score(g["ph"] + [c]) > 21]
+        if bust:
+            return g["deck"].pop(_rng.choice(bust))
+    return g["deck"].pop()
+
+def _bj_dealer_play(g):
+    """Дилер добирает до 17. При подкрутке подбираем порядок карт, дающий нужный исход."""
+    roll, ps = g.get("roll"), _bj_score(g["ph"])
+    def play(deck):
+        h = list(g["dh"]); d = list(deck)
+        while _bj_score(h) < 17: h.append(d.pop())
+        return h, d
+    if roll and ps <= 21:
+        for _ in range(400):
+            d = list(g["deck"]) + [g["dh"][1]]; _rng.shuffle(d)    # закрытая карта дилера ещё не показана — её тоже можно подобрать
+            base = [g["dh"][0], d.pop()]
+            h = list(base)
+            while _bj_score(h) < 17: h.append(d.pop())
+            ds = _bj_score(h)
+            ok = (ds > 21 or ds < ps) if roll == "win" else (21 >= ds > ps)
+            if ok:
+                g["dh"], g["deck"] = h, d; return
+    g["dh"], g["deck"] = play(g["deck"])
+
 async def _bj_finish(uid, g):
     """Дилер добирает, считаем исход, платим. Единственное место, где решается результат."""
-    while _bj_score(g["dh"]) < 17:
-        g["dh"].append(g["deck"].pop())
+    _bj_dealer_play(g)
     ps, ds = _bj_score(g["ph"]), _bj_score(g["dh"])
     pbj = _bj_is_bj(g["ph"]) and not g["doubled"]
     bet = g["bet"]
@@ -2488,9 +2511,15 @@ async def api_bj_start(req):
     if await db.try_debit(uid, bet) is None:
         return web.json_response({"error": "Недостаточно монет"}, status=400)
     deck = [{"s": s_, "v": v} for s_ in _BJ_SUITS for v in _BJ_VALS]
-    _rng.shuffle(deck)
-    g = {"deck": deck, "ph": [deck.pop(), deck.pop()], "dh": [deck.pop(), deck.pop()],
-         "bet": bet, "doubled": False}
+    roll = await luck_roll(uid, "blackjack")
+    for _ in range(60):                       # при подкрутке пере-раздаём, пока стартовая раздача не противоречит исходу
+        _rng.shuffle(deck)
+        ph, dh = [deck[-1], deck[-2]], [deck[-3], deck[-4]]
+        if roll == "win" and _bj_is_bj(dh): continue
+        if roll == "lose" and _bj_is_bj(ph): continue
+        break
+    del deck[-4:]
+    g = {"deck": deck, "ph": ph, "dh": dh, "bet": bet, "doubled": False, "roll": roll}
     active_bj[uid] = g
     if _bj_is_bj(g["ph"]) or _bj_is_bj(g["dh"]):    # натурал у кого-то — раунд сразу заканчивается
         return web.json_response(await _bj_finish(uid, g))
@@ -2505,7 +2534,7 @@ async def api_bj_action(req):
     if not g: return web.json_response({"error": "Нет активной игры"}, status=400)
     act = str(data.get("action", ""))
     if act == "hit":
-        g["ph"].append(g["deck"].pop())
+        g["ph"].append(_bj_draw_player(g))
         if _bj_score(g["ph"]) >= 21:
             return web.json_response(await _bj_finish(uid, g))
     elif act == "stand":
@@ -2516,7 +2545,7 @@ async def api_bj_action(req):
         if await db.try_debit(uid, g["bet"]) is None:
             return web.json_response({"error": "Недостаточно монет для удвоения"}, status=400)
         g["bet"] *= 2; g["doubled"] = True
-        g["ph"].append(g["deck"].pop())
+        g["ph"].append(_bj_draw_player(g))
         return web.json_response(await _bj_finish(uid, g))
     else:
         return web.json_response({"error": "bad action"}, status=400)
@@ -2538,8 +2567,10 @@ active_rockets: dict[int, dict] = {}
 def _rocket_mult(t: float) -> float:
     return min(ROCKET_MAX, int(100 * (2.718281828459045 ** (ROCKET_RATE * max(0.0, t)))) / 100)
 
-def _rocket_crash_point() -> float:
+def _rocket_crash_point(roll=None) -> float:
     r = _rng.random()
+    if roll == "lose": return 1.0                                   # мгновенный крэш
+    if roll == "win":  return min(ROCKET_MAX, int(100 * 2.5 / (1 - r)) / 100)   # гарантированно ≥ 2.5×
     return min(ROCKET_MAX, max(1.0, int(100 * (1 - ROCKET_EDGE) / (1 - r)) / 100))
 
 async def _rocket_resolve(uid: int, g: dict, cash_now: bool = False):
@@ -2565,7 +2596,7 @@ async def _rocket_pay(uid, g, mult):
     new_bal = await _finish_game(uid, "Ракета", bet, payout,
                                  f"Ракета: кешаут {mult:.2f}× ({'+' if payout>=bet else ''}{payout-bet})")
     return {"ok": True, "status": "cashed", "mult": mult, "payout": payout,
-            "profit": payout - bet, "new_balance": new_bal}
+            "profit": payout - bet, "new_balance": new_bal, "crash": g["crash"]}
 
 async def api_rocket_start(req):
     try: data = await req.json()
@@ -2583,7 +2614,7 @@ async def api_rocket_start(req):
     auto = auto if 1.01 <= auto <= ROCKET_MAX else 0.0
     if await db.try_debit(uid, bet) is None:
         return web.json_response({"error": "Недостаточно монет"}, status=400)
-    active_rockets[uid] = {"bet": bet, "crash": _rocket_crash_point(), "start": time.time(), "auto": auto}
+    active_rockets[uid] = {"bet": bet, "crash": _rocket_crash_point(await luck_roll(uid, "rocket")), "start": time.time(), "auto": auto}
     bal = int((await db.get_user(uid) or {}).get("balance", 0))
     return web.json_response({"ok": True, "rate": ROCKET_RATE, "new_balance": bal})
 
@@ -2672,6 +2703,8 @@ async def start_web():
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_get ("/api/status",                 api_status)
+    app.router.add_get ("/api/admin/game_luck",        api_admin_get_game_luck)
+    app.router.add_post("/api/admin/game_luck",        api_admin_set_game_luck)
     app.router.add_get ("/api/admin/maintenance",     api_admin_get_maintenance)
     app.router.add_post("/api/admin/maintenance",     api_admin_set_maintenance)
     app.router.add_get ("/api/admin/glogs",          api_admin_glogs)

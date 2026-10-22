@@ -9,7 +9,7 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overscroll-behavior:none}
+html,body{height:100%;}
 body{font-family:'Nunito',system-ui,sans-serif;color:#10264a;overflow:hidden;
   background:linear-gradient(175deg,#4FA6DA 0%,#7EC4E8 35%,#A9D9F2 65%,#D3EEFB 100%);
   display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom))}
@@ -106,7 +106,7 @@ async function check(manual){
   }catch(e){ pill.textContent='Нет связи с сервером'; }
 }
 check(); timer=setInterval(check,10000);
-if(tg?.BackButton){tg.BackButton.hide();}
+if(tg?.BackButton){ if(game){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');} else tg.BackButton.hide(); }
 </script>
 </body>
 </html>

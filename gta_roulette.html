@@ -11,7 +11,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{--text:#1A2040;--muted:#7A8AAA;--green:#1A9A50;--red:#D02840;--gold:#B88000;}
-html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden;overscroll-behavior-y:none;}
+html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('textures/sky.svg') top center/100% auto no-repeat;}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(255,255,255,.93);box-shadow:0 2px 14px rgba(0,30,80,.11);}
 .fp-back{width:38px;height:38px;border-radius:12px;background:rgba(20,40,90,.06);border:1.5px solid rgba(20,40,90,.12);display:flex;align-items:center;justify-content:center;color:#1A2040;font-size:22px;cursor:pointer;font-weight:700;}
@@ -113,12 +113,6 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
     <div class="timer-wrap" id="t-wrap" style="display:none"><div class="timer-bar" id="t-bar" style="width:100%"></div></div>
   </section>
 
-  <div class="bets-card">
-    <div class="bets-hd"><span class="stag">🎲 ставки</span><div class="pcnt" id="player-count">0 игроков</div></div>
-    <div id="gta-players"><div style="color:var(--muted);text-align:center;padding:14px;font-size:13px">Ждём ставок…</div></div>
-    <div class="your-badge">Твой шанс: <span id="your-chance" style="color:#1A2040">—</span></div>
-  </div>
-
   <div class="bet-card">
     <div class="stag" style="margin-bottom:10px">// ваша ставка</div>
     <input class="bet-inp" id="gta-inp" type="number" min="1" value="10" inputmode="numeric">
@@ -128,6 +122,12 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <div class="qb" onclick="sgb(500)">500</div><div class="qb" onclick="sgbAll()">MAX</div>
     </div>
     <button class="bet-btn" id="gta-btn" onclick="placeGtaBet()">🎲 ПОСТАВИТЬ</button>
+  </div>
+
+  <div class="bets-card">
+    <div class="bets-hd"><span class="stag">🎲 ставки</span><div class="pcnt" id="player-count">0 игроков</div></div>
+    <div id="gta-players"><div style="color:var(--muted);text-align:center;padding:14px;font-size:13px">Ждём ставок…</div></div>
+    <div class="your-badge">Твой шанс: <span id="your-chance" style="color:#1A2040">—</span></div>
   </div>
 
   <details class="rules-card">

@@ -487,7 +487,7 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
 
     async with db.execute(
         "SELECT COALESCE(SUM(amount),0) FROM history "
-        "WHERE type='lose' AND created_at>=? AND created_at<=?",
+        "WHERE type='lose' AND detail LIKE '%Европ%' AND created_at>=? AND created_at<=?",
         (from_ts, to_ts)
     ) as cur:
         euro_losses = (await cur.fetchone())[0] or 0
@@ -501,7 +501,7 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
 
     async with db.execute(
         "SELECT COALESCE(SUM(amount),0) FROM history "
-        "WHERE type='deposit' AND created_at>=? AND created_at<=?",
+        "WHERE type='deposit' AND detail LIKE 'Пополнение через Stars%' AND created_at>=? AND created_at<=?",
         (from_ts, to_ts)
     ) as cur:
         deposits = (await cur.fetchone())[0] or 0
@@ -541,6 +541,18 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
     ) as cur:
         withdrawals = (await cur.fetchone())[0] or 0
 
+    # блэкджек / plinko / ракета (серверные игры)
+    async def _sum(kind):
+        async with db.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM history WHERE type=? AND created_at>=? AND created_at<=? "
+            "AND (detail LIKE '%Блэкджек%' OR detail LIKE '%Plinko%' OR detail LIKE '%Ракета%')",
+            (kind, from_ts, to_ts)) as cur:
+            return (await cur.fetchone())[0] or 0
+    other_losses = await _sum('lose')
+    other_wins   = await _sum('win')
+    async with db.execute("SELECT COUNT(*) FROM users") as cur:
+        players = (await cur.fetchone())[0] or 0
+
     total_revenue = deposits - withdrawals
 
     return {
@@ -555,6 +567,9 @@ async def get_revenue(from_ts: float = 0, to_ts: float = 9999999999):
         "tower_wins":     tower_wins,
         "tower_profit":   tower_losses - tower_wins,
         "deposits":       deposits,
+        "other_losses":   other_losses,
+        "other_wins":     other_wins,
+        "players":        players,
         "withdrawals":    withdrawals,
         "total_revenue":  total_revenue,
         "from_ts": from_ts,
@@ -939,3 +954,20 @@ async def get_recent_activity(limit: int = 100) -> list:
            ORDER BY h.created_at DESC LIMIT ?""", (limit,)) as cur:
         rows = await cur.fetchall()
     return [dict(r) for r in rows]
+
+
+# ── УДАЧА ПО РЕЖИМАМ ─────────────────────────────────────────────────────
+LUCK_KEYS = {
+    "european_roulette": "euro_luck_coeff", "mines": "mines_luck_coeff", "tower": "tower_luck_coeff",
+    "blackjack": "blackjack_luck_coeff", "plinko": "plinko_luck_coeff",
+    "rocket": "rocket_luck_coeff", "gta_roulette": "gta_luck_coeff",
+}
+
+
+async def get_game_luck_coeff(game: str) -> float:
+    return await _get_setting_float(LUCK_KEYS[game], 1.0)
+
+
+async def set_game_luck_coeff(game: str, coeff: float):
+    coeff = max(0.0, min(2.0, float(coeff)))
+    await _set_setting(LUCK_KEYS[game], str(coeff))

@@ -11,7 +11,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{--text:#1A2040;--muted:#7A8AAA;--green:#1A9A50;--red:#D02840;--gold:#B88000;}
-html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden;overscroll-behavior-y:none;}
+html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('textures/sky.svg') top center/100% auto no-repeat;}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(255,255,255,.93);box-shadow:0 2px 14px rgba(0,30,80,.11);}
 .fp-back{width:38px;height:38px;border-radius:12px;background:rgba(20,40,90,.06);border:1.5px solid rgba(20,40,90,.12);display:flex;align-items:center;justify-content:center;color:#1A2040;font-size:22px;cursor:pointer;font-weight:700;}
@@ -129,12 +129,14 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 
 <script>
 const tg = window.Telegram?.WebApp;
-if(tg){tg.ready();tg.expand();try{tg.disableVerticalSwipes&&tg.disableVerticalSwipes();}catch(e){}}
+if(tg){tg.ready();tg.expand();}
+if(tg?.BackButton){tg.BackButton.show();tg.BackButton.onClick(()=>location.href='main.html?tab=games');}
 if(!tg?.initDataUnsafe?.user?.id) window.location.replace('not_telegram.html');
 const UID = tg?.initDataUnsafe?.user?.id || 0;
 
 let balance=0, currentBet=0, phase='idle';          // idle | running
-let RATE=0.15, startTime=0, finished=true, animFrame=null, pollTimer=null, autoMult=0;
+let RATE=0.15, startTime=0, animFrame=null, pollTimer=null, autoMult=0;
+let flying=false, crashKnown=null, cashedMult=null;   // после кешаута ракета летит дальше до настоящего крэша
 let hist=[], lastAngle=63, curMult=1, curT=0;
 const MAXM=100;
 const $=id=>document.getElementById(id);
@@ -203,7 +205,7 @@ function frame(t,m,redrawOnly){
     ctx.strokeStyle=rgba+'.25)';ctx.lineWidth=9;ctx.stroke();
     ctx.strokeStyle=c;ctx.lineWidth=3;ctx.stroke();
   }
-  if(state==='running'||state==='idle'){
+  if(state==='running'||state==='idle'||state==='cashed'){
     // касательная к кривой в текущей точке → нос ракеты смотрит туда же, куда идёт график
     const dx=(W-PL-PR)/v.Tv, dyUp=(H-PT-PB)*RATE*Math.max(1,m)/(v.Mv-1);
     const target=Math.atan2(dx,dyUp)*180/Math.PI;
@@ -219,15 +221,20 @@ function placeIdle(){
 }
 
 function animate(){
-  if(finished||phase!=='running') return;
+  if(!flying) return;
   const t=(performance.now()-startTime)/1000;
-  curT=t; curMult=Math.min(MAXM,Math.floor(Math.exp(t*RATE)*100)/100);
-  if(!hist.length||t>hist[hist.length-1].t+.04) hist.push({t,m:Math.exp(t*RATE)});
+  const raw=Math.exp(t*RATE);
+  if(crashKnown!=null && raw>=crashKnown){ finishCrash(crashKnown); return; }
+  curT=t; curMult=Math.min(MAXM,Math.floor(raw*100)/100);
+  if(!hist.length||t>hist[hist.length-1].t+.04) hist.push({t,m:raw});
   if(hist.length>700) hist.splice(1,2);
-  const mEl=$('mv');mEl.textContent=curMult.toFixed(2)+'×';mEl.className='mult-val safe';
-  $('st-curr').textContent=curMult.toFixed(2)+'×';
-  const btn=$('main-btn');btn.textContent='💰 ЗАБРАТЬ '+Math.floor(currentBet*curMult);
-  frame(t,Math.exp(t*RATE));
+  const mEl=$('mv');mEl.textContent=curMult.toFixed(2)+'×';
+  mEl.className='mult-val '+(cashedMult!=null?'cashed':'safe');
+  if(phase==='running'){
+    $('st-curr').textContent=curMult.toFixed(2)+'×';
+    $('main-btn').textContent='💰 ЗАБРАТЬ '+Math.floor(currentBet*curMult);
+  }
+  frame(t,raw);
   animFrame=requestAnimationFrame(animate);
 }
 
@@ -248,24 +255,27 @@ async function launchRocket(){
   const r=await api('/api/rocket/start','POST',{bet,auto:ac>=1.01?ac:0});
   btn.disabled=false;
   if(r.error){toast(r.error,'err');return;}
+  // если предыдущая ракета ещё долетала — закрываем её визуально
+  if(flying&&crashKnown!=null) addHist(crashKnown,cashedMult!=null);
+  cancelAnimationFrame(animFrame);
   RATE=r.rate||RATE;balance=r.new_balance;$('r-bal').textContent=balance;
-  currentBet=bet;autoMult=ac>=1.01?ac:0;finished=false;phase='running';state='running';
-  hist=[];startTime=performance.now();lastAngle=63;
+  currentBet=bet;autoMult=ac>=1.01?ac:0;phase='running';state='running';
+  flying=true;crashKnown=null;cashedMult=null;
+  hist=[];curT=0;curMult=1;startTime=performance.now();lastAngle=63;
   rocket.className='';rocket.style.opacity=1;rocket.style.transition='none';$('boom').className='';
   $('ms').textContent='ПОЛЁТ';$('st-bet').textContent=bet;$('st-curr').textContent='1.00×';$('st-cashout').textContent='—';
   btn.className='go-btn cash';
   animFrame=requestAnimationFrame(animate);
-  pollTimer=setInterval(pollState,200);
+  clearInterval(pollTimer);pollTimer=setInterval(pollState,200);
 }
 async function pollState(){
-  if(finished)return;
+  if(phase!=='running')return;
   const r=await api('/api/rocket/state');
-  if(finished)return;
+  if(phase!=='running')return;
   if(r.status==='running'){startTime=performance.now()-r.t*1000;}
   else if(r.status==='crashed'||r.status==='cashed'){endRound(r);}
-  else if(r.status==='idle'){endRound({status:'crashed',crash:curMult});}
+  else if(r.status==='idle'){endRound({status:'crashed',crash:Math.max(1,curMult)});}
 }
-function stopLoops(){finished=true;if(animFrame)cancelAnimationFrame(animFrame);if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
 
 function addHist(m,won){
   const arr=JSON.parse(sessionStorage.getItem('rk_hist')||'[]');arr.unshift({m,won});arr.length=Math.min(arr.length,20);
@@ -276,35 +286,45 @@ function renderHist(){
   $('hist').innerHTML=arr.map(h=>`<div class="hc ${h.m<2?'low':h.m<10?'mid':'high'} ${h.won?'won':''}">${(+h.m).toFixed(2)}×</div>`).join('');
 }
 
+// настоящий крэш: взрыв ракеты (после кешаута тоже — ракета долетает до точки краха)
+function finishCrash(c){
+  flying=false;cancelAnimationFrame(animFrame);
+  state='crashed';
+  const mEl=$('mv');mEl.textContent=c.toFixed(2)+'×';mEl.className='mult-val crashed';
+  $('ms').textContent=cashedMult!=null?('КРЭШ · вы забрали '+cashedMult.toFixed(2)+'×'):'КРЭШ';
+  hist.push({t:Math.max(curT,hist.length?hist[hist.length-1].t:0)+.01,m:Math.max(1,c)});
+  const {tip}=frame(curT,Math.max(1,c),true);
+  rocket.style.opacity=0;
+  const b=$('boom');b.style.left=tip.x+'px';b.style.top=tip.y+'px';b.className='go';
+  addHist(c,cashedMult!=null);
+  crashKnown=null;
+}
+
 function endRound(r){
-  if(finished)return;
-  stopLoops();
+  if(phase!=='running')return;
+  clearInterval(pollTimer);pollTimer=null;
   if(r.new_balance!=null){balance=r.new_balance;$('r-bal').textContent=balance;}
-  const mEl=$('mv'),btn=$('main-btn');
-  const final=r.status==='cashed'?r.mult:r.crash;
-  hist.push({t:Math.max(curT,hist.length?hist[hist.length-1].t:0)+.01,m:Math.max(1,final)});
+  phase='idle';
+  const btn=$('main-btn');btn.className='go-btn';btn.textContent='🚀 ЗАПУСТИТЬ СНОВА';btn.disabled=false;
   if(r.status==='cashed'){
-    state='cashed';mEl.textContent=r.mult.toFixed(2)+'×';mEl.className='mult-val cashed';$('ms').textContent='КЕШАУТ  +'+r.profit;
+    cashedMult=r.mult;state='cashed';
     $('st-cashout').textContent=r.mult.toFixed(2)+'×';
-    const {ang}=frame(curT,Math.max(1,final),true);
-    // улетает дальше по траектории
-    const a=lastAngle*Math.PI/180;
-    rocket.style.transition='';rocket.classList.add('away');
-    const m=rocket.style.transform;rocket.style.transform=m+` translateY(-320px)`;
-    addHist(r.mult,true);
     toast(`💰 ${r.mult.toFixed(2)}× · ${r.profit>=0?'+':''}${r.profit}`,'ok');
+    if(flying){                         // ракета продолжает лететь до крэша
+      crashKnown=r.crash;
+      $('ms').textContent='КЕШАУТ  +'+r.profit;
+    }else{                              // вернулись в приложение уже после авто-кешаута
+      const mEl=$('mv');mEl.textContent=(r.crash||r.mult).toFixed(2)+'×';mEl.className='mult-val cashed';
+      $('ms').textContent='КЕШАУТ  +'+r.profit;
+    }
   }else{
-    state='crashed';mEl.textContent=r.crash.toFixed(2)+'×';mEl.className='mult-val crashed';$('ms').textContent='КРЭШ';
-    const {tip}=frame(curT,Math.max(1,r.crash),true);
-    rocket.style.opacity=0;
-    const b=$('boom');b.style.left=tip.x+'px';b.style.top=tip.y+'px';b.className='go';
-    addHist(r.crash,false);
+    cashedMult=null;
     toast(`💥 Крэш на ${r.crash.toFixed(2)}× · −${currentBet}`,'err');
+    flying=true;finishCrash(r.crash);
   }
-  phase='idle';btn.className='go-btn';btn.textContent='🚀 ЗАПУСТИТЬ СНОВА';btn.disabled=false;
 }
 async function doCashout(){
-  if(phase!=='running'||finished)return;
+  if(phase!=='running')return;
   const btn=$('main-btn');btn.disabled=true;
   const r=await api('/api/rocket/cashout','POST',{});
   btn.disabled=false;
@@ -314,12 +334,12 @@ async function doCashout(){
 async function resumeRound(){
   const r=await api('/api/rocket/state');
   if(r.status==='running'){
-    RATE=r.rate||RATE;currentBet=r.bet;autoMult=r.auto||0;finished=false;phase='running';state='running';
+    RATE=r.rate||RATE;currentBet=r.bet;autoMult=r.auto||0;phase='running';state='running';flying=true;
     startTime=performance.now()-r.t*1000;hist=[];
     rocket.className='';$('ms').textContent='ПОЛЁТ';$('st-bet').textContent=currentBet;
     $('main-btn').className='go-btn cash';
     animFrame=requestAnimationFrame(animate);pollTimer=setInterval(pollState,200);
-  }else if(r.status==='crashed'||r.status==='cashed'){finished=false;phase='running';endRound(r);}
+  }else if(r.status==='crashed'||r.status==='cashed'){phase='running';endRound(r);}
 }
 resize();placeIdle();renderHist();
 loadUser().then(resumeRound);
