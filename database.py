@@ -435,7 +435,7 @@ async def get_lobby(lid: int):
 
 async def get_lobby_bets(lid: int):
     db = await _get_conn()
-    return await _rows(db, "SELECT * FROM gta_bets WHERE lobby_id=? ORDER BY amount DESC", (lid,))
+    return await _rows(db, "SELECT * FROM gta_bets WHERE lobby_id=? ORDER BY id ASC", (lid,))
 
 
 async def place_gta_bet(lid: int, uid: int, amount: int):

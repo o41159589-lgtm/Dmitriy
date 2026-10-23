@@ -348,6 +348,7 @@ function drawWheel(angle,winIdx=-1){
 
 // Колесо рисуется ОДИН раз и дальше только вращается через CSS-transform (композитор GPU).
 // Скролл/оверскролл страницы больше не может сломать анимацию: на каждый кадр меняется один transform.
+const wheelEl=document.getElementById('wc');
 function setWheelAngle(a){canvas.style.transform='rotate('+a+'rad)';}
 function paintWheel(winIdx){drawWheel(0,winIdx===undefined?-1:winIdx);}
 function startIdle(){if(idleReq)return;(function frame(){wheelAngle+=.002;setWheelAngle(wheelAngle);idleReq=requestAnimationFrame(frame);})();}
@@ -387,7 +388,7 @@ async function spinEuro(){
   // Jump to the wheel first so a fast bottom→top scroll can't collide with the spin animation
   window.scrollTo(0,0);
 
-  spinning=true;stopIdle();paintWheel(-1);let hl=false;
+  spinning=true;stopIdle();paintWheel(-1);
   if(animReq){cancelAnimationFrame(animReq);animReq=null;}
   document.getElementById('spin-btn').disabled=true;
   document.getElementById('res-num').textContent='…';
@@ -412,34 +413,24 @@ async function spinEuro(){
   travel=((travel%PI2)+PI2)%PI2;
   travel+=8*PI2;
   const finalA=startA-travel;
+  const ease=t=>1-Math.pow(1-t,4.5);
+  const angleAt=t=>startA+(finalA-startA)*ease(t);
+  const numEl=document.getElementById('res-num');
+  // Вращение отдаём браузеру (Web Animations → поток композитора). Прокрутка страницы, оверскролл и
+  // «замороженный» requestAnimationFrame в WebView больше не могут ни остановить колесо, ни сломать анимацию.
+  let anim=null,done=false;
+  if(wheelEl.animate){
+    const frames=[];for(let i=0;i<=120;i++)frames.push({transform:'rotate('+angleAt(i/120)+'rad)'});
+    anim=wheelEl.animate(frames,{duration:DUR,easing:'linear',fill:'forwards'});
+  }
   const t0=performance.now();
-  function ease(t){return 1-Math.pow(1-t,4.5);}
-
-  function frame(now){
-    const numEl=document.getElementById('res-num');
-    try{
-      const elapsed=now-t0,t=Math.min(1,elapsed/DUR);
-      const wA=startA+(finalA-startA)*ease(t);
-
-      // During spin: show live sector
-      const liveIdx=sectorUnderPointer(wA);
-      const live=NUMS[liveIdx];
-      numEl.textContent=live.n;
-      numEl.className='res-num '+live.c;
-      const ico=live.c==='green'?'🟢':live.c==='red'?'🔴':'⚫';
-      if(t<.93)document.getElementById('res-lbl').innerHTML=`${ico}<br>`;
-
-      setWheelAngle(wA);
-      if(t>=.93&&!hl){hl=true;paintWheel(targetIdx);}
-
-      if(t<1){animReq=requestAnimationFrame(frame);return;}
-      wheelAngle=wA%(PI2);
-    }catch(e){
-      // Recover from any transient render glitch instead of freezing the wheel silently
-      wheelAngle=finalA%(Math.PI*2);
-    }
-    animReq=null;
-    setWheelAngle(wheelAngle);paintWheel(targetIdx);
+  function finish(){
+    if(done)return;done=true;
+    if(animReq){cancelAnimationFrame(animReq);animReq=null;}
+    wheelAngle=finalA%PI2;
+    setWheelAngle(wheelAngle);          // фиксируем итоговый угол ДО снятия анимации — без мигания
+    if(anim){try{anim.cancel();}catch(e){}}
+    paintWheel(targetIdx);
     const ico2=res.result_c==='green'?'🟢':res.result_c==='red'?'🔴':'⚫';
     const cname=res.result_c==='green'?'Зеро':res.result_c==='red'?'Красное':'Чёрное';
     numEl.textContent=res.result_n;numEl.className='res-num '+res.result_c;
@@ -461,7 +452,18 @@ async function spinEuro(){
       startIdle();
     },3000);
   }
-  animReq=requestAnimationFrame(frame);
+  function tick(){
+    if(done)return;
+    const el=(anim&&anim.currentTime!=null)?Number(anim.currentTime):performance.now()-t0;
+    const t=Math.min(1,el/DUR);
+    const live=NUMS[sectorUnderPointer(angleAt(t))];
+    numEl.textContent=live.n;numEl.className='res-num '+live.c;
+    if(!anim)setWheelAngle(angleAt(t));   // запасной вариант для старых WebView без Web Animations
+    if(t<1){animReq=requestAnimationFrame(tick);return;}
+    finish();
+  }
+  animReq=requestAnimationFrame(tick);
+  if(anim)anim.finished.then(finish).catch(()=>{});
 }
 
 function sectorUnderPointer(a){const norm=((-a)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);return Math.floor(norm/SLICE)%N;}

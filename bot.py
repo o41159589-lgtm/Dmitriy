@@ -1955,13 +1955,6 @@ async def api_tower_cashout(req: web.Request):
     u2   = await db.get_user(uid)
     name = u2.get("first_name", "?") if u2 else "?"
     fire_log(log_game(uid, name, "Башня", game["bet"], "Выигрыш", won, new_bal))
-    try:
-        await bot.send_message(uid,
-            f"🗼 <b>Кешаут — Башня!</b>\n"
-            f"🏆 Этаж {completed_floor} · ×{mult}\n"
-            f"💰 +<b>{profit}</b> монет · Баланс: <b>{new_bal}</b>",
-            parse_mode="HTML")
-    except Exception: pass
     return web.json_response({"ok": True, "won": won, "mult": mult, "new_balance": new_bal})
 
 
@@ -2570,7 +2563,7 @@ def _rocket_mult(t: float) -> float:
 def _rocket_crash_point(roll=None) -> float:
     r = _rng.random()
     if roll == "lose": return 1.0                                   # мгновенный крэш
-    if roll == "win":  return min(ROCKET_MAX, int(100 * 2.5 / (1 - r)) / 100)   # гарантированно ≥ 2.5×
+    if roll == "win":  return None      # выигрышный раунд: крэша нет, пока игрок не заберёт выигрыш (макс. ×100)
     return min(ROCKET_MAX, max(1.0, int(100 * (1 - ROCKET_EDGE) / (1 - r)) / 100))
 
 async def _rocket_resolve(uid: int, g: dict, cash_now: bool = False):
@@ -2580,8 +2573,10 @@ async def _rocket_resolve(uid: int, g: dict, cash_now: bool = False):
     m = _rocket_mult(t)
     crash, bet, auto = g["crash"], g["bet"], g["auto"]
     # авто-кешаут: срабатывает ровно на заданном множителе, если ракета до него долетела
-    if auto and auto <= crash and m >= auto:
+    if auto and (crash is None or auto <= crash) and m >= auto:
         return await _rocket_pay(uid, g, auto)
+    if crash is None:                      # выигрышный раунд: потолок ×100 забираем автоматически
+        return await _rocket_pay(uid, g, m) if (m >= ROCKET_MAX or cash_now) else None
     if m >= crash:
         active_rockets.pop(uid, None)
         new_bal = await _finish_game(uid, "Ракета", bet, 0, f"Ракета: крэш {crash:.2f}×")
@@ -2595,8 +2590,11 @@ async def _rocket_pay(uid, g, mult):
     bet = g["bet"]; payout = int(bet * mult)
     new_bal = await _finish_game(uid, "Ракета", bet, payout,
                                  f"Ракета: кешаут {mult:.2f}× ({'+' if payout>=bet else ''}{payout-bet})")
+    crash = g["crash"]
+    if crash is None:                      # крэш после кешаута — только для красоты (ракета долетает и взрывается)
+        crash = min(ROCKET_MAX, max(mult + 0.05, int(100 * mult / (1 - _rng.random() * 0.9)) / 100))
     return {"ok": True, "status": "cashed", "mult": mult, "payout": payout,
-            "profit": payout - bet, "new_balance": new_bal, "crash": g["crash"]}
+            "profit": payout - bet, "new_balance": new_bal, "crash": crash}
 
 async def api_rocket_start(req):
     try: data = await req.json()
