@@ -70,14 +70,15 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .idx b{font-size:15px;font-weight:900;letter-spacing:-1px;font-family:'Nunito',sans-serif}
 .idx svg{margin-top:2px}
 .idx.tl{left:3px;top:5px}.idx.br{right:3px;bottom:5px}
+.idx.br svg{margin-top:0;margin-bottom:2px}
+.idx b.rv{display:inline-block;transform:rotate(180deg)}
 .pips{position:absolute;left:27px;right:27px;top:15px;bottom:15px}
 .pip{position:absolute;transform:translate(-50%,-50%);line-height:0}
 .pip.flip{transform:translate(-50%,-50%)}
 .pip.big{transform:translate(-50%,-50%)}
-.art{position:absolute;left:22px;right:22px;top:13px;bottom:13px;border-radius:6px;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(160deg,rgba(255,200,60,.22),rgba(255,255,255,.0) 60%)}
-.art .fl{font-size:34px;font-weight:900;font-family:Georgia,'Times New Roman',serif;line-height:1}
-.art .fs{position:absolute;line-height:0}.art .fs.t{left:3px;top:3px}.art .fs.b{right:3px;bottom:3px}
+.art{position:absolute;left:22px;right:22px;top:13px;bottom:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.art .fl{font-size:40px;font-weight:900;font-family:Georgia,'Times New Roman',serif;line-height:1}
+.art .fs{line-height:0}
 
 /* ── баннер результата на столе ── */
 .banner{position:absolute;left:50%;top:50%;z-index:6;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;text-align:center;
@@ -195,10 +196,11 @@ function frontHTML(c){
   const k=SK[c.s]||'s',v=c.v;
   let mid;
   if(v==='A')mid='<div class="pips"><div class="pip big" style="left:50%;top:50%">'+suit(k,46)+'</div></div>';
-  else if('JQK'.includes(v))mid='<div class="art"><span class="fl">'+v+'</span><span class="fs t">'+suit(k,13)+'</span><span class="fs b">'+suit(k,13)+'</span></div>';
+  else if('JQK'.includes(v))mid='<div class="art"><span class="fl">'+v+'</span><span class="fs">'+suit(k,26)+'</span></div>';
   else mid='<div class="pips">'+PL[v].map(p=>'<div class="pip'+(p[1]>.5?' flip':'')+'" style="left:'+(p[0]*100)+'%;top:'+(p[1]*100)+'%">'+suit(k,14)+'</div>').join('')+'</div>';
-  const idx='<b>'+v+'</b>'+suit(k,12);
-  return {cls:(k==='h'||k==='d')?'red':'',html:'<div class="idx tl">'+idx+'</div>'+mid+'<div class="idx br">'+idx+'</div>'};
+  // сверху: цифра, под ней масть. Снизу — зеркально: масть, под ней перевёрнутая цифра
+  const top='<b>'+v+'</b>'+suit(k,12), bot=suit(k,12)+'<b class="rv">'+v+'</b>';
+  return {cls:(k==='h'||k==='d')?'red':'',html:'<div class="idx tl">'+top+'</div>'+mid+'<div class="idx br">'+bot+'</div>'};
 }
 function makeCard(c,hidden){
   const el=document.createElement('div');el.className='card';

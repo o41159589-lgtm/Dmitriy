@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" onerror="console.error('[TopLuck] pako failed to load — animated .tgs gifts will fall back to emoji')"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js" onerror="console.error('[TopLuck] lottie-web failed to load — animated .tgs gifts will fall back to emoji')"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js" onerror="console.error('[TopLuck] pako failed to load — animated .tgs gifts will fall back to emoji')"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.13.0/lottie.min.js" onerror="console.error('[TopLuck] lottie-web failed to load — animated .tgs gifts will fall back to emoji')"></script>
 <style>
 :root{--safe-top:env(safe-area-inset-top,0px);}
 .toast:not(.show){opacity:0!important;pointer-events:none!important;background:transparent!important;border-color:transparent!important;}
@@ -273,6 +273,28 @@ async function loadUser(){
 }
 
 // ── Real animated Telegram gift stickers (video .webm / Lottie .tgs / static .webp) ──
+// ── Стикеры: декодируем и анимируем ТОЛЬКО то, что сейчас на экране ──
+function _whenLib(name,ms){ms=ms||6000;return new Promise(res=>{const t0=Date.now();(function chk(){
+  if(typeof window[name]!=='undefined')return res(true);if(Date.now()-t0>ms)return res(false);setTimeout(chk,60);})();});}
+async function _getTgsJson(fileId){
+  let json=_stickerJsonCache.get(fileId);if(json)return json;
+  let bytes=null;
+  if(typeof TL_idbGet==='function'){
+    bytes=await TL_idbGet('b:'+fileId).catch(()=>null);              // сырые байты, прогретые на главной
+    if(!bytes){const legacy=await TL_idbGet(fileId).catch(()=>null);  // старый формат кеша (готовый JSON)
+      if(legacy&&!(legacy instanceof ArrayBuffer)){_stickerJsonCache.set(fileId,legacy);return legacy;}}
+  }
+  if(!bytes){const r=await fetch('/api/sticker/'+fileId);if(!r.ok)throw new Error('sticker fetch failed: HTTP '+r.status);bytes=await r.arrayBuffer();}
+  if(!(await _whenLib('pako')))throw new Error('pako not loaded');
+  json=JSON.parse(pako.inflate(new Uint8Array(bytes),{to:'string'}));
+  _stickerJsonCache.set(fileId,json);return json;
+}
+function _lottieMount(container,json){
+  const anim=lottie.loadAnimation({container,renderer:'svg',loop:true,autoplay:true,animationData:json,
+    rendererSettings:{progressiveLoad:true,preserveAspectRatio:'xMidYMid meet'}});
+  try{anim.setSubframe(false);}catch(e){}      // рендерим только целые кадры — заметно легче для CPU
+  return anim;
+}
 const _stickerJsonCache=new Map();
 const _stickerFailCache=new Set();
 async function renderGiftSticker(container,fileId,isVideo,isAnimated){
@@ -284,24 +306,12 @@ async function renderGiftSticker(container,fileId,isVideo,isAnimated){
       const v=document.createElement('video');
       v.src=url;v.autoplay=true;v.loop=true;v.muted=true;v.playsInline=true;
       await new Promise((res,rej)=>{v.onloadeddata=res;v.onerror=()=>rej(new Error('video load error'));setTimeout(()=>rej(new Error('video load timeout')),4000);});
-      container.appendChild(v);_dbg('STICKER',url,'✅ video rendered');return true;
+      container.appendChild(v);container._tlVideo=v;_dbg('STICKER',url,'✅ video rendered');return true;
     }
     if(isAnimated){
-      let json=_stickerJsonCache.get(fileId);
-      if(!json && typeof TL_idbGet==='function'){
-        json = await TL_idbGet(fileId).catch(()=>null);
-        if(json){ _stickerJsonCache.set(fileId,json); _dbg('STICKER',url,'⚡ from prefetch cache'); }
-      }
-      if(!json){
-        if(typeof pako==='undefined'){_dbg('STICKER',url,'❌ pako not loaded');return false;}
-        if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
-        const r=await fetch(url);if(!r.ok)throw new Error('sticker fetch failed: HTTP '+r.status);
-        const buf=await r.arrayBuffer();
-        json=JSON.parse(pako.inflate(new Uint8Array(buf),{to:'string'}));
-        _stickerJsonCache.set(fileId,json);
-      }
-      if(typeof lottie==='undefined'){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
-      lottie.loadAnimation({container,renderer:'svg',loop:true,autoplay:true,animationData:json});
+      const json=await _getTgsJson(fileId);
+      if(!(await _whenLib('lottie'))){_dbg('STICKER',url,'❌ lottie not loaded');return false;}
+      container._tlAnim=_lottieMount(container,json);
       _dbg('STICKER',url,'✅ tgs rendered');return true;
     }
     const img=document.createElement('img');
@@ -337,27 +347,8 @@ function _readShopCache(key){
     return parsed;
   }catch(e){ return null; }
 }
-// Decodes every animated (.tgs) sticker up front (checking the IndexedDB prefetch cache first)
-// so cards can mount their animation the instant they're created — no flash of plain emoji first.
-async function preloadAnimatedStickers(gifts){
-  const jobs = gifts
-    .filter(g => g.sticker_file_id && g.sticker_is_animated)
-    .map(async g => {
-      if(_stickerJsonCache.has(g.sticker_file_id)) return;
-      try{
-        let json = typeof TL_idbGet==='function' ? await TL_idbGet(g.sticker_file_id).catch(()=>null) : null;
-        if(!json){
-          if(typeof pako==='undefined') return;
-          const r = await fetch('/api/sticker/'+g.sticker_file_id);
-          if(!r.ok) return;
-          const buf = await r.arrayBuffer();
-          json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
-        }
-        _stickerJsonCache.set(g.sticker_file_id, json);
-      }catch(e){ /* this one gift falls back to the async path at render time */ }
-    });
-  await Promise.all(jobs);
-}
+// Раньше тут декодировались ВСЕ .tgs до показа магазина (долгий лаг). Теперь — лениво, по мере появления карточек.
+async function preloadAnimatedStickers(){}
 
 async function loadShopGifts(){
   shopLoaded=true;
@@ -412,27 +403,46 @@ function giftCard(gift,source){
   </div>`;
 }
 
+const _stickerQueue=[];let _stickerPumping=false;
+function _stickerPlay(box,on){
+  try{if(box._tlAnim){on?box._tlAnim.play():box._tlAnim.pause();}}catch(e){}
+  try{if(box._tlVideo){on?box._tlVideo.play().catch(()=>{}):box._tlVideo.pause();}}catch(e){}
+}
+const _stickerIO=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{
+  entries.forEach(en=>{
+    const wrap=en.target;wrap._vis=en.isIntersecting;
+    if(en.isIntersecting){
+      if(wrap._mounted)_stickerPlay(wrap._box,true);                       // вернулась на экран — продолжаем
+      else if(!wrap._queued){wrap._queued=true;_stickerQueue.push(wrap);_pumpStickers();}
+    }else if(wrap._mounted)_stickerPlay(wrap._box,false);                  // ушла с экрана — ставим на паузу
+  });
+},{rootMargin:'120px 0px'}):null;
+async function _pumpStickers(){
+  if(_stickerPumping)return;_stickerPumping=true;
+  while(_stickerQueue.length){
+    const wrap=_stickerQueue.shift();
+    if(wrap._vis===false){wrap._queued=false;continue;}     // успела уйти с экрана — смонтируем, когда вернётся
+    const g=wrap._gift,box=wrap._box;
+    const ok=await renderGiftSticker(box,g.sticker_file_id,g.sticker_is_video,g.sticker_is_animated);
+    wrap._queued=false;
+    if(ok){
+      wrap._mounted=true;
+      if(wrap._emoji)wrap._emoji.style.display='none';
+      box.style.display='block';
+      if(wrap._vis===false)_stickerPlay(box,false);
+    }
+    await new Promise(r=>setTimeout(r,60));                  // отдаём кадр браузеру между стикерами
+  }
+  _stickerPumping=false;
+}
 function mountGiftStickers(gifts,source){
   gifts.forEach(gift=>{
     if(!gift.sticker_file_id)return;
     const wrap=document.getElementById(`gw-${source}-${gift.id}`);
     if(!wrap)return;
-    const emojiEl=wrap.querySelector('.gift-emoji');
-    const box=document.createElement('div');
-    box.className='gift-lottie';
-    wrap.appendChild(box);
-
-    const cachedJson = gift.sticker_is_animated ? _stickerJsonCache.get(gift.sticker_file_id) : null;
-    if(cachedJson && typeof lottie!=='undefined'){
-      // Fully synchronous — the animation exists before this card is ever painted, zero flash.
-      if(emojiEl) emojiEl.style.display='none';
-      box.style.display='block';
-      lottie.loadAnimation({container:box,renderer:'svg',loop:true,autoplay:true,animationData:cachedJson});
-      return;
-    }
-    renderGiftSticker(box,gift.sticker_file_id,gift.sticker_is_video,gift.sticker_is_animated).then(ok=>{
-      if(ok){if(emojiEl)emojiEl.style.display='none';box.style.display='block';}
-    });
+    const box=document.createElement('div');box.className='gift-lottie';wrap.appendChild(box);
+    wrap._gift=gift;wrap._box=box;wrap._emoji=wrap.querySelector('.gift-emoji');
+    if(_stickerIO)_stickerIO.observe(wrap);else{wrap._queued=true;_stickerQueue.push(wrap);_pumpStickers();}
   });
 }
 

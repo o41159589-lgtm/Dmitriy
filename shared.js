@@ -173,13 +173,16 @@ function TL_mountEyesLoader(container, opts){
 // while the user browses, so shop.html can render everything instantly and
 // animated on open instead of showing emoji first and swapping in the animation.
 const TL_CACHE_DB = 'tl_cache', TL_CACHE_STORE = 'stickers';
+let _tlDbPromise = null;
 function TL_idbOpen(){
-  return new Promise((resolve,reject)=>{
+  if(_tlDbPromise) return _tlDbPromise;                 // одно соединение на страницу, а не новое на каждый get/set
+  _tlDbPromise = new Promise((resolve,reject)=>{
     const req = indexedDB.open(TL_CACHE_DB, 1);
     req.onupgradeneeded = () => { req.result.createObjectStore(TL_CACHE_STORE); };
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onerror = () => { _tlDbPromise = null; reject(req.error); };
   });
+  return _tlDbPromise;
 }
 async function TL_idbGet(key){
   try{
@@ -228,21 +231,21 @@ async function TL_prefetchShop(){
     const animated = items.filter(g=>g.sticker_file_id && (g.sticker_is_animated||g.is_animated));
     const others   = items.filter(g=>g.sticker_file_id && !(g.sticker_is_animated||g.is_animated));
 
-    // Warm the HTTP cache for video/webp stickers (server sends long-lived Cache-Control already)
-    others.forEach(g=>{ fetch('/api/sticker/'+g.sticker_file_id).catch(()=>{}); });
-
-    // Decode and cache .tgs (Lottie) stickers into IndexedDB so shop.html can mount them with zero delay
-    if(animated.length){
-      await TL_loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js').catch(()=>{});
-      for(const g of animated){
-        try{
-          const cached = await TL_idbGet(g.sticker_file_id);
-          if(cached) continue;
-          const buf = await fetch('/api/sticker/'+g.sticker_file_id).then(r=>r.arrayBuffer());
-          const json = JSON.parse(pako.inflate(new Uint8Array(buf), {to:'string'}));
-          await TL_idbSet(g.sticker_file_id, json);
-        }catch(e){ /* skip this one, shop.html will just fetch it fresh */ }
-      }
+    // Прогреваем ТОЛЬКО сырые байты (без распаковки и JSON.parse) и не пачкой, а по одному с паузами —
+    // главный поток не занят, главная страница не лагает. Декодирует и анимирует магазин уже лениво.
+    const pause = ms => new Promise(r=>setTimeout(r,ms));
+    if(navigator.connection && navigator.connection.saveData) return;
+    for(const g of animated){
+      try{
+        if(await TL_idbGet('b:'+g.sticker_file_id) || await TL_idbGet(g.sticker_file_id)) continue;
+        const buf = await fetch('/api/sticker/'+g.sticker_file_id).then(r=>r.arrayBuffer());
+        await TL_idbSet('b:'+g.sticker_file_id, buf);
+      }catch(e){ /* shop.html просто скачает этот стикер сам */ }
+      await pause(120);
+    }
+    for(const g of others){
+      try{ await fetch('/api/sticker/'+g.sticker_file_id).then(r=>r.blob()); }catch(e){}
+      await pause(80);
     }
   }catch(e){ /* prefetch is best-effort, never blocks anything */ }
 }
