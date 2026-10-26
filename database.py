@@ -957,8 +957,9 @@ async def get_recent_activity(limit: int = 100) -> list:
 
 
 # ── УДАЧА ПО РЕЖИМАМ ─────────────────────────────────────────────────────
-LUCK_KEYS = {   # отдельные коэффициенты только у «старых» режимов; остальные игры управляются глобальным
+LUCK_KEYS = {   # отдельный коэффициент режима поверх глобального. У GTA рулетки его нет: там глобальный + личная удача игроков
     "european_roulette": "euro_luck_coeff", "mines": "mines_luck_coeff", "tower": "tower_luck_coeff",
+    "blackjack": "blackjack_luck_coeff", "plinko": "plinko_luck_coeff", "rocket": "rocket_luck_coeff",
 }
 
 

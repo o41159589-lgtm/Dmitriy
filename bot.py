@@ -1714,6 +1714,24 @@ async def api_admin_set_maintenance(req):
             f"({', '.join(st['disabled_games']) or '—'})", incognito=False))
     return web.json_response({"ok": True, **st})
 
+async def api_admin_get_game_luck(req):
+    game = req.rel_url.query.get("game", "")
+    if game not in db.LUCK_KEYS: return web.json_response({"error": "unknown game"}, status=400)
+    return web.json_response({"game": game, "coeff": await db.get_game_luck_coeff(game)})
+
+async def api_admin_set_game_luck(req):
+    data = await req.json()
+    game = str(data.get("game", ""))
+    if game not in db.LUCK_KEYS: return web.json_response({"error": "unknown game"}, status=400)
+    try: coeff = float(data.get("coeff", 1.0))
+    except Exception: return web.json_response({"error": "bad coeff"}, status=400)
+    await db.set_game_luck_coeff(game, coeff)
+    if not bool(data.get("incognito", False)):
+        uid = _actor_uid(req); u = await db.get_user(uid)
+        fire_log(log_admin_action(uid, u.get("first_name", "Admin") if u else "Admin", "SET_GAME_LUCK", 0,
+                 "Все игроки", f"Удача {game} → {coeff}", incognito=False))
+    return web.json_response({"ok": True, "game": game, "coeff": await db.get_game_luck_coeff(game)})
+
 # Static
 BASE = Path(__file__).parent
 async def serve_html(f):
@@ -2699,6 +2717,8 @@ async def start_web():
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_get ("/api/status",                 api_status)
+    app.router.add_get ("/api/admin/game_luck",        api_admin_get_game_luck)
+    app.router.add_post("/api/admin/game_luck",        api_admin_set_game_luck)
     app.router.add_get ("/api/admin/maintenance",     api_admin_get_maintenance)
     app.router.add_post("/api/admin/maintenance",     api_admin_set_maintenance)
     app.router.add_get ("/api/admin/glogs",          api_admin_glogs)

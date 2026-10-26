@@ -486,6 +486,78 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="tower-luck-status" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
   </div>
 
+  <!-- БЛЭКДЖЕК luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🃏 БЛЭКДЖЕК — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Блэкджека, умножается на глобальный коэффициент. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="lk-val-blackjack" style="font-family:Orbitron,monospace;font-size:20px;color:var(--purple);font-weight:700">1.00</span>
+      </div>
+      <input type="range" id="lk-sl-blackjack" min="0" max="200" value="100" oninput="lkSlider('blackjack',this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--purple);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="lkSet('blackjack',0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="lkSet('blackjack',0.5)">0.5</div>
+        <div class="pb" onclick="lkSet('blackjack',1.0)">1.0 — Честно</div>
+        <div class="pb" onclick="lkSet('blackjack',1.5)">1.5</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="lkSave('blackjack')">💾 Сохранить (только блэкджека)</button>
+    </div>
+    <div id="lk-st-blackjack" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- PLINKO luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🟣 PLINKO — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Plinko, умножается на глобальный коэффициент. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="lk-val-plinko" style="font-family:Orbitron,monospace;font-size:20px;color:var(--cyan);font-weight:700">1.00</span>
+      </div>
+      <input type="range" id="lk-sl-plinko" min="0" max="200" value="100" oninput="lkSlider('plinko',this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--cyan);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="lkSet('plinko',0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="lkSet('plinko',0.5)">0.5</div>
+        <div class="pb" onclick="lkSet('plinko',1.0)">1.0 — Честно</div>
+        <div class="pb" onclick="lkSet('plinko',1.5)">1.5</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="lkSave('plinko')">💾 Сохранить (только plinko)</button>
+    </div>
+    <div id="lk-st-plinko" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
+  <!-- РАКЕТА luck — INDEPENDENT -->
+  <div class="settings-block">
+    <div class="settings-title">🚀 РАКЕТА — УДАЧА</div>
+    <p style="color:var(--muted);font-size:12px;line-height:1.6;margin-bottom:12px">
+      Только для Ракеты, умножается на глобальный коэффициент. <b style="color:var(--text)">Не влияет на другие режимы.</b>
+    </p>
+    <div class="slider-box" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Коэффициент:</span>
+        <span id="lk-val-rocket" style="font-family:Orbitron,monospace;font-size:20px;color:var(--gold);font-weight:700">1.00</span>
+      </div>
+      <input type="range" id="lk-sl-rocket" min="0" max="200" value="100" oninput="lkSlider('rocket',this.value)"
+        style="width:100%;height:6px;border-radius:3px;cursor:pointer;accent-color:var(--gold);margin-bottom:10px"/>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pb" onclick="lkSet('rocket',0)">0.0 — Всегда проигрыш</div>
+        <div class="pb" onclick="lkSet('rocket',0.5)">0.5</div>
+        <div class="pb" onclick="lkSet('rocket',1.0)">1.0 — Честно</div>
+        <div class="pb" onclick="lkSet('rocket',1.5)">1.5</div>
+      </div>
+      <button class="abtn set" style="width:100%;padding:11px" onclick="lkSave('rocket')">💾 Сохранить (только ракеты)</button>
+    </div>
+    <div id="lk-st-rocket" style="text-align:center;font-size:12px;color:var(--muted);min-height:18px"></div>
+  </div>
+
   <!-- Maintenance / game switches -->
   <div class="settings-block">
     <div class="settings-title">🛠️ ТЕХРАБОТЫ И ЗАКРЫТИЕ ИГР</div>
@@ -1869,8 +1941,11 @@ async function loadRev(){
       <div class="ri"><div class="ri-l">🎰 Европ. (виртуально)</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
       <div class="ri"><div class="ri-l">💣 Мины (виртуально)</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
       <div class="ri"><div class="ri-l">🗼 Башня (виртуально)</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
-      <div class="ri"><div class="ri-l">📉 Проиграно игр. (виртуально)</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses+(d.other_losses||0)}</div></div>
-      <div class="ri"><div class="ri-l">📈 Выплачено игр. (виртуально)</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins+(d.other_wins||0)}</div></div>
+      ${['blackjack','plinko','rocket'].map(k=>{const g=(d.games||{})[k]||{profit:0};
+        const nm={blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета'}[k];
+        return `<div class="ri"><div class="ri-l">${nm} (виртуально)</div><div class="ri-v ${g.profit>=0?'g':'r'}">${g.profit>=0?'+':''}${g.profit}</div></div>`;}).join('')}
+      <div class="ri"><div class="ri-l">📉 Проиграно игр. (виртуально)</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
+      <div class="ri"><div class="ri-l">📈 Выплачено игр. (виртуально)</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
       <div style="grid-column:1/-1;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;margin-top:6px">ПО РЕЖИМАМ (точная статистика партий, считается с момента обновления)</div>
       ${gcards}
       <div class="ri"><div class="ri-l">💳 Куплено монет (только за ⭐)</div><div class="ri-v gold">+${d.deposits}</div></div>
@@ -1918,7 +1993,9 @@ async function saveGlCoeff(){
       api('/api/admin/euro_luck','POST',{coeff:1}),
       api('/api/admin/mines_luck','POST',{coeff:1}),
       api('/api/admin/tower_luck','POST',{coeff:1}),
+      ...LK_GAMES.map(g=>api('/api/admin/game_luck','POST',{game:g,coeff:1})),
     ]);
+    LK_GAMES.forEach(g=>{lkCoeff[g]=1;lkRender(g);});
     euroCoeff = 1; minesCoeff = 1; towerLuckCoeff = 1;
     ['euro-slider','mines-slider','tower-luck-slider'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.value=100;
@@ -2015,6 +2092,33 @@ async function saveBjCoeff(){
   } catch{ toast('Ошибка сохранения','err'); }
 }
 
+// ── Независимые коэффициенты удачи: блэкджек / plinko / ракета ──
+const LK_GAMES=['blackjack','plinko','rocket'];
+const lkCoeff={};
+async function loadGameLucks(){
+  for(const g of LK_GAMES){
+    try{ const r=await api('/api/admin/game_luck?game='+g); lkCoeff[g]=r.coeff ?? 1; }catch{ lkCoeff[g]=1; }
+    lkRender(g);
+  }
+}
+function lkRender(g){
+  const v=document.getElementById('lk-val-'+g), sl=document.getElementById('lk-sl-'+g);
+  if(v) v.textContent=(+lkCoeff[g]).toFixed(2);
+  if(sl) sl.value=Math.round(lkCoeff[g]*100);
+}
+function lkSlider(g,v){ lkCoeff[g]=parseInt(v)/100; lkRender(g); }
+function lkSet(g,v){ lkCoeff[g]=v; lkRender(g); }
+async function lkSave(g){
+  const st=document.getElementById('lk-st-'+g);
+  st.style.color='var(--muted)'; st.textContent='⏳ Сохранение...';
+  try{
+    const r=await api('/api/admin/game_luck','POST',{game:g,coeff:lkCoeff[g]});
+    st.style.color=r.ok?'var(--green)':'var(--red)';
+    st.textContent=r.ok?('✅ Применено: '+lkCoeff[g].toFixed(2)):('❌ '+(r.error||'ошибка'));
+  }catch{ st.style.color='var(--red)'; st.textContent='❌ Ошибка'; }
+  setTimeout(()=>st.textContent='',3000);
+}
+
 // Maintenance / per-game switches
 const GAME_LABELS={european_roulette:'🎡 Евр. рулетка',gta_roulette:'🔫 GTA рулетка',mines:'💣 Мины',tower:'🗼 Башня',
   blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета'};
@@ -2061,6 +2165,7 @@ async function loadGl(){
   towerLuckCoeff  = await load('/api/admin/tower_luck', 'coeff', document.getElementById('tower-luck-slider'), document.getElementById('tower-luck-val'));
   bjCoeff         = await load('/api/admin/blackjack_luck', 'coeff', document.getElementById('bj-slider'), document.getElementById('bj-val'));
   await loadMaintenance();
+  await loadGameLucks();
   try{
     const d = await api('/api/admin/mines_max_mult');
     minesMaxMult = d.max_mult ?? d.value ?? 25;
