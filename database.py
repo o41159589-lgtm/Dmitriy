@@ -957,10 +957,8 @@ async def get_recent_activity(limit: int = 100) -> list:
 
 
 # ── УДАЧА ПО РЕЖИМАМ ─────────────────────────────────────────────────────
-LUCK_KEYS = {
+LUCK_KEYS = {   # отдельные коэффициенты только у «старых» режимов; остальные игры управляются глобальным
     "european_roulette": "euro_luck_coeff", "mines": "mines_luck_coeff", "tower": "tower_luck_coeff",
-    "blackjack": "blackjack_luck_coeff", "plinko": "plinko_luck_coeff",
-    "rocket": "rocket_luck_coeff", "gta_roulette": "gta_luck_coeff",
 }
 
 
@@ -971,3 +969,52 @@ async def get_game_luck_coeff(game: str) -> float:
 async def set_game_luck_coeff(game: str, coeff: float):
     coeff = max(0.0, min(2.0, float(coeff)))
     await _set_setting(LUCK_KEYS[game], str(coeff))
+
+
+# ── СТАТИСТИКА ПО РЕЖИМАМ (точные ставки/выплаты каждой партии) ───────────
+STAT_GAMES = ["european_roulette", "mines", "tower", "blackjack", "plinko", "rocket"]
+
+
+async def _ensure_game_stats():
+    db = await _get_conn()
+    await db.execute("""CREATE TABLE IF NOT EXISTS game_stats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, game TEXT NOT NULL, user_id INTEGER NOT NULL,
+        bet INTEGER NOT NULL, payout INTEGER NOT NULL, created_at REAL NOT NULL)""")
+    await db.execute("CREATE INDEX IF NOT EXISTS idx_game_stats ON game_stats(game, created_at)")
+    await db.commit()
+
+
+_game_stats_ready = False
+
+
+async def log_game_result(game: str, uid: int, bet, payout):
+    """Одна сыгранная партия: ставка и выплата (0 = проигрыш). Нужна для точной статистики дохода."""
+    global _game_stats_ready
+    try:
+        if not _game_stats_ready:
+            await _ensure_game_stats(); _game_stats_ready = True
+        db = await _get_conn()
+        await db.execute("INSERT INTO game_stats (game,user_id,bet,payout,created_at) VALUES (?,?,?,?,?)",
+                         (game, uid, _to_int(bet), _to_int(payout), time.time()))
+        await db.commit()
+    except Exception:
+        pass
+
+
+async def get_game_stats(from_ts: float, to_ts: float) -> dict:
+    global _game_stats_ready
+    if not _game_stats_ready:
+        await _ensure_game_stats(); _game_stats_ready = True
+    db = await _get_conn()
+    out = {g: {"games": 0, "wagered": 0, "paid": 0, "profit": 0, "avg": 0.0, "rtp": 0.0, "wins": 0}
+           for g in STAT_GAMES}
+    async with db.execute(
+        """SELECT game, COUNT(*), COALESCE(SUM(bet),0), COALESCE(SUM(payout),0),
+                  COALESCE(SUM(CASE WHEN payout>bet THEN 1 ELSE 0 END),0)
+           FROM game_stats WHERE created_at>=? AND created_at<=? GROUP BY game""", (from_ts, to_ts)) as cur:
+        for g, n, bet, paid, wins in await cur.fetchall():
+            if g in out:
+                o = out[g]; o.update(games=n, wagered=bet, paid=paid, wins=wins, profit=bet - paid,
+                                     avg=round((bet - paid) / n, 2) if n else 0.0,
+                                     rtp=round(paid * 100 / bet, 1) if bet else 0.0)
+    return out

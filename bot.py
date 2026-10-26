@@ -108,7 +108,9 @@ async def luck_roll(uid: int, game: str):
     luck = await db.get_luck(uid)
     if luck == 100: return "win"
     if luck == 0:   return "lose"
-    k = (await db.get_global_luck_coeff()) * (await db.get_game_luck_coeff(game))
+    k = await db.get_global_luck_coeff()
+    if game in db.LUCK_KEYS:                       # у рулетки/мин/башни есть свой коэффициент поверх глобального
+        k *= await db.get_game_luck_coeff(game)
     dev = (k - 1.0) if luck < 0 else ((luck - 50) / 50.0) * k
     p = min(1.0, abs(dev))
     res = None if (p <= 0 or _rng.random() >= p) else ("win" if dev > 0 else "lose")
@@ -1059,6 +1061,7 @@ async def api_spin(req: web.Request):
     profit = total_gain - total_cost
     won = profit > 0
     new_bal = await db.add_to_balance(uid, total_gain)   # ставка уже списана выше
+    await db.log_game_result("european_roulette", uid, total_cost, total_gain)
 
     types_str = "+".join(b["type"] for b in bets)
     if profit >= 0:
@@ -1144,7 +1147,7 @@ async def _gta_run(lid):
     if not bets: return
     await db.set_lobby_spinning(lid)
     pot, total = lobby["pot"], sum(b["amount"] for b in bets)
-    global_k = (await db.get_global_luck_coeff()) * (await db.get_game_luck_coeff("gta_roulette"))
+    global_k = await db.get_global_luck_coeff()
 
     luck_map = {}
     for b in bets:
@@ -1233,6 +1236,7 @@ async def api_mines_start(req: web.Request):
     if uid in active_mines:
         await db.add_history(uid, "lose", active_mines[uid]["bet"],
             f"Мины: незавершённая игра (брошена)")
+        await db.log_game_result("mines", uid, active_mines[uid]["bet"], 0)
 
     # Generate bomb positions
     positions = list(range(25))
@@ -1302,6 +1306,7 @@ async def api_mines_reveal(req: web.Request):
         # Lose — reveal all bombs
         del active_mines[uid]
         await db.update_spin_stats(uid, False, 0, game["bet"])
+        await db.log_game_result("mines", uid, game["bet"], 0)
         await db.add_history(uid, "lose", game["bet"],
             f"Мины: взрыв ({game['bombs']} бомб)")
         asyncio.create_task(_passive_ref_income(uid, game["bet"]))
@@ -1330,6 +1335,7 @@ async def api_mines_reveal(req: web.Request):
         # Auto cashout if all safe cells revealed
         if safe_left == 0:
             new_bal = await db.add_to_balance(uid, current_win)
+            await db.log_game_result("mines", uid, game["bet"], current_win)
             await db.add_history(uid, "win", current_win,
                 f"Мины: все алмазы! x{current_mult} ({game['bombs']} бомб)")
             await db.update_spin_stats(uid, True, current_win, 0)
@@ -1374,6 +1380,7 @@ async def api_mines_cashout(req: web.Request):
     won          = round(game["bet"] * mult)
     profit       = won - game["bet"]
     new_bal      = await db.add_to_balance(uid, won)
+    await db.log_game_result("mines", uid, game["bet"], won)
     await db.add_history(uid, "win", won,
         f"Мины: кешаут x{mult} ({safe_count} алмазов, {game['bombs']} бомб)")
     await db.update_spin_stats(uid, True, won, 0)
@@ -1565,7 +1572,9 @@ async def api_admin_set_global_luck(req):
 async def api_admin_revenue(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
     from_ts = float(req.rel_url.query.get("from",0)); to_ts = float(req.rel_url.query.get("to",9999999999))
-    return web.json_response(await db.get_revenue(from_ts, to_ts))
+    data = await db.get_revenue(from_ts, to_ts)
+    data["games"] = await db.get_game_stats(from_ts, to_ts)
+    return web.json_response(data)
 
 async def api_admin_users(req):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
@@ -1705,24 +1714,6 @@ async def api_admin_set_maintenance(req):
             f"({', '.join(st['disabled_games']) or '—'})", incognito=False))
     return web.json_response({"ok": True, **st})
 
-async def api_admin_get_game_luck(req):
-    game = req.rel_url.query.get("game", "")
-    if game not in db.LUCK_KEYS: return web.json_response({"error": "unknown game"}, status=400)
-    return web.json_response({"game": game, "coeff": await db.get_game_luck_coeff(game)})
-
-async def api_admin_set_game_luck(req):
-    data = await req.json()
-    game = str(data.get("game", ""))
-    if game not in db.LUCK_KEYS: return web.json_response({"error": "unknown game"}, status=400)
-    try: coeff = float(data.get("coeff", 1.0))
-    except Exception: return web.json_response({"error": "bad coeff"}, status=400)
-    await db.set_game_luck_coeff(game, coeff)
-    if not bool(data.get("incognito", False)):
-        uid = _actor_uid(req); u = await db.get_user(uid)
-        fire_log(log_admin_action(uid, u.get("first_name", "Admin") if u else "Admin", "SET_GAME_LUCK", 0,
-                 "Все игроки", f"Удача {game} → {coeff}", incognito=False))
-    return web.json_response({"ok": True, "game": game, "coeff": await db.get_game_luck_coeff(game)})
-
 # Static
 BASE = Path(__file__).parent
 async def serve_html(f):
@@ -1813,6 +1804,7 @@ async def api_tower_start(req: web.Request):
     if uid in active_towers:
         old = active_towers[uid]
         if old.get("floor", 1) > 1:
+            await db.log_game_result("tower", uid, old["bet"], 0)
             await db.add_history(uid, "lose", old["bet"],
                 f"Башня: незавершённая игра (брошена, этаж {old['floor']})")
 
@@ -1875,6 +1867,7 @@ async def api_tower_step(req: web.Request):
     if is_bomb:
         del active_towers[uid]
         await db.update_spin_stats(uid, False, 0, game["bet"])
+        await db.log_game_result("tower", uid, game["bet"], 0)
         await db.add_history(uid, "lose", game["bet"],
             f"Башня: взрыв на этаже {floor}")
         asyncio.create_task(_passive_ref_income(uid, game["bet"]))
@@ -1899,6 +1892,7 @@ async def api_tower_step(req: web.Request):
             # Auto cashout at top floor
             new_bal = await db.add_to_balance(uid, current_win)
             profit = current_win - game["bet"]
+            await db.log_game_result("tower", uid, game["bet"], current_win)
             await db.add_history(uid, "win", current_win,
                 f"Башня: кешаут этаж {floor} ×{mult}")
             await db.update_spin_stats(uid, True, current_win, 0)
@@ -1948,6 +1942,7 @@ async def api_tower_cashout(req: web.Request):
     won         = round(game["bet"] * mult)
     profit      = won - game["bet"]
     new_bal     = await db.add_to_balance(uid, won)
+    await db.log_game_result("tower", uid, game["bet"], won)
     await db.add_history(uid, "win", won,
         f"Башня: кешаут этаж {completed_floor} ×{mult}")
     await db.update_spin_stats(uid, True, won, 0)
@@ -2370,6 +2365,7 @@ async def _finish_game(uid: int, title: str, bet: int, payout: int, detail: str)
     else:
         new_bal = int((await db.get_user(uid) or {}).get("balance", 0))
     profit = payout - bet
+    await db.log_game_result({"Plinko": "plinko", "Блэкджек": "blackjack", "Ракета": "rocket"}.get(title, title), uid, bet, payout)
     if profit >= 0:
         await db.add_history(uid, "win", payout, detail)
         await db.update_spin_stats(uid, True, payout, 0)
@@ -2459,6 +2455,8 @@ def _bj_draw_player(g):
 def _bj_dealer_play(g):
     """Дилер добирает до 17. При подкрутке подбираем порядок карт, дающий нужный исход."""
     roll, ps = g.get("roll"), _bj_score(g["ph"])
+    if ps > 21:            # игрок уже перебрал — раунд проигран, дилер карт не берёт
+        return
     def play(deck):
         h = list(g["dh"]); d = list(deck)
         while _bj_score(h) < 17: h.append(d.pop())
@@ -2701,8 +2699,6 @@ async def start_web():
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_get ("/api/status",                 api_status)
-    app.router.add_get ("/api/admin/game_luck",        api_admin_get_game_luck)
-    app.router.add_post("/api/admin/game_luck",        api_admin_set_game_luck)
     app.router.add_get ("/api/admin/maintenance",     api_admin_get_maintenance)
     app.router.add_post("/api/admin/maintenance",     api_admin_set_maintenance)
     app.router.add_get ("/api/admin/glogs",          api_admin_glogs)
