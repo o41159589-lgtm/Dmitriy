@@ -391,7 +391,6 @@ a[href*="main.html"] {
       💰 КЕШАУТ — <span id="cashout-lbl">0</span> 🪙
     </button>
     <div class="act-row">
-      <button class="act-btn" onclick="newGame()">🔄 Новая игра</button>
       <button class="act-btn" onclick="goBack()">← Назад</button>
     </div>
   </div>
@@ -399,12 +398,13 @@ a[href*="main.html"] {
 </div>
 
 <!-- RESULT -->
-<div class="res-overlay" id="res-overlay" onclick="closeResult()">
+<div class="res-overlay" id="res-overlay">
   <div class="res-card">
     <span class="res-ico" id="res-ico">💎</span>
     <div class="res-title" id="res-title">КЕШАУТ!</div>
     <div class="res-sub" id="res-sub">Ставка: 50 🪙 · ×2.0</div>
     <div class="res-amt" id="res-amt">+100 🪙</div>
+    <button class="res-close" onclick="closeResult()">🎮 Играть снова</button>
     <a href="main.html?tab=games" style="display:block;margin-top:8px;color:rgba(255,255,255,.4);font-size:13px;text-decoration:none;text-align:center">← В меню игр</a>
   </div>
 </div>
@@ -528,9 +528,9 @@ function showResult(won,bet,mult,amount){
   document.getElementById('res-sub').textContent=`Ставка: ${bet} 🪙 · ×${(mult||1).toFixed(2)}`;
   document.getElementById('res-amt').textContent=won?`+${amount} 🪙`:`-${bet} 🪙`;
   document.getElementById('res-amt').className='res-amt '+(won?'win':'lose');
-  document.getElementById('res-overlay').classList.add('show');clearTimeout(window._rcT);window._rcT=setTimeout(closeResult,2600);
+  document.getElementById('res-overlay').classList.add('show');
 }
-function closeResult(){const _o=document.getElementById('res-overlay');if(!_o.classList.contains('show'))return;clearTimeout(window._rcT);_o.classList.remove('show');newGame();loadUser();}
+function closeResult(){document.getElementById('res-overlay').classList.remove('show');newGame();loadUser();}
 function newGame(){gameActive=false;document.getElementById('game-area').classList.remove('on');document.getElementById('setup-card').classList.remove('hidden');revealed=[];}
 function goBack(){if(gameActive&&!confirm('Игра будет потеряна. Выйти?'))return;location.href='main.html?tab=games';}
 

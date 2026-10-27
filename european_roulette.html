@@ -87,14 +87,11 @@ body::before{
 }
 .wheel-frame{position:relative;width:272px;height:272px;}
 #wc{position:absolute;inset:0;border-radius:50%;transform-origin:50% 50%;will-change:transform;}
-.wheel-frame::before{content:'';position:absolute;inset:4px;border-radius:50%;box-shadow:0 8px 24px rgba(0,30,70,0.20);}
-.w-ptr{
-  position:absolute;top:-2px;left:50%;transform:translateX(-50%);
-  width:0;height:0;
-  border-left:10px solid transparent;border-right:10px solid transparent;
-  border-top:22px solid #FFD028;
-  filter:drop-shadow(0 0 8px rgba(255,210,40,.9));z-index:10;
-}
+.wheel-frame::before{content:'';position:absolute;inset:4px;border-radius:50%;box-shadow:0 10px 28px rgba(255,60,120,0.30),0 4px 14px rgba(0,30,70,0.22);}
+.wheel-frame::after{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(ellipse 55% 38% at 32% 20%,rgba(255,255,255,.55) 0,rgba(255,255,255,0) 100%)}
+.w-ptr{position:absolute;top:-9px;left:50%;transform:translateX(-50%);width:26px;height:32px;z-index:3;
+  background:linear-gradient(180deg,#FFF6B8 0%,#FFC400 55%,#E58F00 100%);clip-path:polygon(50% 100%,0 26%,16% 0,84% 0,100% 26%);
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.4))}
 
 /* Result band */
 .res-band{
@@ -291,59 +288,85 @@ async function initUser(){
 
 function sectorUnder(a){const norm=((-a)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);return Math.floor(norm/SLICE)%N;}
 
+// ── КОНФЕТНОЕ колесо: глянцевые карамельные сектора, леденцовый обод с посыпкой, леденцовый центр ──
+const DPR=3;                                   // рисуем в 3× разрешении — чёткое колесо на любом экране
+canvas.width=canvas.height=W*DPR;canvas.style.width=canvas.style.height='100%';
+const CANDY={red:['#FFA3BF','#FF2D6F'],black:['#8F82FF','#2F2392'],green:['#8CFFD2','#00BE6B']};
+const SPRINK=['#FF2D6F','#FFC400','#19E39A','#4C7DFF','#B45CFF'];
 function drawWheel(angle,winIdx=-1){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,W,W);
-  // Base
-  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle='#080812';ctx.fill();
+  const rimW=15,Ro=R-rimW,ri=R*.47;
+  // обод-леденец
+  let g=ctx.createRadialGradient(cx,cy,Ro-2,cx,cy,R);
+  g.addColorStop(0,'#FFE3EE');g.addColorStop(.55,'#FFFFFF');g.addColorStop(1,'#FFC2D8');
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,R-.8,0,Math.PI*2);ctx.strokeStyle='#FFC400';ctx.lineWidth=1.6;ctx.stroke();
+  // разноцветная посыпка по ободу
+  ctx.lineCap='round';
+  for(let i=0;i<37;i++){
+    const a=angle+i*SLICE-Math.PI/2+SLICE/2, rr=R-rimW/2-.5;
+    const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr,tx=-Math.sin(a)*3.2,ty=Math.cos(a)*3.2;
+    ctx.strokeStyle=SPRINK[i%SPRINK.length];ctx.lineWidth=3.4;
+    ctx.beginPath();ctx.moveTo(x-tx,y-ty);ctx.lineTo(x+tx,y+ty);ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x-tx*.7-ty*.25,y-ty*.7+tx*.25);ctx.lineTo(x+tx*.2-ty*.25,y+ty*.2+tx*.25);ctx.stroke();
+  }
+  // тёмная «чаша» под секторами
+  ctx.beginPath();ctx.arc(cx,cy,Ro+1,0,Math.PI*2);ctx.fillStyle='#2A1650';ctx.fill();
 
   for(let i=0;i<N;i++){
     const sa=angle+i*SLICE-Math.PI/2,ea=sa+SLICE;
     const{n,c}=NUMS[i],win=(i===winIdx);
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R-2,sa,ea);ctx.closePath();
+    const [c0,c1]=CANDY[c];
+    ctx.beginPath();ctx.arc(cx,cy,Ro,sa,ea);ctx.arc(cx,cy,ri,ea,sa,true);ctx.closePath();
+    const gg=ctx.createRadialGradient(cx,cy,ri,cx,cy,Ro);
+    if(win){gg.addColorStop(0,'#FFFFFF');gg.addColorStop(.5,c0);gg.addColorStop(1,'#FFFFFF');}
+    else{gg.addColorStop(0,c0);gg.addColorStop(.35,c1);gg.addColorStop(1,c1);}
+    ctx.fillStyle=gg;ctx.fill();
+    // глянцевая полоска на внешнем крае
+    ctx.beginPath();ctx.arc(cx,cy,Ro-4.2,sa+SLICE*.16,ea-SLICE*.16);
+    ctx.strokeStyle='rgba(255,255,255,'+(win?.9:.42)+')';ctx.lineWidth=3.4;ctx.lineCap='round';ctx.stroke();
+    // мягкая тень у внутреннего края
+    ctx.beginPath();ctx.arc(cx,cy,ri+3,sa+SLICE*.1,ea-SLICE*.1);
+    ctx.strokeStyle='rgba(20,0,60,.22)';ctx.lineWidth=3;ctx.stroke();
+    // разделитель
+    ctx.save();ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.1;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(sa)*ri,cy+Math.sin(sa)*ri);ctx.lineTo(cx+Math.cos(sa)*Ro,cy+Math.sin(sa)*Ro);ctx.stroke();ctx.restore();
     if(win){
-      const ma=sa+SLICE/2,gx=cx+Math.cos(ma)*(R*.5),gy=cy+Math.sin(ma)*(R*.5);
-      const g=ctx.createRadialGradient(gx,gy,0,gx,gy,R*.7);
-      if(c==='red'){g.addColorStop(0,'#FF5566');g.addColorStop(1,'#B01020');}
-      else if(c==='black'){g.addColorStop(0,'#6655CC');g.addColorStop(1,'#181530');}
-      else{g.addColorStop(0,'#00FF88');g.addColorStop(1,'#0A6030');}
-      ctx.fillStyle=g;
-    }else{
-      ctx.fillStyle=c==='red'?'#E83050':c==='black'?'#2A2A44':'#18A050';
+      ctx.save();ctx.strokeStyle='#fff';ctx.lineWidth=2.4;ctx.shadowColor='#fff';ctx.shadowBlur=12;
+      ctx.beginPath();ctx.arc(cx,cy,Ro,sa,ea);ctx.arc(cx,cy,ri,ea,sa,true);ctx.closePath();ctx.stroke();ctx.restore();
     }
-    ctx.fill();
-    // Divider
-    ctx.save();ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(cx+Math.cos(sa)*(R*.5),cy+Math.sin(sa)*(R*.5));
-    ctx.lineTo(cx+Math.cos(sa)*(R-2),cy+Math.sin(sa)*(R-2));ctx.stroke();ctx.restore();
-    // Win border
-    if(win){
-      ctx.save();ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.shadowColor='rgba(255,255,255,.6)';ctx.shadowBlur=10;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R-2,sa,ea);ctx.closePath();ctx.stroke();ctx.restore();
-    }
-    // Number
-    const ma=sa+SLICE/2,tr=R*.73;
+    // номер
+    const ma=sa+SLICE/2,tr=(ri+Ro)/2+7;
     ctx.save();ctx.translate(cx+Math.cos(ma)*tr,cy+Math.sin(ma)*tr);ctx.rotate(ma+Math.PI/2);
-    ctx.fillStyle='rgba(255,255,255,.9)';ctx.font=`bold ${n===0?10:8}px 'JetBrains Mono',monospace`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    if(win){ctx.shadowColor='rgba(255,255,200,1)';ctx.shadowBlur=7;}
-    ctx.fillText(n,0,0);ctx.restore();
+    ctx.font=`900 ${n===0?12:11}px Nunito,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor=win?'rgba(80,40,0,.7)':'rgba(20,0,60,.55)';ctx.shadowBlur=2.5;ctx.shadowOffsetY=1;
+    ctx.fillStyle=win?'#3A1A00':'#fff';ctx.fillText(n,0,0);ctx.restore();
   }
+  // золотое кольцо между секторами и центром
+  ctx.beginPath();ctx.arc(cx,cy,ri,0,Math.PI*2);ctx.strokeStyle='#FFC400';ctx.lineWidth=3.4;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,ri-1.8,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1;ctx.stroke();
 
-  // Gold outer ring
-  ctx.beginPath();ctx.arc(cx,cy,R-1,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,214,0,.7)';ctx.lineWidth=2.5;ctx.stroke();
-  // Decorative inner ring
-  ctx.beginPath();ctx.arc(cx,cy,R-14,0,Math.PI*2);
-  ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=1;ctx.strokeStyle='rgba(255,214,0,.25)';ctx.stroke();
-
-  // Hub
+  // центр-леденец: розово-белые «дольки»
+  const ci=ri-3;
+  for(let k=0;k<12;k++){
+    const a0=angle+k*Math.PI/6,a1=a0+Math.PI/6;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,ci,a0,a1);ctx.closePath();
+    const cg=ctx.createRadialGradient(cx,cy,2,cx,cy,ci);
+    if(k%2){cg.addColorStop(0,'#FFFFFF');cg.addColorStop(1,'#FFE0EC');}else{cg.addColorStop(0,'#FF8FB5');cg.addColorStop(1,'#FF3B7A');}
+    ctx.fillStyle=cg;ctx.fill();
+  }
+  const sg=ctx.createRadialGradient(cx-ci*.3,cy-ci*.35,1,cx,cy,ci);
+  sg.addColorStop(0,'rgba(255,255,255,.5)');sg.addColorStop(.6,'rgba(255,255,255,0)');sg.addColorStop(1,'rgba(120,0,60,.18)');
+  ctx.beginPath();ctx.arc(cx,cy,ci,0,Math.PI*2);ctx.fillStyle=sg;ctx.fill();
+  // золотая шишечка в центре
   const hr=R*.13;
-  const hg=ctx.createRadialGradient(cx-hr*.2,cy-hr*.25,0,cx,cy,hr);
-  hg.addColorStop(0,'#FFE878');hg.addColorStop(.5,'#FFD028');hg.addColorStop(1,'#C09000');
+  const hg=ctx.createRadialGradient(cx-hr*.3,cy-hr*.35,0,cx,cy,hr);
+  hg.addColorStop(0,'#FFF8C8');hg.addColorStop(.45,'#FFD028');hg.addColorStop(1,'#C98A00');
   ctx.beginPath();ctx.arc(cx,cy,hr,0,Math.PI*2);ctx.fillStyle=hg;ctx.fill();
-  ctx.strokeStyle='rgba(255,214,0,.4)';ctx.lineWidth=1;ctx.stroke();
-  // Hub shine
-  ctx.beginPath();ctx.arc(cx-hr*.25,cy-hr*.3,hr*.2,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=1.6;ctx.stroke();
+  ctx.beginPath();ctx.arc(cx-hr*.3,cy-hr*.35,hr*.22,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.75)';ctx.fill();
 }
 
 // Колесо рисуется ОДИН раз и дальше только вращается через CSS-transform (композитор GPU).

@@ -2444,6 +2444,10 @@ async def api_plinko_drop(req):
 _BJ_SUITS = "♠♥♦♣"
 _BJ_VALS = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]
 active_bj: dict[int, dict] = {}
+# ── правила блэкджека (по симуляции базовой стратегии даёт RTP ≈ 97%, как у ракеты/плинко) ──
+BJ_DECKS = 6               # колод в «башмаке» (перетасовывается каждый раунд)
+BJ_DEALER_HITS_SOFT_17 = True
+BJ_PAYS = 2.2              # выплата за блэкджек с учётом ставки: 2.5 = 3:2, 2.2 = 6:5, 2.0 = 1:1
 
 def _bj_val(v): return 10 if v in "JQK" or v == "10" else (11 if v == "A" else int(v))
 def _bj_score(h):
@@ -2451,10 +2455,16 @@ def _bj_score(h):
     while s > 21 and a: s -= 10; a -= 1
     return s
 def _bj_is_bj(h): return len(h) == 2 and _bj_score(h) == 21
+def _bj_soft17(h):
+    s = sum(_bj_val(c["v"]) for c in h); a = sum(1 for c in h if c["v"] == "A")
+    while s > 21 and a: s -= 10; a -= 1
+    return s == 17 and a > 0
+def _bj_must_hit(h): return _bj_score(h) < 17 or (BJ_DEALER_HITS_SOFT_17 and _bj_soft17(h))
 
 def _bj_public(g, done=False):
     return {"player": g["ph"], "dealer": g["dh"] if done else [g["dh"][0], None],
             "bet": g["bet"], "doubled": g["doubled"],
+            "pays": BJ_PAYS,
             "can_double": (not done) and not g["doubled"] and len(g["ph"]) == 2,
             "ps": _bj_score(g["ph"]), "ds": _bj_score(g["dh"]) if done else None}
 
@@ -2477,14 +2487,14 @@ def _bj_dealer_play(g):
         return
     def play(deck):
         h = list(g["dh"]); d = list(deck)
-        while _bj_score(h) < 17: h.append(d.pop())
+        while _bj_must_hit(h): h.append(d.pop())
         return h, d
     if roll and ps <= 21:
         for _ in range(400):
             d = list(g["deck"]) + [g["dh"][1]]; _rng.shuffle(d)    # закрытая карта дилера ещё не показана — её тоже можно подобрать
             base = [g["dh"][0], d.pop()]
             h = list(base)
-            while _bj_score(h) < 17: h.append(d.pop())
+            while _bj_must_hit(h): h.append(d.pop())
             ds = _bj_score(h)
             ok = (ds > 21 or ds < ps) if roll == "win" else (21 >= ds > ps)
             if ok:
@@ -2498,7 +2508,7 @@ async def _bj_finish(uid, g):
     pbj = _bj_is_bj(g["ph"]) and not g["doubled"]
     bet = g["bet"]
     if ps > 21:                  outcome, mult = "bust", 0
-    elif pbj and ds != 21:       outcome, mult = "bj", 2.5
+    elif pbj and ds != 21:       outcome, mult = "bj", BJ_PAYS
     elif ds > 21 or ps > ds:     outcome, mult = "win", 2
     elif ps == ds:               outcome, mult = "push", 1
     else:                        outcome, mult = "lose", 0
@@ -2519,7 +2529,7 @@ async def api_bj_start(req):
                                   "state": _bj_public(active_bj[uid])})
     if await db.try_debit(uid, bet) is None:
         return web.json_response({"error": "Недостаточно монет"}, status=400)
-    deck = [{"s": s_, "v": v} for s_ in _BJ_SUITS for v in _BJ_VALS]
+    deck = [{"s": s_, "v": v} for _ in range(BJ_DECKS) for s_ in _BJ_SUITS for v in _BJ_VALS]
     roll = await luck_roll(uid, "blackjack")
     for _ in range(60):                       # при подкрутке пере-раздаём, пока стартовая раздача не противоречит исходу
         _rng.shuffle(deck)

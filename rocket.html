@@ -36,13 +36,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 .mult-val.cashed{color:#FFD84D;text-shadow:0 4px 26px rgba(255,200,40,.6)}
 .mult-status{margin-top:6px;font-size:12px;font-weight:800;letter-spacing:2.5px;color:rgba(255,255,255,.65)}
 
-/* ── ракета (нос смотрит по касательной к графику) ── */
-#rocket{position:absolute;left:0;top:0;width:36px;height:70px;z-index:4;will-change:transform;transform-origin:50% 26px;}
-#rocket svg{position:absolute;left:0;top:0;filter:drop-shadow(0 0 10px rgba(130,170,255,.65))}
-#flame{position:absolute;left:9px;top:50px;width:18px;height:40px;transform-origin:50% 0;animation:flick .12s linear infinite alternate;}
-#flame::before{content:'';position:absolute;inset:0;border-radius:50% 50% 60% 60%/20% 20% 90% 90%;background:linear-gradient(180deg,#fff 0%,#FFE680 25%,#FF9A2E 65%,rgba(255,80,20,0) 100%);filter:blur(.6px)}
-@keyframes flick{from{transform:scaleY(.8) scaleX(.92);opacity:.9}to{transform:scaleY(1.15) scaleX(1.05);opacity:1}}
-#rocket.idle #flame{opacity:.0;animation:none}
+/* ── ракета: анимированный стикер, сконвертированный в WebP (нос стикера смотрит на 45°, поворачиваем по касательной к графику) ── */
+#rocket{position:absolute;left:0;top:0;width:64px;height:64px;z-index:4;will-change:transform;transform-origin:50% 50%;pointer-events:none}
+#rocket img{display:block;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
 #rocket.away{transition:transform .9s cubic-bezier(.5,0,1,.6),opacity .9s;opacity:0}
 #boom{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;z-index:5;pointer-events:none;display:none}
 #boom.go{display:block}
@@ -88,16 +84,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
     <div id="stars"></div>
     <canvas id="cv"></canvas>
     <div class="mult"><div class="mult-val" id="mv">1.00×</div><div class="mult-status" id="ms">ОЖИДАНИЕ</div></div>
-    <div id="rocket" class="idle">
-      <div id="flame"></div>
-      <svg width="36" height="52" viewBox="0 0 36 52">
-        <path d="M18 0C26 9 29 20 28 34H8C7 20 10 9 18 0Z" fill="#F4F6FF"/>
-        <path d="M18 0C22 5 24.500 10 25.500 16H10.500C11.500 10 14 5 18 0Z" fill="#FF5A6A"/>
-        <circle cx="18" cy="22" r="5.200" fill="#2E4FA8"/><circle cx="18" cy="22" r="3.600" fill="#7FB4FF"/><circle cx="16.700" cy="20.700" r="1.200" fill="#fff" opacity=".8"/>
-        <path d="M8 28L0 44L8 40Z" fill="#FF5A6A"/><path d="M28 28L36 44L28 40Z" fill="#FF5A6A"/>
-        <path d="M13 34h10l-2 6h-6z" fill="#8A93B8"/>
-      </svg>
-    </div>
+    <div id="rocket" class="idle"><img src="rocket.webp" width="64" height="64" alt="" draggable="false"></div>
     <div id="boom"><i></i><i></i><b>💥</b></div>
   </div>
 
@@ -200,7 +187,7 @@ function frame(t,m,redrawOnly){
     const dx=(W-PL-PR)/v.Tv, dyUp=(H-PT-PB)*RATE*Math.max(1,m)/(v.Mv-1);
     const target=Math.atan2(dx,dyUp)*180/Math.PI;
     lastAngle += (target-lastAngle)*(redrawOnly?1:.18); ang=lastAngle;
-    rocket.style.transform=`translate(${tip.x-18}px,${tip.y-26}px) rotate(${ang}deg)`;
+    rocket.style.transform=`translate(${tip.x-32}px,${tip.y-32}px) rotate(${ang-45}deg)`;
   }
   return {tip,ang};
 }

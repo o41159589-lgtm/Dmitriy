@@ -294,7 +294,6 @@ a[href*="main.html"] {
       💰 КЕШАУТ — <span id="cashout-lbl">0</span> 🪙
     </button>
     <div class="act-row">
-      <button class="act-btn" onclick="newGame()">🔄 Новая игра</button>
       <button class="act-btn" onclick="goBack()">← Назад</button>
     </div>
   </div>
@@ -302,12 +301,13 @@ a[href*="main.html"] {
 </div>
 
 <!-- RESULT -->
-<div class="res-overlay" id="res-overlay" onclick="closeResult()">
+<div class="res-overlay" id="res-overlay">
   <div class="res-card">
     <span class="res-ico" id="res-ico">🏆</span>
     <div class="res-title win" id="res-title">КЕШАУТ!</div>
     <div class="res-sub" id="res-sub">Этаж 5 · ×2.49</div>
     <div class="res-amt win" id="res-amt">+124 🪙</div>
+    <button class="res-close" onclick="closeResult()">🔄 Играть снова</button>
     <a href="main.html?tab=games" style="display:block;margin-top:8px;color:rgba(255,255,255,.4);font-size:13px;text-decoration:none;text-align:center">← В меню игр</a>
   </div>
 </div>
@@ -461,9 +461,9 @@ function showResult(won,bet,mult,amount,floor,top=false){
   document.getElementById('res-sub').textContent=`Этаж ${floor} · ×${parseFloat(mult||1).toFixed(2)}`;
   document.getElementById('res-amt').textContent=won?`+${amount} 🪙`:`-${bet} 🪙`;
   document.getElementById('res-amt').className='res-amt '+(won?'win':'lose');
-  document.getElementById('res-overlay').classList.add('show');clearTimeout(window._rcT);window._rcT=setTimeout(closeResult,2600);
+  document.getElementById('res-overlay').classList.add('show');
 }
-function closeResult(){const _o=document.getElementById('res-overlay');if(!_o.classList.contains('show'))return;clearTimeout(window._rcT);_o.classList.remove('show');newGame();}
+function closeResult(){document.getElementById('res-overlay').classList.remove('show');newGame();}
 function newGame(){gameActive=false;currentFloor=1;builtFloors=0;document.getElementById('game-area').classList.remove('on');document.getElementById('setup-card').classList.remove('hidden');loadUser();}
 function goBack(){if(gameActive&&currentFloor>1)cashout().then(()=>location.href='main.html?tab=games');else location.href='main.html?tab=games';}
 

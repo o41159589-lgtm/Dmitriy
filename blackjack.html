@@ -126,7 +126,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <div class="hand" id="d-cards"></div>
     </div>
     <div class="mid">
-      <div class="rule">Блэкджек платит 3 к 2</div>
+      <div class="rule" id="rule">Блэкджек платит 6 к 5</div>
       <div class="chipbox" id="chipbox"><div class="chip" id="chip">0</div><div class="chipcap">Выигрыш<br><b id="chip-win">0</b> &#x1FA99;</div></div>
     </div>
     <div class="zone">
@@ -249,7 +249,7 @@ function setScore(id,val,cls){
 function pScoreRender(){const s=score(ph);setScore('p-score',s,s>21?'bust':(isBJ(ph)||s===21)?'bj':'');}
 function setChip(b){
   $('chip').textContent=b>=1000?(b/1000).toFixed(b%1000?1:0)+'k':b;
-  $('chip-win').textContent=Math.round(b*(isBJ(ph)?2.5:2));
+  $('chip-win').textContent=Math.floor(b*(isBJ(ph)?BJ_PAYS:2));
   $('chipbox').classList.toggle('on',b>0);
 }
 function mode(playing){
@@ -272,7 +272,10 @@ async function bjApi(path,body){
     return await r.json();
   }catch(e){return {error:'Ошибка сервера'};}
 }
-function takeState(st){ph=st.player;dh=st.dealer;bet=st.bet;$('b-dbl').disabled=!st.can_double;}
+let BJ_PAYS=2.2;
+function payLabel(p){const x=p-1;return Math.abs(x-1.5)<.01?'3 к 2':Math.abs(x-1.2)<.01?'6 к 5':Math.abs(x-1)<.01?'1 к 1':('x'+p);}
+function takeState(st){ph=st.player;dh=st.dealer;bet=st.bet;$('b-dbl').disabled=!st.can_double;
+  if(st.pays){BJ_PAYS=st.pays;$('rule').textContent='Блэкджек платит '+payLabel(BJ_PAYS);}}
 
 async function resumeGame(){
   const r=await bjApi('/api/blackjack/state');
@@ -314,7 +317,7 @@ async function act(a){
 }
 
 const OUT={
-  bj:['БЛЭКДЖЕК!','выплата 3 к 2','win'],
+  bj:['БЛЭКДЖЕК!','','win'],
   win:['ПОБЕДА','','win'],
   push:['НИЧЬЯ','ставка возвращена','push'],
   lose:['ПРОИГРЫШ','','lose'],
@@ -336,6 +339,7 @@ async function finishRound(r){
   await sleep(250);
   const [title,sub0,cls]=OUT[o.outcome];
   let sub=sub0;
+  if(o.outcome==='bj')sub='выплата '+payLabel(BJ_PAYS);
   if(o.outcome==='win')sub=st.ds>21?'дилер перебрал':st.ps+' против '+st.ds;
   if(o.outcome==='lose')sub=st.ps+' против '+st.ds;
   $('b-t').textContent=title;$('b-s').textContent=sub;
