@@ -249,3 +249,14 @@ async function TL_prefetchShop(){
     }
   }catch(e){ /* prefetch is best-effort, never blocks anything */ }
 }
+
+
+// ── Тёмная тема: шапка и фон Telegram-окна тоже чёрные ──
+(function TL_applyTheme(){
+  try{
+    const t=window.Telegram&&window.Telegram.WebApp; if(!t)return;
+    if(t.setHeaderColor)t.setHeaderColor('#000000');
+    if(t.setBackgroundColor)t.setBackgroundColor('#000000');
+    if(t.setBottomBarColor)t.setBottomBarColor('#000000');
+  }catch(e){}
+})();

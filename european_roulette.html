@@ -13,72 +13,61 @@
 <style>
 /* ── Keep original JS-referenced vars ── */
 :root{
-  --bg:#90C8E8;--bg2:#F4F8FF;
-  --white:#1A2040;--gray1:#445080;--gray2:#8090B0;--gray3:#C0C8D8;
-  --green:#1A9A50;--red:#D8284A;--gold:#A87800;--purple:#6030B0;--cyan:#1068A0;
-  --text:#1A2040;--muted:#8090B0;--muted2:#A0AAB8;
-  --card:rgba(255,255,255,0.88);--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.14);
-  --fd:'Nunito',sans-serif;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif;
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  --bg:#050505;--bg2:#0E0E0E;
+  --white:#F2F2F2;--gray1:#B5B5B5;--gray2:#9B9B9B;--gray3:#B5B5B5;
+  --green:#4ADE80;--red:#FF6B7F;--gold:#FFC94D;--purple:#6030B0;--cyan:#7DB8FF;
+  --text:#F2F2F2;--muted:#9B9B9B;--muted2:#9B9B9B;
+  --card:rgba(18,18,18,.94);--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.14);
+  --fd:'Nunito',sans-serif;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{
   
-  background:linear-gradient(175deg,#5AB0DC 0%,#7EC4E8 30%,#A0D4F0 60%,#C2E8F8 100%) fixed;
-  color:var(--text);font-family:var(--fu);min-height:100vh;overflow-x:hidden;
-}
+  background:linear-gradient(175deg,#000000 0%,#050505 30%,#0C0C0C 60%,#000000 100%) fixed;
+  color:var(--text);font-family:var(--fu);min-height:100vh;overflow-x:hidden}
 
 /* Sky background fixed layer */
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:url('../textures/sky.svg');
-  background-size:cover;background-position:top center;
-}
+
 
 /* ── TOPBAR ── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));
   position:sticky;top:0;z-index:50;
-  background:rgba(255,255,255,0.92);
+  background:rgba(14,14,14,0.96);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-bottom:1px solid rgba(0,0,0,0.07);
-  box-shadow:0 2px 12px rgba(0,30,70,0.10);
-}
+  box-shadow:0 2px 12px rgba(0,0,0,0.30)}
 .fp-back{
   width:38px;height:38px;border-radius:12px;
   background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.10);
   display:flex;align-items:center;justify-content:center;
-  color:var(--text);font-size:22px;cursor:pointer;font-weight:700;
-}
+  color:var(--text);font-size:22px;cursor:pointer;font-weight:700}
 .fp-title{
   font-family:'Nunito',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.5px;font-size:22px;font-weight:700;
-  color:var(--text);letter-spacing:0;
-}
+  color:var(--text);letter-spacing:0}
 .bal-chip{
   display:flex;align-items:center;gap:5px;
-  background:rgba(255,255,255,0.95);border:2px solid #FFD028;
+  background:rgba(14,14,14,0.97);border:2px solid #FFD028;
   border-radius:14px;padding:7px 12px;
-  font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#A87800;
-}
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;color:#FFC94D}
 
 /* ── TOAST ── */
 .toast{
   position:fixed;top:80px;left:14px;right:14px;z-index:500;
-  background:rgba(255,255,255,0.97);border:1.5px solid rgba(0,0,0,0.09);
+  background:rgba(14,14,14,0.97);border:1.5px solid rgba(0,0,0,0.09);
   backdrop-filter:blur(20px);border-radius:16px;padding:12px 18px;
   font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;text-align:center;
   transform:translateY(-80px);opacity:0;
   transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s;pointer-events:none;
-  box-shadow:0 6px 24px rgba(0,30,70,0.14);color:var(--text);
-}
-.toast.show{transform:translateY(0);opacity:1;}
-.toast.ok{color:#1A9A50;border-color:rgba(26,154,80,.3);}
-.toast.err{color:#D8284A;border-color:rgba(216,40,74,.3);}
-.toast.info{color:#1068A0;border-color:rgba(16,104,160,.2);}
+  box-shadow:0 6px 24px rgba(0,0,0,0.42);color:var(--text)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{color:#4ADE80;border-color:rgba(26,154,80,.3)}
+.toast.err{color:#FF6B7F;border-color:rgba(216,40,74,.3)}
+.toast.info{color:#7DB8FF;border-color:rgba(16,104,160,.2)}
 
 /* ── WHEEL SECTION ── */
 .wheel-section{
-  background:rgba(255,255,255,0.55);
+  background:rgba(14,14,14,0.55);
   padding:20px 0 18px;
   display:flex;flex-direction:column;align-items:center;gap:14px;
   border-bottom:1px solid rgba(0,0,0,0.07);
@@ -96,88 +85,80 @@ body::before{
 /* Result band */
 .res-band{
   display:flex;align-items:center;gap:14px;
-  background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.80);
+  background:rgba(14,14,14,0.96);border:2px solid rgba(255,255,255,.13);
   border-radius:20px;padding:12px 24px;min-width:200px;justify-content:center;
-  box-shadow:0 5px 18px rgba(0,30,80,0.11);
-}
+  box-shadow:0 5px 18px rgba(0,0,0,0.33)}
 .res-num{font-style:normal;
   font-family:'Nunito',sans-serif;font-style:normal;font-size:52px;font-weight:700;line-height:1;
-  min-width:60px;text-align:center;transition:color .2s;color:var(--muted2);
-}
-.res-num.red{color:#D8284A;text-shadow:0 0 20px rgba(216,40,74,0.35);}
-.res-num.black{color:#2A2A3A;text-shadow:0 0 10px rgba(40,40,60,0.2);}
-.res-num.green{color:#1A9A50;text-shadow:0 0 20px rgba(26,154,80,0.35);}
-.res-lbl{font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--muted);line-height:1.5;text-align:left;}
+  min-width:60px;text-align:center;transition:color .2s;color:var(--muted2)}
+.res-num.red{color:#FF6B7F;text-shadow:0 0 20px rgba(216,40,74,0.35)}
+.res-num.black{color:#2A2A3A;text-shadow:0 0 10px rgba(40,40,60,0.2)}
+.res-num.green{color:#4ADE80;text-shadow:0 0 20px rgba(26,154,80,0.35)}
+.res-lbl{font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--muted);line-height:1.5;text-align:left}
 
 /* History pills */
-.hist{display:flex;gap:5px;flex-wrap:wrap;padding:10px 14px 4px;min-height:18px;position:relative;z-index:1;}
+.hist{display:flex;gap:5px;flex-wrap:wrap;padding:10px 14px 4px;min-height:18px;position:relative;z-index:1}
 .hp{
   width:32px;height:32px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   font-family:'Nunito',sans-serif;font-size:10px;font-weight:800;flex-shrink:0;
-  animation:hpin .2s cubic-bezier(.34,1.5,.64,1) both;
-}
-@keyframes hpin{from{transform:scale(0);}to{transform:scale(1);}}
-.hp.red{background:rgba(216,40,74,0.12);border:1.5px solid rgba(216,40,74,.30);color:#D8284A;}
-.hp.black{background:rgba(40,40,60,0.08);border:1.5px solid rgba(40,40,60,.18);color:#2A2A3A;}
-.hp.green{background:rgba(26,154,80,0.10);border:1.5px solid rgba(26,154,80,.28);color:#1A9A50;}
+  animation:hpin .2s cubic-bezier(.34,1.5,.64,1) both}
+@keyframes hpin{from{transform:scale(0)}to{transform:scale(1)}}
+.hp.red{background:rgba(216,40,74,0.12);border:1.5px solid rgba(216,40,74,.30);color:#FF6B7F}
+.hp.black{background:rgba(40,40,60,0.08);border:1.5px solid rgba(40,40,60,.18);color:#2A2A3A}
+.hp.green{background:rgba(26,154,80,0.10);border:1.5px solid rgba(26,154,80,.28);color:#4ADE80}
 
 /* ── BET SECTION ── */
-.bet-wrap{padding:14px;position:relative;z-index:1;}
+.bet-wrap{padding:14px;position:relative;z-index:1}
 .stag{font-style:normal;
   font-family:'Nunito',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.8px;font-size:18px;font-weight:700;
-  color:var(--text);margin-bottom:10px;
-}
-.bet-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.bet-lbl{color:var(--muted);font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;white-space:nowrap;}
+  color:var(--text);margin-bottom:10px}
+.bet-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bet-lbl{color:var(--muted);font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;white-space:nowrap}
 .bet-inp{
-  flex:1;background:rgba(255,255,255,0.88);
+  flex:1;background:rgba(14,14,14,0.92);
   border:1.5px solid rgba(0,0,0,0.12);border-radius:14px;
   padding:11px 14px;color:var(--text);
   font-family:'Nunito',sans-serif;font-size:18px;font-weight:800;
-  outline:none;text-align:center;width:0;
-}
-.bet-inp:focus{border-color:rgba(60,90,200,0.40);}
-.qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  outline:none;text-align:center;width:0}
+.bet-inp:focus{border-color:rgba(60,90,200,0.40)}
+.qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .qb{
-  background:rgba(255,255,255,0.82);border:1.5px solid rgba(0,0,0,0.10);
+  background:rgba(14,14,14,0.86);border:1.5px solid rgba(0,0,0,0.10);
   border-radius:10px;padding:7px 13px;color:var(--text);
   font-size:12px;font-weight:800;cursor:pointer;
-  font-family:'Nunito',sans-serif;transition:all .12s;
-}
-.qb:active{background:rgba(0,0,0,0.08);}
+  font-family:'Nunito',sans-serif;transition:all .12s}
+.qb:active{background:rgba(0,0,0,0.08)}
 
 /* Bet type buttons */
-.btypes{display:grid;gap:8px;margin-bottom:10px;}
-.btypes.c3{grid-template-columns:repeat(3,1fr);}
-.btypes.c2{grid-template-columns:repeat(2,1fr);}
-.btypes.c1{grid-template-columns:1fr;}
+.btypes{display:grid;gap:8px;margin-bottom:10px}
+.btypes.c3{grid-template-columns:repeat(3,1fr)}
+.btypes.c2{grid-template-columns:repeat(2,1fr)}
+.btypes.c1{grid-template-columns:1fr}
 .bt{
   border-radius:14px;padding:12px 6px;text-align:center;cursor:pointer;
   font-size:13px;font-weight:800;border:1.5px solid;
-  background:rgba(255,255,255,0.80);color:var(--text);
-  font-family:'Nunito',sans-serif;transition:all .15s;user-select:none;
-}
-.bt-s{font-size:10px;color:var(--muted);margin-top:5px;font-family:'Nunito',sans-serif;font-weight:700;opacity:.75;display:block;}
-.bt.r{border-color:rgba(216,40,74,.22);}
-.bt.r.sel{background:rgba(216,40,74,.14);border-color:rgba(216,40,74,.60);color:#C02035;box-shadow:0 0 0 2px rgba(216,40,74,.15);}
-.bt.bl{border-color:rgba(40,40,60,.14);}
-.bt.bl.sel{background:rgba(40,40,60,.10);border-color:rgba(40,40,60,.40);color:#1A1A2E;box-shadow:0 0 0 2px rgba(40,40,60,.12);}
-.bt.g{border-color:rgba(26,154,80,.16);}
-.bt.g.sel{background:rgba(26,154,80,.12);border-color:rgba(26,154,80,.55);color:#157840;box-shadow:0 0 0 2px rgba(26,154,80,.15);}
-.bt.o{border-color:rgba(0,0,0,.10);}
-.bt.o.sel{background:rgba(40,80,200,.08);border-color:rgba(40,80,200,.30);color:#2050B0;box-shadow:0 0 0 2px rgba(40,80,200,.12);}
+  background:rgba(14,14,14,0.84);color:var(--text);
+  font-family:'Nunito',sans-serif;transition:all .15s;user-select:none}
+.bt-s{font-size:10px;color:var(--muted);margin-top:5px;font-family:'Nunito',sans-serif;font-weight:700;opacity:.75;display:block}
+.bt.r{border-color:rgba(216,40,74,.22)}
+.bt.r.sel{background:rgba(216,40,74,.14);border-color:rgba(216,40,74,.60);color:#C02035;box-shadow:0 0 0 2px rgba(216,40,74,.15)}
+.bt.bl{border-color:rgba(40,40,60,.14)}
+.bt.bl.sel{background:rgba(40,40,60,.10);border-color:rgba(40,40,60,.40);color:#1A1A2E;box-shadow:0 0 0 2px rgba(40,40,60,.12)}
+.bt.g{border-color:rgba(26,154,80,.16)}
+.bt.g.sel{background:rgba(26,154,80,.12);border-color:rgba(26,154,80,.55);color:#157840;box-shadow:0 0 0 2px rgba(26,154,80,.15)}
+.bt.o{border-color:rgba(0,0,0,.10)}
+.bt.o.sel{background:rgba(40,80,200,.08);border-color:rgba(40,80,200,.30);color:#2050B0;box-shadow:0 0 0 2px rgba(40,80,200,.12)}
 
 /* Spin button */
 .spin-btn{
   width:100%;padding:16px;
-  background:linear-gradient(135deg,#4898E0 0%,#2060C0 100%);border:none;border-radius:16px;
+  background:linear-gradient(135deg,#2F80ED,#1F5FD0);border:none;border-radius:16px;
   color:#fff;font-family:'Nunito',sans-serif;font-style:normal;font-size:24px;font-weight:700;
   cursor:pointer;box-shadow:0 5px 18px rgba(40,80,200,0.30);
-  transition:opacity .15s,transform .1s;letter-spacing:0;
-}
-.spin-btn:active{transform:scale(.98);}
-.spin-btn:disabled{opacity:.35;cursor:not-allowed;}
+  transition:opacity .15s,transform .1s;letter-spacing:0}
+.spin-btn:active{transform:scale(.98)}
+.spin-btn:disabled{opacity:.35;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -212,7 +193,7 @@ body::before{
     <div class="qb" onclick="sbAll()">MAX</div><div class="qb" onclick="sbHalf()">½</div>
   </div>
   <div class="stag">Тип ставки</div>
-  <div style="font-size:11px;color:var(--text);opacity:.75;margin:-6px 0 10px;font-family:'Nunito',sans-serif;font-weight:700;">Можно выбрать сразу несколько типов — например «Чёрное» + «Чётное» + «1–18»</div>
+  <div style="font-size:11px;color:var(--text);opacity:.75;margin:-6px 0 10px;font-family:'Nunito',sans-serif;font-weight:700">Можно выбрать сразу несколько типов — например «Чёрное» + «Чётное» + «1–18»</div>
   <div class="btypes c3" style="margin-bottom:8px">
     <div class="bt r" data-bet="red" onclick="selBet(this)">🔴 Красное<div class="bt-s">×2</div></div>
     <div class="bt bl" data-bet="black" onclick="selBet(this)">⚫ Чёрное<div class="bt-s">×2</div></div>

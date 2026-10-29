@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -9,35 +9,35 @@
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
-:root{--bg:#C0E4F8;--card:rgba(255,255,255,.90);--border:rgba(20,40,90,.10);--border2:rgba(20,40,90,.16);--white:#1A2040;--text:#1A2040;--muted:#7A8AAA;--muted2:#9AABCC;--gold:#B88000;--green:#1A9A50;--red:#D02840;--fd:'Nunito',sans-serif;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif;}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:url('../textures/sky.svg');background-size:100% auto;background-position:top center;background-repeat:no-repeat;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(255,255,255,.93);box-shadow:0 2px 14px rgba(0,30,80,.11);border-bottom:1px solid rgba(0,0,0,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);}
-.fp-back{width:38px;height:38px;border-radius:12px;background:rgba(20,40,90,.06);border:1.5px solid rgba(20,40,90,.12);display:flex;align-items:center;justify-content:center;color:#1A2040;font-size:22px;cursor:pointer;font-weight:700;}
-.fp-title{font-size:16px;font-weight:900;color:#1A2040;letter-spacing:1px;text-transform:uppercase;}
-.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.96);border:2px solid #FFD028;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:800;color:#A07800;}
-.toast{position:fixed;top:80px;left:14px;right:14px;z-index:500;background:rgba(255,255,255,.97);border:1.5px solid rgba(20,40,90,.10);color:#1A2040;box-shadow:0 6px 24px rgba(0,30,80,.15);border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);opacity:0;transition:transform .28s,opacity .28s;pointer-events:none;}
-.toast.show{transform:translateY(0);opacity:1;}
-.toast.ok{color:#1A9A50;border-color:rgba(26,154,80,.30);}
-.toast.err{color:#D02840;border-color:rgba(208,40,64,.30);}
-.toast.info{color:#2060B0;border-color:rgba(32,96,176,.22);}
-.page{position:relative;z-index:1;padding:12px 14px 40px;max-width:520px;margin:0 auto;}
-#board-wrap{width:100%;border-radius:26px;overflow:hidden;border:3px solid rgba(255,255,255,.9);box-shadow:0 10px 30px rgba(0,40,110,.18),inset 0 0 0 1px rgba(20,40,90,.06);margin-bottom:14px;background:#E8F4FF;line-height:0;}
-#pc{display:block;margin:0 auto;}
-.setup-card{background:rgba(255,255,255,.92);border:2px solid rgba(255,255,255,.8);border-radius:22px;box-shadow:0 5px 20px rgba(0,30,80,.11);padding:14px;margin-bottom:12px;}
-.stag{font-size:11px;font-weight:800;color:#7A8AAA;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
-.bet-inp{background:rgba(255,255,255,.88);border:1.5px solid rgba(20,40,90,.13);border-radius:12px;padding:10px 14px;color:#1A2040;font-family:inherit;font-weight:800;font-size:18px;outline:none;text-align:center;width:100%;margin-bottom:10px;}
-.bet-inp:focus{border-color:rgba(40,100,220,.40);}
-.qb-row{display:flex;gap:6px;flex-wrap:wrap;}
-.qb{padding:7px 12px;background:rgba(255,255,255,.85);border:1.5px solid rgba(20,40,90,.12);color:#1A2040;font-weight:700;font-size:11px;border-radius:10px;cursor:pointer;}
-.qb:active{background:rgba(20,40,90,.1);}
-.live-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
-.ls{background:rgba(255,255,255,.88);border:1.5px solid rgba(20,40,90,.10);border-radius:14px;padding:10px 8px;text-align:center;}
-.ls-l{color:#7A8AAA;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
-.ls-v{font-size:16px;font-weight:800;color:#1A2040;}
-.drop-btn{width:100%;padding:16px;background:linear-gradient(180deg,#5AAEF2 0%,#2F6FD6 100%);color:#fff;font-family:inherit;font-size:24px;font-weight:900;letter-spacing:1px;border-radius:18px;border:none;border-bottom:4px solid #1F4FA8;box-shadow:0 8px 20px rgba(40,80,200,.30);cursor:pointer;text-shadow:0 1px 0 rgba(0,0,60,.25);transition:transform .08s,border-bottom-width .08s;}
-.drop-btn:active{transform:translateY(3px);border-bottom-width:1px;}
+:root{--bg:#0E0E0E;--card:rgba(18,18,18,.94);--border:rgba(255,255,255,0.11);--border2:rgba(255,255,255,0.16);--white:#F2F2F2;--text:#F2F2F2;--muted:#9B9B9B;--muted2:#9B9B9B;--gold:#FFC94D;--green:#4ADE80;--red:#FF6B7F;--fd:'Nunito',sans-serif;--fu:'Nunito',sans-serif;--fm:'Nunito',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:linear-gradient(175deg,#000000 0%,#050505 28%,#0A0A0A 55%,#0E0E0E 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(14,14,14,0.97);box-shadow:0 2px 14px rgba(0,0,0,0.33);border-bottom:1px solid rgba(0,0,0,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.fp-back{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.13);display:flex;align-items:center;justify-content:center;color:#F2F2F2;font-size:22px;cursor:pointer;font-weight:700}
+.fp-title{font-size:16px;font-weight:900;color:#F2F2F2;letter-spacing:1px;text-transform:uppercase}
+.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(14,14,14,0.97);border:2px solid #FFD028;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:800;color:#FFC94D}
+.toast{position:fixed;top:80px;left:14px;right:14px;z-index:500;background:rgba(14,14,14,0.97);border:1.5px solid rgba(255,255,255,0.11);color:#F2F2F2;box-shadow:0 6px 24px rgba(0,0,0,0.45);border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-80px);opacity:0;transition:transform .28s,opacity .28s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{color:#4ADE80;border-color:rgba(26,154,80,.30)}
+.toast.err{color:#FF6B7F;border-color:rgba(208,40,64,.30)}
+.toast.info{color:#7DB8FF;border-color:rgba(32,96,176,.22)}
+.page{position:relative;z-index:1;padding:12px 14px 40px;max-width:520px;margin:0 auto}
+#board-wrap{width:100%;border-radius:26px;overflow:hidden;border:3px solid rgba(255,255,255,.13);box-shadow:0 10px 30px rgba(0,0,0,0.54),inset 0 0 0 1px rgba(255,255,255,0.07);margin-bottom:14px;background:#1A1A1A;line-height:0}
+#pc{display:block;margin:0 auto}
+.setup-card{background:rgba(14,14,14,0.96);border:2px solid rgba(255,255,255,.13);border-radius:22px;box-shadow:0 5px 20px rgba(0,0,0,0.33);padding:14px;margin-bottom:12px}
+.stag{font-size:11px;font-weight:800;color:#9B9B9B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
+.bet-inp{background:rgba(14,14,14,0.92);border:1.5px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 14px;color:#F2F2F2;font-family:inherit;font-weight:800;font-size:18px;outline:none;text-align:center;width:100%;margin-bottom:10px}
+.bet-inp:focus{border-color:rgba(40,100,220,.40)}
+.qb-row{display:flex;gap:6px;flex-wrap:wrap}
+.qb{padding:7px 12px;background:rgba(14,14,14,0.89);border:1.5px solid rgba(255,255,255,0.13);color:#F2F2F2;font-weight:700;font-size:11px;border-radius:10px;cursor:pointer}
+.qb:active{background:rgba(255,255,255,0.11)}
+.live-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.ls{background:rgba(14,14,14,0.92);border:1.5px solid rgba(255,255,255,0.11);border-radius:14px;padding:10px 8px;text-align:center}
+.ls-l{color:#9B9B9B;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.ls-v{font-size:16px;font-weight:800;color:#F2F2F2}
+.drop-btn{width:100%;padding:16px;background:linear-gradient(180deg,#5AAEF2 0%,#2F6FD6 100%);color:#fff;font-family:inherit;font-size:24px;font-weight:900;letter-spacing:1px;border-radius:18px;border:none;border-bottom:4px solid #1F4FA8;box-shadow:0 8px 20px rgba(40,80,200,.30);cursor:pointer;text-shadow:0 1px 0 rgba(0,0,60,.25);transition:transform .08s,border-bottom-width .08s}
+.drop-btn:active{transform:translateY(3px);border-bottom-width:1px}
 </style>
 </head>
 <body>
@@ -73,7 +73,7 @@ const UID=tg?.initDataUnsafe?.user?.id||0;
 TL_startBanPoll(UID);
 
 /* ── Настройки ── 9 слотов, 8 рядов колышков. Слот k = число "вправо" среди 8 отскоков. */
-let MULTS=[5,2,1.1,1,0.5,1,1.1,2,5];
+let MULTS=[5,2,1.1,0.7,0.5,0.7,1.1,2,5];
 const ROWS=8, NSLOTS=9, SEG=0.28;          // SEG — секунд на один отскок
 
 async function loadMults(){
@@ -135,16 +135,16 @@ function drawBoard(){
   ctx.clearRect(0,0,W,H);
   // фон
   const bgG=ctx.createLinearGradient(0,0,0,H);
-  bgG.addColorStop(0,'#F2F9FF');bgG.addColorStop(.6,'#D4ECFF');bgG.addColorStop(1,'#B9DDFA');
+  bgG.addColorStop(0,'#0F0F12');bgG.addColorStop(.6,'#0A0A0C');bgG.addColorStop(1,'#050506');
   ctx.fillStyle=bgG;ctx.fillRect(0,0,W,H);
   const glow=ctx.createRadialGradient(W/2,H*.35,10,W/2,H*.35,W*.7);
-  glow.addColorStop(0,'rgba(255,255,255,.75)');glow.addColorStop(1,'rgba(255,255,255,0)');
+  glow.addColorStop(0,'rgba(255,255,255,.07)');glow.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
   // мягкая "воронка" за колышками
   ctx.save();ctx.beginPath();
   ctx.moveTo(W/2-10,6);ctx.lineTo(W/2+10,6);
   ctx.lineTo(W/2+(ROWS/2)*SP+SP*.5,BOT+8);ctx.lineTo(W/2-(ROWS/2)*SP-SP*.5,BOT+8);ctx.closePath();
-  ctx.fillStyle='rgba(255,255,255,.28)';ctx.fill();ctx.restore();
+  ctx.fillStyle='rgba(255,255,255,.035)';ctx.fill();ctx.restore();
 
   // колышки
   for(let r=0;r<ROWS;r++)for(let i=0;i<=r;i++){
@@ -209,7 +209,7 @@ function drawBoard(){
   for(const f of floats){
     ctx.globalAlpha=Math.min(1,f.life*1.6);
     ctx.font="900 17px 'Nunito',sans-serif";ctx.textAlign='center';
-    ctx.lineWidth=4;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.strokeText(f.text,f.x,f.y);
+    ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.9)';ctx.strokeText(f.text,f.x,f.y);
     ctx.fillStyle=f.col;ctx.fillText(f.text,f.x,f.y);
   }
   ctx.globalAlpha=1;ctx.textAlign='start';

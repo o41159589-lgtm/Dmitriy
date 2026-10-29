@@ -9,17 +9,17 @@
 <script>(function(){try{var d=localStorage.getItem("__tl_dev_uid__");if(!d)return;var u=parseInt(d);if(!u)return;var t=window.Telegram&&window.Telegram.WebApp;if(!t)return;if(!t.initDataUnsafe)t.initDataUnsafe={};if(!t.initDataUnsafe.user)t.initDataUnsafe.user={};t.initDataUnsafe.user.id=u;}catch(e){}})()</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-:root{--text:#1A2040;--muted:#7A8AAA;--green:#1A9A50;--red:#D02840;--gold:#B88000;}
-html,body{background:linear-gradient(175deg,#60B2DC 0%,#80C4E8 28%,#9FD2F0 55%,#C0E4F8 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('textures/sky.svg') top center/100% auto no-repeat;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(255,255,255,.93);box-shadow:0 2px 14px rgba(0,30,80,.11);}
-.fp-back{width:38px;height:38px;border-radius:12px;background:rgba(20,40,90,.06);border:1.5px solid rgba(20,40,90,.12);display:flex;align-items:center;justify-content:center;color:#1A2040;font-size:22px;cursor:pointer;font-weight:700;}
-.fp-title{font-size:16px;font-weight:900;letter-spacing:1px;text-transform:uppercase;}
-.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.96);border:2px solid #FFD028;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:800;color:#A07800;}
-.toast{position:fixed;top:80px;left:14px;right:14px;z-index:500;background:rgba(255,255,255,.97);border:1.5px solid rgba(20,40,90,.10);box-shadow:0 6px 24px rgba(0,30,80,.15);border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-140%);opacity:0;transition:.3s;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--text:#F2F2F2;--muted:#9B9B9B;--green:#4ADE80;--red:#FF6B7F;--gold:#FFC94D}
+html,body{background:linear-gradient(175deg,#000000 0%,#050505 28%,#0A0A0A 55%,#0E0E0E 100%) fixed;color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;overflow-x:hidden}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:50;background:rgba(14,14,14,0.97);box-shadow:0 2px 14px rgba(0,0,0,0.33)}
+.fp-back{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.13);display:flex;align-items:center;justify-content:center;color:#F2F2F2;font-size:22px;cursor:pointer;font-weight:700}
+.fp-title{font-size:16px;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.bal-chip{display:flex;align-items:center;gap:5px;background:rgba(14,14,14,0.97);border:2px solid #FFD028;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:800;color:#FFC94D}
+.toast{position:fixed;top:80px;left:14px;right:14px;z-index:500;background:rgba(14,14,14,0.97);border:1.5px solid rgba(255,255,255,0.11);box-shadow:0 6px 24px rgba(0,0,0,0.45);border-radius:14px;padding:12px 18px;font-size:14px;font-weight:700;text-align:center;transform:translateY(-140%);opacity:0;transition:.3s}
 .toast.show{transform:none;opacity:1}.toast.err{color:var(--red)}.toast.ok{color:var(--green)}
-.page{position:relative;z-index:1;padding:12px 12px 40px;max-width:520px;margin:0 auto;}
+.page{position:relative;z-index:1;padding:12px 12px 40px;max-width:520px;margin:0 auto}
 
 /* ── стол ── */
 .table{position:relative;border-radius:30px;padding:14px 10px 16px;min-height:440px;overflow:hidden;
@@ -93,21 +93,25 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 @keyframes coinUp{from{transform:translate(0,0) scale(.6);opacity:1}to{transform:translate(var(--dx),-170px) scale(1.1) rotate(300deg);opacity:0}}
 
 /* ── управление ── */
-.panel{background:rgba(255,255,255,.92);border:2px solid rgba(255,255,255,.8);border-radius:22px;box-shadow:0 5px 20px rgba(0,30,80,.11);padding:14px;margin-top:12px}
+.panel{background:rgba(14,14,14,0.96);border:2px solid rgba(255,255,255,.13);border-radius:22px;box-shadow:0 5px 20px rgba(0,0,0,0.33);padding:14px;margin-top:12px}
 .stag{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
-.bet-inp{background:rgba(255,255,255,.88);border:1.5px solid rgba(20,40,90,.13);border-radius:12px;padding:10px 14px;color:#1A2040;font-family:inherit;font-weight:800;font-size:18px;outline:none;text-align:center;width:100%;margin-bottom:10px}
+.bet-inp{background:rgba(14,14,14,0.92);border:1.5px solid rgba(255,255,255,0.14);border-radius:12px;padding:10px 14px;color:#F2F2F2;font-family:inherit;font-weight:800;font-size:18px;outline:none;text-align:center;width:100%;margin-bottom:10px}
 .qb-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.qb{padding:7px 12px;background:rgba(255,255,255,.85);border:1.5px solid rgba(20,40,90,.12);font-weight:700;font-size:11px;border-radius:10px;cursor:pointer}
-.qb:active{background:rgba(20,40,90,.1)}
+.qb{padding:7px 12px;background:rgba(14,14,14,0.89);border:1.5px solid rgba(255,255,255,0.13);font-weight:700;font-size:11px;border-radius:10px;cursor:pointer}
+.qb:active{background:rgba(255,255,255,0.11)}
 .main-btn,.act-btn{font-family:inherit;font-weight:900;border:none;cursor:pointer;color:#fff;transition:transform .08s}
 .main-btn{width:100%;padding:16px;font-size:20px;letter-spacing:.5px;border-radius:18px;background:linear-gradient(180deg,#46D98A,#1FA75C);border-bottom:4px solid #137A42;box-shadow:0 8px 20px rgba(20,150,80,.35)}
 .main-btn:active{transform:translateY(3px);border-bottom-width:1px}
+.rules{padding:12px 14px}
+.rules summary{cursor:pointer;list-style:none;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.rules summary::-webkit-details-marker{display:none}
+.rules ul{margin:10px 0 0 16px;font-size:13px;font-weight:700;line-height:1.7;color:var(--text)}
 .acts{display:none;gap:10px;margin-top:12px}.acts.on{display:flex}
 .act-btn{flex:1;padding:16px 6px;font-size:17px;border-radius:16px;border-bottom:4px solid rgba(0,0,0,.22)}
 .act-btn:active{transform:translateY(3px);border-bottom-width:1px}
 .act-btn:disabled{opacity:.45}
 .btn-hit{background:linear-gradient(180deg,#46D98A,#1FA75C)}
-.btn-stand{background:linear-gradient(180deg,#FF7A86,#D02840)}
+.btn-stand{background:linear-gradient(180deg,#FF7A86,#FF6B7F)}
 .btn-double{background:linear-gradient(180deg,#FFD84D,#F2A900);color:#3A2A00}
 </style>
 </head>
@@ -126,7 +130,6 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
       <div class="hand" id="d-cards"></div>
     </div>
     <div class="mid">
-      <div class="rule" id="rule">Блэкджек платит 6 к 5</div>
       <div class="chipbox" id="chipbox"><div class="chip" id="chip">0</div><div class="chipcap">Выигрыш<br><b id="chip-win">0</b> &#x1FA99;</div></div>
     </div>
     <div class="zone">
@@ -141,6 +144,11 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
     <button class="act-btn btn-stand" id="b-stand" onclick="act('stand')">СТОП</button>
     <button class="act-btn btn-double" id="b-dbl" onclick="act('double')">x2</button>
   </div>
+
+  <details class="panel rules" id="rules">
+    <summary>ℹ️ Правила</summary>
+    <ul id="rules-list"></ul>
+  </details>
 
   <div class="panel" id="ctl">
     <div class="stag">// ставка</div>
@@ -275,10 +283,18 @@ async function bjApi(path,body){
 let BJ_PAYS=2.2;
 function payLabel(p){const x=p-1;return Math.abs(x-1.5)<.01?'3 к 2':Math.abs(x-1.2)<.01?'6 к 5':Math.abs(x-1)<.01?'1 к 1':('x'+p);}
 function takeState(st){ph=st.player;dh=st.dealer;bet=st.bet;$('b-dbl').disabled=!st.can_double;
-  if(st.pays){BJ_PAYS=st.pays;$('rule').textContent='Блэкджек платит '+payLabel(BJ_PAYS);}}
+  if(st.pays){BJ_PAYS=st.pays;}}
+function renderRules(r){
+  if(!r)return;BJ_PAYS=r.pays;
+  $('rules-list').innerHTML='<li>Блэкджек (21 с двух карт) платит <b>'+payLabel(r.pays)+'</b></li>'
+   +'<li>Колод в игре: <b>'+r.decks+'</b></li>'
+   +'<li>Дилер '+(r.h17?'<b>берёт</b> карту на мягких 17':'стоит на всех 17')+'</li>'
+   +'<li>Удвоить можно на первых двух картах</li><li>Обычная победа платит 1 к 1</li>';
+}
 
 async function resumeGame(){
   const r=await bjApi('/api/blackjack/state');
+  renderRules(r&&r.rules);
   if(!(r&&r.active))return;
   active=true;await clearTable();takeState(r.state);mode(true);
   syncHand($('p-cards'),ph,false,{instant:true});syncHand($('d-cards'),dh,true,{instant:true});

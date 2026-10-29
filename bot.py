@@ -1194,6 +1194,8 @@ async def _gta_run(lid):
     commission = _comm(pot)
     payout = pot - commission
     await db.add_to_balance(wid, payout)
+    for _b in bets:                              # итог партии каждого участника — для карты активности в админке
+        await db.log_game_result("gta_roulette", _b["user_id"], _b["amount"], payout if _b["user_id"] == wid else 0)
     await db.add_history(wid,"win",payout,f"GTA #{lid}: банк {pot}, комиссия {commission}")
     await db.update_spin_stats(wid, True, payout, 0)
     wu = await db.get_user(wid)
@@ -1731,6 +1733,37 @@ async def api_admin_set_game_luck(req):
         fire_log(log_admin_action(uid, u.get("first_name", "Admin") if u else "Admin", "SET_GAME_LUCK", 0,
                  "Все игроки", f"Удача {game} → {coeff}", incognito=False))
     return web.json_response({"ok": True, "game": game, "coeff": await db.get_game_luck_coeff(game)})
+
+async def api_admin_user_activity(req):
+    try:
+        uid = int(req.rel_url.query.get("uid", 0)); days = max(7, min(400, int(req.rel_url.query.get("days", 147))))
+        tz = int(req.rel_url.query.get("tz", 0))
+    except Exception:
+        return web.json_response({"error": "bad params"}, status=400)
+    return web.json_response({"days": await db.get_user_activity(uid, time.time() - days * 86400 - 86400, tz)})
+
+_AVATAR_DIR = Path(__file__).parent / "cache" / "avatars"
+async def api_admin_avatar(req):
+    try: uid = int(req.match_info["uid"])
+    except Exception: return web.Response(status=400)
+    f_ = _AVATAR_DIR / f"{uid}.jpg"; miss = _AVATAR_DIR / f"{uid}.none"
+    hdr = {"Cache-Control": "private, max-age=86400"}
+    if f_.exists() and time.time() - f_.stat().st_mtime < 86400:
+        return web.Response(body=f_.read_bytes(), content_type="image/jpeg", headers=hdr)
+    if miss.exists() and time.time() - miss.stat().st_mtime < 3600:
+        return web.Response(status=404)
+    try:
+        ph = await bot.get_user_profile_photos(uid, limit=1)
+        if not ph.total_count: raise LookupError("no photo")
+        sizes = ph.photos[0]; pick = sizes[min(1, len(sizes) - 1)]
+        tf = await bot.get_file(pick.file_id); buf = await bot.download_file(tf.file_path)
+        data = buf.read() if hasattr(buf, "read") else buf
+        _AVATAR_DIR.mkdir(parents=True, exist_ok=True); f_.write_bytes(data)
+        return web.Response(body=data, content_type="image/jpeg", headers=hdr)
+    except Exception:
+        try: _AVATAR_DIR.mkdir(parents=True, exist_ok=True); miss.write_text("1")
+        except Exception: pass
+        return web.Response(status=404)
 
 # Static
 BASE = Path(__file__).parent
@@ -2409,9 +2442,9 @@ async def _read_bet(req, data, lo=1, hi=10**9):
         return uid, None, web.json_response({"error": "⛔ Вы заблокированы."}, status=403)
     return uid, bet, None
 
-# ── PLINKO (8 рядов, 9 слотов, честный биномиальный RNG, RTP ≈ 98%) ──
+# ── PLINKO (8 рядов, 9 слотов, честный биномиальный RNG) ──
 PLINKO_ROWS = 8
-PLINKO_MULTS = [5, 2, 1.1, 1, 0.5, 1, 1.1, 2, 5]
+PLINKO_MULTS = [5, 2, 1.1, 0.7, 0.5, 0.7, 1.1, 2, 5]   # RTP ≈ 84.8%
 
 async def api_plinko_mults(req):
     return web.json_response({"mults": PLINKO_MULTS, "rows": PLINKO_ROWS})
@@ -2571,9 +2604,12 @@ async def api_bj_action(req):
     bal = int((await db.get_user(uid) or {}).get("balance", 0))
     return web.json_response({"ok": True, "done": False, "state": _bj_public(g), "new_balance": bal})
 
+def _bj_rules():
+    return {"pays": BJ_PAYS, "decks": BJ_DECKS, "h17": BJ_DEALER_HITS_SOFT_17}
+
 async def api_bj_state(req):
     g = active_bj.get(int(req.get("tg_uid") or 0))
-    return web.json_response({"active": bool(g), "state": _bj_public(g) if g else None})
+    return web.json_response({"active": bool(g), "state": _bj_public(g) if g else None, "rules": _bj_rules()})
 
 # ── ROCKET (crash) ──
 # m(t) = e^(RATE·t). Точка краха выбирается на сервере в момент ставки и клиенту НЕ отправляется;
@@ -2727,6 +2763,8 @@ async def start_web():
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_get ("/api/status",                 api_status)
+    app.router.add_get ("/api/admin/user_activity",    api_admin_user_activity)
+    app.router.add_get ("/api/admin/avatar/{uid}",     api_admin_avatar)
     app.router.add_get ("/api/admin/game_luck",        api_admin_get_game_luck)
     app.router.add_post("/api/admin/game_luck",        api_admin_set_game_luck)
     app.router.add_get ("/api/admin/maintenance",     api_admin_get_maintenance)

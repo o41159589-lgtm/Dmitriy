@@ -1019,3 +1019,16 @@ async def get_game_stats(from_ts: float, to_ts: float) -> dict:
                                      avg=round((bet - paid) / n, 2) if n else 0.0,
                                      rtp=round(paid * 100 / bet, 1) if bet else 0.0)
     return out
+
+
+async def get_user_activity(uid: int, from_ts: float, tz_min: int = 0) -> list:
+    """Итог по дням для игрока: games = число партий, net = сумма (выплата - ставка) с точки зрения игрока."""
+    global _game_stats_ready
+    if not _game_stats_ready:
+        await _ensure_game_stats(); _game_stats_ready = True
+    db = await _get_conn()
+    async with db.execute(
+        """SELECT strftime('%Y-%m-%d', created_at + ?*60, 'unixepoch') AS d, COUNT(*), COALESCE(SUM(payout-bet),0)
+           FROM game_stats WHERE user_id=? AND created_at>=? GROUP BY d ORDER BY d""",
+        (int(tz_min), int(uid), from_ts)) as cur:
+        return [{"day": r[0], "games": r[1], "net": r[2]} for r in await cur.fetchall()]

@@ -9,7 +9,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Exo+2:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
 :root{
-  --bg:#0A0A0A;--bg2:#111111;--bg3:#1A1A1A;
+  --bg:#000000;--bg2:#0A0A0A;--bg3:#141414;
   --white:#FFFFFF;--gray1:#E0E0E0;--gray2:#AAAAAA;--gray3:#555555;--gray4:#2A2A2A;
   --green:#22C55E;--red:#EF4444;--gold:#F59E0B;--blue:#3B82F6;--purple:#8B5CF6;--cyan:#06B6D4;
   --text:#F0F0F0;--muted:#777777;--muted2:#999999;
@@ -277,6 +277,43 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .abtn.sub{border-color:rgba(239,68,68,.3);color:var(--red);}
 .abtn.sub:hover{background:rgba(239,68,68,.1);}
 .abtn.msg{border-color:var(--border2);color:var(--gray2);}
+
+/* ═══ КАРТОЧКА ПОЛЬЗОВАТЕЛЯ v2 ═══ */
+.uc{background:linear-gradient(180deg,#111,#080808);border:1px solid #222;border-radius:18px;margin-bottom:10px;overflow:hidden;transition:border-color .15s}
+.uc.open{border-color:#3A3A3A}
+.u2-top{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.u2-av{position:relative;width:54px;height:54px;border-radius:16px;flex:0 0 auto;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:21px;color:#fff;border:1.5px solid rgba(255,255,255,.16);box-shadow:0 6px 16px rgba(0,0,0,.7);text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.u2-av.banned{filter:grayscale(.85);border-color:rgba(239,68,68,.6)}
+.u2-lvl{position:absolute;right:-6px;bottom:-6px;background:#FFC94D;color:#000;font:900 9px var(--font-mono);border-radius:8px;padding:2px 6px;border:2px solid #080808;text-shadow:none}
+.u2-info{flex:1;min-width:0}
+.u2-name{font-weight:800;font-size:15px;color:#F5F5F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u2-chips{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.u2-chip{font:700 10.5px var(--font-mono);padding:3px 8px;border-radius:8px;background:#161616;border:1px solid #2A2A2A;color:#BDBDBD;cursor:pointer;white-space:nowrap}
+.u2-chip:active{background:#222}
+.u2-chip.id{color:#EAEAEA}.u2-chip.un{color:#6EB5FF}
+.u2-right{text-align:right;flex:0 0 auto}
+.u2-bal{font:800 15px var(--font-mono);color:#FFC94D}
+.u2-sub{font:600 10px var(--font-mono);color:#8A8A8A;margin-top:4px}
+.u2-prof{background:#0D0D0D;border:1px solid #1F1F1F;border-radius:14px;padding:12px;margin-bottom:12px}
+.u2-ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.u2-pt{font:800 11px var(--font-mono);letter-spacing:1.5px;color:#9A9A9A}
+.hm-wrap{overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.hm-wrap::-webkit-scrollbar{display:none}
+.hm{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);grid-auto-columns:13px;gap:3px;width:max-content}
+.hm i{display:block;width:13px;height:13px;border-radius:3px;background:#1E1E1E}
+.hm i.e{background:transparent}
+.hm i.p{background:#3B3B3B}
+.hm i.g1{background:#14532D}.hm i.g2{background:#15803D}.hm i.g3{background:#22C55E}.hm i.g4{background:#4ADE80}
+.hm i.y1{background:#713F12}.hm i.y2{background:#A16207}.hm i.y3{background:#EAB308}.hm i.y4{background:#FACC15}
+.hm i.sel{outline:2px solid #fff;outline-offset:1px}
+.hm-tip{min-height:16px;margin-top:8px;font:700 11px var(--font-mono);color:#CFCFCF}
+.hm-leg{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;font:600 10px var(--font-mono);color:#9A9A9A}
+.hm-leg b{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+.hm-sum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+.hm-sum div{background:#111;border:1px solid #1F1F1F;border-radius:10px;padding:7px 6px;text-align:center}
+.hm-sum span{display:block;font:600 9px var(--font-mono);color:#8A8A8A;margin-bottom:3px}
+.hm-sum em{font:800 12px var(--font-mono);font-style:normal}
 </style>
 </head>
 <body>
@@ -1561,6 +1598,70 @@ function stats(){
   return {total,coins,banned,lucky};
 }
 
+// ═══ Аватарки и карта активности ═══
+const avURL=new Map();
+const avIO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){avIO.unobserve(e.target);loadAvatar(e.target);}});},{rootMargin:'200px'});
+function hookAvatars(){document.querySelectorAll('.u2-av[data-uid]:not([data-av])').forEach(el=>{el.dataset.av='1';avIO.observe(el);});}
+async function loadAvatar(el){
+  const uid=el.dataset.uid;
+  const apply=u=>{if(u){el.style.backgroundImage=`url(${u})`;const i=el.querySelector('.u2-ini');if(i)i.style.display='none';}};
+  if(avURL.has(uid)){apply(avURL.get(uid));return;}
+  try{
+    const r=await fetch('/api/admin/avatar/'+uid,{headers:{'X-Tg-Init-Data':tg?.initData||''}});
+    if(!r.ok){avURL.set(uid,null);return;}
+    const url=URL.createObjectURL(await r.blob());avURL.set(uid,url);apply(url);
+  }catch(e){avURL.set(uid,null);}
+}
+function copyTxt(ev,t){
+  ev.stopPropagation();
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Скопировано: '+t),()=>toast(t));
+}
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function renderHeat(uid,days){
+  const map={};let maxAbs=1;
+  days.forEach(d=>{map[d.day]=d;maxAbs=Math.max(maxAbs,Math.abs(d.net));});
+  const WEEKS=21,total=WEEKS*7;
+  const end=new Date();end.setHours(12,0,0,0);
+  const start=new Date(end);start.setDate(end.getDate()-(total-1));
+  const pad=(start.getDay()+6)%7;                       // неделя начинается с понедельника
+  let cells='',lost=0,won=0,dg=0,dy=0;
+  for(let i=0;i<pad;i++)cells+='<i class="e"></i>';
+  for(let i=0;i<total;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const key=ymd(d),r=map[key],dd=d.toLocaleDateString('ru',{day:'2-digit',month:'2-digit'});
+    let cls='',tip=dd+' — не играл';
+    if(r&&r.games>0){
+      const lvl=Math.min(4,Math.max(1,Math.ceil(Math.abs(r.net)/maxAbs*4)));
+      if(r.net<0){cls='g'+lvl;lost+=-r.net;dg++;}
+      else if(r.net>0){cls='y'+lvl;won+=r.net;dy++;}
+      else cls='p';
+      tip=`${dd}: ${r.net>0?'+':''}${r.net} 🪙 · ${r.games} игр`;
+    }
+    cells+=`<i class="${cls}" data-t="${tip}" onclick="hmTip(this,'${uid}')"></i>`;
+  }
+  const net=won-lost;
+  return `<div class="hm-wrap"><div class="hm">${cells}</div></div>
+    <div class="hm-tip" id="hmt-${uid}">Нажми на клетку, чтобы увидеть день</div>
+    <div class="hm-leg"><span><b style="background:#1E1E1E"></b>не играл</span><span><b style="background:#22C55E"></b>слил</span><span><b style="background:#EAB308"></b>поднял</span></div>
+    <div class="hm-sum">
+      <div><span>СЛИЛ (${dg} дн.)</span><em style="color:#4ADE80">${lost}🪙</em></div>
+      <div><span>ПОДНЯЛ (${dy} дн.)</span><em style="color:#FACC15">${won}🪙</em></div>
+      <div><span>РАЗНИЦА</span><em style="color:${net>0?'#FACC15':net<0?'#4ADE80':'#BBB'}">${net>0?'+':''}${net}🪙</em></div>
+    </div>`;
+}
+function hmTip(el,uid){
+  const box=el.closest('.hm');box.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');
+  document.getElementById('hmt-'+uid).textContent=el.dataset.t;
+}
+async function loadUserHeat(uid){
+  const box=document.getElementById('act-'+uid);if(!box||box.dataset.loaded)return;box.dataset.loaded='1';
+  try{
+    const r=await api(`/api/admin/user_activity?uid=${uid}&days=150&tz=${-new Date().getTimezoneOffset()}`);
+    box.innerHTML=renderHeat(uid,(r&&r.days)||[]);
+    const sc=box.querySelector('.hm-wrap');if(sc)sc.scrollLeft=sc.scrollWidth;
+  }catch(e){box.dataset.loaded='';box.innerHTML='<div class="hm-tip">Не удалось загрузить</div>';}
+}
+
 function renderUsers(list){
   const s = stats();
   document.getElementById('users-root').innerHTML = `
@@ -1572,6 +1673,7 @@ function renderUsers(list){
     </div>
     <input class="search" placeholder="🔍 Поиск по имени / ID / @username..." oninput="filterU(this.value)"/>
     <div id="ulist">${list.map(uCard).join('')}</div>`;
+  hookAvatars();
 }
 
 function filterU(q){
@@ -1582,6 +1684,7 @@ function filterU(q){
       (u.username||'').toLowerCase().includes(q) ||
       String(u.user_id).includes(q)
     ).map(uCard).join('');
+  hookAvatars();
 }
 
 function fmtDate(ts){
@@ -1607,22 +1710,31 @@ function uCard(u){
   const isBanned = u.banned;
   const lvl = u.level||0;
   const avBg = isBanned ? 'var(--red)' : 'linear-gradient(135deg,var(--purple),#4361ee)';
+  const hue=(u.user_id*47)%360;
+  const avStyle=isBanned?'':`background-image:linear-gradient(135deg,hsl(${hue},70%,42%),hsl(${(hue+50)%360},75%,32%))`;
   return `<div class="uc${isBanned?' banned':''}" id="uc-${u.user_id}" data-balance="${u.balance}">
-    <div class="uc-top" onclick="tog(${u.user_id})">
-      <div class="uc-av${isBanned?' banned-av':''}" style="background:${avBg};position:relative">
-        ${(name[0]||'?').toUpperCase()}
-        <span style="position:absolute;bottom:-3px;right:-3px;background:var(--gold);color:#000;
-          font-family:var(--font-mono);font-size:8px;font-weight:900;border-radius:6px;padding:1px 4px">
-          ${lvl}
-        </span>
+    <div class="u2-top" onclick="tog(${u.user_id})">
+      <div class="u2-av${isBanned?' banned':''}" data-uid="${u.user_id}" style="${avStyle}">
+        <span class="u2-ini">${(name[0]||'?').toUpperCase()}</span>
+        <span class="u2-lvl">LV ${lvl}</span>
       </div>
-      <div class="uc-info">
-        <div class="uc-name">${name}${isBanned?' ⛔':''}</div>
-        <div class="uc-id">ID: ${u.user_id}${uname?' · '+uname:''}</div>
+      <div class="u2-info">
+        <div class="u2-name">${name}${isBanned?' ⛔':''}</div>
+        <div class="u2-chips">
+          <span class="u2-chip id" onclick="copyTxt(event,'${u.user_id}')" title="Нажми, чтобы скопировать">#${u.user_id}</span>
+          ${uname?`<span class="u2-chip un" onclick="copyTxt(event,'${esc(u.username)}')">${uname}</span>`:''}
+        </div>
       </div>
-      <div class="uc-bal" id="uc-bal-${u.user_id}">${u.balance}🪙</div>
+      <div class="u2-right">
+        <div class="u2-bal" id="uc-bal-${u.user_id}">${u.balance} 🪙</div>
+        <div class="u2-sub">${u.spins||0} игр · ${winrate(u)}</div>
+      </div>
     </div>
     <div class="uc-body">
+      <div class="u2-prof">
+        <div class="u2-ph"><span class="u2-pt">АКТИВНОСТЬ · 21 НЕДЕЛЯ</span></div>
+        <div id="act-${u.user_id}"><div class="hm-tip">Загрузка…</div></div>
+      </div>
       <div class="uinfo-grid">
         <div class="uinfo-item"><div class="uinfo-label">🎲 Игр</div><div class="uinfo-val blue">${u.spins}</div></div>
         <div class="uinfo-item"><div class="uinfo-label">🏆 Побед</div><div class="uinfo-val green">${u.wins}</div></div>
@@ -1720,6 +1832,7 @@ function tog(uid){
     const rp = document.getElementById('refs-panel-'+uid);
     if(rp) rp.style.display='block';
     loadUserRefsCount(uid);
+    loadUserHeat(uid);
   }
 }
 async function loadUserRefsCount(uid){
