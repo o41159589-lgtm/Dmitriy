@@ -235,7 +235,13 @@ async function TL_prefetchShop(){
     // главный поток не занят, главная страница не лагает. Декодирует и анимирует магазин уже лениво.
     const pause = ms => new Promise(r=>setTimeout(r,ms));
     if(navigator.connection && navigator.connection.saveData) return;
-    for(const g of animated){
+    // уже сконвертированные сервером WebP/WebM — просто прогреваем кеш браузера (первые 24, по одному)
+    let warmed=0;
+    for(const g of gifts){ if(!g.media_url||warmed>=24)continue; warmed++;
+      try{ await fetch(g.media_url).then(r=>r.blob()); }catch(e){}
+      await pause(80);
+    }
+    for(const g of animated){ if(g.media_url) continue;
       try{
         if(await TL_idbGet('b:'+g.sticker_file_id) || await TL_idbGet(g.sticker_file_id)) continue;
         const buf = await fetch('/api/sticker/'+g.sticker_file_id).then(r=>r.arrayBuffer());
@@ -243,7 +249,7 @@ async function TL_prefetchShop(){
       }catch(e){ /* shop.html просто скачает этот стикер сам */ }
       await pause(120);
     }
-    for(const g of others){
+    for(const g of others){ if(g.media_url) continue;
       try{ await fetch('/api/sticker/'+g.sticker_file_id).then(r=>r.blob()); }catch(e){}
       await pause(80);
     }

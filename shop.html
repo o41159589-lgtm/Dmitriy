@@ -57,6 +57,7 @@ body{background:transparent!important;min-height:100vh}
 /* ── Real animated Telegram sticker container — forced to fill its box
      regardless of the sticker's own native size (this is what previously
      broke the grid: an unconstrained sticker blew up the whole card) ── */
+.gift-media{position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:contain;display:block;pointer-events:none}
 .gift-lottie{position:absolute;inset:4px;display:none;overflow:hidden}
 .gift-lottie svg,.gift-lottie video,.gift-lottie img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain;display:block}
 
@@ -126,6 +127,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
 @keyframes nftFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-4px) rotate(6deg)}}
 @keyframes nftTwinkle{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1)}}
 </style>
+<script src="coin.js" defer></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -134,7 +136,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
   <div class="shop-header">
     <div class="shop-title">МАГАЗИН</div>
     <div style="display:flex;align-items:center;gap:8px">
-      <div class="shop-bal"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="shop-bal">—</span></div>
+      <div class="shop-bal"><img src="textures/coin.webp" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="shop-bal">—</span></div>
       <button onclick="openTopup()" style="background:linear-gradient(135deg,#2F80ED,#1F5FD0);border:none;border-radius:10px;color:#fff;padding:7px 14px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(40,80,200,0.25)">+ ПОПОЛНИТЬ</button>
     </div>
   </div>
@@ -169,7 +171,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
       <div class="mg-icon" id="m-icon"><span id="m-icon-emoji">🎁</span><div id="m-lottie" class="gift-lottie" style="inset:0"></div></div>
       <div>
         <div class="mg-name" id="m-name">—</div>
-        <div class="mg-price"><img src="textures/coin.svg" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="m-price">—</span> монет</div>
+        <div class="mg-price"><img src="textures/coin.webp" width="16" height="16" alt="" style="vertical-align:middle;margin-right:1px"> <span id="m-price">—</span> монет</div>
       </div>
     </div>
     <div class="form-group">
@@ -206,10 +208,10 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
     <div class="mt">💳 ПОПОЛНЕНИЕ</div>
     <p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p>
     <div class="ta-grid">
-      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
-      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
-      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
-      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
+      <div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span>
@@ -297,8 +299,17 @@ function _lottieMount(container,json){
 }
 const _stickerJsonCache=new Map();
 const _stickerFailCache=new Set();
+// Сервер заранее конвертирует подарки в лёгкие анимированные WebP/WebM: показываем их как обычную картинку — сразу, без Lottie
+const _mediaMap=new Map();
+function _rememberMedia(list){(list||[]).forEach(g=>{if(g&&g.sticker_file_id&&g.media_url)_mediaMap.set(g.sticker_file_id,{url:g.media_url,type:g.media_type});});}
+function _mediaEl(m){
+  if(m.type==='video'){const v=document.createElement('video');v.src=m.url;v.autoplay=true;v.loop=true;v.muted=true;v.playsInline=true;v.setAttribute('playsinline','');v.preload='auto';return v;}
+  const i=document.createElement('img');i.src=m.url;i.alt='';i.decoding='async';i.draggable=false;return i;
+}
 async function renderGiftSticker(container,fileId,isVideo,isAnimated){
   if(!fileId){_dbg('STICKER','(none)','⚠️ gift has no sticker_file_id');return false;}
+  const _m=_mediaMap.get(fileId);
+  if(_m){container.appendChild(_mediaEl(_m));if(_m.type==='video')container._tlVideo=container.lastChild;return true;}
   if(_stickerFailCache.has(fileId))return false;
   try{
     const url='/api/sticker/'+fileId;
@@ -356,7 +367,7 @@ async function loadShopGifts(){
 
   const cached=_readShopCache('tl_shop_gifts_cache');
   if(cached){
-    shopGifts=cached.gifts||[];
+    shopGifts=cached.gifts||[];_rememberMedia(shopGifts);
     _dbg('SHOP','cache','⚡ '+shopGifts.length+' gifts from prefetch cache');
     await preloadAnimatedStickers(shopGifts);
     if(!shopGifts.length){if(botInner)botInner.innerHTML='<div class="empty"><span class="empty-i">🎁</span><p>Подарки временно недоступны</p></div>';}
@@ -369,7 +380,7 @@ async function loadShopGifts(){
   if(eyesEl) _shopLoaderCtrl=TL_mountEyesLoader(eyesEl);
   try{
     const data=await get('/api/gifts');
-    shopGifts=data.gifts||[];
+    shopGifts=data.gifts||[];_rememberMedia(shopGifts);
     _dbg('SHOP','/api/gifts',shopGifts.length+' gifts loaded');
     await preloadAnimatedStickers(shopGifts); // keep the loader up until animations are actually ready
     if(_shopLoaderCtrl){_shopLoaderCtrl.stop();_shopLoaderCtrl=null;}
@@ -383,6 +394,13 @@ async function loadShopGifts(){
 }
 
 // Card click (anywhere on the card, including the button — same as the original) opens the buy modal.
+function giftMediaHTML(gift){
+  if(!gift.media_url)return '';
+  _rememberMedia([gift]);
+  return gift.media_type==='video'
+    ?`<video class="gift-media" src="${gift.media_url}" autoplay loop muted playsinline preload="auto"></video>`
+    :`<img class="gift-media" src="${gift.media_url}" alt="" decoding="async" loading="lazy" draggable="false">`;
+}
 function giftCard(gift,source){
   const limited=gift.is_limited&&gift.remaining_count!==null&&gift.remaining_count!==undefined;
   const cls=limited?'gift-card limited':'gift-card';
@@ -395,9 +413,9 @@ function giftCard(gift,source){
     sticker_is_video:gift.sticker_is_video||false,sticker_is_animated:gift.sticker_is_animated||false,
   }).replace(/"/g,'&quot;');
   return `<div class="${cls}" onclick="openBuyModal(${gd},'${source}')">
-    <div class="gift-emoji-wrap" id="gw-${source}-${gift.id}"><span class="gift-emoji">${emoji}</span></div>
+    <div class="gift-emoji-wrap" id="gw-${source}-${gift.id}">${giftMediaHTML(gift)||`<span class="gift-emoji">${emoji}</span>`}</div>
     <div class="gift-name">${gift.name||'Подарок'}</div>
-    <div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> ${displayCost} монет</div>
+    <div class="gift-price"><img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> ${displayCost} монет</div>
     ${remaining}
     <button class="gift-buy-btn">КУПИТЬ</button>
   </div>`;
@@ -437,7 +455,7 @@ async function _pumpStickers(){
 }
 function mountGiftStickers(gifts,source){
   gifts.forEach(gift=>{
-    if(!gift.sticker_file_id)return;
+    if(!gift.sticker_file_id||gift.media_url)return;
     const wrap=document.getElementById(`gw-${source}-${gift.id}`);
     if(!wrap)return;
     const box=document.createElement('div');box.className='gift-lottie';wrap.appendChild(box);
@@ -458,7 +476,7 @@ async function loadNftGallery(){
   if(cached){ nftGallery=cached.nfts||[]; _dbg('SHOP','cache','⚡ '+nftGallery.length+' NFTs from prefetch cache'); return; }
   try{
     const data=await get('/api/nft_gallery');
-    nftGallery=data.nfts||[];
+    nftGallery=data.nfts||[];_rememberMedia(nftGallery.map(n=>({sticker_file_id:n.sticker_file_id,media_url:n.media_url,media_type:n.media_type})));
   }catch(e){ nftGallery=[]; }
 }
 
@@ -474,7 +492,7 @@ function renderOwnerGifts(){
       </div>
     </div>
     <div class="gift-name">Рандомный НФТ</div>
-    <div class="gift-price"><img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> 4000 монет</div>
+    <div class="gift-price"><img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle;margin-right:2px"> 4000 монет</div>
     <button class="gift-buy-btn">КУПИТЬ</button>
   </div>`;
   g.innerHTML=nftCardHtml+shopGifts.map(gift=>giftCard(gift,'owner')).join('');

@@ -160,13 +160,14 @@ html,body{
 .spin-btn:active{transform:scale(.98)}
 .spin-btn:disabled{opacity:.35;cursor:not-allowed}
 </style>
+<script src="coin.js" defer></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 <div class="topbar">
   <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
   <div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">🎡</span><span class="fp-title">ЕВРОП. РУЛЕТКА</span></div>
-  <div class="bal-chip"><img src="../textures/coin.svg" width="20" height="20" alt="🪙" style="vertical-align:middle"> <span id="r-bal">—</span></div>
+  <div class="bal-chip"><img src="../textures/coin.webp" width="20" height="20" alt="🪙" style="vertical-align:middle"> <span id="r-bal">—</span></div>
 </div>
 
 <div class="wheel-section">
@@ -184,7 +185,7 @@ html,body{
 <div class="bet-wrap">
   <div class="stag">Ставка</div>
   <div class="bet-row">
-    <span class="bet-lbl"><img src="../textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle"></span>
+    <span class="bet-lbl"><img src="../textures/coin.webp" width="22" height="22" alt="" style="vertical-align:middle"></span>
     <input class="bet-inp" id="bet-inp" type="number" min="1" value="10" inputmode="numeric" oninput="updateBetSummary()">
   </div>
   <div class="qb-row">

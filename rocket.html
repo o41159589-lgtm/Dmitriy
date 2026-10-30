@@ -70,13 +70,14 @@ html,body{background:linear-gradient(175deg,#000000 0%,#050505 28%,#0A0A0A 55%,#
 .go-btn.cash{background:linear-gradient(180deg,#FFD84D 0%,#F2A900 100%);border-bottom-color:#B87A00;color:#3A2A00;box-shadow:0 8px 20px rgba(230,160,0,.4)}
 .go-btn:disabled{opacity:.6}
 </style>
+<script src="coin.js" defer></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 <div class="topbar">
   <button class="fp-back" onclick="location.href='main.html?tab=games'">‹</button>
   <div class="fp-title">Ракета</div>
-  <div class="bal-chip"><img src="textures/coin.svg" width="20" height="20" alt="" style="vertical-align:middle;margin-right:2px"> <span id="r-bal">—</span></div>
+  <div class="bal-chip"><img src="textures/coin.webp" width="20" height="20" alt="" style="vertical-align:middle;margin-right:2px"> <span id="r-bal">—</span></div>
 </div>
 
 <div class="page">
@@ -84,7 +85,7 @@ html,body{background:linear-gradient(175deg,#000000 0%,#050505 28%,#0A0A0A 55%,#
     <div id="stars"></div>
     <canvas id="cv"></canvas>
     <div class="mult"><div class="mult-val" id="mv">1.00×</div><div class="mult-status" id="ms">ОЖИДАНИЕ</div></div>
-    <div id="rocket" class="idle"><img src="rocket.webp" width="64" height="64" alt="" draggable="false"></div>
+    <div id="rocket" class="idle"><img id="rk-img" src="rocket_stickers/s1.webp" width="64" height="64" alt="" draggable="false"></div>
     <div id="boom"><i></i><i></i><b>💥</b></div>
   </div>
 
@@ -113,7 +114,14 @@ const UID = tg?.initDataUnsafe?.user?.id || 0;
 
 let balance=0, currentBet=0, phase='idle';          // idle | running
 let RATE=0.15, startTime=0, animFrame=null, pollTimer=null, autoMult=0;
-let flying=false, crashKnown=null, cashedMult=null;   // после кешаута ракета летит дальше до настоящего крэша
+let flying=false, crashKnown=null, cashedMult=null;
+// ── Стикеры ракеты: первый раунд всегда s1, дальше случайные (без повтора подряд). Следующий подгружаем заранее ──
+const RK_COUNT=9;let rkCur=1,rkNext=0,rkRounds=0;
+function rkPickNext(){let n;do{n=1+Math.floor(Math.random()*RK_COUNT);}while(n===rkCur&&RK_COUNT>1);rkNext=n;const im=new Image();im.src='rocket_stickers/s'+n+'.webp';}
+function rkSwap(){
+  if(rkRounds>0&&rkNext){rkCur=rkNext;$('rk-img').src='rocket_stickers/s'+rkCur+'.webp';}
+  rkRounds++;rkPickNext();
+}   // после кешаута ракета летит дальше до настоящего крэша
 let hist=[], lastAngle=63, curMult=1, curT=0;
 const MAXM=100;
 const $=id=>document.getElementById(id);
@@ -239,6 +247,7 @@ async function launchRocket(){
   currentBet=bet;autoMult=ac>=1.01?ac:0;phase='running';state='running';
   flying=true;crashKnown=null;cashedMult=null;
   hist=[];curT=0;curMult=1;startTime=performance.now();lastAngle=63;
+  rkSwap();
   rocket.className='';rocket.style.opacity=1;rocket.style.transition='none';$('boom').className='';
   $('ms').textContent='ПОЛЁТ';
   btn.className='go-btn cash';
@@ -318,7 +327,7 @@ async function resumeRound(){
     animFrame=requestAnimationFrame(animate);pollTimer=setInterval(pollState,200);
   }else if(r.status==='crashed'||r.status==='cashed'){phase='running';endRound(r);}
 }
-resize();placeIdle();renderHist();
+resize();placeIdle();rkPickNext();renderHist();
 loadUser().then(resumeRound);
 </script>
 </body>

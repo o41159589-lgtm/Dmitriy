@@ -1032,3 +1032,37 @@ async def get_user_activity(uid: int, from_ts: float, tz_min: int = 0) -> list:
            FROM game_stats WHERE user_id=? AND created_at>=? GROUP BY d ORDER BY d""",
         (int(tz_min), int(uid), from_ts)) as cur:
         return [{"day": r[0], "games": r[1], "net": r[2]} for r in await cur.fetchall()]
+
+
+# ── АВАТАРКИ (photo_url из подписанных данных Telegram) ──────────────────
+_photo_col_ready = False
+
+
+async def _ensure_photo_col():
+    global _photo_col_ready
+    if _photo_col_ready: return
+    db = await _get_conn()
+    try:
+        await db.execute("ALTER TABLE users ADD COLUMN photo_url TEXT")
+        await db.commit()
+    except Exception:
+        pass            # колонка уже есть
+    _photo_col_ready = True
+
+
+async def set_photo_url(uid: int, url: str):
+    try:
+        await _ensure_photo_col()
+        db = await _get_conn()
+        await db.execute("UPDATE users SET photo_url=? WHERE user_id=?", (url, int(uid)))
+        await db.commit()
+    except Exception:
+        pass
+
+
+async def get_photo_url(uid: int):
+    await _ensure_photo_col()
+    db = await _get_conn()
+    async with db.execute("SELECT photo_url FROM users WHERE user_id=?", (int(uid),)) as cur:
+        row = await cur.fetchone()
+    return row[0] if row and row[0] else None

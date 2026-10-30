@@ -456,6 +456,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
 
 </style>
 <link rel="preload" as="image" href="logo.webp">
+<script src="coin.js" defer></script>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -538,7 +539,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
       <div class="prof-username" id="prof-uname"></div>
     </div>
     <div class="prof-bal-row">
-      <div><div class="prof-bal-lbl">Баланс</div><div class="prof-bal-val"><img src="textures/coin.svg" width="18" height="18" alt="" style="vertical-align:middle;margin-right:2px"> <span id="prof-bal">—</span></div></div>
+      <div><div class="prof-bal-lbl">Баланс</div><div class="prof-bal-val"><img src="textures/coin.webp" width="18" height="18" alt="" style="vertical-align:middle;margin-right:2px"> <span id="prof-bal">—</span></div></div>
       <button class="prof-topup-btn" onclick="openTopup()">+ ПОПОЛНИТЬ</button>
     </div>
     <div class="prof-xp-card">
@@ -573,7 +574,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
   <div class="games-header">
     <div class="games-title">Где полудим?)</div>
     <div class="coin-pill">
-      <img src="textures/coin.svg" width="22" height="22" alt="" style="vertical-align:middle;flex-shrink:0"> 
+      <img src="textures/coin.webp" width="22" height="22" alt="" style="vertical-align:middle;flex-shrink:0"> 
       <span id="r-bal">0</span>
     </div>
   </div>
@@ -617,7 +618,7 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
 <!-- Shop moved to its own page: shop.html (was previously duplicated inline here) -->
 
 <!-- TOPUP MODAL -->
-<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)"><div class="modal"><div class="mh"></div><div class="mt">💳 ПОПОЛНЕНИЕ</div><p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p><div class="ta-grid"><div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.svg" width="14" height="14" alt="" style="vertical-align:middle"></div></div></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span><input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()" style="flex:1;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-align:center"/><span style="color:var(--gold)">⭐</span></div><button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button></div></div>
+<div class="ov" id="ov-topup" onclick="closeOv('ov-topup',event)"><div class="modal"><div class="mh"></div><div class="mt">💳 ПОПОЛНЕНИЕ</div><p style="color:var(--muted2);font-size:13px;text-align:center;margin-bottom:14px">1 ⭐ = 10 монет</p><div class="ta-grid"><div class="ta sel" onclick="selAmt(this,50)"><div class="ta-c">50 ⭐</div><div class="ta-s">= 500 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,100)"><div class="ta-c">100 ⭐</div><div class="ta-s">= 1 000 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,250)"><div class="ta-c">250 ⭐</div><div class="ta-s">= 2 500 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div><div class="ta" onclick="selAmt(this,500)"><div class="ta-c">500 ⭐</div><div class="ta-s">= 5 000 <img src="textures/coin.webp" width="14" height="14" alt="" style="vertical-align:middle"></div></div></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="color:var(--muted2);font-size:13px;white-space:nowrap">Или введите:</span><input id="ta-custom" type="number" min="1" max="10000" placeholder="Сумма..." oninput="onCustomInput()" style="flex:1;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:14px;outline:none;text-align:center"/><span style="color:var(--gold)">⭐</span></div><button class="ta-confirm" onclick="confirmTopup()">ОПЛАТИТЬ <span id="ta-amt">50</span> ⭐</button></div></div>
 
 <!-- NAV -->
 <nav class="nav" id="main-nav">
@@ -809,7 +810,7 @@ async function loadTasks(){
     const dEl=document.getElementById('prof-tasks-done');if(dEl)dEl.textContent=done?`${done}/${tasks.length}`:'';
     if(!tasks.length){listEl.innerHTML='<div class="empty"><span class="empty-i">📋</span><p>Заданий пока нет</p></div>';return;}
     const ICONS={channel:'📢',group:'👥',bot:'🤖',spend:'🎰',deposit:'💳'};
-    listEl.innerHTML=tasks.map(t=>`<div class="task-item ${t.completed?'done':''}"><div class="task-icon ${t.completed?'done':''}">${t.completed?'✅':(ICONS[t.type]||'📋')}</div><div class="task-body"><div class="task-title" style="color:${t.completed?'var(--muted2)':'var(--text)'}">${t.title}</div><div class="task-desc">${t.description||''}</div></div><div class="task-right"><div class="task-reward"><img src=\"textures/coin.svg\" width=\"14\" height=\"14\" alt=\"\" style=\"vertical-align:middle\"> +${t.reward}</div>${!t.completed?`<button class="task-btn" onclick="doTask(${t.id},'${t.type}','${t.target||''}')">Выполнить</button>`:'<div style="font-size:11px;color:var(--green);margin-top:3px">Готово ✓</div>'}</div></div>`).join('');
+    listEl.innerHTML=tasks.map(t=>`<div class="task-item ${t.completed?'done':''}"><div class="task-icon ${t.completed?'done':''}">${t.completed?'✅':(ICONS[t.type]||'📋')}</div><div class="task-body"><div class="task-title" style="color:${t.completed?'var(--muted2)':'var(--text)'}">${t.title}</div><div class="task-desc">${t.description||''}</div></div><div class="task-right"><div class="task-reward"><img src=\"textures/coin.webp\" width=\"14\" height=\"14\" alt=\"\" style=\"vertical-align:middle\"> +${t.reward}</div>${!t.completed?`<button class="task-btn" onclick="doTask(${t.id},'${t.type}','${t.target||''}')">Выполнить</button>`:'<div style="font-size:11px;color:var(--green);margin-top:3px">Готово ✓</div>'}</div></div>`).join('');
   }catch(e){listEl.innerHTML='<div class="empty"><span class="empty-i">⚠️</span><p>Ошибка загрузки</p></div>';}
 }
 async function doTask(taskId,type,target){if(target&&(type==='channel'||type==='group'||type==='bot')){const url=target.startsWith('http')?target:`https://t.me/${target.replace('@','')}`;tg?.openTelegramLink?tg.openTelegramLink(url):window.open(url,'_blank');setTimeout(()=>claimTask(taskId),2000);}else claimTask(taskId);}

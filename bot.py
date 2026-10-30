@@ -797,31 +797,136 @@ async def api_invoice(req: web.Request):
 _gifts_cache = {"ts": 0.0, "data": None}
 _GIFTS_TTL = 300   # каталог подарков меняется редко — не дёргаем Telegram на каждый заход
 
-async def api_get_gifts(req: web.Request):
-    if _gifts_cache["data"] is not None and time.time() - _gifts_cache["ts"] < _GIFTS_TTL:
-        return web.json_response(_gifts_cache["data"], headers={"Cache-Control": "public, max-age=120"})
+# ── Медиа подарков: при старте и раз в час качаем актуальные подарки и сохраняем лёгкими файлами ──
+#   .tgs (Lottie)  -> анимированный WebP (нужен пакет rlottie-python), .webm -> как есть, статика -> .webp
+#   Браузеру отдаём через /api/gift_media/<file_id>.<ext> — это обычная <img>/<video>, без Lottie на клиенте.
+GIFT_MEDIA_DIR = Path(__file__).parent / "cache" / "gift_media"
+GIFT_SYNC_INTERVAL = 3600
+GIFT_WEBP_SIZE, GIFT_WEBP_FPS, GIFT_WEBP_MAX_FRAMES, GIFT_WEBP_QUALITY = 128, 20, 60, 65
+_rlottie_warned = False
+
+def _media_for(file_id):
+    """-> {'media_url','media_type'} если файл уже подготовлен, иначе {}."""
+    if not file_id: return {}
+    for ext, typ in (("webp", "image"), ("webm", "video")):
+        if (GIFT_MEDIA_DIR / f"{file_id}.{ext}").exists():
+            return {"media_url": f"/api/gift_media/{file_id}.{ext}", "media_type": typ}
+    return {}
+
+def _tgs_to_webp(data: bytes, out: Path) -> bool:
+    """Синхронно (вызывается в потоке): TGS -> анимированный WebP."""
+    global _rlottie_warned
     try:
-        result = await bot.get_available_gifts()
-        gifts_list = []
-        for gift in result.gifts:
-            st = gift.sticker
-            gifts_list.append({
-                "id": gift.id,
-                "emoji": st.emoji if st else "🎁",
-                "sticker_file_id": st.file_id if st else None,
-                "sticker_is_animated": bool(st.is_animated) if st else False,  # .tgs (Lottie)
-                "sticker_is_video":    bool(st.is_video) if st else False,     # .webm
-                "star_count": gift.star_count,
-                "total_count": gift.total_count,
-                "remaining_count": gift.remaining_count,
-                "is_limited": gift.total_count is not None,
-                "can_be_upgraded": getattr(gift, "can_be_upgraded", False),
-            })
-        _gifts_cache["data"] = {"gifts": gifts_list}; _gifts_cache["ts"] = time.time()
-        return web.json_response({"gifts": gifts_list}, headers={"Cache-Control": "public, max-age=120"})
+        import gzip
+        from rlottie_python import LottieAnimation
+    except Exception:
+        if not _rlottie_warned:
+            _rlottie_warned = True
+            logger.warning("Для конвертации подарков в WebP установите: pip install rlottie-python (пока работает старый Lottie-режим)")
+        return False
+    try:
+        anim = LottieAnimation.from_data(gzip.decompress(data).decode("utf-8"))
+        total = max(1, anim.lottie_animation_get_totalframe())
+        src_fps = anim.lottie_animation_get_framerate() or 60
+        dur = total / src_fps
+        n = max(2, min(GIFT_WEBP_MAX_FRAMES, round(dur * GIFT_WEBP_FPS)))
+        frames = [anim.render_pillow_frame(frame_num=min(total - 1, int(i * total / n)),
+                                           width=GIFT_WEBP_SIZE, height=GIFT_WEBP_SIZE).convert("RGBA") for i in range(n)]
+        tmp = out.with_suffix(".tmp")
+        frames[0].save(tmp, format="WEBP", save_all=True, append_images=frames[1:], duration=max(20, int(1000 * dur / n)),
+                       loop=0, quality=GIFT_WEBP_QUALITY, method=4, alpha_quality=85)
+        tmp.replace(out)
+        return True
+    except Exception as e:
+        logger.warning(f"tgs->webp failed: {e}")
+        return False
+
+async def ensure_media(file_id, is_animated, is_video) -> bool:
+    if not file_id: return False
+    GIFT_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+    if _media_for(file_id): return True
+    f = await bot.get_file(file_id)
+    buf = await bot.download_file(f.file_path)
+    data = buf.read() if hasattr(buf, "read") else buf
+    if is_animated:
+        return await asyncio.get_running_loop().run_in_executor(None, _tgs_to_webp, data, GIFT_MEDIA_DIR / f"{file_id}.webp")
+    ext = "webm" if is_video else "webp"
+    (GIFT_MEDIA_DIR / f"{file_id}.{ext}").write_bytes(data)
+    return True
+
+async def _fetch_gifts_list():
+    result = await bot.get_available_gifts()
+    gifts_list = []
+    for gift in result.gifts:
+        st = gift.sticker
+        gifts_list.append({
+            "id": gift.id,
+            "emoji": st.emoji if st else "🎁",
+            "sticker_file_id": st.file_id if st else None,
+            "sticker_is_animated": bool(st.is_animated) if st else False,  # .tgs (Lottie)
+            "sticker_is_video":    bool(st.is_video) if st else False,     # .webm
+            "star_count": gift.star_count,
+            "total_count": gift.total_count,
+            "remaining_count": gift.remaining_count,
+            "is_limited": gift.total_count is not None,
+            "can_be_upgraded": getattr(gift, "can_be_upgraded", False),
+        })
+    _gifts_cache["data"] = {"gifts": gifts_list}; _gifts_cache["ts"] = time.time()
+    return gifts_list
+
+async def sync_gift_media():
+    gifts = await _fetch_gifts_list()
+    items = [(g["sticker_file_id"], g["sticker_is_animated"], g["sticker_is_video"]) for g in gifts if g["sticker_file_id"]]
+    try:                                         # стикеры «от владельца» (NFT) тоже готовим заранее
+        for n in await db.get_nfts():
+            if n.get("sticker_file_id"): items.append((n["sticker_file_id"], bool(n.get("is_animated")), bool(n.get("is_video"))))
+    except Exception: pass
+    done = failed = 0
+    for fid, anim, vid in items:
+        try:
+            if _media_for(fid): continue
+            ok = await ensure_media(fid, anim, vid)
+            done += 1 if ok else 0; failed += 0 if ok else 1
+        except Exception as e:
+            failed += 1; logger.warning(f"gift media {fid[:12]}…: {e}")
+        await asyncio.sleep(0.05)
+    keep = {f"{fid}.{e}" for fid, _, _ in items for e in ("webp", "webm")}   # чистим устаревшее (подарков уже нет)
+    if GIFT_MEDIA_DIR.exists():
+        for fp in GIFT_MEDIA_DIR.iterdir():
+            if fp.name not in keep and fp.suffix in (".webp", ".webm", ".tmp"):
+                try: fp.unlink()
+                except Exception: pass
+    logger.info(f"gift media sync: {len(items)} стикеров, новых {done}, ошибок {failed}")
+
+async def gift_media_loop():
+    while True:
+        try: await sync_gift_media()
+        except Exception as e: logger.warning(f"gift media sync failed: {e}")
+        await asyncio.sleep(GIFT_SYNC_INTERVAL)
+
+async def api_gift_media(req: web.Request):
+    name = req.match_info["name"]
+    if not re.fullmatch(r"[A-Za-z0-9_\-]{5,200}\.(webp|webm)", name):
+        return web.Response(status=400)
+    fp = GIFT_MEDIA_DIR / name
+    if not fp.exists(): return web.Response(status=404)
+    ctype = "video/webm" if name.endswith(".webm") else "image/webp"
+    return web.Response(body=fp.read_bytes(), content_type=ctype,
+                        headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+def _gifts_with_media(gifts):
+    return [{**g, **_media_for(g.get("sticker_file_id"))} for g in gifts]
+
+async def api_get_gifts(req: web.Request):
+    hdr = {"Cache-Control": "public, max-age=120"}
+    if _gifts_cache["data"] is not None and time.time() - _gifts_cache["ts"] < _GIFTS_TTL:
+        return web.json_response({"gifts": _gifts_with_media(_gifts_cache["data"]["gifts"])}, headers=hdr)
+    try:
+        gifts_list = await _fetch_gifts_list()
+        return web.json_response({"gifts": _gifts_with_media(gifts_list)}, headers=hdr)
     except Exception as e:
         if _gifts_cache["data"] is not None:       # Telegram недоступен — отдаём последний удачный каталог
-            return web.json_response(_gifts_cache["data"])
+            return web.json_response({"gifts": _gifts_with_media(_gifts_cache["data"]["gifts"])})
         logger.error(f"get_available_gifts: {e}")
         return web.json_response({"error": str(e), "gifts": []}, status=500)
 
@@ -869,7 +974,8 @@ async def api_sticker(req: web.Request):
 
 # ── NFT GALLERY (admin-curated, populated by forwarding stickers to the bot) ──
 async def api_nft_gallery(req: web.Request):
-    return web.json_response({"nfts": await db.get_nfts()})
+    nfts = await db.get_nfts()
+    return web.json_response({"nfts": [{**n, **_media_for(n.get("sticker_file_id"))} for n in nfts]})
 
 async def api_admin_delete_nft(req: web.Request):
     if not _is_admin(req): return web.json_response({"error":"forbidden"}, status=403)
@@ -1424,8 +1530,8 @@ from urllib.parse import parse_qsl
 
 INIT_DATA_MAX_AGE = 24 * 3600   # initData старше суток не принимаем
 
-def validate_init_data(init_data: str, token: str, max_age: int = INIT_DATA_MAX_AGE):
-    """Возвращает user_id из подписанного Telegram initData или None."""
+def validate_init_data_user(init_data: str, token: str, max_age: int = INIT_DATA_MAX_AGE):
+    """Возвращает dict пользователя из подписанного Telegram initData (id, first_name, photo_url…) или None."""
     if not init_data or not token:
         return None
     try:
@@ -1440,9 +1546,17 @@ def validate_init_data(init_data: str, token: str, max_age: int = INIT_DATA_MAX_
             return None
         if time.time() - int(pairs.get("auth_date", "0")) > max_age:
             return None
-        return int(json.loads(pairs.get("user", "{}")).get("id", 0)) or None
+        u = json.loads(pairs.get("user", "{}"))
+        return u if int(u.get("id", 0)) else None
     except Exception:
         return None
+
+def validate_init_data(init_data: str, token: str, max_age: int = INIT_DATA_MAX_AGE):
+    """Возвращает user_id из подписанного Telegram initData или None."""
+    u = validate_init_data_user(init_data, token, max_age)
+    return int(u["id"]) if u else None
+
+_photo_seen: dict[int, str] = {}
 
 def _is_admin(req):
     """Админ = подтверждённый подписью Telegram user_id из ADMIN_IDS/DEV_IDS.
@@ -1508,11 +1622,15 @@ async def guard_middleware(req: web.Request, handler):
         return await handler(req)
 
     # ── API ──
-    tg_uid = validate_init_data(req.headers.get("X-Tg-Init-Data", ""), BOT_TOKEN)
+    _tg_user = validate_init_data_user(req.headers.get("X-Tg-Init-Data", ""), BOT_TOKEN)
+    tg_uid = int(_tg_user["id"]) if _tg_user else None
     req["tg_uid"] = tg_uid
+    if _tg_user and _tg_user.get("photo_url") and _photo_seen.get(tg_uid) != _tg_user["photo_url"]:
+        _photo_seen[tg_uid] = _tg_user["photo_url"]           # аватарка из подписанных данных Telegram — для админки
+        asyncio.create_task(db.set_photo_url(tg_uid, _tg_user["photo_url"]))
     is_staff = bool(tg_uid) and (tg_uid in ADMIN_IDS or tg_uid in DEV_IDS)
 
-    if path in _PUBLIC_API or path.startswith("/api/sticker/"):
+    if path in _PUBLIC_API or path.startswith("/api/sticker/") or path.startswith("/api/gift_media/"):
         return await handler(req)
     if not tg_uid:
         return web.json_response({"error": "unauthorized"}, status=401)
@@ -1752,18 +1870,34 @@ async def api_admin_avatar(req):
         return web.Response(body=f_.read_bytes(), content_type="image/jpeg", headers=hdr)
     if miss.exists() and time.time() - miss.stat().st_mtime < 3600:
         return web.Response(status=404)
-    try:
-        ph = await bot.get_user_profile_photos(uid, limit=1)
-        if not ph.total_count: raise LookupError("no photo")
-        sizes = ph.photos[0]; pick = sizes[min(1, len(sizes) - 1)]
-        tf = await bot.get_file(pick.file_id); buf = await bot.download_file(tf.file_path)
-        data = buf.read() if hasattr(buf, "read") else buf
-        _AVATAR_DIR.mkdir(parents=True, exist_ok=True); f_.write_bytes(data)
-        return web.Response(body=data, content_type="image/jpeg", headers=hdr)
-    except Exception:
-        try: _AVATAR_DIR.mkdir(parents=True, exist_ok=True); miss.write_text("1")
+    data = None
+    try:                                           # 1) фото из подписанных данных Telegram (user.photo_url)
+        url = await db.get_photo_url(uid)
+        if url:
+            import aiohttp
+            async with aiohttp.ClientSession() as sess:
+                async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as r:
+                    if r.status == 200: data = await r.read()
+    except Exception as e:
+        logger.info(f"avatar via photo_url failed for {uid}: {e}")
+    if not data:                                   # 2) запасной путь — Bot API
+        try:
+            ph = await bot.get_user_profile_photos(uid, limit=1)
+            if ph.total_count:
+                sizes = ph.photos[0]; pick = sizes[min(1, len(sizes) - 1)]
+                tf = await bot.get_file(pick.file_id); buf = await bot.download_file(tf.file_path)
+                data = buf.read() if hasattr(buf, "read") else buf
+        except Exception as e:
+            logger.info(f"avatar via bot api failed for {uid}: {e}")
+    try: _AVATAR_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception: pass
+    if data:
+        try: f_.write_bytes(data)
         except Exception: pass
-        return web.Response(status=404)
+        return web.Response(body=data, content_type="image/jpeg", headers=hdr)
+    try: miss.write_text("1")
+    except Exception: pass
+    return web.Response(status=404)
 
 # Static
 BASE = Path(__file__).parent
@@ -2407,6 +2541,7 @@ async def api_notify_not_telegram(req: web.Request):
 #  (secrets/SystemRandom), хранит состояние раунда и сам начисляет выплату.
 # ════════════════════════════════════════
 import secrets
+import re
 _rng = random.SystemRandom()
 
 async def _finish_game(uid: int, title: str, bet: int, payout: int, detail: str) -> int:
@@ -2444,7 +2579,7 @@ async def _read_bet(req, data, lo=1, hi=10**9):
 
 # ── PLINKO (8 рядов, 9 слотов, честный биномиальный RNG) ──
 PLINKO_ROWS = 8
-PLINKO_MULTS = [5, 2, 1.1, 0.7, 0.5, 0.7, 1.1, 2, 5]   # RTP ≈ 84.8%
+PLINKO_MULTS = [12, 2.5, 0.6, 1.1, 0.3, 1.1, 0.6, 2.5, 12]   # RTP ≈ 94%: примерно каждый второй бросок в плюс, но плюсы небольшие
 
 async def api_plinko_mults(req):
     return web.json_response({"mults": PLINKO_MULTS, "rows": PLINKO_ROWS})
@@ -2705,6 +2840,7 @@ async def start_web():
     app.router.add_get ("/api/invoice",            api_invoice)
     app.router.add_get ("/api/gifts",              api_get_gifts)
     app.router.add_get ("/api/sticker/{file_id}",   api_sticker)
+    app.router.add_get ("/api/gift_media/{name}",   api_gift_media)
     app.router.add_post("/api/spin",               api_spin)
     app.router.add_get ("/api/gta/lobby",          api_gta_lobby)
     app.router.add_post("/api/gta/bet",            api_gta_bet)
@@ -2801,6 +2937,7 @@ async def main():
     await start_web()
     asyncio.create_task(daily_backup())
     asyncio.create_task(sync_nft_pack())
+    asyncio.create_task(gift_media_loop())      # при старте и далее раз в час
     await dp.start_polling(bot, skip_updates=True)
 
 
