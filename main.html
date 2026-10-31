@@ -454,6 +454,28 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
 .ov p[style]{color:#9B9B9B!important}
 
 
+
+/* ── Серия заходов ── */
+.daily-card{background:linear-gradient(180deg,#141414,#0A0A0A);border:1px solid rgba(255,255,255,.11);border-radius:20px;padding:14px;margin:0 0 12px;position:relative;overflow:hidden}
+.daily-card::before{content:'';position:absolute;right:-40px;top:-50px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,40,.20),transparent 70%);pointer-events:none}
+.daily-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;position:relative}
+.daily-title{font-family:var(--font-mono,monospace);font-size:11px;font-weight:800;letter-spacing:1.5px;color:#9B9B9B}
+.daily-streak{display:flex;align-items:center;gap:6px;font-weight:900;font-size:18px;color:#FFB347}
+.daily-streak small{font-size:11px;font-weight:700;color:#8A8A8A}
+.daily-track{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;position:relative}
+.dc{display:flex;flex-direction:column;align-items:center;gap:5px}
+.dc-c{width:100%;aspect-ratio:1;max-width:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;
+  background:#161616;border:1.5px solid #272727;color:#6F6F6F;position:relative}
+.dc.done .dc-c{background:linear-gradient(145deg,#FFD66B,#F2A100);border-color:#FFE29A;color:#3A2600;box-shadow:0 4px 14px rgba(240,160,0,.35)}
+.dc.today .dc-c{border-color:#FFB347;color:#FFB347;animation:dcPulse 1.4s ease-in-out infinite}
+.dc.big .dc-c{border-radius:14px;font-size:20px}
+.dc.big:not(.done) .dc-c{border-color:#4A3A12;background:linear-gradient(145deg,#1F1A0C,#120F07);color:#FFC94D}
+.dc-n{font-size:10px;font-weight:800;color:#7A7A7A}
+.dc-r{font-size:11px;font-weight:900;color:#BDBDBD;white-space:nowrap}
+.dc.done .dc-r{color:#FFC94D}
+.daily-sub{margin-top:12px;font-size:12px;font-weight:700;color:#A8A8A8;line-height:1.5;position:relative}
+.daily-sub b{color:#F2F2F2}
+@keyframes dcPulse{50%{box-shadow:0 0 0 5px rgba(255,179,71,.14)}}
 </style>
 <link rel="preload" as="image" href="logo.webp">
 <script src="coin.js" defer></script>
@@ -551,6 +573,11 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
       <div class="prof-stat"><div class="prof-stat-val" id="prof-spins">—</div><div class="prof-stat-lbl">Игр</div></div>
       <div class="prof-stat"><div class="prof-stat-val" id="prof-wins">—</div><div class="prof-stat-lbl">Побед</div></div>
       <div class="prof-stat"><div class="prof-stat-val" id="prof-won">—</div><div class="prof-stat-lbl">Выиграно</div></div>
+    </div>
+    <div class="daily-card" id="daily-card">
+      <div class="daily-head"><span class="daily-title">// СЕРИЯ ЗАХОДОВ</span><span class="daily-streak" id="daily-streak">🔥 0 <small>дн.</small></span></div>
+      <div class="daily-track" id="daily-track"></div>
+      <div class="daily-sub" id="daily-sub">Заходи каждый день и получай монеты</div>
     </div>
     <div class="prof-menu-card">
       <div class="prof-menu-row" onclick="openTopup()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#E8C000,#FFD600)">⭐</div><div class="prof-menu-label">Пополнить звёзды</div><span class="prof-menu-arr">›</span></div>
@@ -675,7 +702,43 @@ async function initUser(){
   if(TL_guardBanned(userData))return;
   updateUI();
 }
-async function loadUser(){if(!UID)return;userData=await get(`/api/user/${UID}`).catch(()=>null);if(TL_guardBanned(userData))return;updateUI();}
+async function loadUser(){if(!UID)return;userData=await get(`/api/user/${UID}`).catch(()=>null);if(TL_guardBanned(userData))return;updateUI();if(!window._dailyDone){window._dailyDone=1;claimDaily();}}
+// ── Серия заходов: награда выдаётся автоматически при первом входе за день ──
+function _plDays(n){const a=n%10,b=n%100;return (b>10&&b<15)?'дней':a===1?'день':(a>1&&a<5)?'дня':'дней';}
+function renderDaily(d){
+  const tr=document.getElementById('daily-track');if(!tr||!d)return;
+  const R=d.rewards||[1,1,1,1,1,1,5];
+  const done=d.claimed_today?d.cycle_day:(d.streak%7);
+  tr.innerHTML=R.map((r,i)=>{
+    const st=i<done?'done':(i===done&&!d.claimed_today?'today':'');
+    const big=(i===R.length-1);
+    const icon=i<done?'✓':(big?'🎁':'🪙');
+    return `<div class="dc ${st} ${big?'big':''}"><div class="dc-c">${icon}</div><div class="dc-n">${i+1} день</div><div class="dc-r">+${r}</div></div>`;
+  }).join('');
+  document.getElementById('daily-streak').innerHTML=`🔥 ${d.streak} <small>${_plDays(d.streak)}</small>`;
+  const left=d.claimed_today?(R.length-(d.cycle_day%R.length||R.length)):(R.length-done);
+  const bonus=Math.max(...R);
+  let t;
+  if(d.claimed_today){
+    if(d.cycle_day>=R.length)t=`Сегодня получен бонус за 7 дней: <b>+${bonus} 🪙</b>! Завтра серия продолжится: <b>+${d.next_reward} 🪙</b>`;
+    else if(left===1)t=`Сегодня награда получена. Завтра — бонусный день: <b>+${bonus} 🪙</b>!`;
+    else t=`Сегодня награда получена. Завтра: <b>+${d.next_reward} 🪙</b> · до бонуса <b>+${bonus} 🪙</b> — ${left} ${_plDays(left)}`;
+  }else t=`Зайди сегодня и получи <b>+${d.next_reward} 🪙</b>. Пропустишь день — серия начнётся заново.`;
+  if(d.best>d.streak)t+=` <span style="color:#7A7A7A">Рекорд: ${d.best}</span>`;
+  document.getElementById('daily-sub').innerHTML=t;
+}
+async function claimDaily(){
+  try{
+    const d=await post('/api/daily/claim',{});
+    if(!d||!d.ok)return;
+    if(d.claimed_now){
+      if(userData){userData.balance=d.balance;updateUI();}
+      toast(`🔥 Серия ${d.streak} ${_plDays(d.streak)} · +${d.reward} 🪙`,'ok');
+    }
+    renderDaily(d);
+  }catch(e){}
+}
+
 function updateUI(){
   if(!userData)return;
   const bal=userData.balance??0;
@@ -734,7 +797,7 @@ function fallbackCopyRef(link){
   }catch(e){toast(link,'info');}
 }
 
-const HIST_POS_TYPES=['win','deposit','ref','gift_received','admin_credit'];
+const HIST_POS_TYPES=['win','deposit','ref','gift_received','admin_credit','daily'];
 const HIST_NEG_TYPES=['lose','gift_sent','admin_deduct'];
 const HIST_TASK_TYPE='task';
 
@@ -765,8 +828,8 @@ async function renderHistory(){
     statsEl.innerHTML=`<div class="hs" style="grid-column:1/-1"><div class="hs-l">${label}</div><div class="hs-v ${cls}">${total}</div></div>`;
   }
 
-  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟',task:'📋'};
-  const TITLES={win:'Заработал',lose:'Потратил',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод',task:'Задание'};
+  const ICONS={win:'🏆',lose:'💀',deposit:'💳',ref:'🤝',gift_sent:'🎁',gift_received:'🎁',admin_luck:'🍀',admin_deduct:'⬇️',admin_credit:'⬆️',promo:'🎟',task:'📋',daily:'🔥'};
+  const TITLES={win:'Заработал',lose:'Потратил',deposit:'Пополнение',ref:'Реферал',gift_sent:'Подарок отправлен',gift_received:'Подарок получен',admin_luck:'Изм. удачи',admin_deduct:'Списание',admin_credit:'Пополнение (адм)',promo:'Промокод',task:'Задание',daily:'Ежедневный бонус'};
   const list=document.getElementById('hist-list');
   if(!items.length){list.innerHTML='<div class="empty"><span class="empty-i">📭</span><p>История пуста</p></div>';return;}
   list.innerHTML=items.map(i=>{

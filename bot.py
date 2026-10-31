@@ -1899,6 +1899,25 @@ async def api_admin_avatar(req):
     except Exception: pass
     return web.Response(status=404)
 
+# ── СЕРИЯ ЗАХОДОВ ──
+DAILY_REWARDS = [1, 1, 1, 1, 1, 1, 5]      # награда по дням серии; каждый 7-й день — 5 монет, дальше цикл повторяется
+DAILY_TZ_MIN = 180                          # границы суток считаем по UTC+3 (меняется одной цифрой)
+
+def _daily_dates():
+    from datetime import datetime, timedelta
+    now = datetime.utcnow() + timedelta(minutes=DAILY_TZ_MIN)
+    return now.strftime("%Y-%m-%d"), (now - timedelta(days=1)).strftime("%Y-%m-%d")
+
+async def api_daily_claim(req):
+    uid = int(req.get("tg_uid") or 0)
+    if await db.is_banned(uid): return web.json_response({"error": "banned"}, status=403)
+    today, yest = _daily_dates()
+    res = await db.claim_daily(uid, today, yest, DAILY_REWARDS)
+    if res is None: return web.json_response({"error": "no user"}, status=404)
+    if res.get("claimed_now"):
+        await db.add_history(uid, "daily", res["reward"], f"Ежедневный бонус: серия {res['streak']} дн.")
+    return web.json_response({"ok": True, **res})
+
 # Static
 BASE = Path(__file__).parent
 async def serve_html(f):
@@ -2579,7 +2598,7 @@ async def _read_bet(req, data, lo=1, hi=10**9):
 
 # ── PLINKO (8 рядов, 9 слотов, честный биномиальный RNG) ──
 PLINKO_ROWS = 8
-PLINKO_MULTS = [12, 2.5, 0.6, 1.1, 0.3, 1.1, 0.6, 2.5, 12]   # RTP ≈ 94%: примерно каждый второй бросок в плюс, но плюсы небольшие
+PLINKO_MULTS = [10, 2.5, 1.2, 0.7, 0.3, 0.7, 1.2, 2.5, 10]   # RTP ≈ 88.5%: в плюс заканчивается примерно каждый третий-четвёртый бросок
 
 async def api_plinko_mults(req):
     return web.json_response({"mults": PLINKO_MULTS, "rows": PLINKO_ROWS})
@@ -2899,6 +2918,7 @@ async def start_web():
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_get ("/api/status",                 api_status)
+    app.router.add_post("/api/daily/claim",            api_daily_claim)
     app.router.add_get ("/api/admin/user_activity",    api_admin_user_activity)
     app.router.add_get ("/api/admin/avatar/{uid}",     api_admin_avatar)
     app.router.add_get ("/api/admin/game_luck",        api_admin_get_game_luck)

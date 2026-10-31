@@ -973,7 +973,7 @@ async def set_game_luck_coeff(game: str, coeff: float):
 
 
 # ── СТАТИСТИКА ПО РЕЖИМАМ (точные ставки/выплаты каждой партии) ───────────
-STAT_GAMES = ["european_roulette", "mines", "tower", "blackjack", "plinko", "rocket"]
+STAT_GAMES = ["european_roulette", "mines", "tower", "gta_roulette", "blackjack", "plinko", "rocket"]
 
 
 async def _ensure_game_stats():
@@ -1007,15 +1007,15 @@ async def get_game_stats(from_ts: float, to_ts: float) -> dict:
     if not _game_stats_ready:
         await _ensure_game_stats(); _game_stats_ready = True
     db = await _get_conn()
-    out = {g: {"games": 0, "wagered": 0, "paid": 0, "profit": 0, "avg": 0.0, "rtp": 0.0, "wins": 0}
+    out = {g: {"games": 0, "players": 0, "wagered": 0, "paid": 0, "profit": 0, "avg": 0.0, "rtp": 0.0, "wins": 0}
            for g in STAT_GAMES}
     async with db.execute(
         """SELECT game, COUNT(*), COALESCE(SUM(bet),0), COALESCE(SUM(payout),0),
-                  COALESCE(SUM(CASE WHEN payout>bet THEN 1 ELSE 0 END),0)
+                  COALESCE(SUM(CASE WHEN payout>bet THEN 1 ELSE 0 END),0), COUNT(DISTINCT user_id)
            FROM game_stats WHERE created_at>=? AND created_at<=? GROUP BY game""", (from_ts, to_ts)) as cur:
-        for g, n, bet, paid, wins in await cur.fetchall():
+        for g, n, bet, paid, wins, pl in await cur.fetchall():
             if g in out:
-                o = out[g]; o.update(games=n, wagered=bet, paid=paid, wins=wins, profit=bet - paid,
+                o = out[g]; o.update(games=n, players=pl, wagered=bet, paid=paid, wins=wins, profit=bet - paid,
                                      avg=round((bet - paid) / n, 2) if n else 0.0,
                                      rtp=round(paid * 100 / bet, 1) if bet else 0.0)
     return out
@@ -1066,3 +1066,61 @@ async def get_photo_url(uid: int):
     async with db.execute("SELECT photo_url FROM users WHERE user_id=?", (int(uid),)) as cur:
         row = await cur.fetchone()
     return row[0] if row and row[0] else None
+
+
+# ── СЕРИЯ ЗАХОДОВ (ежедневный бонус) ─────────────────────────────────────
+_daily_cols_ready = False
+
+
+async def _ensure_daily_cols():
+    global _daily_cols_ready
+    if _daily_cols_ready: return
+    db = await _get_conn()
+    for ddl in ("ALTER TABLE users ADD COLUMN streak INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN best_streak INTEGER DEFAULT 0",
+                "ALTER TABLE users ADD COLUMN last_daily TEXT"):
+        try: await db.execute(ddl)
+        except Exception: pass          # колонка уже есть
+    await db.commit()
+    _daily_cols_ready = True
+
+
+def _daily_view(streak, last, best, today, yesterday, rewards, claimed_now=False, reward=0):
+    alive = last in (today, yesterday)
+    eff = int(streak or 0) if alive else 0
+    claimed_today = (last == today)
+    ns = eff + 1                                          # номер дня серии при следующем получении
+    return {"streak": eff, "best": int(best or 0), "claimed_today": claimed_today, "claimed_now": claimed_now,
+            "reward": reward, "rewards": rewards,
+            "cycle_day": ((eff - 1) % len(rewards)) + 1 if eff else 0,
+            "next_reward": rewards[(ns - 1) % len(rewards)]}
+
+
+async def get_daily(uid: int, today: str, yesterday: str, rewards: list):
+    await _ensure_daily_cols()
+    db = await _get_conn()
+    async with db.execute("SELECT streak,last_daily,best_streak FROM users WHERE user_id=?", (int(uid),)) as cur:
+        row = await cur.fetchone()
+    if not row: return None
+    return _daily_view(row[0], row[1], row[2], today, yesterday, rewards)
+
+
+async def claim_daily(uid: int, today: str, yesterday: str, rewards: list):
+    """Один раз в сутки: продлевает серию и начисляет монеты. Повторный вызов в тот же день ничего не даёт."""
+    await _ensure_daily_cols()
+    async with _tx() as db:
+        async with db.execute("SELECT streak,last_daily,best_streak,balance FROM users WHERE user_id=?", (int(uid),)) as cur:
+            row = await cur.fetchone()
+        if not row: return None
+        streak, last, best, bal = int(row[0] or 0), row[1], int(row[2] or 0), _to_int(row[3])
+        if last == today:
+            return _daily_view(streak, last, best, today, yesterday, rewards)
+        streak = streak + 1 if last == yesterday else 1
+        best = max(best, streak)
+        reward = int(rewards[(streak - 1) % len(rewards)])
+        await db.execute("UPDATE users SET streak=?, best_streak=?, last_daily=?, balance=? WHERE user_id=?",
+                         (streak, best, today, str(bal + reward), int(uid)))
+        await db.commit()
+        v = _daily_view(streak, today, best, today, yesterday, rewards, claimed_now=True, reward=reward)
+        v["balance"] = bal + reward
+        return v

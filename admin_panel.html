@@ -314,6 +314,33 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .hm-sum div{background:#111;border:1px solid #1F1F1F;border-radius:10px;padding:7px 6px;text-align:center}
 .hm-sum span{display:block;font:600 9px var(--font-mono);color:#8A8A8A;margin-bottom:3px}
 .hm-sum em{font:800 12px var(--font-mono);font-style:normal}
+
+/* ═══ ДОХОД: сводка и карточки игр ═══ */
+.rev-hero{grid-column:1/-1;background:linear-gradient(160deg,#17130A,#0A0A0A 60%);border:1px solid rgba(245,158,11,.28);border-radius:18px;padding:16px;position:relative;overflow:hidden}
+.rev-hero::after{content:'';position:absolute;right:-30px;top:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.18),transparent 70%)}
+.rh-l{font:800 10px var(--font-mono);letter-spacing:1.6px;color:#9A9A9A}
+.rh-v{font:900 30px var(--font-mono);margin:6px 0 2px}
+.rh-s{font:600 10.5px var(--font-mono);color:#7F7F7F}
+.rh-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;position:relative;z-index:1}
+.rh-row div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:8px 6px;text-align:center}
+.rh-row span{display:block;font:600 9px var(--font-mono);color:#8A8A8A;margin-bottom:4px}
+.rh-row b{font:800 14px var(--font-mono)}
+.rh-row b.gold{color:#FFC94D}.rh-row b.r{color:#FF6B7F}.rh-row b.blue{color:#6EB5FF}
+.rev-sec{grid-column:1/-1;font:800 10.5px var(--font-mono);letter-spacing:1.6px;color:#8A8A8A;margin:6px 2px -2px}
+.gc2{background:linear-gradient(180deg,#121212,#0A0A0A);border:1px solid #222;border-radius:16px;padding:12px;position:relative;overflow:hidden}
+.gc2::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#2A2A2A}
+.gc2.up::before{background:linear-gradient(180deg,#4ADE80,#15803D)}
+.gc2.down::before{background:linear-gradient(180deg,#FF6B7F,#B91C3A)}
+.gc2.empty{opacity:.65}
+.gc2-h{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.gc2-ic{font-size:18px}.gc2-nm{font:800 12px var(--font-mono);color:#E6E6E6}
+.gc2-v{font:900 24px var(--font-mono);line-height:1}
+.gc2.up .gc2-v{color:#4ADE80}.gc2.down .gc2-v{color:#FF6B7F}.gc2.empty .gc2-v{color:#5A5A5A}
+.gc2-l{font:600 9.5px var(--font-mono);color:#7F7F7F;margin:3px 0 9px}
+.gc2-pills{display:flex;gap:6px}
+.gc2-pills span{font:800 11px var(--font-mono);color:#D5D5D5;background:#161616;border:1px solid #262626;border-radius:8px;padding:3px 8px}
+.gc2-f{margin-top:9px;font:600 10px var(--font-mono);color:#8A8A8A}
+.gc2-f b.g{color:#4ADE80}.gc2-f b.r{color:#FF6B7F}
 </style>
 <script src="coin.js" defer></script>
 </head>
@@ -2034,43 +2061,31 @@ async function loadRev(){
   try{
     const d=await api(`/api/admin/revenue?from=${f}&to=${t}`);
     msg.style.display='none';grid.style.display='grid';
-    const ep=d.euro_losses-d.euro_wins;
-    const mp=d.mines_losses-d.mines_wins;
-    const tp=d.tower_losses-d.tower_wins;
-
-    const GN={european_roulette:'🎰 Европ. рулетка',mines:'💣 Мины',tower:'🗼 Башня',blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета'};
     const sg=v=>(v>=0?'+':'')+v;
-    const gcards=Object.entries(d.games||{}).map(([k,g])=>`
-      <div class="ri" style="grid-column:span 1">
-        <div class="ri-l">${GN[k]||k}</div>
-        <div class="ri-v ${g.profit>=0?'g':'r'}">${sg(g.profit)}</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px">
-          Игр: <b style="color:var(--text)">${g.games}</b> · побед игроков: <b style="color:var(--text)">${g.wins}</b><br/>
-          Ставки: ${g.wagered} · выплачено: ${g.paid}<br/>
-          ≈ <b style="color:${g.avg>=0?'var(--green)':'var(--red)'}">${g.avg>=0?'+':''}${g.avg}</b> с игры · RTP ${g.rtp}%
-        </div>
-      </div>`).join('');
+    const GN={european_roulette:['🎰','Европ. рулетка'],mines:['💣','Мины'],tower:['🗼','Башня'],gta_roulette:['🔫','GTA рулетка'],
+              blackjack:['🃏','Блэкджек'],plinko:['🟣','Plinko'],rocket:['🚀','Ракета']};
+    const gcards=Object.entries(d.games||{}).map(([k,g])=>{
+      const [ic,nm]=GN[k]||['🎲',k], up=g.profit>=0, empty=!g.games;
+      return `<div class="gc2 ${empty?'empty':up?'up':'down'}">
+        <div class="gc2-h"><span class="gc2-ic">${ic}</span><span class="gc2-nm">${nm}</span></div>
+        <div class="gc2-v">${empty?'—':sg(g.profit)}</div>
+        <div class="gc2-l">заработали</div>
+        <div class="gc2-pills"><span title="Сколько человек играло">👥 ${g.players}</span><span title="Сколько партий сыграно">🎲 ${g.games}</span></div>
+        ${empty?'':`<div class="gc2-f">≈ <b class="${g.avg>=0?'g':'r'}">${g.avg>=0?'+':''}${g.avg}</b> с игры · RTP ${g.rtp}%</div>`}
+      </div>`;}).join('');
     grid.innerHTML=`
-      <div class="ri"><div class="ri-l">🏙 GTA комиссии</div><div class="ri-v g">+${d.gta_commission}</div></div>
-      <div class="ri"><div class="ri-l">🎰 Европ. (виртуально)</div><div class="ri-v ${ep>=0?'g':'r'}">${ep>=0?'+':''}${ep}</div></div>
-      <div class="ri"><div class="ri-l">💣 Мины (виртуально)</div><div class="ri-v ${mp>=0?'g':'r'}">${mp>=0?'+':''}${mp}</div></div>
-      <div class="ri"><div class="ri-l">🗼 Башня (виртуально)</div><div class="ri-v ${tp>=0?'g':'r'}">${tp>=0?'+':''}${tp}</div></div>
-      ${['blackjack','plinko','rocket'].map(k=>{const g=(d.games||{})[k]||{profit:0};
-        const nm={blackjack:'🃏 Блэкджек',plinko:'🟣 Plinko',rocket:'🚀 Ракета'}[k];
-        return `<div class="ri"><div class="ri-l">${nm} (виртуально)</div><div class="ri-v ${g.profit>=0?'g':'r'}">${g.profit>=0?'+':''}${g.profit}</div></div>`;}).join('')}
-      <div class="ri"><div class="ri-l">📉 Проиграно игр. (виртуально)</div><div class="ri-v gold">${d.euro_losses+d.mines_losses+d.tower_losses}</div></div>
-      <div class="ri"><div class="ri-l">📈 Выплачено игр. (виртуально)</div><div class="ri-v r">-${d.euro_wins+d.mines_wins+d.tower_wins}</div></div>
-      <div style="grid-column:1/-1;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:1.5px;margin-top:6px">ПО РЕЖИМАМ (точная статистика партий, считается с момента обновления)</div>
-      ${gcards}
-      <div class="ri"><div class="ri-l">💳 Куплено монет (только за ⭐)</div><div class="ri-v gold">+${d.deposits}</div></div>
-      <div class="ri"><div class="ri-l">🎁 Выведено подарками</div><div class="ri-v r">-${d.withdrawals||0}</div></div>
-      <div class="ri"><div class="ri-l">👥 Игроков</div><div class="ri-v blue">${d.players ?? users.length}</div></div>
-      <div class="rev-total">
-        <div class="rt-l">Итого реальный доход (⭐ купили − ⭐ выплатили подарками)</div>
-        <div class="rt-v" style="color:${d.total_revenue>=0?'var(--gold)':'var(--red)'}">
-          ${d.total_revenue>=0?'+':''}${d.total_revenue} 🪙
+      <div class="rev-hero">
+        <div class="rh-l">ИТОГО РЕАЛЬНЫЙ ДОХОД</div>
+        <div class="rh-v" style="color:${d.total_revenue>=0?'#FFC94D':'var(--red)'}">${d.total_revenue>=0?'+':''}${d.total_revenue} 🪙</div>
+        <div class="rh-s">⭐ купили − ⭐ выплатили подарками</div>
+        <div class="rh-row">
+          <div><span>💳 Куплено за ⭐</span><b class="gold">+${d.deposits}</b></div>
+          <div><span>🎁 Выведено</span><b class="r">-${d.withdrawals||0}</b></div>
+          <div><span>👥 Игроков</span><b class="blue">${d.players ?? users.length}</b></div>
         </div>
-      </div>`;
+      </div>
+      <div class="rev-sec">ПО ИГРАМ · с момента обновления</div>
+      ${gcards}`;
   } catch{ msg.style.display='block';msg.textContent='Ошибка загрузки'; }
 }
 
