@@ -266,3 +266,19 @@ async function TL_prefetchShop(){
     if(t.setBottomBarColor)t.setBottomBarColor('#000000');
   }catch(e){}
 })();
+
+
+// ── Ошибки JS из приложения -> админ-панель, вкладка «Группа» -> «Ошибки» ──
+(function(){
+  let sent=0;const seen=new Set();
+  function report(msg,where){
+    try{
+      msg=String(msg||'');if(!msg||msg==='Script error.'||sent>=5)return;
+      const k=msg+'|'+where;if(seen.has(k))return;seen.add(k);sent++;
+      fetch('/api/client_error',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({page:location.pathname.split('/').pop()||'index',msg:msg.slice(0,500),where:where||''})}).catch(()=>{});
+    }catch(e){}
+  }
+  window.addEventListener('error',e=>{if(e.target&&e.target!==window)return;report(e.message,(e.filename||'').split('/').pop()+':'+e.lineno+':'+e.colno);});
+  window.addEventListener('unhandledrejection',e=>report('Promise: '+((e.reason&&e.reason.message)||e.reason),''));
+})();

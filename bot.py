@@ -76,7 +76,7 @@ def tower_mult(floor: int) -> float:
     raw = 1.0 + floor * 0.28 - floor * (floor - 1) * 0.010
     return round(TOWER_HOUSE * max(1.0, raw), 4)
 
-def mines_mult(safe_opened: int, bombs: int, max_mult: float = 25.0) -> float:
+def mines_mult(safe_opened: int, bombs: int, max_mult: float = 7.0) -> float:
     """Geometric multiplier — matches client formula exactly.
     mult(0)          = 1.0   (game start)
     mult(safe_total) = max_mult  (all diamonds collected — exact maximum)
@@ -121,13 +121,13 @@ _QM = "?"
 _EMPTY = ""
 
 async def log_error(context: str, error: str):
-    """Log any error to the admin/errors thread in the log group."""
+    """Ошибка -> ветка «Ошибки» в админ-панели (и, как раньше, в тред админ-логов группы). Время показывает сама панель."""
     await log(LOG_THREAD_ADMIN,
         f"⚠️ <b>Ошибка</b>\n"
         f"#error\n"
         f"Место: <code>{_html.escape(context)}</code>\n"
-        f"Ошибка: <code>{_html.escape(str(error)[:400])}</code>\n"
-        f"Время: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
+        f"Ошибка: <code>{_html.escape(str(error)[:400])}</code>",
+        category="errors")
 
 ROULETTE_NUMBERS = [
     (0,"green"),(32,"red"),(15,"black"),(19,"red"),(4,"black"),(21,"red"),
@@ -153,12 +153,12 @@ GLOG_CATEGORY_NAMES = {
     LOG_THREAD_BACKUP:       "backup",
 }
 
-async def log(thread_id: int, text: str, reply_markup=None, incognito: bool = False):
+async def log(thread_id: int, text: str, reply_markup=None, incognito: bool = False, category: str = None):
     """Send message to log group thread + store a copy in DB for the admin panel. incognito=True skips everything."""
     if incognito or not thread_id:
         return
     try:
-        await db.add_glog(thread_id, GLOG_CATEGORY_NAMES.get(thread_id, str(thread_id)), text)
+        await db.add_glog(thread_id, category or GLOG_CATEGORY_NAMES.get(thread_id, str(thread_id)), text)
     except Exception as e:
         logger.warning(f"glog store error (thread {thread_id}): {e}")
     if not LOG_GROUP_ID:
@@ -1918,6 +1918,42 @@ async def api_daily_claim(req):
         await db.add_history(uid, "daily", res["reward"], f"Ежедневный бонус: серия {res['streak']} дн.")
     return web.json_response({"ok": True, **res})
 
+# ── ВЕТКА «ОШИБКИ»: ловим серверные ошибки (ERROR+) и ошибки JS из приложения ──
+import traceback
+_main_loop = None
+
+class _ErrorLogHandler(logging.Handler):
+    def __init__(self):
+        super().__init__(level=logging.ERROR); self._seen = {}
+    def emit(self, record):
+        try:
+            if record.name.startswith("aiohttp.access"): return
+            msg = record.getMessage(); now = time.time()
+            key = (record.name, msg[:160])
+            if now - self._seen.get(key, 0) < 60: return          # одинаковое не чаще раза в минуту
+            self._seen[key] = now
+            if len(self._seen) > 500: self._seen.clear()
+            tb = ""
+            if record.exc_info: tb = "\n" + "".join(traceback.format_exception(*record.exc_info))[-700:]
+            text = f"⚠️ <b>Ошибка сервера</b> · <code>{_html.escape(record.name)}</code>\n<code>{_html.escape((msg + tb)[:1200])}</code>"
+            if _main_loop and _main_loop.is_running():
+                _main_loop.call_soon_threadsafe(lambda: asyncio.ensure_future(db.add_glog(LOG_THREAD_ADMIN, "errors", text)))
+        except Exception:
+            pass
+
+_client_err_rate: dict[int, list] = {}
+async def api_client_error(req):
+    uid = int(req.get("tg_uid") or 0)
+    now = time.time(); lst = [t for t in _client_err_rate.get(uid, []) if now - t < 600]
+    if len(lst) >= 8: return web.json_response({"ok": False}, status=429)
+    lst.append(now); _client_err_rate[uid] = lst
+    try: d = await req.json()
+    except Exception: d = {}
+    page = _html.escape(str(d.get("page", ""))[:60]); msg = _html.escape(str(d.get("msg", ""))[:500]); where = _html.escape(str(d.get("where", ""))[:200])
+    text = f"📱 <b>Ошибка в приложении</b> · <code>{page}</code> · игрок <code>{uid}</code>\n<code>{msg}</code>" + (f"\n<code>{where}</code>" if where else "")
+    await db.add_glog(LOG_THREAD_ADMIN, "errors", text)
+    return web.json_response({"ok": True})
+
 # Static
 BASE = Path(__file__).parent
 async def serve_html(f):
@@ -2918,6 +2954,7 @@ async def start_web():
     app.router.add_post("/api/admin/blackjack_luck", api_admin_set_blackjack_luck)
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_get ("/api/status",                 api_status)
+    app.router.add_post("/api/client_error",           api_client_error)
     app.router.add_post("/api/daily/claim",            api_daily_claim)
     app.router.add_get ("/api/admin/user_activity",    api_admin_user_activity)
     app.router.add_get ("/api/admin/avatar/{uid}",     api_admin_avatar)
@@ -2958,6 +2995,10 @@ async def main():
     asyncio.create_task(daily_backup())
     asyncio.create_task(sync_nft_pack())
     asyncio.create_task(gift_media_loop())      # при старте и далее раз в час
+    global _main_loop
+    _main_loop = asyncio.get_running_loop()
+    logging.getLogger().addHandler(_ErrorLogHandler())
+    await db.migrate_mines_cap()                # макс. коэффициент мин = x7 (однократно)
     await dp.start_polling(bot, skip_updates=True)
 
 

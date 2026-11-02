@@ -637,7 +637,7 @@ async def set_banned(uid: int, banned: bool, reason: str = ""):
 
 
 async def get_mines_max_mult() -> float:
-    return await _get_setting_float('mines_max_mult', 25.0)
+    return await _get_setting_float('mines_max_mult', 7.0)
 
 
 async def set_mines_max_mult(val: float):
@@ -1124,3 +1124,11 @@ async def claim_daily(uid: int, today: str, yesterday: str, rewards: list):
         v = _daily_view(streak, today, best, today, yesterday, rewards, claimed_now=True, reward=reward)
         v["balance"] = bal + reward
         return v
+
+
+async def migrate_mines_cap():
+    """Однократно: максимальный коэффициент мин теперь x7 (а не x25). Дальше его можно менять в админке."""
+    if await _get_setting_str("mines_cap_v7", "") == "1":
+        return
+    await _set_setting("mines_max_mult", "7.0")
+    await _set_setting("mines_cap_v7", "1")

@@ -931,6 +931,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="abtn set" onclick="setGlogCat('admin',this)" style="font-size:10px;padding:5px 9px">🛠 Админ <span id="gc-admin">0</span></button>
       <button class="abtn set" onclick="setGlogCat('broadcast',this)" style="font-size:10px;padding:5px 9px">📢 Рассылка <span id="gc-broadcast">0</span></button>
       <button class="abtn set" onclick="setGlogCat('backup',this)" style="font-size:10px;padding:5px 9px">💾 Бэкап <span id="gc-backup">0</span></button>
+      <button class="abtn set" onclick="setGlogCat('errors',this)" style="font-size:10px;padding:5px 9px;color:#FDBA74">⚠️ Ошибки <span id="gc-errors">0</span></button>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
       <div style="position:relative">
@@ -2095,7 +2096,7 @@ let euroCoeff = 1.0;
 let minesCoeff = 1.0;
 let towerLuckCoeff = 1.0;
 let bjCoeff = 1.0;
-let minesMaxMult = 25.0;
+let minesMaxMult = 7.0;
 let towerMaxFloors = 10;
 
 function _colorCoeff(v){ return v<0.3?'var(--red)':v<0.7?'var(--gold)':'var(--green)'; }
@@ -2297,7 +2298,7 @@ async function loadGl(){
   await loadGameLucks();
   try{
     const d = await api('/api/admin/mines_max_mult');
-    minesMaxMult = d.max_mult ?? d.value ?? 25;
+    minesMaxMult = d.max_mult ?? d.value ?? 7;
     document.getElementById('mines-max-val').textContent = minesMaxMult.toFixed(1)+'x';
     document.getElementById('mines-max-slider').value = Math.min(100, minesMaxMult);
   } catch{}
@@ -2577,7 +2578,7 @@ async function loadGlogs(){
     const total = Object.values(counts).reduce((a,b)=>a+b,0);
     const set = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent = v; };
     set('gc-all', total);
-    ['users','games','deposit','withdraw','withdraw_bot','admin','broadcast','backup'].forEach(c=>set('gc-'+c, counts[c]||0));
+    ['users','games','deposit','withdraw','withdraw_bot','admin','broadcast','backup','errors'].forEach(c=>set('gc-'+c, counts[c]||0));
     renderGlogs();
   }catch(e){
     if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red)">❌ ${esc(String(e.message||e))}</div>`;
@@ -2586,11 +2587,11 @@ async function loadGlogs(){
 
 const GLOG_CAT_COLOR = {
   users:'#3B82F6', games:'#8B5CF6', deposit:'#22C55E', withdraw:'#F59E0B',
-  withdraw_bot:'#F59E0B', admin:'#EF4444', broadcast:'#06B6D4', backup:'#777777'
+  withdraw_bot:'#F59E0B', admin:'#EF4444', broadcast:'#06B6D4', backup:'#777777', errors:'#F97316'
 };
 const GLOG_CAT_LABEL = {
   users:'👤 Игроки', games:'🎮 Игры', deposit:'💳 Депозит', withdraw:'📦 Вывод',
-  withdraw_bot:'🤖 Вывод (бот)', admin:'🛠 Админ', broadcast:'📢 Рассылка', backup:'💾 Бэкап'
+  withdraw_bot:'🤖 Вывод (бот)', admin:'🛠 Админ', broadcast:'📢 Рассылка', backup:'💾 Бэкап', errors:'⚠️ Ошибки'
 };
 function renderGlogs(){
   const listEl = document.getElementById('glog-list');
@@ -2605,7 +2606,8 @@ function renderGlogs(){
     return;
   }
   listEl.innerHTML = items.map(i=>{
-    const dt = new Date((i.created_at||0)*1000).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const dt = new Date((i.created_at||0)*1000).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const body = (i.text||'').replace(/\n?[ \t]*(?:🕐|⏰|🕒|🕓|⌚)?[ \t]*(?:Время|Дата и время|Дата)\s*:[^\n]*/gi,'').trim();
     const color = GLOG_CAT_COLOR[i.category] || 'var(--muted)';
     const label = GLOG_CAT_LABEL[i.category] || esc(i.category||'');
     return `<div style="padding:10px 12px;background:var(--card-bg);border:1px solid var(--card-br);border-left:3px solid ${color};border-radius:10px;font-size:12px;line-height:1.6">
@@ -2613,7 +2615,7 @@ function renderGlogs(){
         <span style="color:${color};font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.5px;font-weight:700">${label}</span>
         <span style="color:var(--muted);font-size:10px;white-space:nowrap">${dt}</span>
       </div>
-      <div style="color:var(--text-main)">${i.text||''}</div>
+      <div style="color:var(--text-main);white-space:pre-wrap">${body}</div>
     </div>`;
   }).join('');
 }
