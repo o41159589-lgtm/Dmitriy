@@ -1908,6 +1908,21 @@ def _daily_dates():
     now = datetime.utcnow() + timedelta(minutes=DAILY_TZ_MIN)
     return now.strftime("%Y-%m-%d"), (now - timedelta(days=1)).strftime("%Y-%m-%d")
 
+def _daily_secs_left() -> int:
+    """Сколько секунд осталось до конца текущих суток (когда серия «сгорает» / появляется новая награда)."""
+    from datetime import datetime, timedelta
+    now = datetime.utcnow() + timedelta(minutes=DAILY_TZ_MIN)
+    nxt = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return max(1, int((nxt - now).total_seconds()))
+
+async def api_daily_get(req):
+    """Состояние серии БЕЗ получения награды — награду игрок забирает кнопкой."""
+    uid = int(req.get("tg_uid") or 0)
+    today, yest = _daily_dates()
+    res = await db.get_daily(uid, today, yest, DAILY_REWARDS)
+    if res is None: return web.json_response({"error": "no user"}, status=404)
+    return web.json_response({"ok": True, "seconds_left": _daily_secs_left(), **res})
+
 async def api_daily_claim(req):
     uid = int(req.get("tg_uid") or 0)
     if await db.is_banned(uid): return web.json_response({"error": "banned"}, status=403)
@@ -1916,43 +1931,7 @@ async def api_daily_claim(req):
     if res is None: return web.json_response({"error": "no user"}, status=404)
     if res.get("claimed_now"):
         await db.add_history(uid, "daily", res["reward"], f"Ежедневный бонус: серия {res['streak']} дн.")
-    return web.json_response({"ok": True, **res})
-
-# ── ВЕТКА «ОШИБКИ»: ловим серверные ошибки (ERROR+) и ошибки JS из приложения ──
-import traceback
-_main_loop = None
-
-class _ErrorLogHandler(logging.Handler):
-    def __init__(self):
-        super().__init__(level=logging.ERROR); self._seen = {}
-    def emit(self, record):
-        try:
-            if record.name.startswith("aiohttp.access"): return
-            msg = record.getMessage(); now = time.time()
-            key = (record.name, msg[:160])
-            if now - self._seen.get(key, 0) < 60: return          # одинаковое не чаще раза в минуту
-            self._seen[key] = now
-            if len(self._seen) > 500: self._seen.clear()
-            tb = ""
-            if record.exc_info: tb = "\n" + "".join(traceback.format_exception(*record.exc_info))[-700:]
-            text = f"⚠️ <b>Ошибка сервера</b> · <code>{_html.escape(record.name)}</code>\n<code>{_html.escape((msg + tb)[:1200])}</code>"
-            if _main_loop and _main_loop.is_running():
-                _main_loop.call_soon_threadsafe(lambda: asyncio.ensure_future(db.add_glog(LOG_THREAD_ADMIN, "errors", text)))
-        except Exception:
-            pass
-
-_client_err_rate: dict[int, list] = {}
-async def api_client_error(req):
-    uid = int(req.get("tg_uid") or 0)
-    now = time.time(); lst = [t for t in _client_err_rate.get(uid, []) if now - t < 600]
-    if len(lst) >= 8: return web.json_response({"ok": False}, status=429)
-    lst.append(now); _client_err_rate[uid] = lst
-    try: d = await req.json()
-    except Exception: d = {}
-    page = _html.escape(str(d.get("page", ""))[:60]); msg = _html.escape(str(d.get("msg", ""))[:500]); where = _html.escape(str(d.get("where", ""))[:200])
-    text = f"📱 <b>Ошибка в приложении</b> · <code>{page}</code> · игрок <code>{uid}</code>\n<code>{msg}</code>" + (f"\n<code>{where}</code>" if where else "")
-    await db.add_glog(LOG_THREAD_ADMIN, "errors", text)
-    return web.json_response({"ok": True})
+    return web.json_response({"ok": True, "seconds_left": _daily_secs_left(), **res})
 
 # Static
 BASE = Path(__file__).parent
@@ -2955,6 +2934,7 @@ async def start_web():
     app.router.add_get ("/api/plinko_mults",         api_plinko_mults)
     app.router.add_get ("/api/status",                 api_status)
     app.router.add_post("/api/client_error",           api_client_error)
+    app.router.add_get ("/api/daily",                  api_daily_get)
     app.router.add_post("/api/daily/claim",            api_daily_claim)
     app.router.add_get ("/api/admin/user_activity",    api_admin_user_activity)
     app.router.add_get ("/api/admin/avatar/{uid}",     api_admin_avatar)

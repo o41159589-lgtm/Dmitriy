@@ -456,26 +456,57 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
 
 
 /* ── Серия заходов ── */
-.daily-card{background:linear-gradient(180deg,#141414,#0A0A0A);border:1px solid rgba(255,255,255,.11);border-radius:20px;padding:14px;margin:0 0 12px;position:relative;overflow:hidden}
-.daily-card::before{content:'';position:absolute;right:-40px;top:-50px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,40,.20),transparent 70%);pointer-events:none}
-.daily-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;position:relative}
-.daily-title{font-family:var(--font-mono,monospace);font-size:11px;font-weight:800;letter-spacing:1.5px;color:#9B9B9B}
-.daily-streak{display:flex;align-items:center;gap:6px;font-weight:900;font-size:18px;color:#FFB347}
-.daily-streak small{font-size:11px;font-weight:700;color:#8A8A8A}
-.daily-track{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;position:relative}
-.dc{display:flex;flex-direction:column;align-items:center;gap:5px}
-.dc-c{width:100%;aspect-ratio:1;max-width:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;
-  background:#161616;border:1.5px solid #272727;color:#6F6F6F;position:relative}
-.dc.done .dc-c{background:linear-gradient(145deg,#FFD66B,#F2A100);border-color:#FFE29A;color:#3A2600;box-shadow:0 4px 14px rgba(240,160,0,.35)}
-.dc.today .dc-c{border-color:#FFB347;color:#FFB347;animation:dcPulse 1.4s ease-in-out infinite}
-.dc.big .dc-c{border-radius:14px;font-size:20px}
-.dc.big:not(.done) .dc-c{border-color:#4A3A12;background:linear-gradient(145deg,#1F1A0C,#120F07);color:#FFC94D}
-.dc-n{font-size:10px;font-weight:800;color:#7A7A7A}
-.dc-r{font-size:11px;font-weight:900;color:#BDBDBD;white-space:nowrap}
-.dc.done .dc-r{color:#FFC94D}
-.daily-sub{margin-top:12px;font-size:12px;font-weight:700;color:#A8A8A8;line-height:1.5;position:relative}
-.daily-sub b{color:#F2F2F2}
-@keyframes dcPulse{50%{box-shadow:0 0 0 5px rgba(255,179,71,.14)}}
+.daily-card{position:relative;overflow:hidden;margin:0 0 12px;padding:16px 14px 14px;border-radius:24px;
+  background:radial-gradient(120% 90% at 85% -10%,rgba(255,140,40,.22),transparent 55%),linear-gradient(180deg,#151515,#090909);
+  border:1px solid rgba(255,179,71,.22);box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.daily-card::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+.dly-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;position:relative;z-index:1}
+.dly-title{font-size:11px;font-weight:800;letter-spacing:1.6px;color:#9B9B9B;text-transform:uppercase}
+.dly-streak{display:flex;align-items:baseline;gap:7px;margin-top:3px}
+.dly-flame{font-size:30px;line-height:1;filter:drop-shadow(0 0 12px rgba(255,120,20,.7));animation:flame 1.6s ease-in-out infinite}
+.dly-num{font-size:40px;font-weight:900;line-height:1;background:linear-gradient(180deg,#FFE29A,#FF9F1C);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dly-num.bump{animation:numBump .6s cubic-bezier(.2,1.6,.4,1)}
+.dly-unit{font-size:13px;font-weight:800;color:#B5B5B5}
+.dly-rec{font-size:11px;font-weight:800;color:#8A8A8A;background:#111;border:1px solid #242424;border-radius:99px;padding:6px 11px;white-space:nowrap}
+.dly-rec b{color:#FFC94D}
+.dly-bar{height:6px;border-radius:99px;background:#1B1B1B;margin-bottom:12px;overflow:hidden;position:relative;z-index:1}
+.dly-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FFB347,#FFE29A);box-shadow:0 0 12px rgba(255,170,60,.6);transition:width .7s cubic-bezier(.2,.9,.3,1)}
+.dly-track{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;position:relative;z-index:1}
+.dt{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:7px 2px 6px;border-radius:15px;min-height:84px;
+  background:#101010;border:1.5px solid #222;opacity:.62;transition:transform .2s}
+.dt-n{font-size:11px;font-weight:900;color:#777}
+.dt-ic{width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+.dt-ic img{width:100%;height:100%;object-fit:contain;filter:grayscale(1) brightness(.7)}
+.dt-r{font-size:12px;font-weight:900;color:#9B9B9B}
+.dt.done{opacity:1;background:linear-gradient(180deg,#2B2008,#151006);border-color:#E0A21A;box-shadow:0 6px 18px rgba(240,160,0,.22)}
+.dt.done .dt-ic img{filter:none}.dt.done .dt-n{color:#E8C66B}.dt.done .dt-r{color:#FFC94D}
+.dt.done::after{content:'✓';position:absolute;top:-6px;right:-5px;width:18px;height:18px;border-radius:50%;background:linear-gradient(145deg,#6EF2A0,#17A34A);color:#052E14;
+  font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #0A0A0A}
+.dt.today{opacity:1;border-color:#FFB347;background:linear-gradient(180deg,#241706,#120C04);animation:dtPulse 1.5s ease-in-out infinite}
+.dt.today .dt-ic img{filter:none;animation:coinHop 1.2s ease-in-out infinite}.dt.today .dt-n{color:#FFB347}.dt.today .dt-r{color:#FFE29A}
+.dt.big .dt-ic{font-size:26px}
+.dt.big:not(.done){border-color:#4B3A12;background:linear-gradient(180deg,#1F180A,#0E0B05);opacity:.9}
+.dt.big:not(.done):not(.today) .dt-ic{filter:grayscale(.4)}
+.dt.pop{animation:tilePop .7s cubic-bezier(.2,1.5,.4,1)}
+.dly-btn{position:relative;z-index:1;display:block;width:100%;margin-top:14px;padding:15px;border:none;border-radius:18px;cursor:pointer;
+  font-family:inherit;font-size:18px;font-weight:900;letter-spacing:.3px;color:#3A2400;overflow:hidden;
+  background:linear-gradient(180deg,#FFE680 0%,#FFB800 100%);border-bottom:4px solid #C98A00;box-shadow:0 10px 26px rgba(255,170,0,.35);transition:transform .08s}
+.dly-btn:active{transform:translateY(3px);border-bottom-width:1px}
+.dly-btn::before{content:'';position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);animation:shine 2.6s ease-in-out infinite}
+.dly-btn.big{background:linear-gradient(180deg,#FFD0FF 0%,#B25CFF 100%);border-bottom-color:#7B2FD6;color:#2A0B4A;box-shadow:0 10px 26px rgba(170,80,255,.4)}
+.dly-btn:disabled{cursor:default}
+.dly-btn.done{background:#141414;border:1.5px solid #2A2A2A;border-bottom-width:1.5px;color:#7FE3A6;box-shadow:none;font-size:15px;padding:13px}
+.dly-btn.done::before{display:none}
+.dly-sub{position:relative;z-index:1;margin-top:10px;text-align:center;font-size:12px;font-weight:700;color:#9A9A9A;line-height:1.5}
+.dly-sub b{color:#F2F2F2;font-variant-numeric:tabular-nums}
+.dly-sub .warn{color:#FF9A6B}
+.coin-fly{position:fixed;z-index:9999;width:26px;height:26px;pointer-events:none;object-fit:contain}
+@keyframes dtPulse{50%{box-shadow:0 0 0 5px rgba(255,179,71,.16),0 0 22px rgba(255,170,60,.35)}}
+@keyframes coinHop{50%{transform:translateY(-4px) scale(1.08)}}
+@keyframes tilePop{0%{transform:scale(.7)}60%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes numBump{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes flame{50%{transform:scale(1.1) rotate(-4deg)}}
+@keyframes shine{0%,55%{left:-80px}100%{left:130%}}
 </style>
 <link rel="preload" as="image" href="logo.webp">
 <script src="coin.js" defer></script>
@@ -575,9 +606,17 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
       <div class="prof-stat"><div class="prof-stat-val" id="prof-won">—</div><div class="prof-stat-lbl">Выиграно</div></div>
     </div>
     <div class="daily-card" id="daily-card">
-      <div class="daily-head"><span class="daily-title">// СЕРИЯ ЗАХОДОВ</span><span class="daily-streak" id="daily-streak">🔥 0 <small>дн.</small></span></div>
-      <div class="daily-track" id="daily-track"></div>
-      <div class="daily-sub" id="daily-sub">Заходи каждый день и получай монеты</div>
+      <div class="dly-top">
+        <div>
+          <div class="dly-title">Серия заходов</div>
+          <div class="dly-streak"><span class="dly-flame">🔥</span><span class="dly-num" id="dly-num">0</span><span class="dly-unit" id="dly-unit">дней</span></div>
+        </div>
+        <div class="dly-rec" id="dly-rec">рекорд <b>0</b></div>
+      </div>
+      <div class="dly-bar"><i id="dly-bar" style="width:0%"></i></div>
+      <div class="dly-track" id="dly-track"></div>
+      <button class="dly-btn" id="dly-btn" disabled>Загрузка…</button>
+      <div class="dly-sub" id="dly-sub"></div>
     </div>
     <div class="prof-menu-card">
       <div class="prof-menu-row" onclick="openTopup()"><div class="prof-menu-icon" style="background:linear-gradient(135deg,#E8C000,#FFD600)">⭐</div><div class="prof-menu-label">Пополнить звёзды</div><span class="prof-menu-arr">›</span></div>
@@ -702,41 +741,77 @@ async function initUser(){
   if(TL_guardBanned(userData))return;
   updateUI();
 }
-async function loadUser(){if(!UID)return;userData=await get(`/api/user/${UID}`).catch(()=>null);if(TL_guardBanned(userData))return;updateUI();if(!window._dailyDone){window._dailyDone=1;claimDaily();}}
-// ── Серия заходов: награда выдаётся автоматически при первом входе за день ──
+async function loadUser(){if(!UID)return;userData=await get(`/api/user/${UID}`).catch(()=>null);if(TL_guardBanned(userData))return;updateUI();if(!window._dailyDone){window._dailyDone=1;loadDaily();}}
+// ── Серия заходов: награду забираем кнопкой ──
+let _dlyTimer=null,_dlyLeft=0;
 function _plDays(n){const a=n%10,b=n%100;return (b>10&&b<15)?'дней':a===1?'день':(a>1&&a<5)?'дня':'дней';}
-function renderDaily(d){
-  const tr=document.getElementById('daily-track');if(!tr||!d)return;
-  const R=d.rewards||[1,1,1,1,1,1,5];
-  const done=d.claimed_today?d.cycle_day:(d.streak%7);
+function _hms(s){s=Math.max(0,s|0);const h=String(Math.floor(s/3600)).padStart(2,'0'),mi=String(Math.floor(s%3600/60)).padStart(2,'0'),se=String(s%60).padStart(2,'0');return `${h}:${mi}:${se}`;}
+function renderDaily(d,opt){
+  const tr=document.getElementById('dly-track');if(!tr||!d)return;
+  opt=opt||{};
+  const R=d.rewards||[1,1,1,1,1,1,5],N=R.length,bonus=Math.max(...R);
+  const done=d.claimed_today?d.cycle_day:(d.streak%N);
   tr.innerHTML=R.map((r,i)=>{
     const st=i<done?'done':(i===done&&!d.claimed_today?'today':'');
-    const big=(i===R.length-1);
-    const icon=i<done?'✓':(big?'🎁':'🪙');
-    return `<div class="dc ${st} ${big?'big':''}"><div class="dc-c">${icon}</div><div class="dc-n">${i+1} день</div><div class="dc-r">+${r}</div></div>`;
+    const big=(r===bonus&&i===N-1);
+    const ic=big?'🎁':'<img src="textures/coin.webp" alt="">';
+    return `<div class="dt ${st} ${big?'big':''}" data-i="${i}"><div class="dt-n">${i+1}</div><div class="dt-ic">${ic}</div><div class="dt-r">+${r}</div></div>`;
   }).join('');
-  document.getElementById('daily-streak').innerHTML=`🔥 ${d.streak} <small>${_plDays(d.streak)}</small>`;
-  const left=d.claimed_today?(R.length-(d.cycle_day%R.length||R.length)):(R.length-done);
-  const bonus=Math.max(...R);
-  let t;
-  if(d.claimed_today){
-    if(d.cycle_day>=R.length)t=`Сегодня получен бонус за 7 дней: <b>+${bonus} 🪙</b>! Завтра серия продолжится: <b>+${d.next_reward} 🪙</b>`;
-    else if(left===1)t=`Сегодня награда получена. Завтра — бонусный день: <b>+${bonus} 🪙</b>!`;
-    else t=`Сегодня награда получена. Завтра: <b>+${d.next_reward} 🪙</b> · до бонуса <b>+${bonus} 🪙</b> — ${left} ${_plDays(left)}`;
-  }else t=`Зайди сегодня и получи <b>+${d.next_reward} 🪙</b>. Пропустишь день — серия начнётся заново.`;
-  if(d.best>d.streak)t+=` <span style="color:#7A7A7A">Рекорд: ${d.best}</span>`;
-  document.getElementById('daily-sub').innerHTML=t;
+  const numEl=document.getElementById('dly-num');
+  numEl.textContent=d.streak;document.getElementById('dly-unit').textContent=_plDays(d.streak);
+  if(opt.bump){numEl.classList.remove('bump');void numEl.offsetWidth;numEl.classList.add('bump');}
+  document.getElementById('dly-rec').innerHTML=`рекорд <b>${Math.max(d.best||0,d.streak)}</b>`;
+  document.getElementById('dly-bar').style.width=Math.round(done/N*100)+'%';
+  if(opt.popIndex!=null){const el=tr.querySelector(`.dt[data-i="${opt.popIndex}"]`);if(el)el.classList.add('pop');}
+  const btn=document.getElementById('dly-btn'),sub=document.getElementById('dly-sub');
+  _dlyLeft=d.seconds_left||0;
+  if(!d.claimed_today){
+    const isBonus=(done===N-1);
+    btn.className='dly-btn'+(isBonus?' big':'');btn.disabled=false;
+    btn.innerHTML=isBonus?`🎁 Забрать бонус +${d.next_reward} 🪙`:`🎁 Забрать +${d.next_reward} 🪙`;
+    btn.onclick=claimDailyBtn;
+    sub.innerHTML=d.streak>0
+      ?`<span class="warn">Забери до конца дня — осталось <b id="dly-timer">${_hms(_dlyLeft)}</b>, иначе серия сбросится</span>`
+      :`Забери награду — серия начнётся с сегодняшнего дня`;
+  }else{
+    btn.className='dly-btn done';btn.disabled=true;btn.onclick=null;
+    btn.innerHTML=`✅ Награда получена`;
+    const tomorrowBonus=(d.cycle_day%N===N-1);
+    sub.innerHTML=`Следующая награда через <b id="dly-timer">${_hms(_dlyLeft)}</b> · <b>+${d.next_reward} 🪙</b>`
+      +(tomorrowBonus?' — <b>бонусный день!</b>':(d.cycle_day<N?` · до бонуса <b>+${bonus} 🪙</b> — ${N-d.cycle_day} ${_plDays(N-d.cycle_day)}`:''));
+  }
+  clearInterval(_dlyTimer);
+  _dlyTimer=setInterval(()=>{
+    _dlyLeft--;const t=document.getElementById('dly-timer');if(t)t.textContent=_hms(_dlyLeft);
+    if(_dlyLeft<=0){clearInterval(_dlyTimer);loadDaily();}
+  },1000);
 }
-async function claimDaily(){
+async function loadDaily(){try{const d=await get('/api/daily');if(d&&d.ok)renderDaily(d);}catch(e){}}
+function _coinBurst(from){
+  const r=from.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  for(let i=0;i<16;i++){
+    const im=document.createElement('img');im.src='textures/coin.webp';im.className='coin-fly';
+    im.style.left=(cx-13)+'px';im.style.top=(cy-13)+'px';document.body.appendChild(im);
+    const dx=(Math.random()-.5)*260,dy=-90-Math.random()*190,rot=(Math.random()-.5)*720;
+    const an=im.animate([{transform:'translate(0,0) scale(.5) rotate(0)',opacity:1},{transform:`translate(${dx*.6}px,${dy}px) scale(1.1) rotate(${rot*.6}deg)`,opacity:1,offset:.55},
+      {transform:`translate(${dx}px,${dy+120}px) scale(.8) rotate(${rot}deg)`,opacity:0}],{duration:900+Math.random()*500,easing:'cubic-bezier(.2,.7,.4,1)',delay:i*18});
+    an.onfinish=()=>im.remove();
+  }
+}
+async function claimDailyBtn(){
+  const btn=document.getElementById('dly-btn');if(!btn||btn.disabled)return;
+  btn.disabled=true;
   try{
     const d=await post('/api/daily/claim',{});
-    if(!d||!d.ok)return;
+    if(!d||!d.ok){btn.disabled=false;toast('Не удалось получить награду','err');return;}
     if(d.claimed_now){
+      _coinBurst(btn);
+      try{Telegram.WebApp.HapticFeedback.notificationOccurred('success');}catch(e){}
       if(userData){userData.balance=d.balance;updateUI();}
       toast(`🔥 Серия ${d.streak} ${_plDays(d.streak)} · +${d.reward} 🪙`,'ok');
     }
-    renderDaily(d);
-  }catch(e){}
+    renderDaily(d,{bump:true,popIndex:d.cycle_day-1});
+  }catch(e){btn.disabled=false;}
 }
 
 function updateUI(){
