@@ -507,6 +507,11 @@ input:checked + .toggle-slider{background:linear-gradient(135deg,#2F80ED,#1F5FD0
 @keyframes numBump{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
 @keyframes flame{50%{transform:scale(1.1) rotate(-4deg)}}
 @keyframes shine{0%,55%{left:-80px}100%{left:130%}}
+
+/* красная точка на «Профиль», пока награда серии не забрана */
+.nav-btn{position:relative}
+.nav-btn.has-dot::after{content:'';position:absolute;top:4px;left:calc(50% + 8px);width:11px;height:11px;border-radius:50%;background:#FF4D4D;border:2px solid #0A0A0A;box-shadow:0 0 10px rgba(255,77,77,.8);animation:navDot 1.4s ease-in-out infinite;z-index:3}
+@keyframes navDot{50%{transform:scale(1.25)}}
 </style>
 <link rel="preload" as="image" href="logo.webp">
 <script src="coin.js" defer></script>
@@ -765,6 +770,7 @@ function renderDaily(d,opt){
   if(opt.popIndex!=null){const el=tr.querySelector(`.dt[data-i="${opt.popIndex}"]`);if(el)el.classList.add('pop');}
   const btn=document.getElementById('dly-btn'),sub=document.getElementById('dly-sub');
   _dlyLeft=d.seconds_left||0;
+  const _pn=document.querySelector('.nav-btn[onclick*="inventory"]');if(_pn)_pn.classList.toggle('has-dot',!d.claimed_today);
   if(!d.claimed_today){
     const isBonus=(done===N-1);
     btn.className='dly-btn'+(isBonus?' big':'');btn.disabled=false;
